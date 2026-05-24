@@ -1,0 +1,21 @@
+type Query {
+  search(limit: Int = 10, term: String!): [User!]!
+  viewer: User
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+union SearchResult = Team | User
+
+type Team {
+  id: ID!
+}
+
+type User {
+  id: ID!
+  name: String
+  roles: [[Role!]!]!
+}

@@ -5,16 +5,24 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use wesley_core::{
-    compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
-    list_schema_operations_sdl, lower_schema_sdl, resolve_operation_selections,
-    resolve_operation_selections_with_schema, SchemaDelta, WesleyError,
+    compute_content_hash, compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
+    list_schema_operations_sdl, lower_schema_sdl, normalize_schema_sdl,
+    resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
+    WesleyError, WesleyIR,
 };
-use wesley_emit_rust::emit_rust_with_operations;
-use wesley_emit_typescript::emit_typescript_with_operations;
+use wesley_emit_rust::{
+    emit_rust_with_operations, GENERATOR_NAME as RUST_GENERATOR_NAME,
+    GENERATOR_VERSION as RUST_GENERATOR_VERSION,
+};
+use wesley_emit_typescript::{
+    emit_typescript_with_operations, GENERATOR_NAME as TYPESCRIPT_GENERATOR_NAME,
+    GENERATOR_VERSION as TYPESCRIPT_GENERATOR_VERSION,
+};
 
 const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
 const EXIT_USAGE: u8 = 2;
+const RUST_NATIVE_EXECUTION_MODE: &str = "rust-native";
 
 fn main() -> ExitCode {
     let args = env::args().skip(1).collect::<Vec<_>>();
@@ -34,6 +42,11 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
             print_help();
             Ok(EXIT_OK)
         }
+        Some("normalize-sdl") if wants_help(&args[1..]) => {
+            print_normalize_sdl_help();
+            Ok(EXIT_OK)
+        }
+        Some("normalize-sdl") => run_normalize_sdl_command(&args[1..]),
         Some("schema") => run_schema_command(&args[1..]),
         Some("emit") => run_emit_command(&args[1..]),
         Some("operation") => run_operation_command(&args[1..]),
@@ -43,6 +56,21 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
         }
         Some(command) => Err(CliError::usage(format!("unknown command '{command}'"))),
     }
+}
+
+fn run_normalize_sdl_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "normalize-sdl")?;
+    let schema_path = options.required_schema("normalize-sdl")?;
+    let sdl = read_file(&schema_path, "schema")?;
+    let normalized = normalize_schema_sdl(&sdl)?;
+
+    if options.hash {
+        println!("{}", compute_content_hash(&normalized));
+    } else {
+        println!("{normalized}");
+    }
+
+    Ok(EXIT_OK)
 }
 
 fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
@@ -139,6 +167,12 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let rust = emit_rust_with_operations(&ir, &operations);
 
             write_file(&out_path, &rust, "Rust output")?;
+            write_emit_metadata_if_requested(
+                options.metadata_out.as_deref(),
+                &ir,
+                RUST_GENERATOR_NAME,
+                RUST_GENERATOR_VERSION,
+            )?;
             Ok(EXIT_OK)
         }
         Some("typescript") if wants_help(&args[1..]) => {
@@ -155,6 +189,12 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let typescript = emit_typescript_with_operations(&ir, &operations);
 
             write_file(&out_path, &typescript, "TypeScript output")?;
+            write_emit_metadata_if_requested(
+                options.metadata_out.as_deref(),
+                &ir,
+                TYPESCRIPT_GENERATOR_NAME,
+                TYPESCRIPT_GENERATOR_VERSION,
+            )?;
             Ok(EXIT_OK)
         }
         Some(command) => Err(CliError::usage(format!("unknown emit command '{command}'"))),
@@ -220,11 +260,13 @@ struct ParsedOptions {
     revision: Option<String>,
     operation: Option<PathBuf>,
     out: Option<PathBuf>,
+    metadata_out: Option<PathBuf>,
     directive: Option<String>,
     format: Option<String>,
     breaking_only: bool,
     exit_code: bool,
     json: bool,
+    hash: bool,
 }
 
 impl ParsedOptions {
@@ -305,6 +347,19 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
                 index += 1;
                 options.out = Some(PathBuf::from(required_value(args, index, "--out")?));
             }
+            "--metadata-out" if command.starts_with("emit ") => {
+                index += 1;
+                options.metadata_out = Some(PathBuf::from(required_value(
+                    args,
+                    index,
+                    "--metadata-out",
+                )?));
+            }
+            "--metadata-out" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--metadata-out' for `{command}`"
+                )));
+            }
             "--directive" | "-d" => {
                 index += 1;
                 let name = required_value(args, index, "--directive")?;
@@ -326,6 +381,14 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             }
             "--json" => {
                 options.json = true;
+            }
+            "--hash" if command == "normalize-sdl" => {
+                options.hash = true;
+            }
+            "--hash" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--hash' for `{command}`"
+                )));
             }
             "--help" | "-h" => {
                 return Err(CliError::usage(format!(
@@ -391,6 +454,28 @@ fn write_file(path: &Path, content: &str, label: &str) -> Result<(), CliError> {
         path: path.to_path_buf(),
         source: source.to_string(),
     })
+}
+
+fn write_emit_metadata_if_requested(
+    path: Option<&Path>,
+    ir: &WesleyIR,
+    generator: &'static str,
+    generator_version: &'static str,
+) -> Result<(), CliError> {
+    let Some(path) = path else {
+        return Ok(());
+    };
+
+    let metadata = EmitMetadata {
+        schema_hash: compute_registry_hash(ir)?,
+        generator,
+        generator_version,
+        execution_mode: RUST_NATIVE_EXECUTION_MODE,
+    };
+    let mut json = serde_json::to_string_pretty(&metadata)?;
+    json.push('\n');
+
+    write_file(path, &json, "emit metadata")
 }
 
 fn read_schema_diff_inputs(options: &ParsedOptions) -> Result<(String, String), CliError> {
@@ -520,6 +605,15 @@ struct FlatChange {
     description: String,
 }
 
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EmitMetadata {
+    schema_hash: String,
+    generator: &'static str,
+    generator_version: &'static str,
+    execution_mode: &'static str,
+}
+
 fn print_schema_delta(
     delta: &SchemaDelta,
     output_format: OutputFormat,
@@ -635,6 +729,7 @@ Usage:
   wesley <command> [options]
 
 Commands:
+  normalize-sdl            Print the Rust-core normalized SDL view
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema operations         List Query/Mutation/Subscription root operations
@@ -648,6 +743,20 @@ Commands:
 Options:
   -h, --help     Show help
   -V, --version  Show version"
+    );
+}
+
+fn print_normalize_sdl_help() {
+    println!(
+        "\
+Wesley SDL normalizer
+
+Usage:
+  wesley normalize-sdl --schema <path> [--hash]
+
+Options:
+  -s, --schema <path>  GraphQL SDL file
+  --hash               Print the SHA-256 of the normalized SDL"
     );
 }
 
@@ -682,12 +791,13 @@ Emits model declarations and root operation bindings when the schema declares
 Query, Mutation, or Subscription fields.
 
 Usage:
-  wesley emit rust --schema <path> --out <path>
-  wesley emit typescript --schema <path> --out <path>
+  wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
+  wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
 
 Options:
-  -s, --schema <path>  GraphQL SDL file
-  --out <path>         Output file"
+  -s, --schema <path>    GraphQL SDL file
+  --out <path>           Output file
+  --metadata-out <path>  Deterministic metadata JSON sidecar"
     );
 }
 

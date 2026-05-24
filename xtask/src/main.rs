@@ -23,6 +23,8 @@ const FORBIDDEN_GIT_IDENTITIES: &[&str] = &[
     "CI Test",
     "test@ci.com",
 ];
+const NODE_RETIREMENT_LEDGER: &str =
+    "docs/design/0017-rust-native-front-door-and-node-retirement/node-retirement-ledger.json";
 const PUBLISH_CRATES: &[PublishCrate] = &[
     PublishCrate {
         name: "wesley-core",
@@ -890,7 +892,245 @@ fn run_docs_check() -> Result<(), Error> {
     check_doc_links()?;
     check_docs_truth_manifest()?;
     check_forbidden_literals()?;
+    check_node_retirement_ledger()?;
     Ok(())
+}
+
+fn check_node_retirement_ledger() -> Result<(), Error> {
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let ledger_path = root.join(NODE_RETIREMENT_LEDGER);
+    let ledger_text = fs::read_to_string(&ledger_path).map_err(|source| Error::CheckFailed {
+        check: "node retirement ledger".to_string(),
+        failures: vec![format!(
+            "missing or unreadable ledger `{}`: {source}",
+            display_path(&root, &ledger_path)
+        )],
+    })?;
+    let ledger: serde_json::Value =
+        serde_json::from_str(&ledger_text).map_err(|source| Error::CheckFailed {
+            check: "node retirement ledger".to_string(),
+            failures: vec![format!("ledger is not valid JSON: {source}")],
+        })?;
+
+    let mut failures = Vec::new();
+    check_node_package_dispositions(&root, &ledger, &mut failures)?;
+    check_pnpm_wesley_front_door_docs(&root, &ledger, &mut failures)?;
+    check_legacy_core_authority_changes(&root, &ledger, &mut failures)?;
+
+    if failures.is_empty() {
+        println!("✅ Node retirement ledger guard passed");
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: "node retirement ledger".to_string(),
+            failures,
+        })
+    }
+}
+
+fn check_node_package_dispositions(
+    root: &Path,
+    ledger: &serde_json::Value,
+    failures: &mut Vec<String>,
+) -> Result<(), Error> {
+    let package_entries = ledger_array(ledger, "packages", failures);
+    let mut ledger_paths = package_entries
+        .iter()
+        .filter_map(|entry| entry.get("path").and_then(serde_json::Value::as_str))
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+    ledger_paths.sort();
+
+    for package_dir in node_package_dirs(root)? {
+        if !ledger_paths.iter().any(|path| path == &package_dir) {
+            failures.push(format!(
+                "{package_dir} has a package.json but no retirement ledger disposition"
+            ));
+        }
+    }
+
+    for entry in package_entries {
+        let Some(path) = entry.get("path").and_then(serde_json::Value::as_str) else {
+            failures.push("node retirement package entry is missing path".to_string());
+            continue;
+        };
+        if entry
+            .get("disposition")
+            .and_then(serde_json::Value::as_str)
+            .is_none_or(str::is_empty)
+        {
+            failures.push(format!("{path} is missing a non-empty disposition"));
+        }
+        if !root.join(path).join("package.json").is_file() {
+            failures.push(format!(
+                "{path} ledger entry does not point at a package.json"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn node_package_dirs(root: &Path) -> Result<Vec<String>, Error> {
+    let packages_dir = root.join("packages");
+    let entries = fs::read_dir(&packages_dir).map_err(|source| {
+        Error::Usage(format!(
+            "failed to read `{}`: {source}",
+            display_path(root, &packages_dir)
+        ))
+    })?;
+    let mut dirs = Vec::new();
+
+    for entry in entries {
+        let entry = entry.map_err(|source| {
+            Error::Usage(format!(
+                "failed to read entry in `{}`: {source}",
+                display_path(root, &packages_dir)
+            ))
+        })?;
+        let path = entry.path();
+        if path.join("package.json").is_file() {
+            dirs.push(display_path(root, &path));
+        }
+    }
+
+    dirs.sort();
+    Ok(dirs)
+}
+
+fn check_pnpm_wesley_front_door_docs(
+    root: &Path,
+    ledger: &serde_json::Value,
+    failures: &mut Vec<String>,
+) -> Result<(), Error> {
+    let context_terms = ledger_strings(ledger, "pnpmWesleyCompatibilityContext", failures);
+    for doc in ledger_strings(ledger, "frontDoorDocs", failures) {
+        let path = root.join(&doc);
+        let content = fs::read_to_string(&path).map_err(|source| Error::CheckFailed {
+            check: "node retirement ledger".to_string(),
+            failures: vec![format!(
+                "front-door doc `{}` is missing or unreadable: {source}",
+                display_path(root, &path)
+            )],
+        })?;
+        let lines = content.lines().collect::<Vec<_>>();
+        for (index, line) in lines.iter().enumerate() {
+            if !line.contains("pnpm wesley") {
+                continue;
+            }
+            let context = context_window(&lines, index, 4).to_ascii_lowercase();
+            if !context_terms
+                .iter()
+                .any(|term| context.contains(&term.to_ascii_lowercase()))
+            {
+                failures.push(format!(
+                    "{}:{} mentions `pnpm wesley` without legacy or migration context",
+                    doc,
+                    index + 1
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn check_legacy_core_authority_changes(
+    root: &Path,
+    ledger: &serde_json::Value,
+    failures: &mut Vec<String>,
+) -> Result<(), Error> {
+    let base = env::var("WESLEY_NODE_RETIREMENT_BASE")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "origin/main".to_string());
+    if !git_revision_exists(&base)? {
+        return Ok(());
+    }
+
+    let changed_paths = git_changed_paths_against(&base)?;
+    let authority_paths = ledger_strings(ledger, "legacyCoreAuthorityPaths", failures);
+    let allowed_changes = ledger_strings(ledger, "legacyCoreAuthorityAllowedChanges", failures);
+
+    for path in changed_paths {
+        if authority_paths
+            .iter()
+            .any(|prefix| path.starts_with(prefix))
+            && !allowed_changes.iter().any(|allowed| allowed == &path)
+        {
+            failures.push(format!(
+                "{path} changes legacy JS core authority; move behavior to Rust or list an explicit temporary allowance in {NODE_RETIREMENT_LEDGER}"
+            ));
+        }
+    }
+
+    let _ = root;
+    Ok(())
+}
+
+fn ledger_array<'a>(
+    ledger: &'a serde_json::Value,
+    key: &str,
+    failures: &mut Vec<String>,
+) -> Vec<&'a serde_json::Value> {
+    match ledger.get(key).and_then(serde_json::Value::as_array) {
+        Some(values) => values.iter().collect(),
+        None => {
+            failures.push(format!("node retirement ledger is missing array `{key}`"));
+            Vec::new()
+        }
+    }
+}
+
+fn ledger_strings(
+    ledger: &serde_json::Value,
+    key: &str,
+    failures: &mut Vec<String>,
+) -> Vec<String> {
+    ledger_array(ledger, key, failures)
+        .into_iter()
+        .filter_map(|value| value.as_str().map(ToOwned::to_owned))
+        .collect()
+}
+
+fn context_window(lines: &[&str], index: usize, radius: usize) -> String {
+    let start = index.saturating_sub(radius);
+    let end = (index + radius + 1).min(lines.len());
+    lines[start..end].join("\n")
+}
+
+fn git_revision_exists(revision: &str) -> Result<bool, Error> {
+    let status = Command::new("git")
+        .args(["rev-parse", "--verify", "--quiet", revision])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map_err(|source| Error::Usage(format!("failed to spawn `git rev-parse`: {source}")))?;
+    Ok(status.success())
+}
+
+fn git_changed_paths_against(base: &str) -> Result<Vec<String>, Error> {
+    let label = format!("git diff --name-only --diff-filter=ACMR {base}...HEAD");
+    let output = Command::new("git")
+        .args(["diff", "--name-only", "--diff-filter=ACMR"])
+        .arg(format!("{base}...HEAD"))
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+
+    if !output.status.success() {
+        return Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(ToOwned::to_owned)
+        .collect())
 }
 
 fn check_doc_links() -> Result<(), Error> {
@@ -1687,6 +1927,37 @@ mod tests {
                 "{name} README must use package-safe links"
             );
         }
+    }
+
+    #[test]
+    fn node_retirement_front_door_doc_read_errors_are_check_failures() {
+        let root = env::temp_dir().join(format!(
+            "wesley-xtask-front-door-doc-{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&root).expect("temp root should be created");
+        let ledger = serde_json::json!({
+            "frontDoorDocs": ["missing.md"],
+            "pnpmWesleyCompatibilityContext": ["legacy"]
+        });
+        let mut failures = Vec::new();
+
+        let error = check_pnpm_wesley_front_door_docs(&root, &ledger, &mut failures)
+            .expect_err("missing front-door doc should be a check failure");
+
+        match error {
+            Error::CheckFailed { check, failures } => {
+                assert_eq!(check, "node retirement ledger");
+                assert_eq!(failures.len(), 1);
+                assert!(
+                    failures[0].contains("front-door doc `missing.md` is missing or unreadable"),
+                    "unexpected failure: {:?}",
+                    failures
+                );
+            }
+            other => panic!("expected CheckFailed, got {other:?}"),
+        }
+        fs::remove_dir_all(root).expect("temp root should be removed");
     }
 
     #[test]

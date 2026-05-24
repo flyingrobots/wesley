@@ -1,13 +1,20 @@
 use std::fs;
 use std::path::PathBuf;
 use wesley_core::{
-    compute_registry_hash, to_canonical_json, ApolloLoweringAdapter, LoweringPort, TypeDefinition,
-    TypeKind,
+    compute_registry_hash, normalize_schema_sdl, to_canonical_json, ApolloLoweringAdapter,
+    LoweringPort, TypeDefinition, TypeKind,
 };
 
 fn get_fixture_path(name: &str) -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("../../test/fixtures/ir-parity");
+    path.push(name);
+    path
+}
+
+fn get_parser_diagnostic_fixture_path(name: &str) -> PathBuf {
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.push("../../test/fixtures/parser-diagnostics");
     path.push(name);
     path
 }
@@ -150,11 +157,14 @@ async fn rejects_duplicate_canonical_directives() {
 
 #[tokio::test]
 async fn parse_errors_expose_stable_diagnostics_with_spans() {
-    let sdl = "type Broken {\n  id:\n}\n";
+    let sdl = fs::read_to_string(get_parser_diagnostic_fixture_path(
+        "parser-syntax-error.graphql",
+    ))
+    .expect("Failed to read parser diagnostic fixture");
 
     let adapter = create_adapter();
     let err = adapter
-        .lower_sdl(sdl)
+        .lower_sdl(&sdl)
         .await
         .expect_err("invalid SDL syntax should fail lowering");
     let diagnostic = err.diagnostic();
@@ -164,6 +174,83 @@ async fn parse_errors_expose_stable_diagnostics_with_spans() {
     assert!(diagnostic.message.contains("expected"));
     assert_eq!(diagnostic.line, Some(3));
     assert_eq!(diagnostic.column, Some(1));
+}
+
+#[tokio::test]
+async fn diagnostic_fixture_rejects_duplicate_canonical_directives() {
+    let sdl = fs::read_to_string(get_parser_diagnostic_fixture_path(
+        "duplicate-directive-alias.graphql",
+    ))
+    .expect("Failed to read parser diagnostic fixture");
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(&sdl)
+        .await
+        .expect_err("duplicate canonical directives should fail lowering");
+    let diagnostic = err.diagnostic();
+
+    assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
+    assert_eq!(diagnostic.message, "Duplicate directive '@wes_table'");
+}
+
+#[tokio::test]
+async fn diagnostic_fixture_rejects_mixed_type_kind_consolidation() {
+    let sdl = fs::read_to_string(get_parser_diagnostic_fixture_path(
+        "mixed-type-kind.graphql",
+    ))
+    .expect("Failed to read parser diagnostic fixture");
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(&sdl)
+        .await
+        .expect_err("mixed type kinds should fail lowering");
+    let diagnostic = err.diagnostic();
+
+    assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
+    assert!(diagnostic.message.contains("Thing"));
+    assert!(diagnostic.message.contains("Object"));
+    assert!(diagnostic.message.contains("Enum"));
+}
+
+#[test]
+fn normalize_sdl_preserves_enum_literals_without_rewriting_strings() {
+    let sdl = r#"
+        directive @defaultMode(mode: Mode!, label: String!) on FIELD_DEFINITION
+
+        enum Mode {
+          ACTIVE
+          DRAFT
+        }
+
+        input ContractFilter {
+          label: String = "ACTIVE"
+          mode: Mode = ACTIVE
+          modes: [Mode!] = [ACTIVE, DRAFT]
+        }
+
+        type Query {
+          contract(label: String = "DRAFT", mode: Mode = DRAFT): Contract
+            @defaultMode(label: "ACTIVE", mode: ACTIVE)
+        }
+
+        type Contract {
+          id: ID!
+        }
+    "#;
+
+    let normalized = normalize_schema_sdl(sdl).expect("schema should normalize");
+
+    assert!(normalized.contains("  label: String = \"ACTIVE\""));
+    assert!(normalized.contains("  mode: Mode = ACTIVE"));
+    assert!(normalized.contains("  modes: [Mode!] = [ACTIVE, DRAFT]"));
+    assert!(
+        normalized.contains(
+            "  contract(label: String = \"DRAFT\", mode: Mode = DRAFT): Contract @defaultMode(label: \"ACTIVE\", mode: ACTIVE)"
+        ),
+        "{normalized}"
+    );
 }
 
 #[tokio::test]

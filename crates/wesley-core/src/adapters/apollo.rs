@@ -2,6 +2,7 @@
 
 use crate::domain::error::WesleyError;
 use crate::domain::ir::*;
+use crate::domain::normalized_sdl::{render_normalized_sdl, DirectiveArgumentTypes};
 use crate::domain::operation::{
     OperationArgument, OperationDirectiveArgs, OperationType, SchemaOperation,
 };
@@ -43,6 +44,69 @@ impl LoweringPort for ApolloLoweringAdapter {
 /// Lowers GraphQL SDL into the Wesley L1 IR using the Apollo parser adapter.
 pub fn lower_schema_sdl(sdl: &str) -> Result<WesleyIR, WesleyError> {
     ApolloLoweringAdapter::new(0).parse_and_lower(sdl)
+}
+
+/// Renders GraphQL SDL as a deterministic Rust-core semantic view.
+pub fn normalize_schema_sdl(sdl: &str) -> Result<String, WesleyError> {
+    let directive_argument_types = directive_argument_types_from_sdl(sdl)?;
+    let ir = lower_schema_sdl(sdl)?;
+
+    Ok(render_normalized_sdl(&ir, &directive_argument_types))
+}
+
+fn directive_argument_types_from_sdl(sdl: &str) -> Result<DirectiveArgumentTypes, WesleyError> {
+    let parser = Parser::new(sdl);
+    let cst = parser.parse();
+
+    let errors = cst.errors().collect::<Vec<_>>();
+    if !errors.is_empty() {
+        let err = &errors[0];
+        return Err(parse_error_from_apollo(sdl, err));
+    }
+
+    let mut definitions = DirectiveArgumentTypes::new();
+    for definition in cst.document().definitions() {
+        let cst::Definition::DirectiveDefinition(directive) = definition else {
+            continue;
+        };
+
+        let name = directive
+            .name()
+            .map(|name| name.text().to_string())
+            .ok_or_else(|| {
+                lowering_error_value("directive", "Directive definition missing name".to_string())
+            })?;
+        let canonical_name = canonical_core_directive_name(&name)
+            .unwrap_or(name.as_str())
+            .to_string();
+        let mut arguments = BTreeMap::new();
+        if let Some(arguments_definition) = directive.arguments_definition() {
+            for input_value in arguments_definition.input_value_definitions() {
+                let argument_name = input_value
+                    .name()
+                    .map(|name| name.text().to_string())
+                    .ok_or_else(|| {
+                        lowering_error_value(
+                            "directive",
+                            format!("Directive '@{name}' argument missing name"),
+                        )
+                    })?;
+                let argument_type = input_value.ty().ok_or_else(|| {
+                    lowering_error_value(
+                        "directive",
+                        format!("Directive '@{name}' argument '{argument_name}' missing type"),
+                    )
+                })?;
+                arguments.insert(
+                    argument_name,
+                    type_reference_from_type(argument_type, true)?,
+                );
+            }
+        }
+        definitions.insert(canonical_name, arguments);
+    }
+
+    Ok(definitions)
 }
 
 /// Computes the structural L1 delta between two GraphQL SDL documents.

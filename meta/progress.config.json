@@ -65,7 +65,7 @@
       "status": "Active",
       "ci": "pkg-generator-js.yml",
       "readme": "packages/wesley-generator-js/README.md",
-      "notes": "TS/Zod emitters"
+      "notes": "Legacy TS/Zod emitters"
     },
     {
       "name": "@wesley/generator-vue",

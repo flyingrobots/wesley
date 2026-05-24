@@ -8,6 +8,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("Wesley native CLI"));
+    assert!(stdout.contains("normalize-sdl"));
     assert!(stdout.contains("schema lower"));
     assert!(stdout.contains("schema operations"));
     assert!(stdout.contains("schema diff"));
@@ -41,6 +42,39 @@ fn nested_command_help_exits_zero() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("wesley schema lower --schema <path>"));
+}
+
+#[test]
+fn normalize_sdl_emits_sorted_consolidated_sdl() {
+    assert_normalized_sdl_fixture("extension-folded");
+}
+
+#[test]
+fn normalize_sdl_preserves_semantic_directives_descriptions_and_defaults() {
+    assert_normalized_sdl_fixture("directives-and-defaults");
+}
+
+#[test]
+fn normalize_sdl_hash_emits_sha256_evidence() {
+    let output = wesley()
+        .args(["normalize-sdl", "--schema"])
+        .arg(fixture(
+            "test/fixtures/normalized-sdl/directives-and-defaults.graphql",
+        ))
+        .arg("--hash")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let expected = std::fs::read_to_string(fixture(
+        "test/fixtures/normalized-sdl/directives-and-defaults.normalized.sha256",
+    ))
+    .expect("normalized SDL hash fixture should read");
+
+    assert_eq!(stdout.trim(), expected.trim());
+    assert!(stderr.is_empty());
 }
 
 #[test]
@@ -472,6 +506,84 @@ fn emit_rust_writes_ast_generated_models() {
 }
 
 #[test]
+fn emit_commands_write_deterministic_metadata_sidecars() {
+    let dir = temp_dir("emit-metadata");
+    let schema = dir.join("schema.graphql");
+    let rust_out = dir.join("generated").join("model.rs");
+    let typescript_out = dir.join("generated").join("types.ts");
+    let rust_metadata = dir.join("generated").join("model.metadata.json");
+    let typescript_metadata = dir.join("generated").join("types.metadata.json");
+
+    std::fs::write(
+        &schema,
+        r#"
+        type Query {
+          viewer: Viewer
+        }
+
+        type Viewer {
+          id: ID!
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let rust_output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&rust_out)
+        .arg("--metadata-out")
+        .arg(&rust_metadata)
+        .output()
+        .expect("wesley should run");
+    assert_success(&rust_output);
+
+    let typescript_output = wesley()
+        .args(["emit", "typescript", "--schema"])
+        .arg(&schema)
+        .arg("--out")
+        .arg(&typescript_out)
+        .arg("--metadata-out")
+        .arg(&typescript_metadata)
+        .output()
+        .expect("wesley should run");
+    assert_success(&typescript_output);
+
+    let rust_json: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(&rust_metadata).expect("Rust metadata should read"),
+    )
+    .expect("Rust metadata should be JSON");
+    let typescript_json: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(&typescript_metadata).expect("TypeScript metadata should read"),
+    )
+    .expect("TypeScript metadata should be JSON");
+
+    assert_eq!(rust_json["schemaHash"], typescript_json["schemaHash"]);
+    assert_eq!(
+        rust_json["schemaHash"]
+            .as_str()
+            .expect("schema hash should be a string")
+            .len(),
+        64
+    );
+    assert_eq!(rust_json["generator"], "wesley-emit-rust");
+    assert_eq!(typescript_json["generator"], "wesley-emit-typescript");
+    assert_eq!(
+        rust_json["generatorVersion"],
+        wesley_emit_rust::GENERATOR_VERSION
+    );
+    assert_eq!(
+        typescript_json["generatorVersion"],
+        wesley_emit_typescript::GENERATOR_VERSION
+    );
+    assert_eq!(rust_json["executionMode"], "rust-native");
+    assert_eq!(typescript_json["executionMode"], "rust-native");
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
 fn emit_commands_include_jedit_operation_bindings() {
     let dir = temp_dir("emit-jedit-operation-bindings");
     let rust_out = dir.join("generated").join("model.rs");
@@ -672,6 +784,27 @@ fn wesley() -> Command {
     Command::new(env!("CARGO_BIN_EXE_wesley"))
 }
 
+fn assert_normalized_sdl_fixture(name: &str) {
+    let output = wesley()
+        .args(["normalize-sdl", "--schema"])
+        .arg(fixture(format!(
+            "test/fixtures/normalized-sdl/{name}.graphql"
+        )))
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let expected = std::fs::read_to_string(fixture(format!(
+        "test/fixtures/normalized-sdl/{name}.normalized.graphql"
+    )))
+    .expect("normalized SDL fixture should read");
+
+    assert_eq!(stdout, expected);
+    assert!(stderr.is_empty());
+}
+
 fn assert_success(output: &std::process::Output) {
     if !output.status.success() {
         panic!(
@@ -683,7 +816,7 @@ fn assert_success(output: &std::process::Output) {
     }
 }
 
-fn fixture(relative: &str) -> std::path::PathBuf {
+fn fixture(relative: impl AsRef<std::path::Path>) -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join(relative)

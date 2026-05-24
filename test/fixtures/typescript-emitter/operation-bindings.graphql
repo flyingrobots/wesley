@@ -1,0 +1,50 @@
+directive @route(path: String!, retry: Int = 0) on FIELD_DEFINITION
+
+scalar DateTime
+
+enum DeliveryMode {
+  BATCH
+  SINGLE
+}
+
+interface Node {
+  id: ID!
+}
+
+type Query {
+  delivery(id: ID!, includeHistory: Boolean = false): Delivery
+    @route(path: "/delivery")
+}
+
+type Mutation {
+  schedule(input: ScheduleInput!, traceId: ID): ScheduleResult!
+    @route(path: "/schedule", retry: 2)
+}
+
+type Subscription {
+  deliveryEvents(after: ID, labels: [[String!]!]): [DeliveryEvent!]!
+    @route(path: "/events")
+}
+
+type Delivery implements Node {
+  id: ID!
+  mode: DeliveryMode!
+  requestedAt: DateTime
+  tags: [String!]!
+}
+
+type DeliveryEvent {
+  delivery: Delivery!
+  observedAt: DateTime!
+}
+
+input ScheduleInput {
+  mode: DeliveryMode!
+  requestedAt: DateTime
+  tags: [String!] = []
+}
+
+type ScheduleResult {
+  accepted: Boolean!
+  delivery: Delivery
+}

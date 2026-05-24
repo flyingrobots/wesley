@@ -32,7 +32,7 @@ or ported. Their migration map lives in
 | Surface                 | Path                                  | Status                              | What it does                                                                                                                                                                                                         |
 | ----------------------- | ------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Rust compiler kernel    | `crates/wesley-core/`                 | Canonical for new compiler work     | Lowers GraphQL SDL into domain-empty L1 IR; diffs L1 schema structure; lists schema root operations; resolves operation selections; extracts directive arguments.                                                    |
-| Native Wesley command   | `crates/wesley-cli/`                  | Rust product CLI                    | Provides schema lowering, schema hashing, schema operation listing, schema diffing, Rust/TypeScript emission, operation selection analysis, and directive argument extraction from Rust crates.                      |
+| Native Wesley command   | `crates/wesley-cli/`                  | Rust product CLI                    | Provides SDL normalization, schema lowering, schema hashing, schema operation listing, schema diffing, Rust/TypeScript emission, operation selection analysis, and directive argument extraction from Rust crates.    |
 | Rust model emitter      | `crates/wesley-emit-rust/`            | Rust projection crate               | Emits Rust data models and root operation request/response bindings from Wesley L1 IR plus `SchemaOperation` data through a structured Rust item/type AST and printer.                                               |
 | Rust TypeScript emitter | `crates/wesley-emit-typescript/`      | Rust projection crate               | Emits TypeScript declarations, root operation request/response bindings, and operation metadata constants from Wesley L1 IR plus `SchemaOperation` data through a structured TypeScript declaration AST and printer. |
 | Repo automation         | `xtask/`                              | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the legacy preflight bridge.                                                                                                                     |
@@ -51,11 +51,15 @@ It can:
 
 - parse and lower GraphQL SDL into the L1 semantic IR
 - consolidate `extend type` blocks before lowering
+- print a normalized SDL view of Rust compiler facts and its SHA-256 evidence
+  hash
 - compute stable canonical JSON and hashes for L1 IR
 - compute structural L1 schema deltas
 - list schema root operations with arguments, result types, and directives
 - emit Rust data models and operation bindings through a Rust AST/printer path
 - emit TypeScript declarations and operation bindings through a Rust AST/printer path
+- write deterministic emit metadata sidecars with schema hash, generator
+  identity, generator version, and execution mode
 - resolve GraphQL operation selection paths
 - resolve schema-coordinate selections when schema SDL is available
 - extract arbitrary operation directive arguments as data
@@ -63,13 +67,15 @@ It can:
 The native CLI exposes those facts through:
 
 ```bash
+wesley normalize-sdl --schema <path>
+wesley normalize-sdl --schema <path> --hash
 wesley schema lower --schema <path> --json
 wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> [--format text|json|summary] [--exit-code]
 wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--exit-code]
-wesley emit rust --schema <path> --out <path>
-wesley emit typescript --schema <path> --out <path>
+wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
+wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```

@@ -8,6 +8,31 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Native emit metadata**: `wesley emit rust` and `wesley emit typescript` now
+  accept `--metadata-out <path>` to write deterministic JSON sidecars with the
+  schema hash, generator identity, generator version, and `rust-native`
+  execution mode.
+- **Emitter retirement fixtures**: Added generic TypeScript operation-binding
+  golden fixtures and a domain-empty Rust emitter fixture so retained emitters
+  prove request/response bindings without leaking PostgreSQL, Echo, or jedit
+  semantics.
+- **Rust SDL normalizer**: Added `wesley normalize-sdl --schema <path>` and a
+  Rust-core `normalize_schema_sdl` API that prints a deterministic,
+  extension-folded SDL view from compiler facts, with golden fixtures for
+  sorted types, fields, arguments, unions, defaults, and nested list
+  references.
+- **Normalized SDL hash evidence**: `wesley normalize-sdl --schema <path>
+  --hash` now emits a SHA-256 evidence hash for the normalized SDL view, and
+  parser parity reports include normalized SDL hash evidence for accepted Rust
+  fixtures.
+- **Legacy Node retirement campaign**: Added design packet `0017`, a Node
+  retirement ledger, and a 96-slice `BEARING` checklist that tracks the
+  Rust-native front-door work required to remove Node as compiler, runtime,
+  release, and documentation authority.
+- **Node retirement guard**: Added a machine-readable Node retirement ledger and
+  `cargo xtask docs-check` validation that requires package dispositions,
+  guards primary docs against product-front-door `pnpm wesley` drift, and blocks
+  new legacy JS core authority without an explicit allowance.
 - **Rust core binding observatory**: Added `pnpm perf:bindings` and
   `pnpm perf:ir -- --observatory` to emit
   `rust-core-binding-observatory.v0` reports that separate Rust CLI, legacy JS
@@ -79,6 +104,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Legacy command retirement decisions**: Classified legacy `zod`, `models`,
+  and `init` as externalized or retired core behavior, and narrowed legacy
+  `generate` replacement to explicit native `emit` commands plus external
+  target modules.
 - **v0.0.6 bearing reset**: Reframed `docs/BEARING.md` around Rust IR parity,
   module-boundary enforcement, and explicit `wesley-postgres` preservation
   after the v0.0.5 clean-house release.
@@ -88,6 +117,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Node retirement doc guard errors**: missing or unreadable
+  `frontDoorDocs` entries now fail `cargo xtask docs-check` as Node retirement
+  ledger check failures instead of CLI usage errors.
+- **Node retirement validation map**: `docs/END_TO_END.md` now routes the Node
+  retirement ledger guard through Rust preflight, matching the actual
+  `cargo xtask docs-check` ownership.
+- **Normalized SDL enum literals**: `normalize_schema_sdl` now renders schema
+  enum defaults and directive enum arguments as GraphQL enum literals while
+  preserving string literals that happen to share enum-like names.
 - **Rust IR performance process bounds**: `pnpm perf:ir` now wraps Rust lowerer
   and Git metadata probes in `@git-stunts/alfred` timeouts with explicit output
   buffers so hung or oversized child processes produce controlled evidence

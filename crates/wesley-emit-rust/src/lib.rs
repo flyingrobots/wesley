@@ -10,6 +10,12 @@ use wesley_core::{
     TypeReference, WesleyIR,
 };
 
+/// Stable generator identifier recorded in native emit metadata.
+pub const GENERATOR_NAME: &str = "wesley-emit-rust";
+
+/// Version of the Rust emitter crate recorded in native emit metadata.
+pub const GENERATOR_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// Emits Rust model declarations for a Wesley L1 IR document.
 pub fn emit_rust(ir: &WesleyIR) -> String {
     let file = RustFile::from_ir(ir);
@@ -787,6 +793,27 @@ pub struct UserFilter {
         ));
         assert!(text_window.contains("\\\"payloadCodec\\\":\\\"QueryBytes\\\""));
         assert!(text_window.contains("\\\"envelope\\\":\\\"ReadingEnvelope\\\""));
+    }
+
+    #[test]
+    fn emits_domain_empty_fixture_without_product_nouns() {
+        let sdl = include_str!("../../../test/fixtures/rust-emitter/domain-empty.graphql");
+        let ir = lower_schema_sdl(sdl).expect("domain-empty fixture should lower");
+        let operations = list_schema_operations_sdl(sdl)
+            .expect("domain-empty fixture operations should resolve");
+
+        let actual = emit_rust_with_operations(&ir, &operations);
+
+        syn::parse_file(&actual).expect("generated Rust should parse");
+        assert!(actual.contains("pub struct ContractRecord {"));
+        assert!(actual.contains("pub struct MutationPublishContractRequest {"));
+        assert!(actual.contains("pub type QueryContractResponse = Option<ContractRecord>;"));
+        for forbidden in ["Postgres", "Supabase", "Echo", "jedit", "Jedit"] {
+            assert!(
+                !actual.contains(forbidden),
+                "generic Rust output leaked product noun `{forbidden}`"
+            );
+        }
     }
 
     #[test]

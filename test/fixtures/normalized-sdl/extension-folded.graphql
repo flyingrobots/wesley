@@ -1,0 +1,24 @@
+extend type User {
+  name: String
+}
+
+type Query {
+  search(term: String!, limit: Int = 10): [User!]!
+  viewer: User
+}
+
+union SearchResult = User | Team
+
+type Team {
+  id: ID!
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+}
+
+type User {
+  roles: [[Role!]!]!
+  id: ID!
+}

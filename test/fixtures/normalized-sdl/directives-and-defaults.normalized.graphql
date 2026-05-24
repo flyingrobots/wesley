@@ -1,0 +1,17 @@
+"""A reusable user"""
+type User @tag(name: "object") @wes_table {
+  """The stable id"""
+  id: ID! @wes_pk
+  name: String @tag(name: "beta") @tag(name: "alpha")
+}
+
+input UserFilter {
+  active: Boolean = true
+  settings: UserSettings = { flags: ["beta", "alpha"], theme: "dark" }
+}
+
+input UserSettings {
+  flags: [String!]! = []
+  quote: String = "A \"quote\""
+  theme: String = "light"
+}
