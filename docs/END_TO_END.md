@@ -907,7 +907,7 @@ flowchart TD
     RustPreflight --> NativeHelp[native CLI help smoke]
     LegacyPreflight --> DocsLinks[docs links]
     LegacyPreflight --> DocsTruth[docs truth manifest]
-    LegacyPreflight --> NodeRetirement[Node retirement ledger guard]
+    RustPreflight --> NodeRetirement[Node retirement ledger guard]
     LegacyPreflight --> Lint[lint and format]
     LegacyPreflight --> PackageTests[package tests]
 

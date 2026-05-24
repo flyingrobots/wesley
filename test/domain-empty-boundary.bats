@@ -41,3 +41,11 @@ load 'bats-plugins/bats-assert/load'
   run grep -E "['\"](postgres|supabase|echo|continuum|jedit|warp-ttd|ttd)['\"]" packages/wesley-cli/src/commands/compile.mjs
   assert_failure
 }
+
+@test "end-to-end validation diagram routes node retirement through Rust preflight" {
+  run grep -F "RustPreflight --> NodeRetirement[Node retirement ledger guard]" docs/END_TO_END.md
+  assert_success
+
+  run grep -F "LegacyPreflight --> NodeRetirement[Node retirement ledger guard]" docs/END_TO_END.md
+  assert_failure
+}

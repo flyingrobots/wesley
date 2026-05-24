@@ -117,6 +117,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Node retirement validation map**: `docs/END_TO_END.md` now routes the Node
+  retirement ledger guard through Rust preflight, matching the actual
+  `cargo xtask docs-check` ownership.
 - **Normalized SDL enum literals**: `normalize_schema_sdl` now renders schema
   enum defaults and directive enum arguments as GraphQL enum literals while
   preserving string literals that happen to share enum-like names.
