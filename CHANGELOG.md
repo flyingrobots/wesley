@@ -8,6 +8,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **End-to-end Wesley narrative**: Added `docs/END_TO_END.md`, a
+  first-principles walkthrough of Wesley's authored SDL, Rust compiler facts,
+  generic emitters, module boundary, assurance tooling, external ownership
+  rules, and design rationale with flowchart, sequence, class, entity,
+  state-machine, and mindmap diagrams.
 - **Parser parity spike**: Added `pnpm parity:parser`, which compares legacy
   `GraphQLAdapter.parseSDL` acceptance with Rust `wesley schema lower`
   acceptance over explicit parser-sensitive fixtures, including valid SDL,

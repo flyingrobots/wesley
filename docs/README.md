@@ -12,6 +12,7 @@ which signpost is supposed to answer which question.
 | Surface                                                | Role                                                                                                  |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
 | [README.md](../README.md)                              | Product-facing front door: what Wesley is, what is real today, and where to start.                    |
+| [END_TO_END.md](./END_TO_END.md)                       | Full system narrative from authored GraphQL through compiler facts, artifacts, evidence, and owners.  |
 | [ENTRYPOINTS.md](./ENTRYPOINTS.md)                     | Short answer for which Wesley to run or edit: Rust kernel, native CLI, xtask, or legacy Node tooling. |
 | [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md) | Deletion map for the historical Node CLI, packages, generators, hosts, and evidence tooling.          |
 | [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)             | Fast noun map for the Wesley base platform, modules, and project workspace.                           |
@@ -64,6 +65,7 @@ It also now has a more explicit METHOD closeout surface under
 ### Product Orientation
 
 - [README.md](../README.md)
+- [END_TO_END.md](./END_TO_END.md)
 - [ENTRYPOINTS.md](./ENTRYPOINTS.md)
 - [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md)
 - [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)
