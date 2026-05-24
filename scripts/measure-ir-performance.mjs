@@ -42,7 +42,7 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
 
   if (options.help) {
-    printHelp();
+    printHelp(options);
     return;
   }
 
@@ -349,51 +349,26 @@ async function measureObservatoryFixture(fixturePath, options) {
       throw new Error(`Fixture does not exist: ${displayPath}`);
     }
 
-    for (let index = 0; index < options.warmups; index += 1) {
-      await runLower(fixturePath);
-      measureLegacyJsLower(fixturePath);
-    }
-
-    const rustDurationsMs = [];
-    const legacyJsDurationsMs = [];
-    const legacyJsHeapDeltaBytes = [];
-    let lastOutput = '';
-
-    for (let index = 0; index < options.iterations; index += 1) {
-      const measured = await measureLower(fixturePath);
-      rustDurationsMs.push(measured.durationMs);
-      lastOutput = measured.stdout;
-
-      const legacyMeasured = measureLegacyJsLower(fixturePath);
-      legacyJsDurationsMs.push(legacyMeasured.durationMs);
-      legacyJsHeapDeltaBytes.push(legacyMeasured.heapDeltaBytes);
-    }
-
-    const parsed = JSON.parse(lastOutput);
-    const semanticIr = { ...parsed };
-    delete semanticIr.metadata;
+    const rustCli = await measureRustCliObservatoryAdapter(fixturePath, options);
+    const legacyJsInProcess = measureLegacyJsObservatoryAdapter(fixturePath, options);
+    const adapterFailures = [rustCli, legacyJsInProcess].filter(
+      (adapter) => adapter.status !== 'pass'
+    );
 
     return {
       fixture: displayPath,
-      status: 'pass',
+      status: adapterFailures.length === 0 ? 'pass' : 'error',
+      ...(adapterFailures.length > 0
+        ? {
+            error: adapterFailures
+              .map((adapter) => adapter.error)
+              .filter(Boolean)
+              .join('; ')
+          }
+        : {}),
       schemaBytes: statSync(fixturePath).size,
-      rustCli: {
-        status: 'pass',
-        outputBytes: Buffer.byteLength(lastOutput),
-        rustL1Hash: sha256Hex(canonicalizeJSON(semanticIr)),
-        typeCount: Array.isArray(parsed.types) ? parsed.types.length : null,
-        durationMs: summarizeDurations(rustDurationsMs),
-        memory: rustCliMemoryPolicy()
-      },
-      legacyJsInProcess: {
-        status: 'pass',
-        durationMs: summarizeDurations(legacyJsDurationsMs),
-        memory: {
-          heapDeltaBytes: summarizeIntegerSamples(legacyJsHeapDeltaBytes),
-          caveat:
-            'heapUsed deltas are process-local samples and can be negative when the Node runtime releases memory.'
-        }
-      },
+      rustCli,
+      legacyJsInProcess,
       nodeRustBinding: bindingNotImplemented('node-rust-binding'),
       wasmBinding: bindingNotImplemented('wasm-binding')
     };
@@ -402,6 +377,82 @@ async function measureObservatoryFixture(fixturePath, options) {
       fixture: displayPath,
       status: 'error',
       error: error?.message || String(error)
+    };
+  }
+}
+
+async function measureRustCliObservatoryAdapter(fixturePath, options) {
+  try {
+    for (let index = 0; index < options.warmups; index += 1) {
+      await runLower(fixturePath);
+    }
+
+    const durationsMs = [];
+    let lastOutput = '';
+
+    for (let index = 0; index < options.iterations; index += 1) {
+      const measured = await measureLower(fixturePath);
+      durationsMs.push(measured.durationMs);
+      lastOutput = measured.stdout;
+    }
+
+    const parsed = JSON.parse(lastOutput);
+    const semanticIr = { ...parsed };
+    delete semanticIr.metadata;
+
+    return {
+      status: 'pass',
+      outputBytes: Buffer.byteLength(lastOutput),
+      rustL1Hash: sha256Hex(canonicalizeJSON(semanticIr)),
+      typeCount: Array.isArray(parsed.types) ? parsed.types.length : null,
+      durationMs: summarizeDurations(durationsMs),
+      memory: rustCliMemoryPolicy()
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      error: error?.message || String(error),
+      memory: rustCliMemoryPolicy()
+    };
+  }
+}
+
+function measureLegacyJsObservatoryAdapter(fixturePath, options) {
+  try {
+    for (let index = 0; index < options.warmups; index += 1) {
+      measureLegacyJsLower(fixturePath);
+    }
+
+    const legacyJsDurationsMs = [];
+    const legacyJsHeapDeltaBytes = [];
+
+    for (let index = 0; index < options.iterations; index += 1) {
+      const measured = measureLegacyJsLower(fixturePath);
+      legacyJsDurationsMs.push(measured.durationMs);
+      legacyJsHeapDeltaBytes.push(measured.heapDeltaBytes);
+    }
+
+    return {
+      status: 'pass',
+      durationMs: summarizeDurations(legacyJsDurationsMs),
+      memory: {
+        heapDeltaBytes: summarizeIntegerSamples(legacyJsHeapDeltaBytes),
+        caveat:
+          'heapUsed deltas are process-local samples and can be negative when the Node runtime releases memory.'
+      }
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      error: error?.message || String(error),
+      memory: {
+        heapDeltaBytes: {
+          status: 'not-captured',
+          reason: 'legacy JS lowerer failed before heap-delta evidence could be summarized'
+        },
+        caveat:
+          'heapUsed deltas are process-local samples and can be negative when the Node runtime releases memory.'
+      }
     };
   }
 }
@@ -629,27 +680,38 @@ function renderObservatoryMarkdown(report) {
 
   lines.push(
     '',
-    '| Fixture | Status | Types | Rust CLI Median ms | Legacy JS Median ms | Legacy JS Heap Delta Mean bytes | Node Binding | WASM Binding |',
-    '| --- | --- | ---: | ---: | ---: | ---: | --- | --- |'
+    '| Fixture | Status | Types | Output Bytes | Rust CLI Median ms | Legacy JS Median ms | Legacy JS Heap Delta Mean bytes | Rust L1 Hash | Node Binding | WASM Binding |',
+    '| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |'
   );
 
   for (const fixture of report.fixtures) {
-    if (fixture.status !== 'pass') {
-      lines.push(
-        `| \`${fixture.fixture}\` | ${fixture.status}: ${escapeMarkdownCell(fixture.error)} |  |  |  |  |  |  |`
-      );
-      continue;
-    }
-
     lines.push(
-      `| \`${fixture.fixture}\` | ${fixture.status} | ${fixture.rustCli.typeCount ?? ''} | ` +
-        `${fixture.rustCli.durationMs.median} | ${fixture.legacyJsInProcess.durationMs.median} | ` +
-        `${fixture.legacyJsInProcess.memory.heapDeltaBytes.mean} | ` +
-        `${fixture.nodeRustBinding.status} | ${fixture.wasmBinding.status} |`
+      `| \`${fixture.fixture}\` | ${fixtureStatusCell(fixture)} | ` +
+        `${fixture.rustCli?.typeCount ?? ''} | ${fixture.rustCli?.outputBytes ?? ''} | ` +
+        `${adapterMetricCell(fixture.rustCli, (adapter) => adapter.durationMs.median)} | ` +
+        `${adapterMetricCell(fixture.legacyJsInProcess, (adapter) => adapter.durationMs.median)} | ` +
+        `${adapterMetricCell(fixture.legacyJsInProcess, (adapter) => adapter.memory.heapDeltaBytes.mean)} | ` +
+        `${hashCell(fixture.rustCli?.rustL1Hash)} | ` +
+        `${fixture.nodeRustBinding?.status ?? ''} | ${fixture.wasmBinding?.status ?? ''} |`
     );
   }
 
   return lines.join('\n');
+}
+
+function fixtureStatusCell(fixture) {
+  if (fixture.status === 'pass') return 'pass';
+  return `${fixture.status}: ${escapeMarkdownCell(fixture.error)}`;
+}
+
+function adapterMetricCell(adapter, metric) {
+  if (!adapter) return '';
+  if (adapter.status !== 'pass') return `${adapter.status}: ${escapeMarkdownCell(adapter.error)}`;
+  return metric(adapter);
+}
+
+function hashCell(hash) {
+  return hash ? `\`${hash}\`` : '';
 }
 
 function escapeMarkdownCell(value) {
@@ -658,8 +720,13 @@ function escapeMarkdownCell(value) {
     .replaceAll('\n', ' ');
 }
 
-function printHelp() {
-  console.log(`Usage: pnpm perf:ir [--json|--markdown] [--include-legacy-js] [--observatory] [--list-fixtures] [--fixture <path> ...] [--iterations <n>] [--warmups <n>] [--output <path>]
+function printHelp(options = {}) {
+  const usage = options.observatory
+    ? `Usage: pnpm perf:bindings [--json|--markdown] [--list-fixtures] [--fixture <path> ...] [--iterations <n>] [--warmups <n>] [--output <path>]
+       pnpm perf:ir -- --observatory [--json|--markdown] [--list-fixtures] [--fixture <path> ...] [--iterations <n>] [--warmups <n>] [--output <path>]`
+    : `Usage: pnpm perf:ir [--json|--markdown] [--include-legacy-js] [--observatory] [--list-fixtures] [--fixture <path> ...] [--iterations <n>] [--warmups <n>] [--output <path>]`;
+
+  console.log(`${usage}
 
 Measures Rust CLI schema-lower wall-clock duration over the explicit IR fixture
 corpus. The v0 report is evidence, not a pass/fail performance threshold.

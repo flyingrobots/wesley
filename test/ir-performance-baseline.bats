@@ -343,5 +343,47 @@ NODE
   assert_output --partial '# Rust Core Binding Observatory'
   assert_output --partial '| Adapter | Status | Host | Binding | Execution Mode |'
   assert_output --partial '| `node-rust-binding` | not-implemented | node | napi-or-native-addon-pending | rust-native |'
-  assert_output --partial '| Fixture | Status | Types | Rust CLI Median ms | Legacy JS Median ms | Legacy JS Heap Delta Mean bytes | Node Binding | WASM Binding |'
+  assert_output --partial '| Fixture | Status | Types | Output Bytes | Rust CLI Median ms | Legacy JS Median ms | Legacy JS Heap Delta Mean bytes | Rust L1 Hash | Node Binding | WASM Binding |'
+}
+
+@test "Rust core binding observatory isolates legacy JS parser failures from Rust CLI evidence" {
+  make_fake_wesley
+  printf 'type User { id: }\n' > "$TEST_TEMP_DIR/js-rejected.graphql"
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    node scripts/measure-ir-performance.mjs \
+      --observatory \
+      --fixture "$TEST_TEMP_DIR/js-rejected.graphql" \
+      --iterations 1 \
+      --warmups 0 \
+      --json
+  assert_failure
+
+  OBSERVATORY_OUTPUT="$output" node --input-type=module <<'NODE'
+const report = JSON.parse(process.env.OBSERVATORY_OUTPUT);
+const fixture = report.fixtures[0];
+
+if (fixture.status !== 'error') throw new Error(`fixture status: ${fixture.status}`);
+if (fixture.rustCli.status !== 'pass') throw new Error(`rust status: ${fixture.rustCli.status}`);
+if (fixture.legacyJsInProcess.status !== 'error') {
+  throw new Error(`legacy status: ${fixture.legacyJsInProcess.status}`);
+}
+if (!fixture.legacyJsInProcess.error.includes('GraphQL syntax error')) {
+  throw new Error(`legacy error: ${fixture.legacyJsInProcess.error}`);
+}
+if (fixture.nodeRustBinding.status !== 'not-implemented') {
+  throw new Error(`node slot: ${fixture.nodeRustBinding.status}`);
+}
+if (fixture.wasmBinding.status !== 'not-implemented') {
+  throw new Error(`wasm slot: ${fixture.wasmBinding.status}`);
+}
+NODE
+}
+
+@test "Rust core binding observatory help names the perf bindings entrypoint" {
+  run pnpm perf:bindings -- --help
+  assert_success
+  assert_output --partial 'Usage: pnpm perf:bindings'
+  assert_output --partial 'pnpm perf:ir -- --observatory'
 }
