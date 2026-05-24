@@ -8,6 +8,27 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **End-to-end Wesley narrative**: Added `docs/END_TO_END.md`, a
+  first-principles walkthrough of Wesley's authored SDL, Rust compiler facts,
+  generic emitters, module boundary, assurance tooling, external ownership
+  rules, and design rationale with flowchart, sequence, class, entity,
+  state-machine, and mindmap diagrams.
+- **Parser parity spike**: Added `pnpm parity:parser`, which compares legacy
+  `GraphQLAdapter.parseSDL` acceptance with Rust `wesley schema lower`
+  acceptance over explicit parser-sensitive fixtures, including valid SDL,
+  syntax-invalid SDL, nested list SDL, and shared rejection of duplicate
+  canonical directive aliases.
+- **Nested-list type-family parity fixture**: Added
+  `nested-list-schema.graphql` to the default `pnpm parity:ir` corpus under
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`, and taught the projection to
+  compare nested list wrappers and leaf nullability.
+- **Legacy JS performance comparison option**: `pnpm perf:ir` now supports
+  `--include-legacy-js` to capture in-process legacy JS lowerer wall-clock
+  samples beside Rust CLI lowering evidence without claiming Node binding,
+  WASM, peak RSS, or cutover-threshold proof.
+- **Hermetic module target zoo evidence**: Added module-loading tests proving
+  multi-module compile target alias resolution and generated target schema-hash
+  agreement without importing product or database semantics into Wesley core.
 - **Rust IR performance baseline**: Added `pnpm perf:ir`, which measures Rust
   CLI `schema lower` wall-clock samples over the explicit valid Rust IR fixture
   corpus, including `large-schema.graphql`, and emits JSON or Markdown evidence

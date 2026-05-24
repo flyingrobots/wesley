@@ -77,6 +77,31 @@ NODE
   assert_output --partial '"samples":'
   assert_output --partial '"memory": {'
   assert_output --partial '"status": "not-captured"'
+  assert_output --partial '"legacyJsLowering": {'
+  assert_output --partial $'"legacyJsLowering": {\n      "status": "not-captured"'
+
+  run grep -c '^schema lower' "$FAKE_WESLEY_CALL_LOG"
+  assert_success
+  assert_output "3"
+}
+
+@test "Rust IR performance baseline can compare legacy JS lowerer wall-clock samples" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    WESLEY_FAKE_CALL_LOG="$FAKE_WESLEY_CALL_LOG" \
+    node scripts/measure-ir-performance.mjs \
+      --fixture test/fixtures/ir-parity/small-schema.graphql \
+      --iterations 2 \
+      --warmups 1 \
+      --include-legacy-js \
+      --json
+  assert_success
+  assert_output --partial '"legacyJsLowering": {'
+  assert_output --partial '"status": "captured"'
+  assert_output --partial '"legacyJsDurationMs": {'
+  assert_output --partial '"samples":'
 
   run grep -c '^schema lower' "$FAKE_WESLEY_CALL_LOG"
   assert_success
@@ -89,6 +114,7 @@ NODE
   assert_output --partial 'test/fixtures/ir-parity/small-schema.graphql'
   assert_output --partial 'test/fixtures/ir-parity/large-schema.graphql'
   assert_output --partial 'test/fixtures/ir-parity/schema-extensions-schema.graphql'
+  assert_output --partial 'test/fixtures/ir-parity/nested-list-schema.graphql'
 }
 
 @test "Rust IR performance baseline computes even-sample median as midpoint" {
@@ -253,4 +279,20 @@ NODE
 
   run grep -F '# Rust IR Performance Baseline' "$TEST_TEMP_DIR/report.md"
   assert_success
+}
+
+@test "Rust IR performance markdown includes comparison columns when legacy JS is captured" {
+  make_fake_wesley
+
+  run env \
+    WESLEY_CLI_BIN="$FAKE_WESLEY" \
+    node scripts/measure-ir-performance.mjs \
+      --fixture test/fixtures/ir-parity/small-schema.graphql \
+      --iterations 1 \
+      --warmups 0 \
+      --include-legacy-js \
+      --markdown
+  assert_success
+  assert_output --partial 'Legacy JS comparison: `captured`'
+  assert_output --partial '| Fixture | Status | Types | Rust Median ms | Rust Mean ms | Legacy JS Median ms | Legacy JS Mean ms | Rust L1 Hash |'
 }

@@ -185,6 +185,8 @@ The v0 corpus is explicit and projection-owned:
   `js-table-vs-rust-table.v0`
 - `test/fixtures/ir-parity/schema-extensions-schema.graphql` under
   `js-sdl-type-family-vs-rust-l1-type-family.v0`
+- `test/fixtures/ir-parity/nested-list-schema.graphql` under
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`
 
 The command lowers each fixture through its projection-owned JS lowerer and the
 Rust CLI, projects both outputs into the selected shared shape, compares
@@ -198,6 +200,23 @@ bytes.
 
 `large-schema.graphql` remains outside the default v0 sentinel corpus as scale
 coverage rather than first-pass compatibility evidence.
+
+## Parser Parity Spike
+
+The pulled [parser parity spike](./SOURCE_parser-parity-spike.md) adds:
+
+```bash
+pnpm parity:parser
+```
+
+This command compares legacy `GraphQLAdapter.parseSDL` acceptance with Rust
+`wesley schema lower` acceptance over parser-sensitive fixtures. It records
+both-accepted valid SDL, both-rejected syntax errors, and both-rejected
+duplicate canonical core directives after alias normalization.
+
+The spike kept `apollo-parser` for v0.0.6 and closed one projection gap by
+admitting nested list type references to the type-family projection instead of
+adding a third projection.
 
 ## Performance Baseline
 
@@ -214,9 +233,10 @@ valid Rust IR fixture corpus, including `large-schema.graphql`. It records
 fixture identity, SDL byte size, output byte size, Rust L1 semantic hash, type
 count, sample durations, and summary timings.
 
-This is evidence, not a cutover threshold. It explicitly does not capture peak
-RSS, JS lowering, Node binding overhead, WASM binding overhead, or external
-consumer in-process measurements.
+`pnpm perf:ir -- --include-legacy-js` also records in-process legacy JS lowerer
+wall-clock samples for the same fixture run. This is comparison evidence only;
+it is not Node binding overhead, WASM binding overhead, peak RSS, or a cutover
+threshold.
 
 ## Type-Family Projection
 
@@ -228,10 +248,11 @@ GraphQL type-family facts that the legacy JS table adapter drops: scalars,
 interfaces, unions, enums, input objects, object/interface implements, and
 extension-folded fields or members.
 
-`schema-extensions-schema.graphql` is admitted to the default sentinel corpus
-under this projection. Running the fixture through
-`js-table-vs-rust-table.v0` remains useful table evidence, but it is not the
-evidence that admits the non-table type-family facts.
+`schema-extensions-schema.graphql` and `nested-list-schema.graphql` are
+admitted to the default sentinel corpus under this projection. Running the
+schema-extension fixture through `js-table-vs-rust-table.v0` remains useful
+table evidence, but it is not the evidence that admits the non-table
+type-family facts.
 
 The supporting
 [core-rs IR contract and fixtures note](./SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
@@ -250,10 +271,12 @@ and preserves repeated custom directives as ordered values.
 3. Does the design forbid raw legacy table IR versus raw Rust L1 comparison
    and name a projection before comparing bytes?
 4. Does the fixture corpus now cover directive-heavy SDL, schema extensions,
-   legacy aliases, and at least one invalid-SDL case?
+   nested list references, legacy aliases, and at least one invalid-SDL case?
 5. Does Rust L1 preserve canonical directive names for supported aliases?
 6. Does `pnpm parity:ir` compare the projection-owned v0 corpus without
    changing the Rust golden-regeneration command?
+7. Does `pnpm parity:parser` keep parser acceptance evidence separate from
+   semantic projection parity?
 
 ## Non-Goals
 

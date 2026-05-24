@@ -17,7 +17,8 @@ export const DEFAULT_PARITY_FIXTURES = Object.freeze([
   parityFixture(
     'test/fixtures/ir-parity/schema-extensions-schema.graphql',
     TYPE_FAMILY_PROJECTION_NAME
-  )
+  ),
+  parityFixture('test/fixtures/ir-parity/nested-list-schema.graphql', TYPE_FAMILY_PROJECTION_NAME)
 ]);
 
 const TABLE_COLUMN_SCALARS = new Set([
@@ -318,40 +319,45 @@ function projectRustTypeFamilyField(field) {
 }
 
 function projectGraphqlType(type) {
-  let nullable = true;
-  let current = type;
+  const shape = projectGraphqlTypeShape(type, true);
+  const projected = {
+    base: shape.base,
+    nullable: shape.nullable,
+    isList: shape.listWrappers.length > 0
+  };
 
-  if (current?.kind === 'NonNullType') {
-    nullable = false;
-    current = current.type;
+  if (projected.isList) {
+    projected.listItemNullable = shape.listWrappers[1]?.nullable ?? shape.leafNullable;
   }
 
-  if (current?.kind === 'NamedType') {
+  if (shape.listWrappers.length > 1) {
+    projected.listWrappers = shape.listWrappers;
+    projected.leafNullable = shape.leafNullable;
+  }
+
+  return projected;
+}
+
+function projectGraphqlTypeShape(type, nullable) {
+  if (type?.kind === 'NonNullType') {
+    return projectGraphqlTypeShape(type.type, false);
+  }
+
+  if (type?.kind === 'NamedType') {
     return {
-      base: normalizeAstString(current.name.value),
+      base: normalizeAstString(type.name.value),
       nullable,
-      isList: false
+      listWrappers: [],
+      leafNullable: nullable
     };
   }
 
-  if (current?.kind === 'ListType') {
-    let listItemNullable = true;
-    let item = current.type;
-
-    if (item?.kind === 'NonNullType') {
-      listItemNullable = false;
-      item = item.type;
-    }
-
-    if (item?.kind !== 'NamedType') {
-      throw new Error('Nested list types are not supported by type-family parity projection v0');
-    }
-
+  if (type?.kind === 'ListType') {
+    const nested = projectGraphqlTypeShape(type.type, true);
     return {
-      base: normalizeAstString(item.name.value),
+      ...nested,
       nullable,
-      isList: true,
-      listItemNullable
+      listWrappers: [{ nullable }, ...nested.listWrappers]
     };
   }
 
@@ -367,6 +373,13 @@ function projectRustTypeFamilyFieldType(type) {
 
   if (projected.isList) {
     projected.listItemNullable = type.listItemNullable !== false;
+  }
+
+  if (Array.isArray(type.listWrappers) && type.listWrappers.length > 1) {
+    projected.listWrappers = type.listWrappers.map((wrapper) => ({
+      nullable: wrapper?.nullable === true
+    }));
+    projected.leafNullable = type.leafNullable !== false;
   }
 
   return projected;

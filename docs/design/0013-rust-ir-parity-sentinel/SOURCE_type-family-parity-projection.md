@@ -16,6 +16,10 @@ useful, but narrow: it proves the folded table facts agree and says nothing
 about the scalar, interface, union, enum, or input-object facts that made the
 fixture worth adding to the Rust L1 corpus.
 
+The parser parity spike then exposed the next structural gap: nested list type
+references were valid Rust L1 facts but were not representable in this
+projection until `nested-list-schema.graphql` was admitted.
+
 The legacy JS `GraphQLAdapter.parseSDL` table IR intentionally drops those
 non-table facts. Widening the current table projection and declaring victory
 would therefore be false evidence.
@@ -46,12 +50,13 @@ This name is intentionally explicit. The JS side is not the legacy table IR; it
 is a canonical SDL structural projection produced in JS from the parsed SDL.
 The Rust side is L1 IR projected into the same structural shape.
 
-## First Fixture
+## First Fixtures
 
-The first default-corpus candidate is:
+The first default-corpus fixtures are:
 
 ```text
 test/fixtures/ir-parity/schema-extensions-schema.graphql
+test/fixtures/ir-parity/nested-list-schema.graphql
 ```
 
 Pre-implementation behavior:
@@ -71,6 +76,8 @@ Implemented behavior:
 - `pnpm parity:ir --list-fixtures` lists each default fixture with its owning
   projection
 - `schema-extensions-schema.graphql` is admitted under
+  `js-sdl-type-family-vs-rust-l1-type-family.v0`
+- `nested-list-schema.graphql` is admitted under
   `js-sdl-type-family-vs-rust-l1-type-family.v0`
 - `pnpm parity:ir` passes the default v0 corpus across the table and
   type-family projections
@@ -92,6 +99,7 @@ The v0 projection includes these generic GraphQL facts:
 - enum names and enum value names
 - input object names
 - input field names, type references, default values, and directives
+- nested list wrappers and leaf nullability for type references
 
 The projection includes only facts that both sides can derive from SDL and Rust
 L1 without target-specific interpretation.
@@ -123,7 +131,8 @@ contracts.
 - Sort projected field, argument, enum value, union member, interface, and
   directive keys by deterministic code-point order because the projection
   treats them as semantic fact sets.
-- Preserve GraphQL nullability and list wrapper structure.
+- Preserve GraphQL nullability, nested list wrapper structure, and leaf
+  nullability.
 - Preserve directive argument values after each side has produced semantic
   values.
 - Preserve repeated directive values as arrays instead of collapsing by
@@ -148,6 +157,8 @@ Implemented shape:
   hash, and Rust hash
 - admit `schema-extensions-schema.graphql` to the default sentinel corpus under
   the type-family projection
+- admit `nested-list-schema.graphql` to the default sentinel corpus under the
+  type-family projection
 
 The JS-side structural projection may reuse the existing canonical SDL
 machinery in `packages/wesley-core/src/domain/canonicalize.mjs`, but the

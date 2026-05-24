@@ -40,6 +40,7 @@ explicit valid Rust IR fixture corpus:
 - `test/fixtures/ir-parity/directive-heavy-schema.graphql`
 - `test/fixtures/ir-parity/legacy-alias-schema.graphql`
 - `test/fixtures/ir-parity/schema-extensions-schema.graphql`
+- `test/fixtures/ir-parity/nested-list-schema.graphql`
 
 The report includes:
 
@@ -53,6 +54,8 @@ The report includes:
 - Rust L1 semantic hash with top-level `metadata` removed
 - type count
 - duration samples, minimum, median, mean, and maximum milliseconds
+- optional in-process legacy JS lowering samples when
+  `--include-legacy-js` is passed
 - explicit `memory.status: "not-captured"`
 
 The command is evidence, not a threshold. It exits nonzero only when a fixture
@@ -62,6 +65,7 @@ Useful invocations:
 
 ```bash
 pnpm perf:ir -- --json
+pnpm perf:ir -- --include-legacy-js --json
 pnpm perf:ir -- --markdown --output out/rust-ir-performance-baseline.md
 pnpm perf:ir -- --fixture test/fixtures/ir-parity/large-schema.graphql --iterations 5
 ```
@@ -70,7 +74,7 @@ pnpm perf:ir -- --fixture test/fixtures/ir-parity/large-schema.graphql --iterati
 
 These remain intentionally outside v0:
 
-- current JS lowering wall-clock and memory on the same corpus
+- current JS lowering memory on the same corpus
 - Rust peak RSS
 - Node binding overhead
 - WASM binding overhead
@@ -87,7 +91,9 @@ The follow-on queue item is
 2. Does the report include stable fixture identity, output identity, sample
    counts, and summary timings without implying a speed threshold?
 3. Does the report explicitly say memory is not captured in v0?
-4. Can tests exercise the report contract through a fake lowerer without
+4. Can optional JS comparison evidence be captured without presenting it as
+   Node binding, WASM, memory, or cutover evidence?
+5. Can tests exercise the report contract through a fake lowerer without
    relying on real timing values?
 
 ## Repo Evidence

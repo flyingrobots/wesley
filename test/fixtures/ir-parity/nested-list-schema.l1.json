@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "types": [
+    {
+      "name": "MatrixHolder",
+      "kind": "OBJECT",
+      "directives": {},
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "base": "ID",
+            "nullable": false,
+            "isList": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "matrix",
+          "type": {
+            "base": "Int",
+            "nullable": false,
+            "isList": true,
+            "listItemNullable": false,
+            "listWrappers": [
+              {
+                "nullable": false
+              },
+              {
+                "nullable": false
+              }
+            ],
+            "leafNullable": false
+          },
+          "directives": {}
+        },
+        {
+          "name": "optional",
+          "type": {
+            "base": "String",
+            "nullable": true,
+            "isList": true,
+            "listItemNullable": true,
+            "listWrappers": [
+              {
+                "nullable": true
+              },
+              {
+                "nullable": true
+              }
+            ],
+            "leafNullable": true
+          },
+          "directives": {}
+        }
+      ]
+    }
+  ]
+}

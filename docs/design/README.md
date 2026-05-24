@@ -21,6 +21,7 @@ Current packets:
 - [`0011`](./0011-causal-suffix-bundle-family-and-runtime-sync/causal-suffix-bundle-family-and-runtime-sync.md): Causal suffix bundle family and runtime sync
 - [`0012`](./0012-product-leftover-cleanup/product-leftover-cleanup.md): Product leftover cleanup for the v0.0.5 clean-house release
 - [`0013`](./0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md): Rust IR parity sentinel for the v0.0.6 compiler-truth release, including the
+  [parser parity spike](./0013-rust-ir-parity-sentinel/SOURCE_parser-parity-spike.md),
   [type-family parity projection](./0013-rust-ir-parity-sentinel/SOURCE_type-family-parity-projection.md)
   and
   [Rust core performance baseline](./0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)
