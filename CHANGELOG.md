@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- **`weslaw` Law IR loader review fixes**: The loader now rejects wrong-typed
+  optional sequence fields and invariant predicates with fields from another
+  predicate operation, the published Law IR JSON Schema now discriminates each
+  entry `kind` against its normalized `body`, and the scalar semantics docs now
+  match the shipped v1 surface.
+
 ### Added
 
 - **`weslaw` semantic Law IR design**: Added design packet `0019` defining

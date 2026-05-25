@@ -514,7 +514,7 @@ pub fn to_canonical_law_ir_json(value: &LawIrV1) -> Result<String, serde_json::E
 fn parse_registries(map: &Mapping) -> Result<LawRegistrySetV1, WeslawError> {
     reject_unknown_fields(map, "$.registries", &["resources", "verifiers", "channels"])?;
     Ok(LawRegistrySetV1 {
-        resources: optional_sequence(map, "resources")
+        resources: optional_sequence(map, "resources", "$.registries.resources")?
             .unwrap_or_default()
             .iter()
             .enumerate()
@@ -522,7 +522,7 @@ fn parse_registries(map: &Mapping) -> Result<LawRegistrySetV1, WeslawError> {
                 parse_resource_registry_entry(value, &format!("$.registries.resources[{index}]"))
             })
             .collect::<Result<Vec<_>, _>>()?,
-        verifiers: optional_sequence(map, "verifiers")
+        verifiers: optional_sequence(map, "verifiers", "$.registries.verifiers")?
             .unwrap_or_default()
             .iter()
             .enumerate()
@@ -530,7 +530,7 @@ fn parse_registries(map: &Mapping) -> Result<LawRegistrySetV1, WeslawError> {
                 parse_verifier_registry_entry(value, &format!("$.registries.verifiers[{index}]"))
             })
             .collect::<Result<Vec<_>, _>>()?,
-        channels: optional_sequence(map, "channels")
+        channels: optional_sequence(map, "channels", "$.registries.channels")?
             .unwrap_or_default()
             .iter()
             .enumerate()
@@ -708,13 +708,13 @@ fn parse_footprint_law(map: &Mapping, path: &str) -> Result<FootprintLawV1, Wesl
             .unwrap_or_default(),
         forbids: optional_string_list(map, "forbids", &format!("{path}.forbids"))?
             .unwrap_or_default(),
-        slots: optional_sequence(map, "slots")
+        slots: optional_sequence(map, "slots", &format!("{path}.slots"))?
             .unwrap_or_default()
             .iter()
             .enumerate()
             .map(|(index, value)| parse_footprint_slot(value, &format!("{path}.slots[{index}]")))
             .collect::<Result<Vec<_>, _>>()?,
-        closures: optional_sequence(map, "closures")
+        closures: optional_sequence(map, "closures", &format!("{path}.closures"))?
             .unwrap_or_default()
             .iter()
             .enumerate()
@@ -722,13 +722,13 @@ fn parse_footprint_law(map: &Mapping, path: &str) -> Result<FootprintLawV1, Wesl
                 parse_footprint_closure(value, &format!("{path}.closures[{index}]"))
             })
             .collect::<Result<Vec<_>, _>>()?,
-        create_slots: optional_sequence(map, "createSlots")
+        create_slots: optional_sequence(map, "createSlots", &format!("{path}.createSlots"))?
             .unwrap_or_default()
             .iter()
             .enumerate()
             .map(|(index, value)| parse_create_slot(value, &format!("{path}.createSlots[{index}]")))
             .collect::<Result<Vec<_>, _>>()?,
-        updates: optional_sequence(map, "updates")
+        updates: optional_sequence(map, "updates", &format!("{path}.updates"))?
             .unwrap_or_default()
             .iter()
             .enumerate()
@@ -805,7 +805,7 @@ fn parse_channel_law(map: &Mapping, path: &str) -> Result<ChannelLawV1, WeslawEr
             )?),
             None => None,
         },
-        messages: optional_sequence(map, "messages")
+        messages: optional_sequence(map, "messages", &format!("{path}.messages"))?
             .unwrap_or_default()
             .iter()
             .enumerate()
@@ -846,39 +846,45 @@ fn parse_invariant_law(map: &Mapping, path: &str) -> Result<InvariantLawV1, Wesl
         ));
     }
     let predicate = required_mapping(map, "predicate", &format!("{path}.predicate"))?;
-    reject_unknown_fields(
-        predicate,
-        &format!("{path}.predicate"),
-        &["op", "field", "value", "verifier", "ref", "inputContract"],
-    )?;
-    match required_string(predicate, "op", &format!("{path}.predicate.op"))?.as_str() {
-        "fieldEquals" => Ok(InvariantLawV1 {
-            predicate: PredicateV1::FieldEquals {
-                field: required_string(predicate, "field", &format!("{path}.predicate.field"))?,
-                value: yaml_to_json_value(
-                    required_value(predicate, "value", &format!("{path}.predicate.value"))?,
-                    &format!("{path}.predicate.value"),
-                )?,
-            },
-        }),
-        "external" => Ok(InvariantLawV1 {
-            predicate: PredicateV1::External {
-                verifier: required_string(
-                    predicate,
-                    "verifier",
-                    &format!("{path}.predicate.verifier"),
-                )?,
-                r#ref: required_string(predicate, "ref", &format!("{path}.predicate.ref"))?,
-                input_contract: optional_string(
-                    predicate,
-                    "inputContract",
-                    &format!("{path}.predicate.inputContract"),
-                )?,
-            },
-        }),
+    let predicate_path = format!("{path}.predicate");
+    match required_string(predicate, "op", &format!("{predicate_path}.op"))?.as_str() {
+        "fieldEquals" => {
+            reject_unknown_fields(predicate, &predicate_path, &["op", "field", "value"])?;
+            Ok(InvariantLawV1 {
+                predicate: PredicateV1::FieldEquals {
+                    field: required_string(predicate, "field", &format!("{predicate_path}.field"))?,
+                    value: yaml_to_json_value(
+                        required_value(predicate, "value", &format!("{predicate_path}.value"))?,
+                        &format!("{predicate_path}.value"),
+                    )?,
+                },
+            })
+        }
+        "external" => {
+            reject_unknown_fields(
+                predicate,
+                &predicate_path,
+                &["op", "verifier", "ref", "inputContract"],
+            )?;
+            Ok(InvariantLawV1 {
+                predicate: PredicateV1::External {
+                    verifier: required_string(
+                        predicate,
+                        "verifier",
+                        &format!("{predicate_path}.verifier"),
+                    )?,
+                    r#ref: required_string(predicate, "ref", &format!("{predicate_path}.ref"))?,
+                    input_contract: optional_string(
+                        predicate,
+                        "inputContract",
+                        &format!("{predicate_path}.inputContract"),
+                    )?,
+                },
+            })
+        }
         other => Err(WeslawError::at_path(
             WeslawDiagnosticCode::InvalidDocument,
-            format!("{path}.predicate.op"),
+            format!("{predicate_path}.op"),
             format!("unknown predicate op {other}"),
         )),
     }
@@ -1039,10 +1045,21 @@ fn required_sequence<'a>(
     })
 }
 
-fn optional_sequence<'a>(map: &'a Mapping, key: &str) -> Option<&'a [Yaml]> {
-    mapping_get(map, key)
-        .and_then(Yaml::as_vec)
-        .map(Vec::as_slice)
+fn optional_sequence<'a>(
+    map: &'a Mapping,
+    key: &str,
+    path: &str,
+) -> Result<Option<&'a [Yaml]>, WeslawError> {
+    match mapping_get(map, key) {
+        Some(value) => value.as_vec().map(Vec::as_slice).map(Some).ok_or_else(|| {
+            WeslawError::at_path(
+                WeslawDiagnosticCode::InvalidDocument,
+                path,
+                "expected array",
+            )
+        }),
+        None => Ok(None),
+    }
 }
 
 fn required_value<'a>(map: &'a Mapping, key: &str, path: &str) -> Result<&'a Yaml, WeslawError> {

@@ -18,3 +18,6 @@ The `weslaw` schema artifacts are checked in as canonical JSON: object keys are
 lexicographically sorted and the files contain no formatting whitespace. That
 byte form is for deterministic publication and review only; semantic law hashes
 must still be computed from normalized Law IR, not schema-file bytes.
+
+The Law IR schema is self-contained and discriminates each entry `kind` against
+the matching normalized `body` shape.

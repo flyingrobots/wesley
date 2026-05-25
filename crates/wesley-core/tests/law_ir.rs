@@ -196,6 +196,37 @@ fn law_ir_v1_serializes_as_versioned_canonical_json() {
 }
 
 #[test]
+fn law_ir_v1_json_schema_accepts_ir_and_rejects_kind_body_mismatch() {
+    let schema: serde_json::Value =
+        serde_json::from_str(&read_fixture("schemas/wesley-law-ir-v1.schema.json"))
+            .expect("Law IR schema should parse");
+    let validator = jsonschema::validator_for(&schema).expect("Law IR schema should compile");
+
+    let law_ir = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
+    ))
+    .expect("fixture should lower");
+    let json = to_canonical_law_ir_json(&law_ir).expect("Law IR should serialize");
+    let valid_ir: serde_json::Value = serde_json::from_str(&json).expect("JSON should parse");
+    let valid_errors = validator
+        .iter_errors(&valid_ir)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(valid_errors.is_empty(), "{valid_errors:#?}");
+
+    let mut mismatched_ir = valid_ir;
+    mismatched_ir["entries"][0]["kind"] = serde_json::Value::String("footprintLaw".to_string());
+    let mismatch_errors = validator
+        .iter_errors(&mismatched_ir)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        !mismatch_errors.is_empty(),
+        "Law IR schema must reject kind/body mismatches"
+    );
+}
+
+#[test]
 fn rejected_weslaw_fixtures_emit_stable_diagnostic_codes() {
     let cases = [
         (
@@ -216,6 +247,21 @@ fn rejected_weslaw_fixtures_emit_stable_diagnostic_codes() {
         (
             "test/fixtures/weslaw/rejected/unknown-field.weslaw.yaml",
             "test/fixtures/weslaw/rejected/unknown-field.expected.txt",
+            WeslawDiagnosticCode::UnknownField,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/wrong-type-optional-sequence.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/wrong-type-optional-sequence.expected.txt",
+            WeslawDiagnosticCode::InvalidDocument,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/field-equals-extra-predicate-field.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/field-equals-extra-predicate-field.expected.txt",
+            WeslawDiagnosticCode::UnknownField,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/external-extra-predicate-field.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/external-extra-predicate-field.expected.txt",
             WeslawDiagnosticCode::UnknownField,
         ),
     ];

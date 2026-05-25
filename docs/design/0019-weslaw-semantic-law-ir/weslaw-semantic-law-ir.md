@@ -949,8 +949,7 @@ laws:
     kind: scalarSemantics
     subject: scalar:ExampleId
     semantics:
-      representation: string
-      opaque: true
+      representation: opaqueIdentifier
 ```
 
 ### Known Wesley Directives

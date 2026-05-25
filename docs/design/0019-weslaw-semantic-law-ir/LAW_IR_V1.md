@@ -178,9 +178,7 @@ Semantic fields:
 
 ```text
 ScalarSemanticsLawV1
-  representation: integer | string | bytes | opaque
-  opaque: boolean = false
-  byteWidth: u32?
+  representation: integer | string | opaqueIdentifier
   minInclusive: integer?
   maxInclusive: integer?
   ordering: none | lamport | total | partial?
@@ -191,19 +189,22 @@ ScalarSemanticsLawV1
 Forbidden interpretations v1:
 
 ```text
-wallClockTime
-runtimeGlobalOrdering
-humanDisplayLabel
 silentGraphQLIntNarrowing
 ```
 
 Binding rules:
 
 - subject must bind to a GraphQL scalar;
-- `byteWidth` requires `representation` of `bytes`, `string`, or `opaque`;
 - integer ranges require `representation: integer`;
 - `minInclusive` must not exceed `maxInclusive`;
 - `silentGraphQLIntNarrowing` is meaningful only for integer-like scalars.
+
+Deferred scalar extensions:
+
+- `bytes` representation and byte-width constraints;
+- forbidden interpretation enums for wall-clock time, runtime-global ordering,
+  and human-display-label semantics;
+- richer opaque-id metadata beyond the `opaqueIdentifier` representation.
 
 ## Variant Law
 
