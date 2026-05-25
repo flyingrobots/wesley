@@ -106,6 +106,10 @@ home.
   non-shape symbols are fatal errors.
 - Law documents must anchor to a canonical schema hash. Normal compilation
   fails when the active schema hash does not match the law anchor.
+- Law IR and the `weslaw/v1` authoring shape must publish machine-readable
+  schemas. If the representation is JSON, that means JSON Schema under
+  `schemas/`; if a later representation is not JSON, it still needs a published
+  schema contract.
 - Hashes are computed from normalized Law IR, not YAML bytes.
 - Semantic law hashes exclude comments, formatting, source spans, and rationale
   prose.
@@ -138,21 +142,21 @@ specs and fixtures:
 
 ## Vocabulary
 
-| Term | Meaning |
-| --- | --- |
-| Shape | The GraphQL-owned structural contract: types, fields, arguments, enum values, operation signatures, nullability, and lists. |
-| Law | Semantic facts that constrain or explain meaning: scalar semantics, variants, footprints, channels, invariants, and evidence posture. |
-| Contract bundle | The bound unit containing Shape IR, Law IR, policy/profile IR, hashes, manifests, and provenance. |
-| Shape IR | Wesley's canonical lowered representation of authored GraphQL SDL shape. |
-| Law IR | Wesley's canonical lowered representation of semantic law. |
-| Policy/Profile IR | Enforcement posture for a context, such as local, CI, release, or certification. |
-| Evidence | What Wesley generated, observed, witnessed, or verified. |
-| Judgment | A downstream conclusion over shape, law, policy, and evidence. |
-| Subject coordinate | A stable reference to a schema or law subject, such as `scalar:WorldlineTick` or `operation:Mutation.replaceRangeAsTick`. |
-| Law id | A globally stable identifier for one semantic law entry. |
-| Law frontend | An authored input form that lowers into Law IR: v1 YAML, known directives, or future SDL+. |
-| Overlay | A law document that refines base law without weakening it. |
-| Rebind | An explicit migration workflow that checks whether existing law still binds to a changed schema hash. |
+| Term               | Meaning                                                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Shape              | The GraphQL-owned structural contract: types, fields, arguments, enum values, operation signatures, nullability, and lists.           |
+| Law                | Semantic facts that constrain or explain meaning: scalar semantics, variants, footprints, channels, invariants, and evidence posture. |
+| Contract bundle    | The bound unit containing Shape IR, Law IR, policy/profile IR, hashes, manifests, and provenance.                                     |
+| Shape IR           | Wesley's canonical lowered representation of authored GraphQL SDL shape.                                                              |
+| Law IR             | Wesley's canonical lowered representation of semantic law.                                                                            |
+| Policy/Profile IR  | Enforcement posture for a context, such as local, CI, release, or certification.                                                      |
+| Evidence           | What Wesley generated, observed, witnessed, or verified.                                                                              |
+| Judgment           | A downstream conclusion over shape, law, policy, and evidence.                                                                        |
+| Subject coordinate | A stable reference to a schema or law subject, such as `scalar:WorldlineTick` or `operation:Mutation.replaceRangeAsTick`.             |
+| Law id             | A globally stable identifier for one semantic law entry.                                                                              |
+| Law frontend       | An authored input form that lowers into Law IR: v1 YAML, known directives, or future SDL+.                                            |
+| Overlay            | A law document that refines base law without weakening it.                                                                            |
+| Rebind             | An explicit migration workflow that checks whether existing law still binds to a changed schema hash.                                 |
 
 ## Architecture
 
@@ -352,16 +356,16 @@ It is the type discipline the compiler must enforce.
 
 Every active law entry has:
 
-| Field | Meaning | Hash posture |
-| --- | --- | --- |
-| `id` | Stable law id. | Semantic hash |
-| `kind` | Closed Law IR variant. | Semantic hash |
-| `subject` | Bound schema or law coordinate. | Semantic hash |
-| `status` | `active` or `draft`; only active law affects bundles. | Semantic hash if active |
-| `tags` | Optional classification tags. | Semantic hash when semantically relevant |
-| `profiles` | Optional profile applicability references. | Profile hash or semantic hash depending on field |
-| `rationale` | Human explanation. | Document/provenance hash only |
-| `source` | Authored source span or path. | Excluded from semantic hash |
+| Field       | Meaning                                               | Hash posture                                     |
+| ----------- | ----------------------------------------------------- | ------------------------------------------------ |
+| `id`        | Stable law id.                                        | Semantic hash                                    |
+| `kind`      | Closed Law IR variant.                                | Semantic hash                                    |
+| `subject`   | Bound schema or law coordinate.                       | Semantic hash                                    |
+| `status`    | `active` or `draft`; only active law affects bundles. | Semantic hash if active                          |
+| `tags`      | Optional classification tags.                         | Semantic hash when semantically relevant         |
+| `profiles`  | Optional profile applicability references.            | Profile hash or semantic hash depending on field |
+| `rationale` | Human explanation.                                    | Document/provenance hash only                    |
+| `source`    | Authored source span or path.                         | Excluded from semantic hash                      |
 
 Draft entries may exist in files produced by `wesley init-law`, but they do not
 bind into active bundles and do not affect generated artifacts.
@@ -621,15 +625,15 @@ Compiler expectations:
 
 The following are valuable but should not block v1:
 
-| Category | Why defer |
-| --- | --- |
-| Evidence posture law | Important for Continuum witness semantics, but less structurally concrete than scalar, variant, footprint, channel, and simple invariant law. |
-| Profile-aware severity escalation | Belongs in Policy/Profile IR; should not be confused with semantic truth. |
-| Generated test scaffolding | Useful after residue and observation surfaces are stable. |
-| Runtime capability APIs from footprints | High payoff, but depends on stable footprint IR and target-owned runtime adapters. |
-| Law Matrix static site | Strong human legibility surface after `wesley law explain` and semantic diffs exist. |
-| LSP support | Should use the same engine as `wesley law explain`; do not build it first. |
-| Wesley SDL+ | Authoring sugar only after Law IR is stable. |
+| Category                                | Why defer                                                                                                                                     |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Evidence posture law                    | Important for Continuum witness semantics, but less structurally concrete than scalar, variant, footprint, channel, and simple invariant law. |
+| Profile-aware severity escalation       | Belongs in Policy/Profile IR; should not be confused with semantic truth.                                                                     |
+| Generated test scaffolding              | Useful after residue and observation surfaces are stable.                                                                                     |
+| Runtime capability APIs from footprints | High payoff, but depends on stable footprint IR and target-owned runtime adapters.                                                            |
+| Law Matrix static site                  | Strong human legibility surface after `wesley law explain` and semantic diffs exist.                                                          |
+| LSP support                             | Should use the same engine as `wesley law explain`; do not build it first.                                                                    |
+| Wesley SDL+                             | Authoring sugar only after Law IR is stable.                                                                                                  |
 
 ## Binding Model
 
@@ -649,17 +653,17 @@ The binder receives:
 
 An active law entry must satisfy all applicable rules:
 
-| Rule | Failure |
-| --- | --- |
-| `schema.hash` equals active schema hash | `WESLAW_SCHEMA_HASH_MISMATCH` |
-| `id` is globally unique in the bundle | `WESLAW_DUPLICATE_ID` |
-| `kind` is a known closed Law IR variant | `WESLAW_UNKNOWN_KIND` |
-| `subject` parses as a coordinate | `WESLAW_INVALID_COORDINATE` |
-| `subject` binds to an existing schema or law-registry subject | `WESLAW_UNRESOLVED_SUBJECT` |
-| `subject` kind matches law kind | `WESLAW_WRONG_SUBJECT_KIND` |
+| Rule                                                          | Failure                       |
+| ------------------------------------------------------------- | ----------------------------- |
+| `schema.hash` equals active schema hash                       | `WESLAW_SCHEMA_HASH_MISMATCH` |
+| `id` is globally unique in the bundle                         | `WESLAW_DUPLICATE_ID`         |
+| `kind` is a known closed Law IR variant                       | `WESLAW_UNKNOWN_KIND`         |
+| `subject` parses as a coordinate                              | `WESLAW_INVALID_COORDINATE`   |
+| `subject` binds to an existing schema or law-registry subject | `WESLAW_UNRESOLVED_SUBJECT`   |
+| `subject` kind matches law kind                               | `WESLAW_WRONG_SUBJECT_KIND`   |
 | referenced fields, enum values, args, and resource kinds bind | `WESLAW_UNRESOLVED_REFERENCE` |
-| entry does not contradict another active entry | `WESLAW_CONFLICT` |
-| overlay refines instead of relaxes base law | `WESLAW_OVERLAY_RELAXATION` |
+| entry does not contradict another active entry                | `WESLAW_CONFLICT`             |
+| overlay refines instead of relaxes base law                   | `WESLAW_OVERLAY_RELAXATION`   |
 
 Unknown active law is fatal. Unknown draft law may be retained outside the
 active bundle as migration scaffolding.
@@ -715,12 +719,12 @@ wesley law rebind \
 
 The rebind report should classify each entry:
 
-| Class | Meaning |
-| --- | --- |
-| `unchanged` | Subject and references bind identically under the new schema. |
-| `rebuilt` | Subject binds after a deterministic rename or coordinate migration supplied by the operator. |
-| `broken` | Subject or required references no longer bind. |
-| `needs-review` | Law still binds, but semantic surrounding shape changed enough to require human review. |
+| Class          | Meaning                                                                                      |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| `unchanged`    | Subject and references bind identically under the new schema.                                |
+| `rebuilt`      | Subject binds after a deterministic rename or coordinate migration supplied by the operator. |
+| `broken`       | Subject or required references no longer bind.                                               |
+| `needs-review` | Law still binds, but semantic surrounding shape changed enough to require human review.      |
 
 Rebind updates schema hash anchors only when the operator explicitly accepts the
 new binding result.
@@ -732,13 +736,13 @@ differently because of key order or formatting, the system loses trust.
 
 ### Hash Inputs
 
-| Hash | Includes | Excludes |
-| --- | --- | --- |
-| `schemaHash` | canonical Shape IR | comments, source spans, formatting |
-| `lawHash` | canonical active Law IR semantic fields | comments, rationale, source spans, file order |
-| `profileHash` | canonical active Policy/Profile IR | environment variables, source spans |
-| `bundleHash` | schemaHash + lawHash + profileHash + compiler identity | prose docs, local paths unless intentionally part of provenance |
-| `lawDocumentHash` | semantic law plus rationale/provenance text | transient source spans |
+| Hash              | Includes                                               | Excludes                                                        |
+| ----------------- | ------------------------------------------------------ | --------------------------------------------------------------- |
+| `schemaHash`      | canonical Shape IR                                     | comments, source spans, formatting                              |
+| `lawHash`         | canonical active Law IR semantic fields                | comments, rationale, source spans, file order                   |
+| `profileHash`     | canonical active Policy/Profile IR                     | environment variables, source spans                             |
+| `bundleHash`      | schemaHash + lawHash + profileHash + compiler identity | prose docs, local paths unless intentionally part of provenance |
+| `lawDocumentHash` | semantic law plus rationale/provenance text            | transient source spans                                          |
 
 ### Ordering Rules
 
@@ -770,6 +774,38 @@ The codec owns:
 - null omission rules;
 - array semantics.
 
+### Published Schemas
+
+`weslaw` is a compiler contract, not an undocumented Rust struct. Every
+externally consumed representation needs a schema artifact.
+
+Initial schema artifacts:
+
+| Artifact                                 | Status                        | Purpose                                                    |
+| ---------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
+| `schemas/wesley-law-ir-v1.schema.json`   | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON.                      |
+| `schemas/weslaw-v1.schema.json`          | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
+| `schemas/wesley-law-diff-v1.schema.json` | diff phase requirement        | JSON Schema for machine-readable law diff events.          |
+
+These schemas validate public structure. They are not semantic hash inputs.
+Changing comments, descriptions, `$id`, or schema annotations must not change
+`lawHash` unless the underlying Law IR semantics also change.
+
+The `weslaw/v1` authoring schema accepts explicitly marked draft scaffolding
+with future or ambiguous fields, but the normalized `wesley.law-ir/v1` schema
+rejects draft entries entirely. Promotion to active law is therefore the point
+where closed kind/body validation becomes mandatory.
+
+JSON is acceptable as the first schema-authoring format, but the design should
+not freeze the project there. The open implementation choice is how Rust owns
+these schema artifacts over time:
+
+- handwritten schemas checked into `schemas/`;
+- generated schemas from Rust types with checked-in outputs;
+- generated Rust types from checked-in schemas.
+
+The requirement to publish schemas is not open.
+
 ## Semantic Diff Model
 
 Law diffs are first-class outputs. Human summaries are generated from
@@ -792,18 +828,18 @@ sequenceDiagram
 
 v1 diff event classes:
 
-| Event | Meaning |
-| --- | --- |
-| `LAW_ADDED` | New active law entry. |
-| `LAW_REMOVED` | Active law entry removed. |
-| `LAW_STRENGTHENED` | Constraint narrowed or forbidden behavior increased. |
-| `LAW_WEAKENED` | Constraint widened or forbidden behavior decreased. |
-| `FOOTPRINT_EXPANDED` | Reads, writes, creates, or closure reach expanded. |
-| `FOOTPRINT_CONTRACTED` | Footprint reach contracted. |
-| `CHANNEL_VERSION_CHANGED` | Channel version or compatibility posture changed. |
-| `BINDING_BROKEN` | Previously bound law no longer binds. |
-| `SCHEMA_HASH_REBOUND` | Law was explicitly rebound to a new schema hash. |
-| `PREDICATE_CHANGED` | Invariant predicate changed. |
+| Event                     | Meaning                                              |
+| ------------------------- | ---------------------------------------------------- |
+| `LAW_ADDED`               | New active law entry.                                |
+| `LAW_REMOVED`             | Active law entry removed.                            |
+| `LAW_STRENGTHENED`        | Constraint narrowed or forbidden behavior increased. |
+| `LAW_WEAKENED`            | Constraint widened or forbidden behavior decreased.  |
+| `FOOTPRINT_EXPANDED`      | Reads, writes, creates, or closure reach expanded.   |
+| `FOOTPRINT_CONTRACTED`    | Footprint reach contracted.                          |
+| `CHANNEL_VERSION_CHANGED` | Channel version or compatibility posture changed.    |
+| `BINDING_BROKEN`          | Previously bound law no longer binds.                |
+| `SCHEMA_HASH_REBOUND`     | Law was explicitly rebound to a new schema hash.     |
+| `PREDICATE_CHANGED`       | Invariant predicate changed.                         |
 
 Example JSON:
 
@@ -861,11 +897,11 @@ flowchart LR
 
 Examples:
 
-| Layer | Example |
-| --- | --- |
-| Law | `PlaybackModeInput SEEK requires target and then`. |
-| Policy | `release profile treats missing variant coverage as error`. |
-| Evidence | `TypeScript and Rust validators generated from lawHash abc`. |
+| Layer    | Example                                                                 |
+| -------- | ----------------------------------------------------------------------- |
+| Law      | `PlaybackModeInput SEEK requires target and then`.                      |
+| Policy   | `release profile treats missing variant coverage as error`.             |
+| Evidence | `TypeScript and Rust validators generated from lawHash abc`.            |
 | Judgment | `Holmes says release gate passes because validators and witness exist`. |
 
 Profiles must be explicit. No v1 behavior may infer profile from ambient
@@ -918,8 +954,7 @@ laws:
     kind: scalarSemantics
     subject: scalar:ExampleId
     semantics:
-      representation: string
-      opaque: true
+      representation: opaqueIdentifier
 ```
 
 ### Known Wesley Directives
@@ -1058,10 +1093,10 @@ pub const WESLEY_BUNDLE_HASH: &str = "sha256:...";
 TypeScript example:
 
 ```ts
-export const WESLEY_SCHEMA_HASH = "sha256:...";
-export const WESLAW_HASH = "sha256:...";
-export const WESLEY_PROFILE_HASH = "sha256:...";
-export const WESLEY_BUNDLE_HASH = "sha256:...";
+export const WESLEY_SCHEMA_HASH = 'sha256:...';
+export const WESLAW_HASH = 'sha256:...';
+export const WESLEY_PROFILE_HASH = 'sha256:...';
+export const WESLEY_BUNDLE_HASH = 'sha256:...';
 ```
 
 That gives generated artifacts cryptographic traceability to the exact shape,
@@ -1175,18 +1210,19 @@ v1/v1.1 boundary.
 
 ### Phase 1: Law Loader And Typed IR
 
-- [ ] WLAW-011 Add Rust Law IR v1 types for common law entry metadata.
-- [ ] WLAW-012 Add Rust Law IR v1 types for `ScalarSemanticsLaw`.
-- [ ] WLAW-013 Add Rust Law IR v1 types for `VariantLaw`.
-- [ ] WLAW-014 Add Rust Law IR v1 types for `FootprintLaw`.
-- [ ] WLAW-015 Add Rust Law IR v1 types for `ChannelLaw`.
-- [ ] WLAW-016 Add Rust Law IR v1 types for typed `InvariantLaw`.
-- [ ] WLAW-017 Parse `weslaw/v1` YAML into a draft Law AST.
-- [ ] WLAW-018 Normalize draft Law AST into typed Law IR.
-- [ ] WLAW-019 Reject unknown law kinds and unknown fields with stable
+- [x] WLAW-011 Add Rust Law IR v1 types for common law entry metadata.
+- [x] WLAW-012 Add Rust Law IR v1 types for `ScalarSemanticsLaw`.
+- [x] WLAW-013 Add Rust Law IR v1 types for `VariantLaw`.
+- [x] WLAW-014 Add Rust Law IR v1 types for `FootprintLaw`.
+- [x] WLAW-015 Add Rust Law IR v1 types for `ChannelLaw`.
+- [x] WLAW-016 Add Rust Law IR v1 types for typed `InvariantLaw`.
+- [x] WLAW-017 Parse `weslaw/v1` YAML through the v1 structure loader and
+      publish the initial `weslaw/v1` authoring schema artifact.
+- [x] WLAW-018 Normalize loader output into typed Law IR.
+- [x] WLAW-019 Reject unknown active law kinds and unknown active fields with stable
       diagnostics.
-- [ ] WLAW-020 Add fixture tests proving accepted YAML lowers into typed Law
-      IR.
+- [x] WLAW-020 Add fixture tests proving accepted YAML lowers into typed Law
+      IR and the accepted fixtures satisfy the published authoring schema.
 
 ### Phase 2: Strict Binding
 
@@ -1296,8 +1332,9 @@ v1/v1.1 boundary.
 
 ## Open Decisions
 
-1. Which Law IR schema definition format should be canonical in the Rust
-   implementation?
+1. Which schema-artifact ownership model should the Rust implementation use:
+   handwritten schemas checked into `schemas/`, schemas generated from Rust
+   types, or Rust types generated from checked-in schemas?
 2. Should evidence posture enter v1, or wait for v1.1 after scalar, variant,
    footprint, channel, and typed invariant law prove the model?
 3. Which known directive family should be lowered first?

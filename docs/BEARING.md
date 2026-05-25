@@ -327,6 +327,7 @@ The non-negotiables are narrow:
 - Law IR is the product; YAML, directives, and future SDL+ are frontends.
 - Active law binds strictly to schema coordinates and explicit law registries.
 - Law documents anchor to canonical schema hashes.
+- Law IR and authoring documents publish versioned machine-readable schemas.
 - Semantic hashes are computed from normalized Law IR, not authored bytes.
 - Machine-readable law diffs are first-class outputs.
 - Policy, evidence, and judgment remain separate from semantic law.
@@ -337,10 +338,13 @@ Working budget: **75 slices**. The first scope checkpoint is `WLAW-050`; do
 not treat slices `WLAW-051` through `WLAW-075` as locked until the checkpoint
 re-estimates the v1/v1.1 boundary.
 
-Status: **10 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+Status: **20 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
 substrate docs, coordinate and registry grammar, canonicalization and
 diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
-examples.
+examples. `WLAW-011` through `WLAW-020` add the Rust Law IR v1 types, the
+`weslaw/v1` YAML structure loader, stable structure diagnostics, fixture
+lowering tests, and versioned canonical JSON Schema artifacts for the authored
+and normalized law surfaces.
 
 ## Tensions
 
@@ -389,11 +393,10 @@ runtime ownership into the base compiler.
 
 The next pulls after this PR are:
 
-1. `WLAW-011` through `WLAW-020`: add the typed Law IR and YAML loader.
-2. `WLAW-021` through `WLAW-035`: add strict schema-bound law validation.
-3. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
+1. `WLAW-021` through `WLAW-035`: add strict schema-bound law validation.
+2. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
    bundle manifest fields.
-4. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
+3. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
    for the required drift checkpoint.
 
 ## Post-Retirement Freestyle Slice Log

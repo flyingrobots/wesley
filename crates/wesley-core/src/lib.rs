@@ -19,6 +19,7 @@ pub use adapters::apollo::{
 pub use domain::capability::*;
 pub use domain::error::*;
 pub use domain::ir::*;
+pub use domain::law::*;
 pub use domain::operation::*;
 pub use domain::optic::*;
 pub use domain::schema_delta::*;

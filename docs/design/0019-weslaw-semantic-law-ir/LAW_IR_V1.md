@@ -47,11 +47,35 @@ weslaw/v1
 
 These identifiers are separate on purpose:
 
-| Identifier | Owns |
-| --- | --- |
-| `weslaw/v1` | Authored YAML shape and migration affordances. |
-| `wesley.law-ir/v1` | Typed semantic model after frontend lowering. |
-| `wesley.law-ir.canonical-json.v1` | Canonical bytes used for `lawHash`. |
+| Identifier                        | Owns                                           |
+| --------------------------------- | ---------------------------------------------- |
+| `weslaw/v1`                       | Authored YAML shape and migration affordances. |
+| `wesley.law-ir/v1`                | Typed semantic model after frontend lowering.  |
+| `wesley.law-ir.canonical-json.v1` | Canonical bytes used for `lawHash`.            |
+
+## Published Schema Artifacts
+
+Law IR v1 must ship with machine-readable schemas. This is not optional.
+
+The first schema artifacts are:
+
+| Artifact                               | Purpose                                                          |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| `schemas/wesley-law-ir-v1.schema.json` | JSON Schema for the typed Law IR v1 JSON representation.         |
+| `schemas/weslaw-v1.schema.json`        | JSON Schema for the parsed `weslaw/v1` authoring document shape. |
+
+The JSON Schema files validate structure. They are not the canonical hash input,
+and they are not necessarily the permanent source-authoring format for the
+schema contracts themselves. Wesley may author them directly in JSON at first,
+then later generate them from Rust types, generate Rust types from them, or move
+to another schema-authoring system if that proves cleaner.
+
+`lawHash` still comes from bound, normalized Law IR bytes under
+`wesley.law-ir.canonical-json.v1`.
+
+If a future frontend or canonical codec is not JSON, Wesley must still publish a
+machine-readable schema contract for that representation before treating it as a
+supported interface.
 
 ## Bundle Shape
 
@@ -103,15 +127,15 @@ LawEntryV1
 
 Hash posture:
 
-| Field | Included in `lawHash` | Notes |
-| --- | --- | --- |
-| `id` | yes | Stable identity of the law. |
-| `kind` | yes | Closed Law IR variant. |
-| `subject` | yes | Bound coordinate. |
-| semantic body | yes | Variant-specific semantic fields. |
-| `tags` | yes | Tags are semantic classification in v1. |
-| `provenance` | no | Included in `lawDocumentHash` if requested. |
-| `rationale` | no | Human explanation, not semantic truth. |
+| Field         | Included in `lawHash` | Notes                                       |
+| ------------- | --------------------- | ------------------------------------------- |
+| `id`          | yes                   | Stable identity of the law.                 |
+| `kind`        | yes                   | Closed Law IR variant.                      |
+| `subject`     | yes                   | Bound coordinate.                           |
+| semantic body | yes                   | Variant-specific semantic fields.           |
+| `tags`        | yes                   | Tags are semantic classification in v1.     |
+| `provenance`  | no                    | Included in `lawDocumentHash` if requested. |
+| `rationale`   | no                    | Human explanation, not semantic truth.      |
 
 ## Closed Law Kinds
 
@@ -154,12 +178,10 @@ Semantic fields:
 
 ```text
 ScalarSemanticsLawV1
-  representation: integer | string | bytes | opaque
-  opaque: boolean = false
-  byteWidth: u32?
+  representation: integer | string | opaqueIdentifier
   minInclusive: integer?
   maxInclusive: integer?
-  ordering: none | lamport | total | partial?
+  ordering: none | lamport | total | partial
   scope: string?
   forbids: [ScalarForbiddenInterpretation]
 ```
@@ -167,19 +189,23 @@ ScalarSemanticsLawV1
 Forbidden interpretations v1:
 
 ```text
-wallClockTime
-runtimeGlobalOrdering
-humanDisplayLabel
 silentGraphQLIntNarrowing
 ```
 
 Binding rules:
 
 - subject must bind to a GraphQL scalar;
-- `byteWidth` requires `representation` of `bytes`, `string`, or `opaque`;
 - integer ranges require `representation: integer`;
 - `minInclusive` must not exceed `maxInclusive`;
+- `ordering`, when present, must use the closed v1 ordering vocabulary;
 - `silentGraphQLIntNarrowing` is meaningful only for integer-like scalars.
+
+Deferred scalar extensions:
+
+- `bytes` representation and byte-width constraints;
+- forbidden interpretation enums for wall-clock time, runtime-global ordering,
+  and human-display-label semantics;
+- richer opaque-id metadata beyond the `opaqueIdentifier` representation.
 
 ## Variant Law
 
@@ -258,7 +284,7 @@ FootprintClosureV1
   operator: string
   argBindings: [ArgPath | SlotName]
   reads: [ResourceKind]
-  cardinality: one | optional | many
+  cardinality: one | optional | many = one
 ```
 
 Create-slot fields:
@@ -352,7 +378,7 @@ PredicateV1 =
 Rejected v1 shapes:
 
 ```yaml
-expr: "forall x in X: ..."
+expr: 'forall x in X: ...'
 ```
 
 Raw string expressions are not executable v1 law. They may be preserved as
@@ -380,6 +406,7 @@ Rules:
 - draft entries do not enter `lawHash`;
 - draft entries do not affect generated artifacts;
 - draft entries may fail binding without failing bundle compilation;
+- draft entries are filtered before active kind/body validation;
 - promotion from draft to active must be explicit.
 
 ## Law IR v1 Non-Goals

@@ -3,8 +3,9 @@
 This corpus supports design packet
 `docs/design/0019-weslaw-semantic-law-ir/`.
 
-It is intentionally checked in before the Rust parser exists. The files define
-the first v1 substrate target for `WLAW-008` and `WLAW-009`.
+The files define the first v1 substrate target for `WLAW-008` and `WLAW-009`,
+then serve as Rust parser and published-schema fixtures for `WLAW-011` through
+`WLAW-020`.
 
 ## Files
 
@@ -28,5 +29,7 @@ ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
 - Product names such as Echo, jedit, Continuum, and warp-ttd appear only to
   preserve the real semantic pressure that motivated `weslaw`.
 - External repos remain the owners of their runtime and protocol meaning.
-- These fixtures should become parser/binder tests when `WLAW-011` through
-  `WLAW-035` land.
+- Accepted fixtures must lower into typed Law IR and satisfy
+  `schemas/weslaw-v1.schema.json`.
+- Rejected fixtures pin stable structure diagnostic codes before full
+  schema-bound binding lands in `WLAW-021` through `WLAW-035`.

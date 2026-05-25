@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- **`weslaw` Law IR loader review fixes**: The loader now rejects wrong-typed
+  optional sequence fields and invariant predicates with fields from another
+  predicate operation, the published Law IR JSON Schema now discriminates each
+  entry `kind` against its normalized `body`, normalized Law IR now excludes
+  draft entries and sorts active entries by id, scalar semantic relationship
+  rules are enforced during loading, draft scaffolding is filtered before active
+  kind/body validation, scalar ordering is a closed v1 vocabulary, and the
+  scalar semantics docs now match the shipped v1 surface. Footprint closure
+  cardinality now accepts the authoring-schema default of `one` when omitted and
+  rejects values outside the closed `one`/`optional`/`many` vocabulary.
+
 ### Added
 
 - **`weslaw` semantic Law IR design**: Added design packet `0019` defining
@@ -16,7 +29,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   a 75-slice implementation runway with a mandatory scope checkpoint at
   `WLAW-050`, plus a locked `WLAW-001` through `WLAW-010` v1 substrate covering
   Law IR, coordinate and registry grammar, canonicalization, diagnostics,
-  active/draft semantics, and accepted/rejected `weslaw/v1` fixtures.
+  active/draft semantics, and accepted/rejected `weslaw/v1` fixtures. The next
+  packet adds Rust Law IR v1 types, a `weslaw/v1` structure loader, stable
+  duplicate-id/raw-expression/unknown-kind/unknown-field diagnostics, fixture
+  lowering tests, and versioned canonical JSON Schema artifacts for
+  `weslaw/v1` and `wesley.law-ir/v1`.
 - **Holmes assurance hexagon design**: Added design packet `0018` describing a
   ground-up Rust Holmes redesign with hexagonal architecture, CLI/API/MCP
   interfaces, dependency-injected ports, and a reporting abstraction where

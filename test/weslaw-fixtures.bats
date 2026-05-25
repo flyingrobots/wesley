@@ -25,3 +25,33 @@ load 'bats-plugins/bats-assert/load'
   run grep -R "explain-law" docs/design/0019-weslaw-semantic-law-ir
   assert_failure
 }
+
+@test "weslaw schema artifacts are versioned canonical JSON" {
+  run node --input-type=module -e '
+    import { readFileSync } from "node:fs";
+    const files = [
+      ["schemas/weslaw-v1.schema.json", "weslaw/v1"],
+      ["schemas/wesley-law-ir-v1.schema.json", "wesley.law-ir/v1"],
+    ];
+    function sortJson(value) {
+      if (Array.isArray(value)) return value.map(sortJson);
+      if (value && typeof value === "object") {
+        return Object.fromEntries(
+          Object.keys(value).sort().map((key) => [key, sortJson(value[key])]),
+        );
+      }
+      return value;
+    }
+    for (const [file, apiVersion] of files) {
+      const raw = readFileSync(file, "utf8");
+      const parsed = JSON.parse(raw);
+      if (raw !== JSON.stringify(sortJson(parsed))) {
+        throw new Error(`${file} is not canonical JSON`);
+      }
+      if (parsed.properties?.apiVersion?.const !== apiVersion) {
+        throw new Error(`${file} does not pin ${apiVersion}`);
+      }
+    }
+  '
+  assert_success
+}
