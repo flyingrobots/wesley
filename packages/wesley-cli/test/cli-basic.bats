@@ -61,6 +61,13 @@ EOF
     assert_output --partial "Wesley - GraphQL → Everything"
     refute_output --partial "compile-ttd"
     refute_output --partial "bundle-echo"
+    refute_output --partial "models"
+}
+
+@test "models command is retired" {
+    run node "$CLI_PATH" models
+    assert_failure 1
+    assert_output --partial "unknown command 'models'"
 }
 
 @test "generate help works" {

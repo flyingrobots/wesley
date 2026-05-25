@@ -62,7 +62,6 @@
     "overrides": {
       "vite": "npm:rolldown-vite@7.1.14",
       "flatted": "3.4.2",
-      "ts-morph>minimatch": ">=10.2.3",
       "js-yaml@>=4.0.0": ">=4.1.1",
       "markdown-it@>=13.0.0": ">=14.1.1",
       "brace-expansion@1.1.12": "1.1.14",

@@ -4,7 +4,7 @@ import { GeneratorCommand } from './GeneratorCommand.mjs';
  * FileOutputGeneratorCommand - Base class for generators that output to files
  *
  * Extends GeneratorCommand with --out-file option for commands that
- * generate single files (like zod, typescript) vs directories (like models)
+ * generate single files such as legacy zod or typescript projections.
  */
 export class FileOutputGeneratorCommand extends GeneratorCommand {
   constructor(ctx, name, description) {

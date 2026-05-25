@@ -62,6 +62,20 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 0 ]
 }
 
+@test "CLI quick workflow is legacy-only and does not add a host-node smoke" {
+  run bash -lc "grep -F 'name: Legacy Compatibility - CLI Quick Check' .github/workflows/cli-quick.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'Legacy compatibility - CLI quick' .github/workflows/cli-quick.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'node ../wesley-host-node/bin/wesley.mjs --version' .github/workflows/cli-quick.yml | wc -l || true"
+  assert_success
+  [ "$output" -eq 0 ]
+}
+
 @test "cert-shipme anchors and paginates bot comments" {
   run bash -lc "grep -F '<!-- SHIPME_COMMENT -->' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -178,6 +192,17 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F 'wesley-scaffold-multitenant' .github/workflows/architecture-boundaries.yml | wc -l"
   assert_success
   [ "$output" -eq 0 ]
+}
+
+@test "architecture boundaries workflow excludes deleted task package from required packages" {
+  run bash -lc "grep -F 'wesley-tasks' .github/workflows/architecture-boundaries.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+}
+
+@test "deleted task package no longer has a package workflow" {
+  run test ! -e .github/workflows/pkg-tasks.yml
+  assert_success
 }
 
 @test "@wesley/cli package test script is compatible with Node 20 test runner globs" {

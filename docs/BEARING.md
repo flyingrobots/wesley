@@ -120,6 +120,14 @@ front door and retirement ledger. Later slices should retire Node by capability,
 not by deleting files before equivalent Rust truth or explicit extraction
 exists.
 
+Status: **90 / 96 slices closed**. The leaf package deletion tranche removed
+the scaffold, fixture, and task-runtime packages and proved the remaining Rust
+release path does not depend on them. The follow-on generator tranche deleted
+`wesley-generator-js` and retired model-class scaffolding. The open retirement
+work is now concentrated in the large compatibility packages (`wesley-core`,
+`wesley-cli`, `wesley-host-node`, and `wesley-runtime-node`) plus the final
+closeout/removal slices.
+
 - [x] NR-001 Reset `BEARING` around the 96-slice legacy Node retirement
       campaign.
 - [x] NR-002 Open design packet `0017` for the Rust-native front door and Node
@@ -269,26 +277,26 @@ lower` references.
       the Node executable wrapper.
 - [ ] NR-079 Delete `packages/wesley-runtime-node` after module loading and
       runtime evidence no longer depend on it.
-- [ ] NR-080 Delete or externalize `packages/wesley-generator-js`.
+- [x] NR-080 Delete or externalize `packages/wesley-generator-js`.
 - [x] NR-081 Delete or externalize `packages/wesley-generator-vue`.
-- [ ] NR-082 Delete or externalize `packages/wesley-scaffold-multitenant`.
-- [ ] NR-083 Delete or replace `packages/wesley-test-fixtures`.
-- [ ] NR-084 Delete or externalize `packages/wesley-tasks`.
-- [ ] NR-085 Remove package workspace entries for deleted legacy packages.
-- [ ] NR-086 Remove package scripts that only support deleted legacy packages.
-- [ ] NR-087 Remove lockfile dependency families that exist only for deleted
+- [x] NR-082 Delete or externalize `packages/wesley-scaffold-multitenant`.
+- [x] NR-083 Delete or replace `packages/wesley-test-fixtures`.
+- [x] NR-084 Delete or externalize `packages/wesley-tasks`.
+- [x] NR-085 Remove package workspace entries for deleted legacy packages.
+- [x] NR-086 Remove package scripts that only support deleted legacy packages.
+- [x] NR-087 Remove lockfile dependency families that exist only for deleted
       legacy packages.
-- [ ] NR-088 Remove GitHub Actions jobs that exist only for deleted legacy
+- [x] NR-088 Remove GitHub Actions jobs that exist only for deleted legacy
       packages.
-- [ ] NR-089 Preserve website/docs tooling separately if JavaScript remains
+- [x] NR-089 Preserve website/docs tooling separately if JavaScript remains
       useful outside product authority.
-- [ ] NR-090 Preserve `@git-stunts/alfred` only for JavaScript tooling seams
+- [x] NR-090 Preserve `@git-stunts/alfred` only for JavaScript tooling seams
       that still need bounded child-process behavior.
-- [ ] NR-091 Preserve `ninelives` as the Rust resilience policy primitive for
+- [x] NR-091 Preserve `ninelives` as the Rust resilience policy primitive for
       compiler and capability seams.
-- [ ] NR-092 Run a repo-wide stale Node shadow audit after deletions.
-- [ ] NR-093 Run a docs link/truth audit after deletions.
-- [ ] NR-094 Run a CI/release dry-run proving Rust-only product release does not
+- [x] NR-092 Run a repo-wide stale Node shadow audit after deletions.
+- [x] NR-093 Run a docs link/truth audit after deletions.
+- [x] NR-094 Run a CI/release dry-run proving Rust-only product release does not
       require legacy Node packages.
 - [ ] NR-095 Publish the final legacy Node retirement closeout with migrated,
       extracted, deleted, deferred, and rejected surfaces.
@@ -336,10 +344,10 @@ without false gates**.
 
 The v0.0.6 compiler-truth work still matters, but the long-term goal now makes
 the priority sharper: delete only the package surfaces whose gates are actually
-closed, and record blockers for the rest. `packages/wesley-generator-vue/` is
-deleted. `packages/wesley-core/`, `packages/wesley-cli/`,
-`packages/wesley-host-node/`, `packages/wesley-runtime-node/`, and
-`packages/wesley-generator-js/` remain open because current workspace packages,
+closed, and record blockers for the rest. `packages/wesley-generator-vue/` and
+`packages/wesley-generator-js/` are deleted. `packages/wesley-core/`,
+`packages/wesley-cli/`, `packages/wesley-host-node/`, and
+`packages/wesley-runtime-node/` remain open because current workspace packages,
 scripts, tests, workflows, or evidence tools still depend on them.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
@@ -354,7 +362,8 @@ Holmes survive without pinning Wesley to legacy Node.
 
 The next pulls after this drift check are:
 
-1. Cut `packages/wesley-host-node/` out of any non-legacy smoke path.
+1. Continue cutting `packages/wesley-host-node/` out of any non-legacy smoke
+   path.
 2. Move or delete remaining root scripts that route through the Node host.
 3. Replace parity and performance helpers that import JS lowerer code with
    Rust fixture-truth checks.

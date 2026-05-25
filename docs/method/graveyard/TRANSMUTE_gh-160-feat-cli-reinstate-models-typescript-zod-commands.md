@@ -1,11 +1,17 @@
 # GH-160 feat(cli): reinstate models/typescript/zod commands
 
+Archived by NR-080. The original request bundled three surfaces that no longer
+share one direction: `models` is deleted, retained generic TypeScript output
+belongs in Rust-native emitters, and `zod` remains only as CLI-local
+compatibility debt until the legacy CLI is retired or the capability gets an
+external owner.
+
 - Imported from: GitHub issue
 - Issue: #160
 - URL: https://github.com/flyingrobots/wesley/issues/160
 - Imported on: 2026-04-04
 - GitHub updated: 2026-03-18T14:44:56Z
-- Lane: `inbox`
+- Lane: `graveyard`
 - Legend: `TRANSMUTE`
 - Labels: `feature`, `tests`, `pkg:wesley-cli`
 

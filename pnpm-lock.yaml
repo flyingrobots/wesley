@@ -7,7 +7,6 @@ settings:
 overrides:
   vite: npm:rolldown-vite@7.1.14
   flatted: 3.4.2
-  ts-morph>minimatch: '>=10.2.3'
   js-yaml@>=4.0.0: '>=4.1.1'
   markdown-it@>=13.0.0: '>=14.1.1'
   brace-expansion@1.1.12: 1.1.14
@@ -76,9 +75,6 @@ importers:
       '@wesley/core':
         specifier: workspace:*
         version: link:../wesley-core
-      '@wesley/generator-js':
-        specifier: workspace:*
-        version: link:../wesley-generator-js
       '@wesley/holmes':
         specifier: workspace:^
         version: link:../wesley-holmes
@@ -114,19 +110,6 @@ importers:
         specifier: ^4.3.0
         version: 4.3.0
 
-  packages/wesley-generator-js:
-    dependencies:
-      '@wesley/core':
-        specifier: workspace:*
-        version: link:../wesley-core
-      ts-morph:
-        specifier: ^27.0.2
-        version: 27.0.2
-    devDependencies:
-      vitest:
-        specifier: ^4.1.7
-        version: 4.1.7(jsdom@29.1.1)(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.15)))
-
   packages/wesley-holmes:
     dependencies:
       '@wesley/core':
@@ -161,9 +144,6 @@ importers:
       '@wesley/core':
         specifier: workspace:*
         version: link:../wesley-core
-      '@wesley/generator-js':
-        specifier: workspace:*
-        version: link:../wesley-generator-js
       '@wesley/runtime-node':
         specifier: workspace:*
         version: link:../wesley-runtime-node
@@ -192,28 +172,6 @@ importers:
       graphql:
         specifier: ^16.9.0
         version: 16.11.0
-
-  packages/wesley-scaffold-multitenant:
-    dependencies:
-      '@wesley/core':
-        specifier: workspace:*
-        version: link:../wesley-core
-    devDependencies:
-      vitest:
-        specifier: ^4.1.7
-        version: 4.1.7(jsdom@29.1.1)(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.15)))
-
-  packages/wesley-tasks:
-    devDependencies:
-      vitest:
-        specifier: ^4.1.7
-        version: 4.1.7(jsdom@29.1.1)(rolldown-vite@7.1.14(esbuild@0.25.10)(sugarss@5.0.1(postcss@8.5.15)))
-
-  packages/wesley-test-fixtures:
-    dependencies:
-      fast-check:
-        specifier: ^4.3.0
-        version: 4.3.0
 
   wesley-website:
     dependencies:
@@ -1195,9 +1153,6 @@ packages:
   '@tiptap/starter-kit@3.20.1':
     resolution: {integrity: sha512-opqWxL/4OTEiqmVC0wsU4o3JhAf6LycJ2G/gRIZVAIFLljI9uHfpPMTFGxZ5w9IVVJaP5PJysfwW/635kKqkrw==}
 
-  '@ts-morph/common@0.28.1':
-    resolution: {integrity: sha512-W74iWf7ILp1ZKNYXY5qbddNaml7e9Sedv5lvU1V8lftlitkc9Pq1A+jlH23ltDgWYeZFFEqGCD1Ies9hqu3O+g==}
-
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
@@ -1538,9 +1493,6 @@ packages:
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
-
-  code-block-writer@13.0.3:
-    resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -2488,9 +2440,6 @@ packages:
   parse5@8.0.1:
     resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
-  path-browserify@1.0.1:
-    resolution: {integrity: sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g==}
-
   path-exists@4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
     engines: {node: '>=8'}
@@ -3080,9 +3029,6 @@ packages:
     engines: {node: '>=18.12'}
     peerDependencies:
       typescript: '>=4.8.4'
-
-  ts-morph@27.0.2:
-    resolution: {integrity: sha512-fhUhgeljcrdZ+9DZND1De1029PrE+cMkIP7ooqkLRTrRLTqcki2AstsyJm0vRNbTbVCNJ0idGlbBrfqc7/nA8w==}
 
   tsconfig-paths-webpack-plugin@4.2.0:
     resolution: {integrity: sha512-zbem3rfRS8BgeNK50Zz5SIQgXzLafiHjOwUAvk/38/o1jHn/V5QAgVUcz884or7WYcPaH3N2CIfUc2u0ul7UcA==}
@@ -4108,12 +4054,6 @@ snapshots:
       '@tiptap/extensions': 3.20.1(@tiptap/core@3.20.1(@tiptap/pm@3.20.4))(@tiptap/pm@3.20.4)
       '@tiptap/pm': 3.20.4
 
-  '@ts-morph/common@0.28.1':
-    dependencies:
-      minimatch: 10.2.5
-      path-browserify: 1.0.1
-      tinyglobby: 0.2.15
-
   '@tybys/wasm-util@0.10.1':
     dependencies:
       tslib: 2.8.1
@@ -4496,8 +4436,6 @@ snapshots:
       readdirp: 4.1.2
 
   clsx@2.1.1: {}
-
-  code-block-writer@13.0.3: {}
 
   color-convert@2.0.1:
     dependencies:
@@ -5589,8 +5527,6 @@ snapshots:
     dependencies:
       entities: 8.0.0
 
-  path-browserify@1.0.1: {}
-
   path-exists@4.0.0: {}
 
   path-key@3.1.1: {}
@@ -6243,11 +6179,6 @@ snapshots:
   ts-api-utils@2.5.0(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
-
-  ts-morph@27.0.2:
-    dependencies:
-      '@ts-morph/common': 0.28.1
-      code-block-writer: 13.0.3
 
   tsconfig-paths-webpack-plugin@4.2.0:
     dependencies:

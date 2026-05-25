@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-24T20:12:13.365Z",
+  "generatedAt": "2026-05-24T22:56:14.997Z",
   "overall": {
     "stage": "MVP",
     "next": "Alpha",
@@ -83,25 +83,6 @@
       "coverage": null
     },
     {
-      "name": "@wesley/generator-js",
-      "status": "Legacy Compatibility",
-      "stage": "MVP",
-      "progress": 50,
-      "next": "Alpha",
-      "passRate": 1,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
       "name": "@wesley/holmes",
       "status": "Legacy Compatibility",
       "stage": "Alpha",
@@ -140,25 +121,6 @@
       "coverage": null
     },
     {
-      "name": "@wesley/tasks",
-      "status": "Legacy Compatibility",
-      "stage": "MVP",
-      "progress": 50,
-      "next": "Alpha",
-      "passRate": 1,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
       "name": "@wesley/host-deno",
       "status": "Legacy Compatibility",
       "stage": "Alpha",
@@ -188,25 +150,6 @@
         "hasStatus": true,
         "hasUsage": true,
         "hasApi": true,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/test-fixtures",
-      "status": "Legacy Compatibility",
-      "stage": "MVP",
-      "progress": 20,
-      "next": "Alpha",
-      "passRate": null,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": true,
-        "hasApi": false,
         "hasCaveats": false
       },
       "milestones": {

@@ -131,11 +131,8 @@ semantics.
 | `packages/wesley-cli/`                                                   | Legacy compatibility JS command framework and module-aware command surfaces.                                                                                             |
 | `packages/wesley-host-node/`                                             | Legacy compatibility Node executable wrapper around the JS CLI and runtime adapters.                                                                                     |
 | `packages/wesley-runtime-node/`                                          | Legacy compatibility Node module discovery/loading and host utilities.                                                                                                   |
-| `packages/wesley-generator-js/`                                          | Legacy TypeScript/Zod/model generation surface; retained generic TypeScript output belongs in Rust emitters.                                                             |
 | `packages/wesley-holmes/`                                                | Legacy assurance, verification, counterfactual, Holmes/Moriarty-era tooling pending explicit non-compiler boundary.                                                      |
 | `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | Legacy compatibility host experiments pending deletion or externalization.                                                                                               |
-| `packages/wesley-tasks/`                                                 | Legacy task planning/orchestration utilities pending Rust proof or deletion.                                                                                             |
-| `packages/wesley-test-fixtures/`                                         | Legacy shared test fixtures and schema builders for package tests.                                                                                                       |
 | `schemas/`                                                               | JSON schemas and generic directive/schema assets used by tooling and tests.                                                                                              |
 | `test/fixtures/`                                                         | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas.                                                                                              |
 | `scripts/`                                                               | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts.                                                                                      |
@@ -145,8 +142,14 @@ semantics.
 Some directories still contain extraction residue. In particular,
 `packages/wesley-generator-echo/` exists on disk but is not an active tracked
 source package in this architecture. Echo-owned work should happen in Echo.
-The former `packages/wesley-generator-vue/` experiment has been deleted; Vue
-output should return only through an external target owner.
+The former `packages/wesley-generator-vue/` and `packages/wesley-generator-js/`
+packages have been deleted; target-specific generators should return only
+through external target owners or Rust-native emitters.
+The former `packages/wesley-scaffold-multitenant/`,
+`packages/wesley-test-fixtures/`, and `packages/wesley-tasks/` packages are
+also deleted. Product scaffolds belong to product repos, fixture helpers belong
+as plain `test/fixtures` or Rust test assets, and generic task execution remains
+descriptor-only until Rust planning proves a runtime need.
 
 ## Rust Kernel
 

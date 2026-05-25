@@ -53,14 +53,11 @@ Examples:
 
 #### Generators
 
-Packages that emit generic target artifacts from Wesley IR.
+Packages or Rust crates that emit target artifacts from Wesley IR.
 
-Examples:
-
-- `@wesley/generator-js`
-
-Historical product and database generators still present in this repo are
-extraction debt. They should move into their owning module repos.
+The former generic `@wesley/generator-js` package has been deleted. Retained
+generic TypeScript output now belongs in Rust-native emitters; target-specific
+or product-specific generators should live with their owning module repos.
 
 #### Hosts
 
@@ -96,20 +93,22 @@ Examples:
 
 #### Supporting Utilities
 
-Packages that support scheduling, planning, fixtures, or internal shared operations.
+Repository utilities that support planning, fixtures, or internal shared
+operations without becoming product packages.
 
 Examples:
 
-- `@wesley/tasks`
-- `@wesley/test-fixtures`
+- `test/fixtures/`
+- `cargo xtask`
+- `scripts/`
 
 #### Scaffolds And Stacks
 
 Early project templates or packaged starting points built on Wesley outputs.
 
-Examples:
-
-- `@wesley/scaffold-multitenant`
+Examples now live outside generic Wesley. The former
+`@wesley/scaffold-multitenant` package was deleted during the legacy Node
+retirement campaign.
 
 Domain-specific stacks still present in this repo are extraction debt. Stacks
 with database or product assumptions should live outside Wesley.

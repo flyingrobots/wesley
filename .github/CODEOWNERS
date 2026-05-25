@@ -16,12 +16,5 @@
 /packages/wesley-cli/ @flyingrobots
 /packages/wesley-host-node/ @flyingrobots
 
-# Generators
-/packages/wesley-generator-js/ @flyingrobots
-
-# Stacks & scaffolds
-/packages/wesley-scaffold-multitenant/ @flyingrobots
-
 # Internals
 /packages/wesley-holmes/ @flyingrobots
-/packages/wesley-tasks/ @flyingrobots

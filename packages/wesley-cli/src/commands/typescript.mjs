@@ -1,8 +1,8 @@
 import { LoweringEngine, WesleyError } from '@wesley/core';
-import { TypeScriptGenerator } from '@wesley/generator-js';
 import { FileOutputGeneratorCommand } from '../framework/FileOutputGeneratorCommand.mjs';
 import { resolveSchemaIr } from '../utils/schema-ir-cache.mjs';
 import { generateFamilyTypeScriptFromSDL, hasTableLikeIr } from '../utils/family-projections.mjs';
+import { generateTableTypeScript } from '../utils/table-projections.mjs';
 
 export class TypeScriptCommand extends FileOutputGeneratorCommand {
   constructor(ctx) {
@@ -30,8 +30,7 @@ export class TypeScriptCommand extends FileOutputGeneratorCommand {
 
     let tsCode;
     if (hasTableLikeIr(resolved.ir)) {
-      const generator = new TypeScriptGenerator(null);
-      tsCode = generator.generate(schema);
+      tsCode = generateTableTypeScript(schema);
     } else {
       tsCode = generateFamilyTypeScriptFromSDL(schemaContent);
     }

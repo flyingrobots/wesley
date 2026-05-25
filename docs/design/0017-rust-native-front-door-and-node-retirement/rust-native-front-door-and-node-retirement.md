@@ -138,9 +138,10 @@ the product spine. The native Rust CLI is the product front door; host package
 smokes keep historical surfaces honest until they are deleted or moved to
 external ecosystem ownership.
 
-The former Vue generator experiment has been deleted from generic Wesley.
-Future Vue output belongs to an external target module or product owner rather
-than a built-in Wesley package.
+The former Vue and JavaScript generator packages have been deleted from generic
+Wesley. Retained generic TypeScript output belongs in Rust emitters; future
+Vue, Zod, or other target-specific output belongs to an external target module
+or product owner rather than a built-in Wesley package.
 
 ## Non-Goals
 

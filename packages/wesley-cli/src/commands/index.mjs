@@ -4,7 +4,6 @@ export * from './cert-sign.mjs';
 export * from './cert-verify.mjs';
 export * from './compile.mjs';
 export * from './generate.mjs';
-export * from './models.mjs';
 export * from './runs.mjs';
 export * from './transform.mjs';
 export * from './typescript.mjs';

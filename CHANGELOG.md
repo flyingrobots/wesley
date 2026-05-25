@@ -90,6 +90,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Removed
 
+- **Legacy JavaScript generator package**: Deleted
+  `packages/wesley-generator-js`, removed its package workflow, lockfile
+  importer, progress row, host shims, and `models` command. Retained generic
+  TypeScript output belongs in Rust emitters; Zod remains only as CLI-local
+  compatibility debt.
+- **Leaf legacy packages**: Deleted `packages/wesley-scaffold-multitenant`,
+  `packages/wesley-test-fixtures`, and `packages/wesley-tasks`; removed the
+  package-only `pkg-tasks` workflow, lockfile importers, progress rows, and the
+  dead optional task-planner load from the Node host.
 - **Vue generator package**: Deleted `packages/wesley-generator-vue` after the
   retirement ledger classified Vue projection output as target-owned behavior
   with no generic Wesley owner.
@@ -145,6 +154,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Legacy CLI quick workflow**: Reclassified the CLI quick-check workflow as a
+  legacy compatibility check and removed its extra direct host-node smoke; the
+  package tests remain the compatibility proof.
 - **Product health check**: `cargo xtask preflight` is now the ordinary product
   health gate, while `cargo xtask legacy-preflight` explicitly runs the
   historical Node package preflight only for legacy package or pnpm workspace

@@ -579,14 +579,11 @@ packages/
 ├── wesley-cli/
 ├── wesley-continuum/
 ├── wesley-core/
-├── wesley-generator-js/
 ├── wesley-holmes/
 ├── wesley-host-browser/
 ├── wesley-host-bun/
 ├── wesley-host-deno/
-├── wesley-host-node/
-├── wesley-scaffold-multitenant/
-└── wesley-tasks/
+└── wesley-host-node/
 ```
 
 ### Proposed Structure
@@ -637,10 +634,8 @@ packages/
 │   ├── deno/                      #   @wesley/host-deno
 │   └── browser/                   #   @wesley/host-browser
 │
-├── tasks/                         # @wesley/tasks (T.A.S.K.S.)
-│
 └── stacks/                        # Full-stack scaffolds
-    └── scaffold-multitenant/
+    └── external product repositories
 ```
 
 Key changes:
@@ -655,7 +650,9 @@ Key changes:
 This is a **naming and directory reorganization**, not a rewrite. The code inside each package stays the same. The main work is:
 
 1. Rename directories and update `pnpm-workspace.yaml`
-2. Update `package.json` names (`@wesley/generator-js` → `@wesley/transmute-js`; PostgreSQL/Supabase modules now belong in `wesley-postgres`)
+2. Update `package.json` names for remaining externalized target modules;
+   PostgreSQL/Supabase modules now belong in `wesley-postgres`, and the former
+   generic JavaScript generator package has been deleted rather than renamed.
 3. Update cross-package imports
 4. Add `evidence/` directories with contract and collector to each transmutation module
 5. Update `createNodeRuntime` to discover transmutation modules
@@ -796,7 +793,8 @@ If a generator needs a domain-specific shape (e.g., JS generators need `Schema`)
 
 **Files**:
 
-- `packages/wesley-generator-js/src/index.mjs` — internalize `irToSchema()` conversion
+- `packages/wesley-cli/src/utils/table-projections.mjs` — keep remaining
+  table-shaped TypeScript/Zod compatibility local until the legacy CLI exits
 - external PostgreSQL/Supabase module package — align `emitDDL()` etc.
 - `packages/wesley-core/src/application/LoweringEngine.mjs` — centralize SDL/IR/domain lowering before orchestration
 - `packages/wesley-cli/src/commands/typescript.mjs`, `zod.mjs` — remove inline adapter calls
@@ -841,13 +839,17 @@ graph LR
 - `packages/wesley-core/src/application/EvidenceMap.mjs` — wire into runner
 - `packages/wesley-core/src/application/Scoring.mjs` — wire into runner
 
-#### 0c. Wire T.A.S.K.S. into transmutation execution
+#### 0c. Keep transmutation task graphs descriptor-only
 
-**Problem**: `@wesley/tasks` has a complete DAG engine (`TaskDefinition`, `TaskDependency`, `TaskGraph`) but generic generation still runs through the sequential pipeline. The old `@wesley/slaps` PostgreSQL lock-aware executor moved to `wesley-postgres` as `@wesley/postgres-slaps`, so base Wesley should expose task graphs without depending on a database executor.
+**Problem**: The deleted `@wesley/tasks` package carried a JavaScript DAG
+runtime, but generic Wesley no longer has evidence that it needs to own task
+execution. The old `@wesley/slaps` PostgreSQL lock-aware executor moved to
+`wesley-postgres` as `@wesley/postgres-slaps`, so base Wesley should expose
+task graph descriptors without depending on a JavaScript or database executor.
 
 The sequential registry now carries more of the orchestration truth than it did originally: transmutations register their own prerequisites, plugin construction, and runtime capabilities, and the built-in `null-generator` witness exercises that seam without adding special cases to the runner.
 
-**Fix**: Each transmutation becomes a `TaskGraph`:
+**Fix**: Each transmutation can be described as a graph:
 
 ```mermaid
 graph LR
@@ -859,7 +861,8 @@ graph LR
     G3 --> E
 ```
 
-The `TransmutationRunner` builds this graph from the transmutation config, then hosts or modules can feed the descriptor into a compatible executor. Benefits:
+The `TransmutationRunner` builds this graph from the transmutation config, then
+hosts or modules can feed the descriptor into a compatible executor. Benefits:
 
 - **Parallelism**: Independent generators run concurrently (DDL and types don't depend on each other)
 - **`--dry-run` for free**: Render the task graph without executing it
@@ -868,8 +871,8 @@ The `TransmutationRunner` builds this graph from the transmutation config, then 
 
 **Files**:
 
-- `packages/wesley-tasks/src/TaskDefinition.mjs` — ready, use as-is
-- New: `packages/wesley-core/src/application/TransmutationRunner.mjs` — orchestrator
+- `packages/wesley-core/src/application/TransmutationRunner.mjs` — descriptor builder
+- external modules or owning runtimes — execution policy, retries, concurrency, and resource locks
 
 #### 0d. Standardize named exports (resolves CR-33)
 

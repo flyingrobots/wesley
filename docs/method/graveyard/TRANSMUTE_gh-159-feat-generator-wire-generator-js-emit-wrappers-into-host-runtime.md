@@ -1,11 +1,17 @@
 # GH-159 feat(generator): wire generator-js emit wrappers into host runtime
 
+Archived by NR-080. The requested direction is intentionally no longer valid:
+`packages/wesley-generator-js/` has been deleted, the Node host no longer exposes
+built-in generator shims, and retained generic TypeScript output belongs in
+Rust-native emitters. Zod remains only as CLI-local compatibility debt until the
+legacy CLI itself is retired or extracted.
+
 - Imported from: GitHub issue
 - Issue: #159
 - URL: https://github.com/flyingrobots/wesley/issues/159
 - Imported on: 2026-04-04
 - GitHub updated: 2026-03-18T14:44:55Z
-- Lane: `inbox`
+- Lane: `graveyard`
 - Legend: `TRANSMUTE`
 - Labels: `feature`, `pkg:wesley-generator-js`, `pkg:wesley-host-node`
 
