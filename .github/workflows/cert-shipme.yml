@@ -5,11 +5,13 @@ on:
     branches: [main, dev, 'feat/*', 'fix/*', 'milestone/*']
     paths:
       - 'packages/**'
+      - 'scripts/prepare-shipme-cert-fixture.mjs'
       - '.github/**'
       - '.github/workflows/cert-shipme.yml'
   pull_request:
     paths:
       - 'packages/**'
+      - 'scripts/prepare-shipme-cert-fixture.mjs'
       - '.github/**'
       - '.github/workflows/cert-shipme.yml'
 

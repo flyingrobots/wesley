@@ -215,6 +215,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **SHIPME fixture workflow trigger**: `cert-shipme.yml` now runs when
+  `scripts/prepare-shipme-cert-fixture.mjs` changes, so certificate fixture
+  regressions cannot bypass the SHIPME CI signal through path filtering.
 - **Node retirement doc guard errors**: missing or unreadable
   `frontDoorDocs` entries now fail `cargo xtask docs-check` as Node retirement
   ledger check failures instead of CLI usage errors.
