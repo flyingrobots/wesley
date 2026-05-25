@@ -9,9 +9,9 @@ intentionally narrower than the broader Continuum target state in
 [docs/design/0003-continuum-contract-compiler/continuum-contract-compiler.md](../design/0003-continuum-contract-compiler/continuum-contract-compiler.md).
 
 Generic Wesley no longer ships public `compile-ttd` or `bundle-echo` commands.
-It also no longer exports `@wesley/core/ttd`. Those surfaces must reappear only
-as Continuum-owned module commands or external packages if they are still
-needed.
+It also no longer exports the old core TTD package surface. Those surfaces must
+reappear only as Continuum-owned module commands or external packages if they
+are still needed.
 
 ## Canonical Authored Home
 

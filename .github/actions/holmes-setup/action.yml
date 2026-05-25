@@ -79,17 +79,11 @@ runs:
       shell: bash
       env:
         WESLEY_REPO_ROOT: ${{ github.workspace }}
+        SHIPME_BUNDLE_DIR: ${{ inputs.bundle-dir }}
+        SHIPME_OUT_DIR: ${{ inputs.out-dir }}
       run: |
         if [ ! -f "${{ inputs.bundle-dir }}/bundle.json" ]; then
-          SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
-          SCHEMA_FILE="$(basename "${{ inputs.schema }}")"
-          pushd "$SCHEMA_DIR" >/dev/null
-          node "$GITHUB_WORKSPACE/packages/wesley-host-node/bin/wesley.mjs" generate \
-            --schema "$SCHEMA_FILE" \
-            --emit-bundle \
-            --allow-dirty \
-            --out-dir "${{ inputs.out-dir }}"
-          popd >/dev/null
+          node "$GITHUB_WORKSPACE/scripts/prepare-shipme-cert-fixture.mjs"
         fi
 
     - name: Force regeneration
@@ -97,16 +91,10 @@ runs:
       shell: bash
       env:
         WESLEY_REPO_ROOT: ${{ github.workspace }}
+        SHIPME_BUNDLE_DIR: ${{ inputs.bundle-dir }}
+        SHIPME_OUT_DIR: ${{ inputs.out-dir }}
       run: |
-        SCHEMA_DIR="$(dirname "${{ inputs.schema }}")"
-        SCHEMA_FILE="$(basename "${{ inputs.schema }}")"
-        pushd "$SCHEMA_DIR" >/dev/null
-        node "$GITHUB_WORKSPACE/packages/wesley-host-node/bin/wesley.mjs" generate \
-          --schema "$SCHEMA_FILE" \
-          --emit-bundle \
-          --allow-dirty \
-          --out-dir "${{ inputs.out-dir }}"
-        popd >/dev/null
+        node "$GITHUB_WORKSPACE/scripts/prepare-shipme-cert-fixture.mjs"
 
     - name: Save Moriarty cache
       if: ${{ always() && steps.moriarty-cache.outputs.cache-hit != 'true' && hashFiles(format('{0}/history.json', inputs.bundle-dir)) != '' }}

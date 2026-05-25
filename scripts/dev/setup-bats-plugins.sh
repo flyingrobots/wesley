@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Ensure bats plugin directories exist under packages/wesley-cli/test/bats-plugins
+# Ensure bats plugin directories exist under test/bats-plugins.
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PLUGINS_DIR="$ROOT_DIR/packages/wesley-cli/test/bats-plugins"
+PLUGINS_DIR="$ROOT_DIR/test/bats-plugins"
 mkdir -p "$PLUGINS_DIR"
 
 fetch_plugin() {

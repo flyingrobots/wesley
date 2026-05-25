@@ -10,7 +10,7 @@ import {
   extractContentForLineSpan,
   isExactLineSpan,
   isWholeFileLineSpan
-} from '@wesley/core';
+} from './support/evidence-quality.mjs';
 
 export class Watson {
   constructor(bundle) {

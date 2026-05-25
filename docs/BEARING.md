@@ -10,21 +10,20 @@ timeline
     Phase 1 : v0.0.5 Shipped : Clean House : Domain-Empty Backlog
     Phase 2 : v0.0.6 : Rust IR Parity : Boundary Proof
     Phase 3 : Binding Observatory : Module Runtime : Artifact Evidence
-    Phase 4 : Core Release : Legacy Node Retirement : Postgres Module Cutover
+    Phase 4 : Legacy Node Retired : Rust-Native Release : Holmes Assurance
 ```
 
 ## Active Gravity
 
-### 1. v0.0.6 Rust IR Parity
+### 1. Rust-Native Compiler Spine
 
-The next Wesley hill is not another product lane. It is a compiler-truth
-release that makes the Rust core harder to drift from the legacy JS lowering
-surface while Wesley finishes moving toward one native compiler brain.
+The legacy Node compiler surface is retired. The current Wesley product spine is
+the Rust workspace: `crates/wesley-core`, `crates/wesley-cli`, retained emitters,
+Rust L1 fixtures, and `cargo xtask` verification.
 
-v0.0.5 closed the clean-house release. v0.0.6 should turn that cleanup into
-evidence: richer canonical fixtures, clearer compatibility diagnostics, and a
-separate JS/Rust parity sentinel that proves whether current Rust L1 bytes
-still match the legacy truth anchors where they are expected to match.
+Wesley should now behave like a normal Rust-native compiler project with
+JavaScript only where it has an explicit non-compiler owner: Holmes assurance,
+website/docs tooling, and browser/Bun/Deno host experiments.
 
 ### 2. Domain-Empty Core
 
@@ -56,8 +55,9 @@ still match the legacy truth anchors where they are expected to match.
 native self-consistency are now the product release gate.
 
 The JS/Rust parity sentinel work remains useful as historical migration
-evidence, but it is no longer the release oracle. Current authority lives in
-Rust tests, Rust L1 goldens, native CLI behavior, and
+evidence, but it is no longer the release oracle and the parity scripts are
+gone. Current authority lives in Rust tests, Rust L1 goldens, native CLI
+behavior, and
 [the `0017` parity sentinel archive](./design/0017-rust-native-front-door-and-node-retirement/PARITY_SENTINEL_ARCHIVE.md).
 
 ### 5. Resilience Policy Boundary
@@ -83,19 +83,15 @@ Rust tests, Rust L1 goldens, native CLI behavior, and
 - Move product/runtime/database semantics to owning repos or modules before
   deleting generic compatibility evidence that external consumers still need.
 
-### 7. Rust Core Binding Observatory
+### 7. Rust Core Binding Observatory Archive
 
-- `pnpm perf:bindings` is now the evidence seam for Node/Rust/WASM cutover
-  planning.
-- Keep Rust CLI, legacy JS, Node binding, and WASM binding as separate adapter
-  dimensions instead of collapsing them into one timing number.
-- Treat `node-rust-binding` and `wasm-binding` as explicit `not-implemented`
-  report slots until real adapters exist.
-- Do not choose N-API, WASM, or legacy JS retirement from performance vibes.
-  Cutover needs correctness parity, latency, memory, binding overhead, and
-  normal CLI regression evidence.
+- The binding observatory remains design evidence, not an active release gate.
+- Do not resurrect the legacy JS lowerer just to compare timings. Future N-API,
+  WASM, or external process bindings need fresh Rust-native evidence.
+- Keep Rust CLI, Node binding, and WASM binding as separate adapter dimensions
+  instead of collapsing them into one timing number.
 - [0016-rust-core-binding-observatory](./design/0016-rust-core-binding-observatory/rust-core-binding-observatory.md)
-  is now the active Phase 3 runway packet.
+  is archived runway context.
 
 ### 8. Wesley-Postgres Preservation
 
@@ -107,26 +103,25 @@ execution adapters, and database safety primitives. Wesley should coordinate
 by preserving generic module seams and avoiding new database semantics in the
 base platform.
 
-### 9. Legacy Node Retirement Campaign
+### 9. Legacy Node Retirement Campaign Closeout
 
-The long-term target is no legacy Node authority in Wesley's compiler,
-runtime, product entrypoint, docs, tests, or release posture. JavaScript may
-remain only when a surface is explicitly classified as compatibility evidence,
-external ecosystem support, website/docs tooling, or a temporary migration
-harness.
+The long-term target is met: no legacy Node authority remains in Wesley's
+compiler, runtime, product entrypoint, tests, CI posture, or active release
+plan. JavaScript remains only where a surface is explicitly classified outside
+compiler authority: Holmes assurance, external host smoke experiments, website
+tooling, docs tooling, and small repository automation.
 
 Working budget: **96 slices**. The first ten slices establish the Rust-native
 front door and retirement ledger. Later slices should retire Node by capability,
 not by deleting files before equivalent Rust truth or explicit extraction
 exists.
 
-Status: **90 / 96 slices closed**. The leaf package deletion tranche removed
-the scaffold, fixture, and task-runtime packages and proved the remaining Rust
-release path does not depend on them. The follow-on generator tranche deleted
-`wesley-generator-js` and retired model-class scaffolding. The open retirement
-work is now concentrated in the large compatibility packages (`wesley-core`,
-`wesley-cli`, `wesley-host-node`, and `wesley-runtime-node`) plus the final
-closeout/removal slices.
+Status: **96 / 96 slices closed**. `packages/wesley-core`,
+`packages/wesley-cli`, `packages/wesley-host-node`, and
+`packages/wesley-runtime-node` are deleted. Holmes is self-contained. Browser,
+Bun, and Deno host packages no longer import the retired JS core or runtime.
+The closeout lives in
+[FINAL_CLOSEOUT.md](./design/0017-rust-native-front-door-and-node-retirement/FINAL_CLOSEOUT.md).
 
 - [x] NR-001 Reset `BEARING` around the 96-slice legacy Node retirement
       campaign.
@@ -224,7 +219,7 @@ closeout/removal slices.
       with native CLI invocations wherever tests are not explicitly legacy tests.
 - [x] NR-050 Move remaining Node-host tests into a compatibility-only lane.
 - [x] NR-051 Add CI labels or job names that distinguish Rust product checks
-      from legacy compatibility checks.
+      from external host experiment checks.
 - [x] NR-052 Make `cargo xtask preflight` the ordinary product health check.
 - [x] NR-053 Make `cargo xtask legacy-preflight` optional for legacy package
       changes only.
@@ -269,13 +264,13 @@ lower` references.
       migration-only evidence.
 - [x] NR-075 Archive JS/Rust parity sentinel reports as historical evidence
       instead of active authority.
-- [ ] NR-076 Delete `packages/wesley-core` after generic useful behavior is
+- [x] NR-076 Delete `packages/wesley-core` after generic useful behavior is
       ported, extracted, or explicitly rejected.
-- [ ] NR-077 Delete `packages/wesley-cli` after commands are ported, extracted,
+- [x] NR-077 Delete `packages/wesley-cli` after commands are ported, extracted,
       or explicitly rejected.
-- [ ] NR-078 Delete `packages/wesley-host-node` after no product/test path uses
+- [x] NR-078 Delete `packages/wesley-host-node` after no product/test path uses
       the Node executable wrapper.
-- [ ] NR-079 Delete `packages/wesley-runtime-node` after module loading and
+- [x] NR-079 Delete `packages/wesley-runtime-node` after module loading and
       runtime evidence no longer depend on it.
 - [x] NR-080 Delete or externalize `packages/wesley-generator-js`.
 - [x] NR-081 Delete or externalize `packages/wesley-generator-vue`.
@@ -298,9 +293,9 @@ lower` references.
 - [x] NR-093 Run a docs link/truth audit after deletions.
 - [x] NR-094 Run a CI/release dry-run proving Rust-only product release does not
       require legacy Node packages.
-- [ ] NR-095 Publish the final legacy Node retirement closeout with migrated,
+- [x] NR-095 Publish the final legacy Node retirement closeout with migrated,
       extracted, deleted, deferred, and rejected surfaces.
-- [ ] NR-096 Remove the campaign from active `BEARING` once the closeout is
+- [x] NR-096 Remove the campaign from active `BEARING` once the closeout is
       merged and only normal maintenance remains.
 
 ### 10. Holmes Assurance Hexagon
@@ -311,16 +306,16 @@ JavaScript-shaped crate. The new design lives in
 
 The target shape is one assurance core with three interfaces: CLI, API, and
 MCP. Reporting is an abstraction over a structured `ReportDocument`; GitHub PR
-comments are one publisher, not the architecture. This is now the preferred
-exit path for the current `packages/wesley-holmes` blocker that keeps
-`@wesley/core` and `@wesley/runtime-node` alive.
+comments are one publisher, not the architecture. The JavaScript Holmes package
+no longer blocks legacy core/runtime deletion, but it is still a transitional
+assurance surface.
 
 ## Tensions
 
-- **Two-Brain Confusion**: Rust and Node surfaces still coexist. The intended
-  shape is one compiler brain (`crates/wesley-core`), one native command body
-  (`crates/wesley-cli`), and legacy Node support surfaces under `packages/`
-  until ported, extracted, or retired.
+- **Rust Native Discipline**: The easy mistake after deletion is to recreate
+  the old JavaScript surface through scripts, docs, or compatibility shortcuts.
+  New compiler behavior belongs in Rust crates unless there is an explicit
+  non-compiler owner.
 - **Fixture Churn**: IR, hash, directive, or generated-artifact changes can
   affect Echo and jedit fixtures. Those changes need explicit compatibility
   notes rather than accidental hash churn.
@@ -339,38 +334,48 @@ exit path for the current `packages/wesley-holmes` blocker that keeps
 
 ## Next Target
 
-The immediate focus is **Holmes assurance redesign and legacy package deletion
-without false gates**.
-
-The v0.0.6 compiler-truth work still matters, but the long-term goal now makes
-the priority sharper: delete only the package surfaces whose gates are actually
-closed, and record blockers for the rest. `packages/wesley-generator-vue/` and
-`packages/wesley-generator-js/` are deleted. `packages/wesley-core/`,
-`packages/wesley-cli/`, `packages/wesley-host-node/`, and
-`packages/wesley-runtime-node/` remain open because current workspace packages,
-scripts, tests, workflows, or evidence tools still depend on them.
+The immediate focus is **post-retirement hardening plus Holmes assurance
+redesign**.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
 references, legacy aliases, invalid duplicate-directive coverage, parser parity
 acceptance evidence, IR parity projections, Rust CLI performance baselines,
 module-target dispatch coverage, the `0014` domain-empty boundary, the `0015`
-resilience boundary, and the `0016` binding observatory. Those remain the proof
-floor. The `0017` packet names the retirement campaign that decides what all
-that proof is for. The `0018` packet names the assurance architecture that lets
-Holmes survive without pinning Wesley to legacy Node.
+resilience boundary, and the `0016` binding observatory archive. Those remain
+historical proof floor. The `0017` packet now closes the retirement campaign.
+The `0018` packet names the assurance architecture that lets Holmes mature
+without pinning Wesley to legacy Node.
 
 The next pulls after this drift check are:
 
-1. Continue cutting `packages/wesley-host-node/` out of any non-legacy smoke
-   path.
-2. Move or delete remaining root scripts that route through the Node host.
-3. Replace parity and performance helpers that import JS lowerer code with
-   Rust fixture-truth checks.
-4. Start the Holmes assurance hexagon by adding Rust domain/report contracts
+1. Guard the retired package set in CI and xtask so the old surface cannot
+   silently return.
+2. Keep `docs/END_TO_END.md` and public docs aligned with the Rust-native
+   product spine.
+3. Start the Holmes assurance hexagon by adding Rust domain/report contracts
    and dependency-injected ports.
-5. Keep deleting leaf packages only when `pnpm -r test`, docs checks, and CI
-   workflow references prove the package has no active owner in this repo.
+4. Keep browser/Bun/Deno packages honest as host experiments, not compiler
+   authority.
+5. Revisit backlog cards that still mention deleted package paths and either
+   archive, rewrite, or close them as obsolete.
+
+## Post-Retirement Freestyle Slice Log
+
+These celebration slices are not a new campaign. They are cleanup ballast after
+the 96-slice retirement closeout.
+
+- [x] PF-001 Remove the remaining `HOST=node` host-contract entrypoint and make
+      retained host-contract runs opt into `browser`, `deno`, or `bun`.
+- [x] PF-002 Rename live host-check doctrine from `Legacy Compatibility` to
+      `External Host Experiment`.
+- [x] PF-003 Add a Rust `xtask` guard that fails when a package listed in
+      `retiredPackages` quietly reappears with a `package.json`.
+- [x] PF-004 Refresh CI, host, and script docs so post-retirement operators see
+      product checks, repo hygiene, and external host experiments as separate
+      lanes.
+- [x] PF-005 Record the post-retirement cleanup in the changelog so the branch
+      tells the whole story after merge.
 
 The `ninelives` decision is made: use `ninelives` for Rust resilience seams and
 Alfred for JavaScript tooling seams. Keep the scope narrow: resilience policy
@@ -378,9 +383,8 @@ wraps execution boundaries; it does not import product, database, scheduler, or
 runtime semantics into Wesley.
 
 The Node binding decision is intentionally not made yet. The current posture is
-Rust CLI as the authoritative native compiler path, legacy JS as compatibility
-fallback during parity migration, and observatory evidence before any N-API or
-WASM production binding choice.
+Rust CLI as the authoritative native compiler path and fresh observatory
+evidence before any N-API or WASM production binding choice.
 
 Echo and jedit do not need more Wesley feature gravity for their current work.
 Wesley should coordinate on compatibility only when a concrete artifact, hash,

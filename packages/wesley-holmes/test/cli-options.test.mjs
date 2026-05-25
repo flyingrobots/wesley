@@ -6,11 +6,12 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
+import { createRuntimeStreamId, GitWarpEventStore } from '../src/support/runtime-ledger.mjs';
+
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(__filename), '..', '..', '..');
 const cliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'cli.mjs');
 const moriartyCliPath = path.join(repoRoot, 'packages', 'wesley-holmes', 'src', 'moriarty-cli.mjs');
-const wesleyCliPath = path.join(repoRoot, 'packages', 'wesley-host-node', 'bin', 'wesley.mjs');
 const counterfactualModulePath = fileURLToPath(
   new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url)
 );
@@ -265,33 +266,61 @@ function runGit(cwd, ...args) {
 }
 
 function persistTransformRun(fixture, runId, extraArgs = []) {
+  assert.deepEqual(extraArgs, [], 'persistTransformRun no longer shells through legacy Node CLI');
   const outDir = path.join(fixture.tempDir, 'out');
   mkdirSync(outDir, { recursive: true });
-  const result = spawnSync(
-    process.execPath,
-    [
-      wesleyCliPath,
-      'transform',
-      '--schema',
-      fixture.schemaPath,
-      '--out-dir',
-      outDir,
-      '--transmutation',
-      'null-generator',
-      '--run-id',
-      runId,
-      '--emit-bundle',
-      '--json',
-      '--quiet',
-      ...extraArgs
-    ],
+  const transmutation = 'null-generator';
+  const streamId = createRuntimeStreamId({ transmutation, runId });
+  const eventStore = new GitWarpEventStore({
+    rootDir: path.join(fixture.tempDir, '.wesley-cache', 'ledger')
+  });
+  const command = 'transform';
+  const baseEvent = {
+    streamId,
+    schemaVersion: '1.0.0',
+    timestamp: '2026-01-01T00:00:00.000Z',
+    causationId: null,
+    correlationId: runId,
+    runId,
+    transmutation
+  };
+
+  for (const event of [
     {
-      cwd: fixture.tempDir,
-      encoding: 'utf8',
-      env: { ...process.env }
+      ...baseEvent,
+      eventId: `${streamId}:1`,
+      type: 'RunRequested',
+      sequence: 1,
+      idempotencyKey: `${streamId}:requested`,
+      payload: { command }
+    },
+    {
+      ...baseEvent,
+      eventId: `${streamId}:2`,
+      type: 'TaskStarted',
+      sequence: 2,
+      idempotencyKey: `${streamId}:main:started`,
+      payload: { command }
+    },
+    {
+      ...baseEvent,
+      eventId: `${streamId}:3`,
+      type: 'TaskCompleted',
+      sequence: 3,
+      idempotencyKey: `${streamId}:main:completed`,
+      payload: { command }
+    },
+    {
+      ...baseEvent,
+      eventId: `${streamId}:4`,
+      type: 'RunCompleted',
+      sequence: 4,
+      idempotencyKey: `${streamId}:completed`,
+      payload: { command, verdict: 'PASS' }
     }
-  );
-  assert.equal(result.status, 0, result.stderr || result.stdout);
+  ]) {
+    eventStore.append(event);
+  }
 }
 
 function runCli(
@@ -342,16 +371,7 @@ function runCli(
 function inspectPersistedRun(fixture, runId, transmutation) {
   const result = spawnSync(
     process.execPath,
-    [
-      wesleyCliPath,
-      'runs',
-      'inspect',
-      '--run-id',
-      runId,
-      '--transmutation',
-      transmutation,
-      '--json'
-    ],
+    [cliPath, 'runs', 'inspect', '--run-id', runId, '--transmutation', transmutation, '--json'],
     {
       cwd: fixture.tempDir,
       encoding: 'utf8',
@@ -364,7 +384,7 @@ function inspectPersistedRun(fixture, runId, transmutation) {
 
 function listPersistedRuns(fixture, transmutation, status = null) {
   const args = [
-    wesleyCliPath,
+    cliPath,
     'runs',
     'status',
     '--transmutation',

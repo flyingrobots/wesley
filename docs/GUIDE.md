@@ -39,9 +39,7 @@ checkout. Use `cargo xtask release-check` before cutting native release
 artifacts; it runs the Rust tests, builds the optimized binary, and packages
 the Rust library crate without publishing anything.
 
-The historical package CLI still carries compatibility-only TypeScript, Zod,
-diff, generate, and transform paths while those surfaces are being extracted or
-retired. Prefer the native commands where parity exists:
+The historical package CLI is retired. Use the native commands:
 
 - **Lower**: `wesley schema lower --schema <path> --json`
 - **Hash**: `wesley schema hash --schema <path>`
@@ -52,12 +50,12 @@ retired. Prefer the native commands where parity exists:
 - **Emit metadata**: add `--metadata-out <path>` to record schema hash,
   generator identity, generator version, and `rust-native` execution mode.
 
-For users still calling `pnpm wesley`, treat that command as a migration
-bridge. The direct replacements are `wesley schema lower`, `wesley schema
-hash`, `wesley schema diff`, `wesley doctor`, and `wesley emit typescript` or
-`wesley emit rust`. Zod, certificate, run-ledger, and Holmes-family commands
-remain legacy compatibility or assurance tooling until they move behind their
-own boundary.
+For legacy migration users still calling `pnpm wesley`, rewrite the caller.
+The direct replacements are `wesley schema lower`, `wesley schema hash`,
+`wesley schema diff`, `wesley doctor`, and `wesley emit typescript` or
+`wesley emit rust`.
+Zod and certificate commands are no longer generic compiler-front-door work.
+Holmes-family commands live under `@wesley/holmes`.
 
 Zod output is no longer treated as core Wesley retirement work. Reintroduce it
 through an external target module or package when a consumer needs JavaScript
@@ -79,19 +77,16 @@ profiles, and runtime conventions. Wesley core does not own those meanings.
 For the active ownership rule, see
 [design/0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
-The current repository still contains historical Continuum, WARPspace,
-PostgreSQL, and Supabase command/package residue. Treat those paths as
-extraction debt. New domain behavior should land in the owning external module
-repo, not in Wesley.
+Historical Continuum, WARPspace, PostgreSQL, and Supabase package residue has
+been removed from the compiler front door. New domain behavior should land in
+the owning external module repo, not in Wesley.
 
 ### 3. Governance & Inspection
 
 Audit proposed changes, emit HOLMES reports, and inspect the static dashboard
 artifact assembled by CI.
-These are historical assurance/tooling surfaces while the Node retirement
-campaign decides what moves, extracts, or disappears.
+These are assurance/tooling surfaces outside compiler authority.
 
-- **Certificate**: legacy `pnpm wesley cert-create --help`
 - **HOLMES report**: `pnpm --filter @wesley/holmes exec node src/cli.mjs report --help`
 - **Dashboard artifact**: open `docs/holmes-dashboard/index.html` with the
   HOLMES workflow JSON artifacts. See
@@ -145,9 +140,9 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 - [ ] **I am setting up Rust core work**: Run `cargo xtask preflight`.
 - [ ] **I am changing docs only**: Run `cargo xtask docs-check`.
-- [ ] **I am changing legacy packages or pnpm workspace files**: Run `pnpm install` and `cargo xtask legacy-preflight`.
+- [ ] **I am changing retained JS packages or pnpm workspace files**: Run `pnpm install` and `cargo xtask legacy-preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
-- [ ] **I am adding a generic projection**: Start in `crates/wesley-emit-rust` or `crates/wesley-emit-typescript`, and only touch legacy Node generators for legacy package work.
+- [ ] **I am adding a generic projection**: Start in `crates/wesley-emit-rust` or `crates/wesley-emit-typescript`.
 - [ ] **I am adding a domain target**: Put it in an external module repo and load it into Wesley.
 - [ ] **I am extending Wesley**: Use `docs/guides/extending.md` to pick the Rust core, native CLI, emitter, external module, or `xtask` boundary.
 - [ ] **I am contributing to Wesley**: Read `METHOD.md` and `BEARING.md`.

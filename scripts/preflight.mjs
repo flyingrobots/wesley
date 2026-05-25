@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-import { readdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
 
 if (process.env.SKIP_PREFLIGHT === '1') {
   console.log('SKIP_PREFLIGHT=1 set — skipping preflight checks');
@@ -22,7 +21,7 @@ const gitIdentityChk = spawnSync(process.execPath, ['scripts/check-git-identity.
 });
 if (gitIdentityChk.status !== 0) fail('Git identity guard failed');
 
-// 1) .gitignore contains .wesley-cache/ and out/
+// .gitignore contains generated-output ignores.
 try {
   const gi = readFileSync(resolve('.gitignore'), 'utf8');
   if (!gi.match(/^\.wesley-cache\//m)) fail('Missing .wesley-cache/ in .gitignore');
@@ -39,7 +38,7 @@ try {
   fail('Missing .gitignore');
 }
 
-// 2) No macOS runners in workflows
+// No macOS runners in workflows.
 try {
   const dir = resolve('.github/workflows');
   const files = readdirSync(dir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
@@ -52,7 +51,7 @@ try {
   // (forks, minimal clones). This check is best-effort only.
 }
 
-// 3) No Claude code workflows
+// No Claude code workflows.
 try {
   const dir = resolve('.github/workflows');
   const files = readdirSync(dir).filter((f) => f.includes('claude'));
@@ -61,55 +60,27 @@ try {
   // Intentionally ignored: workflows dir may not exist
 }
 
-// 4) Core purity: disallow node:* imports and common node modules in core
-function walk(dir) {
-  const out = [];
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) out.push(...walk(resolve(dir, e.name)));
-    else if (e.isFile() && e.name.endsWith('.mjs')) out.push(resolve(dir, e.name));
-  }
-  return out;
-}
-
-try {
-  const coreDir = resolve('packages/wesley-core/src');
-  const files = walk(coreDir);
-  for (const f of files) {
-    const c = readFileSync(f, 'utf8');
-    if (/from\s+['"]node:/.test(c) || /require\(['"]node:/.test(c))
-      fail(`node:* import in core: ${f}`);
-    if (
-      /\bfrom\s+['"](fs|path)(?:\/[^'"]*)?['"]/.test(c) ||
-      /\brequire\(['"](fs|path)(?:\/[^'"]*)?['"]\)/.test(c)
-    )
-      fail(`platform import in core: ${f}`);
-    if (/\bprocess\./.test(c)) fail(`process.* used in core: ${f}`);
-  }
-} catch {
-  // ignore if core missing
-}
-
-// 5) Docs link check
+// Docs link check.
 const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { stdio: 'inherit' });
 if (linkChk.status !== 0) fail('Docs link check failed');
 
-// 5b) Docs truth check
+// Docs truth check.
 const truthChk = spawnSync(process.execPath, ['scripts/check-doc-truth.mjs'], { stdio: 'inherit' });
 if (truthChk.status !== 0) fail('Docs truth check failed');
 
-// 5c) Forbidden machine-local path literals
+// Forbidden machine-local path literals.
 const privatePathChk = spawnSync(process.execPath, ['scripts/check-forbidden-literals.mjs'], {
   stdio: 'inherit'
 });
 if (privatePathChk.status !== 0) fail('Forbidden machine-local path literal check failed');
 
-// 5d) Front-door CLI examples should name registered Wesley commands
+// Front-door CLI examples should name registered Wesley commands.
 const docCliChk = spawnSync(process.execPath, ['scripts/check-doc-cli-commands.mjs'], {
   stdio: 'inherit'
 });
 if (docCliChk.status !== 0) fail('Docs CLI command check failed');
 
-// 6) pnpm version consistency
+// pnpm version consistency.
 try {
   const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
   const pm = pkg.packageManager || '';
@@ -129,7 +100,7 @@ try {
   fail(`pnpm version check failed: ${e?.message || e}`);
 }
 
-// 7) Architecture boundaries via dependency-cruiser
+// Architecture boundaries via dependency-cruiser.
 function runOrFail(cmd, args, msg) {
   const res = spawnSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32' });
   if (res.status !== 0) fail(msg);
@@ -143,49 +114,7 @@ runOrFail(
   'dependency-cruiser boundary check failed'
 );
 
-// 8) ESLint core purity (use repo's ESLint version, flat-config compatible)
-try {
-  const flatConfigDir = mkdtempSync(join(tmpdir(), 'eslint-core-purity-'));
-  const flatConfigPath = resolve(flatConfigDir, 'eslint.config.mjs');
-  const cfg =
-    "export default [{\n    files: [\"packages/wesley-core/src/**/*.mjs\"],\n    languageOptions: { ecmaVersion: 2022, sourceType: 'module' },\n    rules: {\n      'no-restricted-imports': [\n        'error',\n        {\n          patterns: [ { group: ['node:*'], message: 'Do not use Node built-ins in core (keep it pure).' } ],\n          paths: [\n            { name: 'fs', message: 'Use ports/adapters; no fs in core.' },\n            { name: 'path', message: 'Use ports/adapters; no path in core.' },\n            { name: 'process', message: 'Do not use process in core.' },\n            { name: 'child_process', message: 'No child_process in core.' },\n            { name: 'os', message: 'No os in core.' },\n            { name: 'buffer', message: 'No Buffer usage in core.' }\n          ]\n        }\n      ]\n    }\n  }];\n";
-  try {
-    writeFileSync(flatConfigPath, cfg, 'utf8');
-    runOrFail(
-      'pnpm',
-      [
-        'exec',
-        'eslint',
-        '--config',
-        flatConfigPath,
-        'packages/wesley-core/src/**/*.mjs',
-        '--max-warnings=0'
-      ],
-      'ESLint core purity check failed'
-    );
-  } finally {
-    rmSync(flatConfigDir, { recursive: true, force: true });
-  }
-} catch (e) {
-  fail(`ESLint core purity check failed to run: ${e?.message || e}`);
-}
-
-// 9) Core packaging hygiene — ensure @wesley/core has no Node-only deps or engines
-try {
-  const corePkgPath = resolve('packages/wesley-core/package.json');
-  const core = JSON.parse(readFileSync(corePkgPath, 'utf8'));
-  const badDeps = new Set(['chokidar', 'ts-morph', 'fs-extra', '@types/node']);
-  const deps = Object.keys(core.dependencies || {}).concat(Object.keys(core.devDependencies || {}));
-  for (const d of deps) {
-    if (badDeps.has(d)) fail(`@wesley/core must not depend on '${d}' (host-specific).`);
-  }
-  if (core.engines && core.engines.node)
-    fail('@wesley/core must not declare engines.node; keep hosts portable.');
-} catch (_e) {
-  // If core package missing, skip
-}
-
-// 10) License audit — ensure all packages use Apache-2.0 (dynamic discovery)
+// License audit: ensure all packages use Apache-2.0 (dynamic discovery).
 try {
   const ls = spawnSync('pnpm', ['ls', '-r', '--json', '--depth=-1'], { encoding: 'utf8' });
   if (ls.status !== 0) throw new Error(`pnpm ls failed with code ${ls.status}`);
@@ -212,7 +141,7 @@ try {
   fail(`License audit failed: ${e?.message || e}`);
 }
 
-// 11) Progress weights completeness — required packages must have explicit weights
+// Progress weights completeness: required packages must have explicit weights.
 try {
   const cfg = JSON.parse(readFileSync(resolve('meta/progress.config.json'), 'utf8'));
   const weights = (cfg.project && cfg.project.weights) || {};
@@ -236,7 +165,7 @@ try {
   fail(`Progress weights completeness check failed: ${e?.message || e}`);
 }
 
-// 12) Docs whitespace rule — avoid trailing double-space line breaks on Status lines
+// Docs whitespace rule: avoid trailing double-space line breaks on Status lines.
 try {
   const cfg = JSON.parse(readFileSync(resolve('meta/progress.config.json'), 'utf8'));
   const offenders = [];

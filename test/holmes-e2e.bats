@@ -4,10 +4,9 @@ load 'helpers'
 
 setup() {
     export REPO_ROOT="$BATS_TEST_DIRNAME/.."
-    export CLI_PATH="$REPO_ROOT/packages/wesley-host-node/bin/wesley.mjs"
     export HOLMES_CLI="$REPO_ROOT/packages/wesley-holmes/src/cli.mjs"
     export TEMP_DIR="$(mktemp -d)"
-    cp "$REPO_ROOT/example/schema.graphql" "$TEMP_DIR/schema.graphql"
+    cp "$REPO_ROOT/test/fixtures/examples/schema.graphql" "$TEMP_DIR/schema.graphql"
 }
 
 teardown() {
@@ -17,7 +16,7 @@ teardown() {
 @test "holmes investigation/verification/prediction produce artifacts" {
     pushd "$TEMP_DIR" >/dev/null
 
-    run node "$CLI_PATH" generate --schema schema.graphql --emit-bundle --quiet
+    run node "$REPO_ROOT/scripts/prepare-shipme-cert-fixture.mjs"
     assert_success
 
     run bash -c "node '$HOLMES_CLI' investigate --json holmes.json > holmes.md"

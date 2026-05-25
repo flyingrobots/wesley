@@ -4,7 +4,6 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { buildGitDiscoveryEnv } from '../packages/wesley-cli/src/utils/git-env.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = resolve(__dirname, '..');
@@ -78,7 +77,7 @@ function buildCommands(changedFiles) {
   }
 
   if (needsLegacyPreflight(changedFiles)) {
-    addCommand('legacy-preflight', 'Legacy package preflight', 'cargo xtask legacy-preflight');
+    addCommand('legacy-preflight', 'JavaScript package preflight', 'cargo xtask legacy-preflight');
   }
 
   if (needsRepoBats(changedFiles)) {
@@ -160,11 +159,7 @@ function needsRepoBats(changedFiles) {
       file.startsWith('test/') ||
       file.startsWith('packages/wesley-host-browser/') ||
       file.startsWith('packages/wesley-host-bun/') ||
-      file.startsWith('packages/wesley-host-deno/') ||
-      file.startsWith('packages/wesley-host-node/') ||
-      file.startsWith('packages/wesley-cli/src/commands/watch') ||
-      file.startsWith('packages/wesley-core/src/cli/') ||
-      file === 'packages/wesley-core/src/util/EventEmitter.mjs'
+      file.startsWith('packages/wesley-host-deno/')
   );
 }
 
@@ -252,6 +247,13 @@ function readStdin() {
 
 function shellQuote(value) {
   return `'${String(value).replaceAll("'", "'\"'\"'")}'`;
+}
+
+function buildGitDiscoveryEnv(env) {
+  return {
+    ...env,
+    GIT_OPTIONAL_LOCKS: env.GIT_OPTIONAL_LOCKS || '0'
+  };
 }
 
 main();

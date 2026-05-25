@@ -2,9 +2,7 @@
  * Browser host public API
  */
 
-import { GenerationPipeline } from '@wesley/core';
 import { createBrowserRuntime } from './createBrowserRuntime.mjs';
-import { MemoryFileSystem } from './createBrowserRuntime.mjs'; // Import MemoryFileSystem
 
 /**
  * @typedef {Object} BrowserCompileResult
@@ -26,40 +24,18 @@ export async function compileSchemaInBrowser(inputFiles) {
     throw new TypeError('inputFiles must be an array of { file: string, body: string } objects.');
   }
 
-  // Combine all input files into a single SDL string for initial parsing
-  // In a more advanced scenario, MemoryFileSystem would handle file imports
-  // For now, simple concatenation.
-  const schemaSDL = inputFiles.map((f) => f.body).join('\n\n');
+  for (const file of inputFiles) {
+    if (!file || typeof file.file !== 'string' || typeof file.body !== 'string') {
+      throw new TypeError('inputFiles must contain { file: string, body: string } objects.');
+    }
+  }
 
+  const schemaSDL = inputFiles.map((file) => file.body).join('\n\n');
   if (schemaSDL.length > 1_000_000) {
     throw new Error('Combined schema too large (max 1MB)');
   }
 
   const rt = await createBrowserRuntime();
-  const fs = new MemoryFileSystem(); // Use a dedicated FS for this compilation
-
-  // Populate the in-memory file system with input files
-  for (const file of inputFiles) {
-    await fs.write(file.file, file.body);
-  }
-
-  // Minimal diff engine to satisfy the generic pipeline contract.
-  const diffEngine = {
-    async diff(_prev, _cur) {
-      return { steps: [] };
-    },
-    async generateMigration(_diff) {
-      return null;
-    }
-  };
-
-  const pipeline = new GenerationPipeline({
-    parser: rt.parsers.graphql,
-    diffEngine,
-    fileSystem: fs, // Use the in-memory FS
-    logger: rt.logger
-  });
-
   /** @type {BrowserCompileResult} */
   const result = {
     ok: false,
@@ -70,22 +46,14 @@ export async function compileSchemaInBrowser(inputFiles) {
   };
 
   try {
-    const bundle = await pipeline.execute(schemaSDL, { sha: 'browser-playground' });
-    const tables = Array.isArray(bundle?.schema?.tables) ? bundle.schema.tables.length : 0;
+    const sanitized = rt.validators.sanitizeGraphQL(schemaSDL);
+    const ir = await rt.parsers.graphql.parse(sanitized);
+    const tables = Array.isArray(ir?.tables) ? ir.tables.length : 0;
 
-    result.outputFiles.push({ file: 'schema.json', body: JSON.stringify(bundle.schema, null, 2) });
+    result.outputFiles.push({ file: 'schema.json', body: JSON.stringify(ir, null, 2) });
 
     result.ok = true;
     result.tables = tables;
-
-    // Check for errors in the bundle
-    if (bundle.errors && bundle.errors.length > 0) {
-      result.ok = false;
-      result.errors = bundle.errors.map((err) => ({ message: err.message || String(err) }));
-    } else if (tables === 0 && schemaSDL.includes('type ')) {
-      // Fallback: if we have types but 0 tables, something might be wrong with parsing/bundle
-      // console.log('DEBUG: Bundle schema:', JSON.stringify(bundle.schema, null, 2));
-    }
 
     return result;
   } catch (err) {
@@ -95,6 +63,23 @@ export async function compileSchemaInBrowser(inputFiles) {
   }
 }
 
-// Re-export runInBrowser for any existing uses, if necessary, or remove if compileSchemaInBrowser is the sole entry.
-// For now, keep it for compatibility until we confirm no other parts rely on it.
-// export { runInBrowser } from './index.mjs';
+export async function runInBrowser(schema) {
+  const result = await compileSchemaInBrowser([{ file: 'schema.graphql', body: schema }]);
+  if (!result.ok) {
+    return {
+      ok: false,
+      token: null,
+      tables: 0,
+      errors: result.errors
+    };
+  }
+
+  const rt = await createBrowserRuntime();
+  const ir = JSON.parse(result.outputFiles[0].body);
+  const token = `BROWSER_SMOKE_OK:${result.tables}:${(await rt.crypto.sha256Hex(ir)).slice(0, 12)}`;
+  return {
+    ok: true,
+    token,
+    tables: result.tables
+  };
+}

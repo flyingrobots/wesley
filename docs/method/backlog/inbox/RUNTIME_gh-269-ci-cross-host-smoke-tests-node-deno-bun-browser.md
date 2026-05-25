@@ -1,4 +1,4 @@
-# GH-269 CI: cross-host smoke tests (Node/Deno/Bun/Browser)
+# GH-269 CI: cross-host smoke tests
 
 - Imported from: GitHub issue
 - Issue: #269
@@ -8,6 +8,14 @@
 - Lane: `inbox`
 - Legend: `RUNTIME`
 - Labels: `ci`, `tests`
+
+## Post-Retirement Note
+
+This import predates the legacy Node host deletion. Its original Node and
+`@wesley/core` acceptance text is obsolete. Retained repo-local coverage now
+belongs to browser, Deno, and Bun external host experiments with self-contained
+smokes; future Node execution evidence needs a new adapter design and must not
+restore the deleted host package.
 
 ## Legend Fit
 

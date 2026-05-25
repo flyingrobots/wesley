@@ -39,5 +39,7 @@ themselves Node-only.
 Execution mode and portability floor metadata now live in Rust. Hermetic
 fixture checks prove that portable capability outputs must agree across
 Rust-native, WASM, and external-process hosts for the same input digest.
-Browser, Bun, Deno, and Node host packages are explicitly compatibility lanes,
-not proof of portable compiler truth.
+Browser, Bun, and Deno host packages are explicitly external host experiments,
+not proof of portable compiler truth. The Node host package has been retired,
+so future Node execution evidence must arrive through a new, explicit adapter
+design rather than the deleted legacy host.

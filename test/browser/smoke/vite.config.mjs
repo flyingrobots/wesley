@@ -21,8 +21,7 @@ export default defineConfig({
       '@wesley/host-browser': resolve(
         __dirname,
         '../../../packages/wesley-host-browser/src/index.mjs'
-      ),
-      '@wesley/core': resolve(__dirname, '../../../packages/wesley-core/src/index.mjs')
+      )
     }
   }
 });

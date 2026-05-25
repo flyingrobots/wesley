@@ -36,7 +36,8 @@ was edited after generation.
 
 ## Evidence
 
-- [packages/wesley-cli/test/compile.bats](../../../packages/wesley-cli/test/compile.bats)
+- Historical test path: `packages/wesley-cli/test/compile.bats` was deleted
+  during legacy Node retirement.
 - [Wesley Extraction Map](../wesley-extraction-map.md)
 
 The original Continuum realization verifier files were removed from generic

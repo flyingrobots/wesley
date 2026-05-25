@@ -1,4 +1,4 @@
-name: Legacy Compatibility - pkg-host-deno
+name: External Host Experiment - pkg-host-deno
 
 on:
   push:
@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   deno-host:
-    name: Legacy compatibility - host-deno package
+    name: External host experiment - host-deno package
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:

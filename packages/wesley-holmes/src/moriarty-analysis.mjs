@@ -1,4 +1,7 @@
-import { confidencePenaltyForEvidenceTrust, evidenceTrustMeetsThreshold } from '@wesley/core';
+import {
+  confidencePenaltyForEvidenceTrust,
+  evidenceTrustMeetsThreshold
+} from './support/evidence-quality.mjs';
 
 export function analyzeMoriartyPredictionCore({
   historyPoints,

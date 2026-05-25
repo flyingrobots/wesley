@@ -2,16 +2,16 @@
 title: Rust core binding and memory baselines
 legend: EVIDENCE
 packet: 0016-rust-core-binding-observatory
-status: active
+status: archived
 ---
 
 # Rust core binding and memory baselines
 
 ## Why now
 
-`pnpm perf:ir` records Rust CLI lowering wall-clock evidence over the canonical
-IR fixture corpus. Cutover decisions still need memory and embedding-overhead
-evidence before Wesley can make stronger performance claims.
+This packet recorded Rust CLI lowering wall-clock evidence over the canonical
+IR fixture corpus before the legacy JavaScript compiler surface was deleted.
+The Node binding comparison scripts were retired with that surface.
 
 ## Hill
 
@@ -21,7 +21,7 @@ into one runtime number.
 
 ## Implemented Slice
 
-`pnpm perf:bindings` now emits a binding observatory report:
+The retired `pnpm perf:bindings` script emitted a binding observatory report:
 
 ```bash
 pnpm perf:bindings -- --json
@@ -39,8 +39,8 @@ The report captures:
 - WASM binding as an explicit `not-implemented` evidence slot.
 - Cutover criteria as explicit `not-evaluated` release posture.
 
-The fixture corpus remains the explicit valid IR fixture corpus used by
-`pnpm perf:ir`.
+The fixture corpus remains useful as historical evidence, but the active
+product gate is now `cargo xtask preflight`.
 
 ## Deferred Evidence
 
@@ -68,6 +68,8 @@ These remain intentionally outside this slice:
 
 ## Repo Evidence
 
-- [`scripts/measure-ir-performance.mjs`](../../../scripts/measure-ir-performance.mjs)
-- [`test/ir-performance-baseline.bats`](../../../test/ir-performance-baseline.bats)
+- Historical script: `scripts/measure-ir-performance.mjs` was deleted during
+  legacy Node retirement.
+- Historical test: `test/ir-performance-baseline.bats` was deleted during
+  legacy Node retirement.
 - [Rust core performance baseline](../0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)

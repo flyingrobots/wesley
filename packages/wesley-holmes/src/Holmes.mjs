@@ -4,7 +4,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { assessEvidenceTrust } from '@wesley/core';
+import { assessEvidenceTrust } from './support/evidence-quality.mjs';
 import {
   pickBestEvidenceLocation,
   summarizeEvidenceKinds,

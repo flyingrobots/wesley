@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Legacy compatibility Deno host experiment",
+  "description": "External Deno host smoke experiment",
   "wesley": {
     "retirement": {
       "status": "legacy-compatibility",
       "disposition": "delete-or-externalize",
       "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
-      "replacement": "Externalize or delete the Deno host experiment after its legacy compatibility evidence is obsolete."
+      "replacement": "Externalize or delete the Deno host experiment after its smoke evidence is obsolete."
     }
   },
   "main": "./mod.ts",

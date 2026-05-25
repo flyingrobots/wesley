@@ -4,13 +4,11 @@ load 'bats-plugins/bats-support/load'
 load 'bats-plugins/bats-assert/load'
 
 setup() {
-  HOST="${HOST:-node}"
+  : "${HOST:?Set HOST to browser, deno, or bun. The retired Node host has no host-contract lane.}"
 }
 
 @test "host contracts pass on selected host" {
-  if [ "$HOST" = "node" ]; then
-    run node scripts/host_contracts_node.mjs
-  elif [ "$HOST" = "deno" ]; then
+  if [ "$HOST" = "deno" ]; then
     run deno run --config deno.json -A scripts/host_contracts_deno.mjs
   elif [ "$HOST" = "bun" ]; then
     run bun run scripts/host_contracts_bun.mjs

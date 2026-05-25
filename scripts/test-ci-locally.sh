@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
 
-# Local CI Test Simulation
-# Simulates what GitHub Actions will do
+# Local CI Test Simulation.
+# Simulates the retained Rust product and repo-level smoke checks.
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CLI_DIR="$ROOT_DIR/packages/wesley-cli"
+echo "🧪 Wesley - Local CI Simulation"
+echo "==============================="
 
-echo "🧪 Wesley CLI - Local CI Simulation"
-echo "===================================="
-
-cd "$CLI_DIR"
+cd "$ROOT_DIR"
 
 echo ""
 echo "📦 Installing dependencies..."
-pnpm install
+pnpm install --frozen-lockfile
 
 echo ""
 echo "🔧 Checking Bats installation..."
@@ -28,38 +26,21 @@ bats --version
 echo "✅ Bats is available"
 
 echo ""
-echo "📋 Verifying git repository..."
-if [[ ! -d .git ]]; then
-    echo "🔧 Initializing git repository for tests..."
-    git init .
-    git config user.name "Local Test"
-    git config user.email "test@local.dev"
-    git add .
-    git commit -m "Local CI test commit" || echo "Nothing to commit"
-fi
+echo "🧪 Running workspace tests..."
+pnpm -w test
 
 echo ""
-echo "🧪 Running CLI tests (same as CI)..."
-pnpm test
+echo "🦀 Running Rust product preflight..."
+cargo xtask preflight
 
 echo ""
-echo "📄 Running tests with TAP output (CI format)..."
-pnpm test:tap > cli-test-results-local.tap
-echo "TAP results saved to cli-test-results-local.tap"
-
-echo ""
-echo "🔥 Running smoke tests..."
-
-echo "Version check:"
-node wesley.mjs --version
-
-echo ""
-echo "Help check:"  
-node wesley.mjs --help | head -5
-
-echo ""
-echo "stdin support check:"
-echo 'type Query { hello: String }' | node wesley.mjs generate --schema - --json --quiet || echo "✓ Expected parser failure"
+echo "🔥 Running repo-level Bats checks..."
+export BATS_LIB_PATH=test
+export TERM=xterm
+export BATS_NO_COLOR=1
+bash scripts/setup-bats-plugins.sh
+ln -sfn "$PWD/test/bats-plugins" test/hosts/bats-plugins
+bats -t test/ci-workflows.bats test/domain-empty-boundary.bats test/docs-whitespace.bats
 
 echo ""
 echo "✅ Local CI simulation completed successfully!"

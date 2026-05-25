@@ -4,10 +4,12 @@ import path from 'node:path';
 
 import {
   GENERATED_COUNTERFACTUAL_CURRENT_PATH,
-  GENERATED_COUNTERFACTUAL_DIR,
+  GENERATED_COUNTERFACTUAL_DIR
+} from '../support/artifacts.mjs';
+import {
+  discoverConfiguredHolmesModules,
   listModuleCapabilities
-} from '@wesley/core';
-import { discoverConfiguredWesleyModules } from '@wesley/runtime-node';
+} from '../support/module-capabilities.mjs';
 
 export const COUNTERFACTUAL_SURFACE_VERSION = 'wesley-counterfactual-v1';
 export const COUNTERFACTUAL_DIR = GENERATED_COUNTERFACTUAL_DIR;
@@ -86,7 +88,7 @@ function normalizeLaneRequest(lane) {
 }
 
 async function loadCounterfactualCapabilityRegistry({ repoRoot, env, logger }) {
-  const result = await discoverConfiguredWesleyModules({
+  const result = await discoverConfiguredHolmesModules({
     cwd: repoRoot,
     env,
     logger

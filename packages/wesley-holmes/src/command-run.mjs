@@ -1,6 +1,11 @@
 import path from 'node:path';
-import { buildRuntimeRunReport, createRunId, createRuntimeEventCollector } from '@wesley/core';
-import { GitWarpEventStore, resolveLedgerRootDir } from '@wesley/runtime-node';
+import {
+  buildRuntimeRunReport,
+  createRunId,
+  createRuntimeEventCollector,
+  GitWarpEventStore,
+  resolveLedgerRootDir
+} from './support/runtime-ledger.mjs';
 
 const COMMAND_TRANSMUTATIONS = Object.freeze({
   investigate: 'holmes-investigate',

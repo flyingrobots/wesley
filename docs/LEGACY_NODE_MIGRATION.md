@@ -2,7 +2,7 @@
 
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
-This is the deletion map for the historical Node Wesley surface.
+This is the final deletion map for the historical Node Wesley surface.
 
 The goal is not to port every file. The goal is to keep useful Wesley
 capabilities while removing Node as a product entry point.
@@ -12,14 +12,14 @@ and its
 [Node retirement ledger](./design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md).
 
 The native Rust distribution path is crates.io: `cargo install wesley-cli`
-installs the `wesley` binary. Sibling-repo paths and Node entrypoints are local
-development or legacy compatibility surfaces, not release distribution.
+installs the `wesley` binary. Sibling-repo paths and JavaScript entrypoints are
+local development, assurance, or host-experiment surfaces, not release
+distribution.
 
 ## If You Still Call `pnpm wesley`
 
-`pnpm wesley` is the historical Node wrapper. Keep it only for commands that
-have not yet moved or exited. Generic compiler work should move to the native
-binary:
+`pnpm wesley` was the historical Node wrapper. It is now retired. Rewrite
+callers to the native binary or to the owning external module:
 
 | Old call                                 | Replacement                                                                        |
 | ---------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -28,9 +28,11 @@ binary:
 | `pnpm wesley generate --schema <path>`   | `wesley emit rust ...`, `wesley emit typescript ...`, or an external module target |
 | `pnpm wesley typescript --schema <path>` | `wesley emit typescript --schema <path> --out <path>`                              |
 
-Commands such as `cert-*`, `runs`, `validate-bundle`, `zod`, and Holmes-family
-flows are not native compiler-front-door commands. They remain compatibility or
-assurance surfaces until explicitly extracted, rebuilt, or deleted.
+Commands such as `cert-*`, `runs`, `validate-bundle`, and `zod` were not
+native compiler-front-door commands and were not ported as generic Wesley
+nouns. Holmes-family flows live in `@wesley/holmes`, and any future Zod,
+certificate, or runtime-ledger surface must be designed in its owning package or
+module.
 
 ## Rule
 
@@ -45,36 +47,36 @@ Every legacy Node surface gets one disposition:
 
 ## Command Inventory
 
-| Legacy command        | Current file                                           | Disposition                      | Rust destination / exit                                                                                                                                                                                                                                          |
-| --------------------- | ------------------------------------------------------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `generate`            | `packages/wesley-cli/src/commands/generate.mjs`        | Port generic pieces, then delete | Replace with native schema/operation/emit commands plus external modules. Keep only while JS generators and evidence bundle flow still need it.                                                                                                                  |
-| `transform`           | `packages/wesley-cli/src/commands/transform.mjs`       | Delete                           | It is a compatibility wrapper around `generate`; do not recreate as a core noun unless the Rust transmutation model earns it.                                                                                                                                    |
-| `compile`             | `packages/wesley-cli/src/commands/compile.mjs`         | Defer, then rebuild in Rust      | Replace Node dynamic module target dispatch with a Rust target registry or external-process target protocol.                                                                                                                                                     |
-| `typescript` / `ts`   | `packages/wesley-cli/src/commands/typescript.mjs`      | Partially ported                 | Native `wesley emit typescript` now emits basic TypeScript declarations through `crates/wesley-emit-typescript`, a Rust AST/printer projection. Legacy generator parity is not complete yet.                                                                     |
-| `zod`                 | `packages/wesley-cli/src/commands/zod.mjs`             | Extract                          | Zod is JavaScript validation output, not core compiler truth. The remaining Node command is CLI-local compatibility code, not a standalone generator package. Reintroduce richer Zod output through an external target module or package if a consumer needs it. |
-| `models`              | Deleted                                                | Deleted                          | Model-class scaffolding is not core compiler truth. Keep richer model classes only if a target module explicitly owns them.                                                                                                                                      |
-| `diff`                | `packages/wesley-cli/src/commands/diff.mjs`            | Ported                           | Native `wesley schema diff` now compares L1 schema structure in Rust, including Git-aware `--schema <path> --against <rev>` lookup. Argument-aware operation deltas remain a separate IR/API decision because L1 fields do not currently carry field arguments.  |
-| `init`                | `packages/wesley-cli/src/commands/init.mjs`            | Retire legacy scaffolding        | A future native `wesley init` is acceptable only as a tiny schema starter and must be designed as new work. Do not port product conventions into core.                                                                                                           |
-| `doctor`              | `packages/wesley-cli/src/commands/doctor.mjs`          | Port narrow                      | Rebuild only Rust-native health checks. Drop Node/plugin resolver checks once Node packages retire.                                                                                                                                                              |
-| `validate-bundle`     | `packages/wesley-cli/src/commands/validate-bundle.mjs` | Assurance boundary               | Keep compatibility-only until evidence bundle validation moves beside assurance tooling.                                                                                                                                                                         |
-| `runs`                | `packages/wesley-cli/src/commands/runs.mjs`            | Assurance/runtime boundary       | Runtime ledger inspection is not needed for the compiler kernel. Move with Holmes/runtime evidence; do not add a native compiler command.                                                                                                                        |
-| `cert-create`         | `packages/wesley-cli/src/commands/cert-create.mjs`     | Assurance boundary               | SHIPME/certificate workflow belongs in assurance tooling, not the compiler kernel.                                                                                                                                                                               |
-| `cert-sign` / `stake` | `packages/wesley-cli/src/commands/cert-sign.mjs`       | Assurance boundary               | Move with certificate tooling if still needed.                                                                                                                                                                                                                   |
-| `cert-verify`         | `packages/wesley-cli/src/commands/cert-verify.mjs`     | Assurance boundary               | Move with certificate tooling if still needed.                                                                                                                                                                                                                   |
-| `cert-badge`          | `packages/wesley-cli/src/commands/cert-badge.mjs`      | Assurance boundary or delete     | Only keep with certificate tooling.                                                                                                                                                                                                                              |
+| Legacy command        | Final disposition      | Replacement / owner                                                                                                                  |
+| --------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `generate`            | Deleted                | Native `wesley schema lower`, `wesley emit rust`, `wesley emit typescript`, and external modules for non-generic targets.            |
+| `transform`           | Deleted                | No direct replacement. Reintroduce only if a Rust transmutation model earns a first-class noun.                                      |
+| `compile`             | Deleted                | Use the Rust CLI for generic compiler work. Domain target dispatch belongs to external modules or a future explicit target protocol. |
+| `typescript` / `ts`   | Ported then deleted    | `wesley emit typescript --schema <path> --out <path>` through `crates/wesley-emit-typescript`.                                       |
+| `zod`                 | Deleted                | Future JavaScript validation output belongs to an external target module or package.                                                 |
+| `models`              | Deleted                | Model-class scaffolding is not generic compiler truth.                                                                               |
+| `diff`                | Ported then deleted    | `wesley schema diff --old <old> --new <new>` and `wesley schema diff --schema <path> --against <rev>`.                               |
+| `init`                | Deleted                | A future native `wesley init` must be designed as new Rust work.                                                                     |
+| `doctor`              | Ported then deleted    | `wesley doctor` for Rust-native health checks.                                                                                       |
+| `validate-bundle`     | Deleted                | Evidence bundle validation belongs beside assurance tooling if retained.                                                             |
+| `runs`                | Extracted then deleted | Holmes-local ledger support owns retained run inspection helpers.                                                                    |
+| `cert-create`         | Deleted                | SHIPME/certificate behavior belongs to assurance tooling, not the compiler kernel.                                                   |
+| `cert-sign` / `stake` | Deleted                | Rebuild only in a certificate-specific package if still needed.                                                                      |
+| `cert-verify`         | Deleted                | Rebuild only in a certificate-specific package if still needed.                                                                      |
+| `cert-badge`          | Deleted                | Rebuild only in a certificate-specific package if still needed.                                                                      |
 
 ## Package Inventory
 
-| Legacy package                  | Disposition                    | Notes                                                                                           |
-| ------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `packages/wesley-core/`         | Port then delete               | Audit for generic compiler behavior not already in `crates/wesley-core`; reject domain residue. |
-| `packages/wesley-cli/`          | Delete after command migration | Native `crates/wesley-cli` is the product body.                                                 |
-| `packages/wesley-host-node/`    | Delete                         | Legacy compatibility only; native binary replaces the Node host as product front door.          |
-| `packages/wesley-runtime-node/` | Extract or delete              | Node module loading should not define Wesley core.                                              |
-| `packages/wesley-holmes/`       | Extract or rebuild later       | Assurance/evidence tooling is adjacent, not a blocker for compiler-kernel Rustification.        |
-| `packages/wesley-host-browser/` | Delete or externalize          | Legacy compatibility only; externalize if browser ecosystem ownership remains useful.           |
-| `packages/wesley-host-bun/`     | Delete                         | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.      |
-| `packages/wesley-host-deno/`    | Delete                         | Legacy compatibility only; delete or externalize after compatibility evidence is obsolete.      |
+| Package                         | Final disposition      | Notes                                                                                   |
+| ------------------------------- | ---------------------- | --------------------------------------------------------------------------------------- |
+| `packages/wesley-core/`         | Deleted                | Generic compiler authority now lives in `crates/wesley-core`.                           |
+| `packages/wesley-cli/`          | Deleted                | Native `crates/wesley-cli` is the product body.                                         |
+| `packages/wesley-host-node/`    | Deleted                | The old Node wrapper is gone; product work uses the Rust binary.                        |
+| `packages/wesley-runtime-node/` | Deleted                | Retained ledger/module helpers were copied into Holmes support modules before deletion. |
+| `packages/wesley-holmes/`       | Retained as assurance  | Holmes is not compiler authority and must stay self-contained.                          |
+| `packages/wesley-host-browser/` | Retained as experiment | Browser smoke adapter has no dependency on deleted JS core/runtime packages.            |
+| `packages/wesley-host-bun/`     | Retained as experiment | Bun smoke adapter has no dependency on deleted JS core/runtime packages.                |
+| `packages/wesley-host-deno/`    | Retained as experiment | Deno smoke adapter has no dependency on deleted JS core/runtime packages.               |
 
 ## Retired Package Inventory
 
@@ -85,23 +87,23 @@ Every legacy Node surface gets one disposition:
 | `packages/wesley-scaffold-multitenant/` | NR-082 | Deleted | Product scaffolding belongs to product repositories, not generic Wesley.                             |
 | `packages/wesley-test-fixtures/`        | NR-083 | Deleted | Useful fixtures live as plain `test/fixtures` files or Rust tests.                                   |
 | `packages/wesley-tasks/`                | NR-084 | Deleted | Task graph truth remains descriptor-only in core until Rust planning proves a runtime need.          |
+| `packages/wesley-core/`                 | NR-076 | Deleted | Rust core owns compiler authority.                                                                   |
+| `packages/wesley-cli/`                  | NR-077 | Deleted | Rust CLI owns the product front door.                                                                |
+| `packages/wesley-host-node/`            | NR-078 | Deleted | Node wrapper eliminated.                                                                             |
+| `packages/wesley-runtime-node/`         | NR-079 | Deleted | Holmes owns retained support copies locally.                                                         |
 
 ## Execution Order
 
 1. Keep shipping Rust-native compiler facts through `crates/wesley-core` and
    `crates/wesley-cli`.
-2. Port generic schema diff if it is still wanted. Done for L1 schema
-   structure through `wesley schema diff`.
-3. Keep TypeScript in the Rust projection crate and move Zod to an external
-   target boundary if consumers still need it.
-4. Replace Node `generate` with explicit Rust emit commands:
-   `wesley emit rust --schema <path> --out <path>` and
-   `wesley emit typescript --schema <path> --out <path>`.
-5. Keep browser/Bun/Deno/Node host packages in explicitly named legacy
-   compatibility CI lanes only while their deletion or externalization gates
-   remain open.
-6. Remove root `package.json`, `pnpm-workspace.yaml`, and `pnpm-lock.yaml` only
-   after package, website, and legacy CI references are gone or externalized.
+2. Keep TypeScript in the Rust projection crate and move any future Zod work to
+   an external target boundary.
+3. Keep Holmes self-contained until its Rust redesign is ready.
+4. Keep browser/Bun/Deno packages explicitly labeled as host experiments while
+   they remain useful smoke surfaces.
+5. Remove root `package.json`, `pnpm-workspace.yaml`, and `pnpm-lock.yaml` only
+   after Holmes, host experiments, website tooling, and JavaScript docs/test
+   helpers are gone or externalized.
 
 ## Non-Goals
 

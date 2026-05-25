@@ -10,7 +10,7 @@ import {
   GENERATED_ARTIFACT_DIR,
   GENERATED_BUNDLE_PATH,
   generatedArtifactPathCandidates
-} from '@wesley/core';
+} from './support/artifacts.mjs';
 import { Holmes } from './Holmes.mjs';
 import { Watson } from './Watson.mjs';
 import {

@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Legacy compatibility browser host experiment",
+  "description": "External browser host smoke experiment",
   "wesley": {
     "retirement": {
       "status": "legacy-compatibility",
       "disposition": "delete-or-externalize",
       "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
-      "replacement": "Externalize or delete the browser host experiment after its legacy compatibility evidence is obsolete."
+      "replacement": "Externalize or delete the browser host experiment after its smoke evidence is obsolete."
     }
   },
   "main": "./src/index.mjs",
@@ -43,9 +43,7 @@
   "scripts": {
     "test": "vitest run"
   },
-  "dependencies": {
-    "@wesley/core": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "vitest": "^4.1.7"
   }

@@ -1,79 +1,45 @@
 /**
- * Dependency Cruiser Configuration for Wesley ENSIGN Architecture
- * Enforces hexagonal architecture boundaries and package dependencies
+ * Dependency Cruiser Configuration for Wesley
+ * Enforces retained JavaScript package boundaries after legacy Node retirement.
  */
 
 export default {
   forbidden: [
     {
-      name: 'no-core-to-adapters',
-      comment: 'Core domain should not import from adapter packages',
+      name: 'no-retired-wesley-package-imports',
+      comment: 'Retained packages must not import deleted JavaScript compiler/runtime packages',
       severity: 'error',
       from: {
-        path: 'packages/wesley-core/src'
-      },
-      to: {
-        path: ['packages/wesley-host-node/src', 'packages/wesley-cli/src']
-      }
-    },
-    {
-      name: 'no-core-node-dependencies',
-      comment: 'Core domain should not use Node.js modules directly',
-      severity: 'error',
-      from: {
-        path: 'packages/wesley-core/src'
+        path: '^packages/.+?/src'
       },
       to: {
         path: [
-          '^node:.*',
-          '^fs$',
-          '^path$',
-          '^os$',
-          '^process$',
-          '^child_process$',
-          '^stream$',
-          '^events$',
-          '^util$',
-          '^crypto$',
-          '^buffer$'
-        ],
-        pathNot: [
-          // Allow core Node.js types that are platform-agnostic
-          '^url$'
+          '^@wesley/(core|cli|runtime-node)$',
+          '^@wesley/(core|cli|runtime-node)/',
+          'packages/wesley-(core|cli|host-node|runtime-node)'
         ]
       }
     },
     {
-      name: 'no-cli-to-host',
-      comment: 'CLI library should not import from host adapter',
+      name: 'no-host-experiment-to-holmes',
+      comment: 'External host experiments must stay independent from Holmes assurance tooling',
       severity: 'error',
       from: {
-        path: 'packages/wesley-cli/src'
+        path: 'packages/wesley-host-(browser|bun|deno)'
       },
       to: {
-        path: 'packages/wesley-host-node/src'
+        path: 'packages/wesley-holmes'
       }
     },
     {
-      name: 'no-tasks-to-slaps',
-      comment: 'T.A.S.K.S. should not directly depend on S.L.A.P.S.',
+      name: 'no-holmes-to-host-experiments',
+      comment: 'Holmes assurance tooling must not depend on host smoke experiments',
       severity: 'error',
       from: {
-        path: 'packages/wesley-tasks/src'
+        path: 'packages/wesley-holmes'
       },
       to: {
-        path: 'packages/wesley-slaps/src'
-      }
-    },
-    {
-      name: 'no-generators-cross-dependency',
-      comment: 'Generator packages should not depend on each other',
-      severity: 'error',
-      from: {
-        path: 'packages/wesley-generator-*/src'
-      },
-      to: {
-        path: 'packages/wesley-generator-*/src'
+        path: 'packages/wesley-host-(browser|bun|deno)'
       }
     }
   ],

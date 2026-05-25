@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# Bootstrap Bats plugin dependencies for the CLI test suite.
+# Bootstrap Bats plugin dependencies for repo-level Bats suites.
 # Downloads pinned releases of bats-support, bats-assert, and bats-file
-# into packages/wesley-cli/test/bats-plugins/.
+# into test/bats-plugins/.
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGET_DIR="$ROOT_DIR/packages/wesley-cli/test/bats-plugins"
+TARGET_DIR="$ROOT_DIR/test/bats-plugins"
 
 declare -A REPOS=(
   [bats-support]="https://github.com/bats-core/bats-support.git"

@@ -33,9 +33,9 @@ Generic implementation
 - package: `packages/wesley-holmes`
 - policy loader: `src/counterfactual/policy.mjs`
 - dispatcher: `src/counterfactual/provider.mjs`
-- runtime run lookup: shared `@wesley/core` run-store use cases plus the shared
-  `@wesley/runtime-node` ledger adapter
-- module loading: shared `@wesley/runtime-node` module-entry loader
+- runtime run lookup: Holmes-local support modules copied from the retired
+  runtime ledger surface
+- module loading: Holmes-local capability discovery support
 
 Module implementation
 
@@ -58,9 +58,9 @@ Current rule
 - Holmes and Moriarty emit their own command streams into the shared ledger
   under command-specific transmutation names instead of appending events onto a
   bound Wesley runtime stream
-- Holmes exposes read-only `runs status|inspect` commands over the same shared
-  ledger through the same core/runtime-node seams, so operational introspection
-  does not require the `wesley` entry point
+- Holmes exposes read-only `runs status|inspect` commands over its retained
+  ledger support, so operational introspection does not require the `wesley`
+  entry point
 
 ## Lane Model
 

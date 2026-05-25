@@ -62,7 +62,9 @@ This slice shipped:
 
 ## Evidence
 
-- [packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs](../../../packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs)
-- [packages/wesley-cli/src/commands/typescript.mjs](../../../packages/wesley-cli/src/commands/typescript.mjs)
-- [packages/wesley-cli/src/commands/zod.mjs](../../../packages/wesley-cli/src/commands/zod.mjs)
+- Historical implementation paths:
+  `packages/wesley-cli/src/framework/FileOutputGeneratorCommand.mjs`,
+  `packages/wesley-cli/src/commands/typescript.mjs`, and
+  `packages/wesley-cli/src/commands/zod.mjs`.
+- These files were deleted during legacy Node retirement.
 - [Wesley extraction map](../wesley-extraction-map.md)

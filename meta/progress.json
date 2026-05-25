@@ -1,33 +1,14 @@
 {
-  "generatedAt": "2026-05-24T22:56:14.997Z",
+  "generatedAt": "2026-05-25T02:25:09.538Z",
   "overall": {
-    "stage": "MVP",
-    "next": "Alpha",
-    "progress": 66
+    "stage": "Alpha",
+    "next": "Beta",
+    "progress": 50
   },
   "results": [
     {
-      "name": "@wesley/core",
-      "status": "Legacy Compatibility",
-      "stage": "MVP",
-      "progress": 45,
-      "next": "Alpha",
-      "passRate": 0.9,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": true,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/cli",
-      "status": "Legacy Compatibility",
+      "name": "@wesley/holmes",
+      "status": "Assurance",
       "stage": "Alpha",
       "progress": 50,
       "next": "Beta",
@@ -45,27 +26,8 @@
       "coverage": null
     },
     {
-      "name": "@wesley/host-node",
-      "status": "Legacy Compatibility",
-      "stage": "MVP",
-      "progress": 50,
-      "next": "Alpha",
-      "passRate": 1,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
       "name": "@wesley/host-browser",
-      "status": "Legacy Compatibility",
+      "status": "External host experiment",
       "stage": "MVP",
       "progress": 40,
       "next": "Alpha",
@@ -83,46 +45,8 @@
       "coverage": null
     },
     {
-      "name": "@wesley/holmes",
-      "status": "Legacy Compatibility",
-      "stage": "Alpha",
-      "progress": 50,
-      "next": "Beta",
-      "passRate": 1,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": true,
-        "hasApi": false,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
-      "name": "@wesley/runtime-node",
-      "status": "Legacy Compatibility",
-      "stage": "MVP",
-      "progress": 0,
-      "next": "Alpha",
-      "passRate": null,
-      "docs": {
-        "hasStatus": true,
-        "hasUsage": false,
-        "hasApi": true,
-        "hasCaveats": false
-      },
-      "milestones": {
-        "alpha": null,
-        "beta": null
-      },
-      "coverage": null
-    },
-    {
       "name": "@wesley/host-deno",
-      "status": "Legacy Compatibility",
+      "status": "External host experiment",
       "stage": "Alpha",
       "progress": 50,
       "next": "Beta",
@@ -141,7 +65,7 @@
     },
     {
       "name": "@wesley/host-bun",
-      "status": "Legacy Compatibility",
+      "status": "External host experiment",
       "stage": "Alpha",
       "progress": 50,
       "next": "Beta",

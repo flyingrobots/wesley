@@ -194,15 +194,14 @@ flowchart TD
     Judgment --> Operator[Operator or CI decision]
 ```
 
-That picture hides an important current-state detail: Wesley has two historical
-implementation surfaces.
+That picture used to hide an important migration detail: Wesley once had two
+implementation surfaces. The retired surface is now gone from compiler
+authority.
 
 1. The **Rust workspace** is the current compiler center. New compiler truth
    belongs in `crates/wesley-core` and the native `wesley` CLI.
-2. The **Node workspace** still carries legacy commands, module loading,
-   hosts, compatibility projections, and evidence tooling. It remains useful as
-   compatibility evidence and migration harnesses, but it is no longer the
-   compiler brain, product front door, or release authority.
+2. The **JavaScript workspace** is explicitly non-compiler: Holmes assurance,
+   website/docs tooling, and small browser/Bun/Deno host smoke experiments.
 
 ```mermaid
 flowchart LR
@@ -214,13 +213,11 @@ flowchart LR
         Xtask[xtask]
     end
 
-    subgraph LegacySupport["Legacy support surfaces"]
-        JsCore[packages/wesley-core]
-        JsCli[packages/wesley-cli]
-        RuntimeNode[packages/wesley-runtime-node]
-        CompatProjection[CLI-local compatibility projections]
+    subgraph NonCompilerJS["Non-compiler JavaScript surfaces"]
         Holmes[packages/wesley-holmes]
-        Hosts[packages/wesley-host-*]
+        Hosts[packages/wesley-host-browser/bun/deno]
+        Website[wesley-website]
+        Tooling[scripts]
     end
 
     Core --> Cli
@@ -228,16 +225,14 @@ flowchart LR
     Core --> EmitTS
     Xtask --> Core
     Xtask --> Cli
-    JsCli --> JsCore
-    JsCli --> RuntimeNode
-    JsCli --> CompatProjection
-    JsCore --> Holmes
-    RuntimeNode --> Hosts
+    Holmes --> Tooling
+    Hosts --> Tooling
+    Website --> Tooling
 
-    LegacySupport -. compatibility evidence .-> CurrentCenter
+    NonCompilerJS -. evidence and docs only .-> CurrentCenter
 ```
 
-The current v0.0.6 work is about making that migration honest: expand Rust IR
+The current post-retirement work is about keeping that boundary honest: expand Rust IR
 fixtures, compare selected JS and Rust lowering projections, and preserve module
 boundaries before retiring legacy behavior.
 
@@ -689,19 +684,16 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     actor User
-    participant CLI as legacy @wesley/cli
-    participant Loader as @wesley/runtime-node
-    participant Registry as ModuleCapabilityRegistry
+    participant CLI as Rust wesley CLI
+    participant Registry as Capability descriptor registry
     participant Module as External target module
     participant Core as Wesley compiler facts
     participant Out as Generated artifacts
 
-    User->>CLI: legacy pnpm wesley compile --schema schema.graphql --target targetName
-    CLI->>Loader: discover config and env modules
-    Loader->>Registry: register module capabilities
-    CLI->>Registry: resolve requested target
-    Registry-->>CLI: target descriptor
-    CLI->>Module: invoke module-owned target
+    User->>CLI: wesley module command with schema and target
+    CLI->>Registry: resolve target descriptor
+    Registry-->>CLI: target metadata and capability requirements
+    CLI->>Module: invoke module-owned target boundary
     Module->>Core: consume schema facts as needed
     Module->>Out: emit target-owned artifacts
     CLI-->>User: summary, dry-run output, or structured error
@@ -861,13 +853,13 @@ If you open the repository today, the important paths are:
 | `crates/wesley-emit-rust/`       | Rust projection crate.                                                        |
 | `crates/wesley-emit-typescript/` | TypeScript projection crate.                                                  |
 | `xtask/`                         | Rust repository automation, docs checks, preflight, release checks.           |
-| `packages/wesley-core/`          | Legacy JavaScript compiler core and toolchain support.                        |
-| `packages/wesley-cli/`           | Legacy JavaScript command framework and module-aware command surfaces.        |
-| `packages/wesley-runtime-node/`  | Legacy Node module discovery, loading, and host utilities.                    |
-| `packages/wesley-holmes/`        | Legacy assurance, evidence, verification, and judgment tooling.               |
+| `packages/wesley-holmes/`        | Self-contained assurance, evidence, verification, and judgment tooling.       |
+| `packages/wesley-host-browser/`  | Browser host smoke experiment outside compiler authority.                     |
+| `packages/wesley-host-bun/`      | Bun host smoke experiment outside compiler authority.                         |
+| `packages/wesley-host-deno/`     | Deno host smoke experiment outside compiler authority.                        |
 | `docs/`                          | Architecture, method, design packets, release packets, and current direction. |
 | `test/fixtures/`                 | GraphQL fixtures, Rust L1 golden files, and parity inputs.                    |
-| `scripts/`                       | Fixture, parity, performance, docs, and CI support scripts.                   |
+| `scripts/`                       | Fixture, docs, CI, and repository support scripts.                            |
 
 ```mermaid
 flowchart TB
@@ -884,12 +876,11 @@ flowchart TB
             Xtask[xtask]
         end
 
-        subgraph Node["Legacy compatibility appendices"]
-            JsCore["@wesley/core"]
-            JsCli["@wesley/cli"]
-            Runtime["@wesley/runtime-node"]
-            JsGenerators["@wesley/generator-*"]
+        subgraph JS["Non-compiler JavaScript"]
             Holmes["@wesley/holmes"]
+            HostBrowser["@wesley/host-browser"]
+            HostBun["@wesley/host-bun"]
+            HostDeno["@wesley/host-deno"]
         end
     end
 
@@ -903,19 +894,17 @@ flowchart TB
     Docs --> Rust
     Fixtures --> Core
     Scripts --> Rust
-    Scripts --> Node
+    Scripts --> JS
     NativeCli --> Core
     NativeCli --> EmitRust
     NativeCli --> EmitTS
-    JsCli --> Runtime
-    JsCli --> JsCore
-    JsCore --> JsGenerators
-    JsCore --> Holmes
+    Holmes --> Docs
 
     Core -. compiler facts .-> Echo
     Core -. L1 IR .-> Postgres
-    Runtime -. module loading .-> Continuum
-    JsGenerators -. generated artifacts .-> Apps
+    Core -. module facts .-> Continuum
+    EmitRust -. generated artifacts .-> Apps
+    EmitTS -. generated artifacts .-> Apps
 ```
 
 ## Validation And Release Evidence
@@ -923,16 +912,14 @@ flowchart TB
 Wesley treats tests and generated evidence as part of the product.
 
 The current validation surface includes Rust tests, native CLI checks, docs
-truth checks, docs link checks, legacy package checks, parity sentinels, fixture
-generation, and performance evidence.
+truth checks, docs link checks, retained package checks, fixture generation,
+and retirement guards.
 
 ```mermaid
 flowchart TD
     Change[Proposed change] --> RustPreflight[cargo xtask preflight]
     Change --> LegacyPreflight[cargo xtask legacy-preflight]
     Change --> Fixtures[pnpm fixtures:ir]
-    Change --> Parity[pnpm parity:ir and parity:parser]
-    Change --> Perf[pnpm perf:ir]
 
     RustPreflight --> RustTests[cargo test --workspace]
     RustPreflight --> NativeHelp[native CLI help smoke]
@@ -944,8 +931,6 @@ flowchart TD
     PnpmLegacy --> PackageTests[package tests]
 
     Fixtures --> Golden[L1 golden files]
-    Parity --> Comparator[JS/Rust projection evidence]
-    Perf --> Baseline[wall-clock baseline evidence]
 
     RustTests --> PR[Pull request]
     NativeHelp --> PR
@@ -955,21 +940,15 @@ flowchart TD
     Lint --> PR
     PackageTests --> PR
     Golden --> PR
-    Comparator --> PR
-    Baseline --> PR
 ```
 
-The v0.0.6 release lane specifically tightens Rust IR parity. Its point is not
-to declare legacy Node lowering dead. Its point is to make the compatibility
-claim explicit, fixture-backed, and reviewable before retiring more legacy
-surface area.
+The v0.0.6 release lane tightened Rust IR parity before deletion. That evidence
+is now historical. The release oracle is Rust fixture truth and Rust-native
+preflight.
 
-The active Node retirement campaign adds another proof surface: a
-machine-readable ledger and drift guard that keeps the historical package
-surface classified while the Rust native front door grows. Current CI names now
-separate `Rust Product` checks from `Legacy Compatibility` host checks so a
-green browser/Bun/Deno/Node host smoke cannot be mistaken for product compiler
-authority.
+The closed Node retirement campaign leaves another proof surface: a
+machine-readable ledger and drift guard that fails if retired package manifests
+or imports return.
 
 ## What Wesley Does Today
 
@@ -987,11 +966,10 @@ Today, Wesley can:
 - emit Rust models and operation bindings
 - emit TypeScript declarations and operation bindings
 - write deterministic native emit metadata sidecars
-- keep only narrow legacy JavaScript compatibility projections while Zod and
-  target-specific outputs move to external ownership
+- keep JavaScript outside compiler authority except for Holmes assurance,
+  website/docs tooling, and host smoke experiments
 - model external module targets through Rust capability descriptors, ABI
   compatibility reports, stateless runtime policy, and hermetic fixture checks
-- run parity sentinels across selected JS and Rust projections
 - run docs, lint, package, Rust, fixture, and preflight checks
 - maintain evidence and design packets around releases and architectural
   boundaries
@@ -1012,15 +990,12 @@ mindmap
             schema diff
             emit rust
             emit typescript
-        Legacy tooling
-            JS generators
-            Module loading
-            Hosts
+        Non-compiler JavaScript
             Holmes tooling
+            Host experiments
+            Website and docs tooling
         Evidence
             Fixtures
-            Parity sentinels
-            Performance baseline
             Docs truth
         Boundaries
             External modules
@@ -1073,8 +1048,7 @@ and a `textWindow` query.
 5. Wesley lists the root query operation and its argument/result types.
 6. Wesley emits Rust and TypeScript bindings.
 7. A module may emit additional target-specific artifacts.
-8. Fixture or parity scripts compare the result against expected compiler
-   behavior.
+8. Fixture tests compare the result against expected compiler behavior.
 9. Witness or evidence tooling can record what was checked.
 10. A project or runtime consumes the generated artifacts under its own policy.
 
@@ -1087,7 +1061,7 @@ sequenceDiagram
     participant Rust as Rust emitter
     participant TS as TypeScript emitter
     participant Module as External module
-    participant Tests as Fixtures and parity checks
+    participant Tests as Fixtures and Rust checks
     participant Project as Project runtime
 
     Author->>SDL: edit contract
@@ -1126,11 +1100,11 @@ Hashes and parity checks only matter if the bytes are deterministic. That is
 why canonical JSON, fixture goldens, sorted projections, explicit metadata
 rules, and stable diagnostic codes matter.
 
-### Evidence Before Retirement
+### Evidence Before Deletion
 
-Legacy Node behavior is being retired carefully. The v0.0.6 lane builds parity
-evidence before demoting more legacy lowering surfaces. That avoids replacing
-one unproved truth with another.
+Legacy Node behavior was retired carefully. The v0.0.6 and 0017 lanes built
+fixture, parity, and migration evidence before deleting the remaining package
+surfaces. That avoided replacing one unproved truth with another.
 
 ### Witnesses Are Bounded Claims
 

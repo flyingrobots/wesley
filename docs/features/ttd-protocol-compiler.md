@@ -3,9 +3,9 @@
 > Compile typed protocols with deterministic verification from GraphQL SDL
 
 > Extraction note: generic Wesley no longer ships the public `compile-ttd`
-> command or the `@wesley/core/ttd` package export. The implementation moved to
-> the Continuum-owned `continuum/wesley/ttd/` module surface. CLI examples below
-> are historical shape for a future module command or external package.
+> command or the old core TTD package export. The implementation moved to the
+> Continuum-owned `continuum/wesley/ttd/` module surface. CLI examples below are
+> historical shape for a future module command or external package.
 
 ## Overview
 
@@ -209,7 +209,7 @@ graph LR
 ## Programmatic API
 
 From Continuum-owned tooling, the relocated module is imported from the
-Continuum checkout rather than from `@wesley/core`:
+Continuum checkout rather than from generic Wesley core:
 
 ```typescript
 import { compileTtdProtocol } from './wesley/ttd/index.mjs';
@@ -261,7 +261,15 @@ The schema hash is computed from:
 ### Testing Determinism
 
 ```typescript
-import { FakeClock } from '@wesley/core/ports';
+class FakeClock {
+  constructor(iso) {
+    this.iso = iso;
+  }
+
+  now() {
+    return this.iso;
+  }
+}
 
 const clock = new FakeClock('2025-01-01T00:00:00.000Z');
 const result1 = await compileTtdProtocol({ sdl, deps: { clock, crypto } });

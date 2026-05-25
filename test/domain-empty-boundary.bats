@@ -25,21 +25,12 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
-@test "compile targets remain module-owned instead of built-in product targets" {
-  run grep -F "listModuleCapabilities(" packages/wesley-cli/src/commands/compile.mjs
+@test "legacy JS compile command is retired instead of owning product targets" {
+  run test ! -e packages/wesley-cli/src/commands/compile.mjs
   assert_success
 
-  run grep -F "'wesley'," packages/wesley-cli/src/commands/compile.mjs
+  run grep -F "wesley schema lower" docs/GUIDE.md
   assert_success
-
-  run grep -F "'targets'" packages/wesley-cli/src/commands/compile.mjs
-  assert_success
-
-  run grep -F "No compile targets are available. Load a Wesley module that registers wesley.targets." packages/wesley-cli/src/commands/compile.mjs
-  assert_success
-
-  run grep -E "['\"](postgres|supabase|echo|continuum|jedit|warp-ttd|ttd)['\"]" packages/wesley-cli/src/commands/compile.mjs
-  assert_failure
 }
 
 @test "end-to-end validation diagram routes node retirement through Rust preflight" {

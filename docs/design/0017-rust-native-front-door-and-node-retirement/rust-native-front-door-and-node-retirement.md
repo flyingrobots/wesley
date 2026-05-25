@@ -133,10 +133,10 @@ Certificate, Holmes/Moriarty, run-ledger, and package-evidence commands are
 not native compiler-front-door commands. They exit with assurance tooling or
 remain compatibility-only until that boundary exists.
 
-Browser, Bun, Deno, and Node host packages are also compatibility surfaces, not
-the product spine. The native Rust CLI is the product front door; host package
-smokes keep historical surfaces honest until they are deleted or moved to
-external ecosystem ownership.
+Browser, Bun, and Deno host packages are external host experiments, not the
+product spine. The native Rust CLI is the product front door; host package
+smokes keep retained non-product surfaces honest until they are deleted or
+moved to external ecosystem ownership. The Node host package has been retired.
 
 The former Vue and JavaScript generator packages have been deleted from generic
 Wesley. Retained generic TypeScript output belongs in Rust emitters; future
