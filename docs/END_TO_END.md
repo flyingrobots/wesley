@@ -405,9 +405,14 @@ wesley schema lower --schema <path> --json
 wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> --format summary --exit-code
+wesley init-law --schema <schema.graphql> --family <family> --out <law.weslaw.yaml>
+wesley law lint --law <law.weslaw.yaml> --json
 wesley law validate --schema <schema.graphql> --law <law.weslaw.yaml> --json
 wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> --json
 wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> --format markdown
+wesley law explain --law <law.weslaw.yaml> scalar:PositiveInt
+wesley law explain --law <law.weslaw.yaml> operation:Mutation.replaceRangeAsTick
+wesley law rebind --schema <schema.graphql> --law <law.weslaw.yaml> --accept --out <rebound.weslaw.yaml>
 wesley operation selections --operation <path> --schema <path> --json
 wesley operation directive-args --operation <path> --directive <name> --json
 ```
@@ -421,9 +426,13 @@ These commands are boring on purpose. They answer compiler questions:
 - Which semantic law entries bind to this schema, and which `lawHash`,
   `lawDocumentHash`, `profileHash`, and `bundleHash` identify the bound
   contract bundle?
+- Which known formal directives can be scaffolded into active `weslaw/v1`, and
+  which comments are only draft suggestions that require human promotion?
 - Which semantic law changed between two law versions, and is the change a
   strengthening, weakening, footprint expansion/contraction, channel version
   change, predicate change, schema-hash rebound, or binding break?
+- Which laws govern a particular scalar, operation, or other subject?
+- Does a law file need an explicit schema-hash rebind before it can validate?
 - Which response paths or schema-coordinate selections does an operation use?
 - Which directive arguments are present on an operation?
 
@@ -433,8 +442,13 @@ flowchart TD
     Canonical --> Hash[Schema hash]
     IR --> Delta[Schema diff]
     IR --> RootOps[Root operation catalog]
+    IR --> InitLaw[init-law directive lowering]
     IR --> LawBind[Strict law binding]
+    InitLaw --> LawDrafts[Active law plus draft suggestions]
     LawDoc[weslaw/v1 document] --> LawBind
+    LawDoc --> LawLint[Structure-only law lint]
+    LawDoc --> LawExplain[Law explain]
+    LawDoc --> LawRebind[Explicit schema-hash rebind]
     LawBind --> LawManifest[Contract bundle manifest]
     LawDoc --> LawDiff[Semantic law diff]
     LawDiff --> LawDiffJson[JSON diff report]
@@ -448,7 +462,10 @@ flowchart TD
     OpParse --> DirectiveArgs[Directive argument extraction]
 
     Hash --> CI[CI and fixture evidence]
+    LawLint --> CI
     LawManifest --> CI
+    LawExplain --> Operator[Operator inspection]
+    LawRebind --> Operator
     LawDiffJson --> CI
     LawDiffJson --> Assurance[Holmes/BLADE]
     LawDiffMarkdown --> Review

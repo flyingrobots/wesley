@@ -1083,7 +1083,7 @@ Output formats:
 Human-readable explanation for one subject:
 
 ```text
-wesley law explain operation:Mutation.replaceRangeAsTick
+wesley law explain --law schemas/hot-text.weslaw.yaml operation:Mutation.replaceRangeAsTick
 ```
 
 Expected output:
@@ -1232,9 +1232,9 @@ Working budget: **75 slices**.
 
 The budget is intentionally larger than the minimal compiler substrate because
 `weslaw` must become an operator-usable contract-bundle feature, not just an
-internal parser. The `WLAW-050` checkpoint confirmed that the 75-slice runway
-still fits, with one more semantic-diff completion pull before directive
-lowering and adoption tooling begin.
+internal parser. The `WLAW-050` checkpoint preserved the runway through
+semantic diff completion, and the `WLAW-069` checkpoint moves the remaining
+work into first consumer payoff and v1 packet closeout.
 
 ### Phase 0: Design Lock
 
@@ -1333,19 +1333,19 @@ lowering and adoption tooling begin.
 
 ### Phase 5: Directive Lowering And Adoption Tools
 
-- [ ] WLAW-060 Lower one known formal directive family into Law IR.
-- [ ] WLAW-061 Prove directive-authored and YAML-authored law canonicalize to
+- [x] WLAW-060 Lower one known formal directive family into Law IR.
+- [x] WLAW-061 Prove directive-authored and YAML-authored law canonicalize to
       the same Law IR.
-- [ ] WLAW-062 Add `wesley law lint` for structure-only validation.
-- [ ] WLAW-063 Add `wesley init-law` scaffolding from known formal directives.
-- [ ] WLAW-064 Add comment-derived draft suggestions with mandatory human
+- [x] WLAW-062 Add `wesley law lint` for structure-only validation.
+- [x] WLAW-063 Add `wesley init-law` scaffolding from known formal directives.
+- [x] WLAW-064 Add comment-derived draft suggestions with mandatory human
       promotion.
-- [ ] WLAW-065 Add `wesley law explain scalar:<Name>`.
-- [ ] WLAW-066 Add `wesley law explain operation:<Root>.<Field>`.
-- [ ] WLAW-067 Add `wesley law rebind` report generation.
-- [ ] WLAW-068 Add explicit rebind acceptance flow for schema-hash anchor
+- [x] WLAW-065 Add `wesley law explain scalar:<Name>`.
+- [x] WLAW-066 Add `wesley law explain operation:<Root>.<Field>`.
+- [x] WLAW-067 Add `wesley law rebind` report generation.
+- [x] WLAW-068 Add explicit rebind acceptance flow for schema-hash anchor
       updates.
-- [ ] WLAW-069 Update docs and changelog for law authoring and adoption
+- [x] WLAW-069 Update docs and changelog for law authoring and adoption
       workflows.
 
 ### Phase 6: First Consumer Payoff
@@ -1388,10 +1388,40 @@ What changed:
   because they need the binding cases and final CLI surface to avoid ad hoc
   semantics.
 
+Follow-up completed:
+
+- `WLAW-060` through `WLAW-069` completed directive lowering, law lint/init-law,
+  explain, and rebind adoption tooling.
+
+## WLAW-069 Drift Checkpoint
+
+The adoption tooling pull closed `WLAW-060` through `WLAW-069`.
+
+What shipped:
+
+- `@wes_channel` is the first formally known directive family that lowers into
+  active Law IR.
+- Directive-authored `@wes_channel` law and equivalent YAML-authored channel
+  law canonicalize to the same semantic Law IR and `lawHash`.
+- `wesley law lint` validates `weslaw/v1` structure without schema binding.
+- `wesley init-law` scaffolds active law from known formal directives and emits
+  description-derived draft suggestions that require human promotion.
+- `wesley law explain` now reports scalar semantics and operation footprint
+  law for explicit subjects.
+- `wesley law rebind` reports schema-hash anchor drift and requires
+  `--accept --out <path>` before writing a rebound law document.
+
+What held:
+
+- Comments still do not become active law automatically.
+- SDL directives are only a frontend into canonical Law IR.
+- Normal validation still fails on schema-hash mismatch; rebind is an explicit
+  operator action.
+
 Next pull:
 
-- Start `WLAW-060` through `WLAW-069`: directive lowering, law lint/init-law,
-  explain, and rebind adoption tooling.
+- Finish `WLAW-070` through `WLAW-075`: first consumer payoff, law coverage or
+  Law Matrix decision, and packet closeout evidence.
 
 ## Non-Goals
 
@@ -1415,7 +1445,8 @@ Next pull:
    types, or Rust types generated from checked-in schemas?
 2. Should evidence posture enter v1, or wait for v1.1 after scalar, variant,
    footprint, channel, and typed invariant law prove the model?
-3. Which known directive family should be lowered first?
+3. Resolved in `WLAW-060`: `@wes_channel` is the first known formal directive
+   family lowered into Law IR.
 4. Which target should receive the first generated scalar/variant validators?
 
 Resolved in `WLAW-036` through `WLAW-045`: bundle manifests record compiler

@@ -742,6 +742,84 @@ pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
     })
 }
 
+/// Lowers formally known `@wes_channel` SDL directives into Law IR v1.
+///
+/// This is the first directive-authored law bridge: SDL remains the source of
+/// structural shape, while the directive facts lower into the same canonical
+/// Law IR used by authored `weslaw/v1` documents.
+pub fn lower_wes_channel_directives_to_law_ir_v1(
+    schema_ir: &WesleyIR,
+    family: &str,
+    schema_hash: &str,
+    schema_source: Option<String>,
+) -> Result<LawIrV1, WeslawError> {
+    validate_schema_hash_anchor(schema_hash, "schemaHash")?;
+    let mut entries = Vec::new();
+
+    for definition in &schema_ir.types {
+        let Some(directive) = definition.directives.get("wes_channel") else {
+            continue;
+        };
+        if definition.kind != TypeKind::Object {
+            return Err(WeslawError::at_path(
+                WeslawDiagnosticCode::WrongSubjectKind,
+                format!("type:{}", definition.name),
+                "@wes_channel may only lower from object types",
+            ));
+        }
+        let name = directive_string_field(
+            directive,
+            "name",
+            &format!("type:{}.@wes_channel.name", definition.name),
+        )?;
+        let version = directive_u64_field(
+            directive,
+            "version",
+            &format!("type:{}.@wes_channel.version", definition.name),
+        )?;
+        let ordered = directive_bool_field(
+            directive,
+            "ordered",
+            &format!("type:{}.@wes_channel.ordered", definition.name),
+        )?;
+        let subject = format!("channel:{name}@{version}");
+        parse_subject_coordinate(&subject, &format!("type:{}.@wes_channel", definition.name))?;
+
+        entries.push(LawEntryV1 {
+            id: format!("directive.wes_channel.{name}.v{version}"),
+            status: LawStatusV1::Active,
+            kind: LawKindV1::ChannelLaw,
+            subject,
+            tags: Vec::new(),
+            rationale: None,
+            body: LawEntryBodyV1::ChannelLaw(ChannelLawV1 {
+                ordered,
+                version,
+                compatibility: None,
+                messages: definition
+                    .fields
+                    .iter()
+                    .map(|field| ChannelMessageV1 {
+                        field: field.name.clone(),
+                        r#type: field.r#type.base.clone(),
+                    })
+                    .collect(),
+            }),
+        });
+    }
+
+    sort_law_ir_entries(&mut entries);
+
+    Ok(LawIrV1 {
+        api_version: WESLEY_LAW_IR_API_VERSION.to_string(),
+        family: family.to_string(),
+        schema_hash: schema_hash.to_string(),
+        schema_source,
+        registries: LawRegistrySetV1::default(),
+        entries,
+    })
+}
+
 /// Serializes Law IR v1 as canonical JSON for the public v1 representation.
 ///
 /// This helper provides deterministic JSON bytes for `wesley.law-ir/v1`
@@ -1712,6 +1790,58 @@ fn push_json_change(
         old,
         new,
     });
+}
+
+fn directive_string_field(
+    value: &serde_json::Value,
+    field: &str,
+    path: &str,
+) -> Result<String, WeslawError> {
+    value
+        .get(field)
+        .and_then(serde_json::Value::as_str)
+        .map(ToString::to_string)
+        .ok_or_else(|| {
+            WeslawError::at_path(
+                WeslawDiagnosticCode::InvalidDocument,
+                path,
+                format!("directive field {field} must be a string"),
+            )
+        })
+}
+
+fn directive_u64_field(
+    value: &serde_json::Value,
+    field: &str,
+    path: &str,
+) -> Result<u64, WeslawError> {
+    value
+        .get(field)
+        .and_then(serde_json::Value::as_u64)
+        .ok_or_else(|| {
+            WeslawError::at_path(
+                WeslawDiagnosticCode::InvalidDocument,
+                path,
+                format!("directive field {field} must be an unsigned integer"),
+            )
+        })
+}
+
+fn directive_bool_field(
+    value: &serde_json::Value,
+    field: &str,
+    path: &str,
+) -> Result<bool, WeslawError> {
+    value
+        .get(field)
+        .and_then(serde_json::Value::as_bool)
+        .ok_or_else(|| {
+            WeslawError::at_path(
+                WeslawDiagnosticCode::InvalidDocument,
+                path,
+                format!("directive field {field} must be a boolean"),
+            )
+        })
 }
 
 fn scalar_forbids_value(body: &ScalarSemanticsLawV1) -> Result<serde_json::Value, WeslawError> {

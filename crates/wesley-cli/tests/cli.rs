@@ -9,11 +9,15 @@ fn help_exits_zero_without_footprint_command() {
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("Wesley native CLI"));
     assert!(stdout.contains("normalize-sdl"));
+    assert!(stdout.contains("init-law"));
     assert!(stdout.contains("schema lower"));
     assert!(stdout.contains("schema operations"));
     assert!(stdout.contains("schema diff"));
     assert!(stdout.contains("law validate"));
+    assert!(stdout.contains("law lint"));
     assert!(stdout.contains("law diff"));
+    assert!(stdout.contains("law explain"));
+    assert!(stdout.contains("law rebind"));
     assert!(stdout.contains("doctor"));
     assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
@@ -204,6 +208,214 @@ fn law_validate_json_emits_bundle_manifest_hashes() {
         "wesley.contract-bundle-manifest/v1"
     );
     assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_lint_accepts_structure_without_schema_binding() {
+    let output = wesley()
+        .args(["law", "lint", "--law"])
+        .arg(fixture(
+            "test/fixtures/weslaw/rejected/schema-hash-mismatch.weslaw.yaml",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["apiVersion"], "wesley.law-ir/v1");
+    assert_eq!(report["activeEntryCount"], 1);
+    assert_eq!(
+        report["schemaHash"],
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    );
+    assert!(report["lawHash"]
+        .as_str()
+        .expect("law hash should be a string")
+        .starts_with("sha256:"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn init_law_scaffolds_known_directive_law_and_draft_suggestions() {
+    let dir = temp_dir("init-law");
+    let schema = dir.join("schema.graphql");
+    let out = dir.join("scaffold.weslaw.yaml");
+
+    std::fs::write(
+        &schema,
+        r#"
+        directive @wes_channel(name: String!, version: Int!, ordered: Boolean!) on OBJECT
+
+        """
+        Positive integer values must preserve their intended domain.
+        """
+        scalar PositiveInt
+
+        type ReadyMessage {
+          ok: Boolean!
+        }
+
+        type DemoChannel
+          @wes_channel(name: "demo.channel", version: 1, ordered: true)
+        {
+          ready: ReadyMessage!
+        }
+
+        type Query {
+          ready: ReadyMessage!
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .args(["init-law", "--schema"])
+        .arg(&schema)
+        .args(["--family", "adoption-test", "--out"])
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let scaffold = std::fs::read_to_string(&out).expect("scaffold should read");
+
+    assert!(stdout.is_empty());
+    assert!(stderr.is_empty());
+    assert!(scaffold.contains("family: \"adoption-test\""));
+    assert!(scaffold.contains("kind: channelLaw"));
+    assert!(scaffold.contains("subject: \"channel:demo.channel@1\""));
+    assert!(scaffold.contains("field: \"ready\""));
+    assert!(scaffold.contains("type: \"ReadyMessage\""));
+    assert!(scaffold.contains("status: draft"));
+    assert!(scaffold.contains("draft.description.scalar.PositiveInt"));
+
+    let lint = wesley()
+        .args(["law", "lint", "--law"])
+        .arg(&out)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+    assert_success(&lint);
+    let lint_stdout = String::from_utf8(lint.stdout).expect("stdout should be utf8");
+    let lint_report: serde_json::Value =
+        serde_json::from_str(&lint_stdout).expect("stdout should be json");
+    assert_eq!(lint_report["activeEntryCount"], 1);
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn law_explain_reports_scalar_semantics() {
+    let output = wesley()
+        .args(["law", "explain", "--law"])
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
+        ))
+        .arg("scalar:PositiveInt")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("Subject: scalar:PositiveInt"));
+    assert!(stdout.contains("Bound laws: 1"));
+    assert!(stdout.contains("Law: echo.scalar.positiveInt.u32-positive"));
+    assert!(stdout.contains("Kind: scalar semantics"));
+    assert!(stdout.contains("Minimum: 1"));
+    assert!(stdout.contains("Maximum: 4294967295"));
+    assert!(stdout.contains("Forbids: silentGraphQLIntNarrowing"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_explain_reports_operation_footprint() {
+    let output = wesley()
+        .args(["law", "explain", "--law"])
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .arg("operation:Mutation.replaceRangeAsTick")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("Subject: operation:Mutation.replaceRangeAsTick"));
+    assert!(stdout.contains("Law: jedit.op.replaceRangeAsTick.footprint"));
+    assert!(stdout.contains("Kind: operation footprint"));
+    assert!(stdout.contains("Reads: Anchor, BufferWorldline"));
+    assert!(stdout.contains("Writes: BufferWorldline"));
+    assert!(stdout.contains("Creates: RopeBranch, RopeHead"));
+    assert!(stdout.contains("Forbids: AstState, Diagnostics, GitWitness, UiState"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_rebind_reports_and_accepts_schema_hash_updates() {
+    let dir = temp_dir("law-rebind");
+    let out = dir.join("rebound.weslaw.yaml");
+    let schema = fixture("test/fixtures/weslaw/contract-bundle-shape.graphql");
+    let law = fixture("test/fixtures/weslaw/rejected/schema-hash-mismatch.weslaw.yaml");
+
+    let report_output = wesley()
+        .args(["law", "rebind", "--schema"])
+        .arg(&schema)
+        .arg("--law")
+        .arg(&law)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&report_output);
+    let report_stdout = String::from_utf8(report_output.stdout).expect("stdout should be utf8");
+    let report: serde_json::Value =
+        serde_json::from_str(&report_stdout).expect("stdout should be json");
+    assert_eq!(report["apiVersion"], "wesley.law-rebind/v1");
+    assert_eq!(report["changed"], true);
+    assert_eq!(report["accepted"], false);
+    assert!(report["newSchemaHash"]
+        .as_str()
+        .expect("new schema hash should be a string")
+        .starts_with("sha256:"));
+
+    let accept_output = wesley()
+        .args(["law", "rebind", "--schema"])
+        .arg(&schema)
+        .arg("--law")
+        .arg(&law)
+        .args(["--accept", "--out"])
+        .arg(&out)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&accept_output);
+    let accept_stdout = String::from_utf8(accept_output.stdout).expect("stdout should be utf8");
+    let accept_report: serde_json::Value =
+        serde_json::from_str(&accept_stdout).expect("stdout should be json");
+    assert_eq!(accept_report["accepted"], true);
+    assert_eq!(accept_report["output"], out.display().to_string());
+
+    let validate_output = wesley()
+        .args(["law", "validate", "--schema"])
+        .arg(&schema)
+        .arg("--law")
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+    assert_success(&validate_output);
+
+    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]

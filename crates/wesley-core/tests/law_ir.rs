@@ -6,10 +6,11 @@ use yaml_rust2::{Yaml, YamlLoader};
 use wesley_core::{
     build_contract_bundle_manifest_v1, compute_law_hash_set_v1, compute_law_hash_v1,
     compute_registry_hash, diff_law_ir_v1, list_schema_operations_sdl, load_weslaw_yaml,
-    lower_schema_sdl, to_canonical_law_ir_json, to_semantic_law_ir_json,
-    validate_law_ir_v1_bindings, FootprintCardinalityV1, LawDiffEventKindV1, LawEntryBodyV1,
-    LawKindV1, LawStatusV1, PredicateV1, ScalarForbiddenInterpretationV1, ScalarRepresentationV1,
-    WeslawDiagnosticCode, WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION, WESLEY_LAW_DIFF_API_VERSION,
+    lower_schema_sdl, lower_wes_channel_directives_to_law_ir_v1, to_canonical_law_ir_json,
+    to_semantic_law_ir_json, validate_law_ir_v1_bindings, FootprintCardinalityV1,
+    LawDiffEventKindV1, LawEntryBodyV1, LawKindV1, LawStatusV1, PredicateV1,
+    ScalarForbiddenInterpretationV1, ScalarRepresentationV1, WeslawDiagnosticCode,
+    WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION, WESLEY_LAW_DIFF_API_VERSION,
     WESLEY_LAW_IR_API_VERSION, WESLEY_LAW_IR_CANONICAL_JSON_CODEC,
 };
 
@@ -102,6 +103,7 @@ fn accepted_weslaw_fixtures_satisfy_authoring_json_schema() {
         "test/fixtures/weslaw/accepted/variant-playback-mode.weslaw.yaml",
         "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
         "test/fixtures/weslaw/accepted/channel-ttd-protocol.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/channel-ttd-protocol-from-directive.weslaw.yaml",
         "test/fixtures/weslaw/accepted/invariant-translated-evidence.weslaw.yaml",
     ];
 
@@ -1308,6 +1310,35 @@ fn law_ir_v1_binding_rejects_unresolved_subjects() {
     assert!(error
         .message
         .contains("operation:Mutation.replaceRangeAsTick"));
+}
+
+#[test]
+fn formal_wes_channel_directives_lower_into_canonical_law_ir() {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let lowered = lower_wes_channel_directives_to_law_ir_v1(
+        &ir,
+        "weslaw-fixture-contract-bundle",
+        &schema_hash,
+        Some("../contract-bundle-shape.graphql".to_string()),
+    )
+    .expect("@wes_channel directives should lower");
+    let authored = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/channel-ttd-protocol-from-directive.weslaw.yaml",
+    ))
+    .expect("authored equivalent should lower");
+
+    assert_eq!(
+        to_semantic_law_ir_json(&lowered).expect("lowered semantic JSON should compute"),
+        to_semantic_law_ir_json(&authored).expect("authored semantic JSON should compute")
+    );
+    assert_eq!(
+        compute_law_hash_v1(&lowered).expect("lowered hash should compute"),
+        compute_law_hash_v1(&authored).expect("authored hash should compute")
+    );
+
+    let binding = validate_law_ir_v1_bindings(&lowered, &ir, &operations, &schema_hash)
+        .expect("directive-lowered channel law should bind");
+    assert_eq!(binding.bound_entry_count, 1);
 }
 
 #[test]

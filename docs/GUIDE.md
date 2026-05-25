@@ -44,8 +44,12 @@ The historical package CLI is retired. Use the native commands:
 - **Lower**: `wesley schema lower --schema <path> --json`
 - **Hash**: `wesley schema hash --schema <path>`
 - **Diff**: `wesley schema diff --old <old> --new <new> --format summary`
+- **Law scaffold**: `wesley init-law --schema <schema> --family <family> --out <law>`
+- **Law lint**: `wesley law lint --law <law> [--json]`
 - **Law**: `wesley law validate --schema <schema> --law <law> [--json]`
 - **Law Diff**: `wesley law diff --old <old-law> --new <new-law> --json`
+- **Law Explain**: `wesley law explain --law <law> <subject> [--json]`
+- **Law Rebind**: `wesley law rebind --schema <schema> --law <law> [--accept --out <law>]`
 
 - **Rust**: `wesley emit rust --schema <path> --out <path> [--law <path>]`
 - **TypeScript**: `wesley emit typescript --schema <path> --out <path> [--law <path>]`
@@ -57,8 +61,10 @@ The historical package CLI is retired. Use the native commands:
 
 For legacy migration users still calling `pnpm wesley`, rewrite the caller.
 The direct replacements are `wesley schema lower`, `wesley schema hash`,
-`wesley schema diff`, `wesley law validate`, `wesley law diff`,
-`wesley doctor`, and `wesley emit typescript` or `wesley emit rust`.
+`wesley schema diff`, `wesley init-law`, `wesley law lint`,
+`wesley law validate`, `wesley law diff`, `wesley law explain`,
+`wesley law rebind`, `wesley doctor`, and `wesley emit typescript` or
+`wesley emit rust`.
 Zod and certificate commands are no longer generic compiler-front-door work.
 Holmes-family commands live under `@wesley/holmes`.
 

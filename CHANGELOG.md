@@ -27,6 +27,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **`weslaw` adoption tooling**: Added `@wes_channel` directive lowering into
+  canonical Law IR, a fixture proving directive-authored channel law and
+  YAML-authored channel law produce the same semantic `lawHash`, structure-only
+  `wesley law lint`, `wesley init-law` scaffolding for known formal directives,
+  description-derived draft suggestions that remain inactive until promoted,
+  `wesley law explain` for scalar and operation subjects, and explicit
+  `wesley law rebind` reporting plus `--accept --out <path>` output for
+  schema-hash anchor updates.
 - **`weslaw` strict schema binding**: Added Rust-core validation that requires
   active `weslaw/v1` documents to match the active `sha256:<64 lowercase hex>`
   schema hash, binds scalar/type/input/enum/field/operation/channel/family

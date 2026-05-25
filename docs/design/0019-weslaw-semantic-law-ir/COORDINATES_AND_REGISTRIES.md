@@ -219,9 +219,12 @@ files.
 Accepted inputs:
 
 ```text
+wesley init-law --schema <schema.graphql> --family <family> --out <law.weslaw.yaml>
+wesley law lint --law <law.weslaw.yaml>
 wesley law validate --schema <schema.graphql> --law <law.weslaw.yaml>
-wesley law diff --old-law <old.weslaw.yaml> --new-law <new.weslaw.yaml>
-wesley init-law --schema <schema.graphql> --out <law.weslaw.yaml>
+wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml>
+wesley law explain --law <law.weslaw.yaml> scalar:PositiveInt
+wesley law rebind --schema <schema.graphql> --law <law.weslaw.yaml> --accept --out <rebound.weslaw.yaml>
 ```
 
 Later config-driven discovery may be added after the explicit CLI surfaces are

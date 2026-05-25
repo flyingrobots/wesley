@@ -335,10 +335,10 @@ The non-negotiables are narrow:
   are stable.
 
 Working budget: **75 slices**. The first scope checkpoint was `WLAW-050`; it
-kept the remaining runway intact and confirmed that structured semantic diffs
-need one more completion pull before adoption tooling starts.
+kept the runway intact. The second checkpoint at `WLAW-069` confirms the
+adoption tooling is now usable enough to start the first consumer payoff pull.
 
-Status: **59 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+Status: **69 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
 substrate docs, coordinate and registry grammar, canonicalization and
 diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
 examples. `WLAW-011` through `WLAW-020` add the Rust Law IR v1 types, the
@@ -360,7 +360,12 @@ remaining runway. `WLAW-051` through `WLAW-059` add channel law and typed
 invariant diff events, strengthened/weakened law classifications,
 binding-break and schema-hash rebound reporting, `wesley law diff --json`,
 Markdown summaries, CI-ready semantic diff fixtures, Holmes/BLADE-facing
-fixtures, and the matching docs/changelog update.
+fixtures, and the matching docs/changelog update. `WLAW-060` through
+`WLAW-069` add `@wes_channel` directive lowering, directive/YAML canonical
+equivalence tests, `wesley law lint`, `wesley init-law`, description-derived
+draft suggestions, `wesley law explain` for scalar and operation subjects,
+explicit `wesley law rebind` reporting and acceptance, and updated adoption
+docs.
 
 ## Tensions
 
@@ -392,8 +397,8 @@ fixtures, and the matching docs/changelog update.
 
 ## Next Target
 
-The immediate focus is **weslaw Law IR design, then Holmes assurance
-integration**.
+The immediate focus is **finishing the `weslaw` v1 consumer payoff and packet
+closeout**.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
@@ -407,12 +412,10 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The next pulls after this PR are:
+The next pull after this PR is:
 
-1. `WLAW-060` through `WLAW-069`: start directive lowering and adoption tools
-   only after the diff surface is coherent.
-2. `WLAW-070` through `WLAW-075`: deliver the first consumer payoff and packet
-   closeout unless the adoption phase exposes a v1/v1.1 split.
+1. `WLAW-070` through `WLAW-075`: deliver the first consumer payoff, make the
+   coverage/Law Matrix call, and close the v1 packet with playback evidence.
 
 ## Post-Retirement Freestyle Slice Log
 

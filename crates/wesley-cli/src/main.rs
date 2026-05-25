@@ -5,12 +5,13 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use wesley_core::{
-    build_contract_bundle_manifest_v1, compute_content_hash, compute_registry_hash, diff_law_ir_v1,
-    diff_schema_sdl, extract_operation_directive_args, format_law_diff_markdown_v1,
-    list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl, normalize_schema_sdl,
-    record_law_binding_error_v1, resolve_operation_selections,
-    resolve_operation_selections_with_schema, ContractBundleManifestV1, LawDiffReportV1,
-    SchemaDelta, WeslawError, WesleyError, WesleyIR,
+    build_contract_bundle_manifest_v1, compute_content_hash, compute_law_hash_v1,
+    compute_registry_hash, diff_law_ir_v1, diff_schema_sdl, extract_operation_directive_args,
+    format_law_diff_markdown_v1, list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl,
+    lower_wes_channel_directives_to_law_ir_v1, normalize_schema_sdl, record_law_binding_error_v1,
+    resolve_operation_selections, resolve_operation_selections_with_schema,
+    ContractBundleManifestV1, FootprintLawV1, LawDiffReportV1, LawEntryBodyV1, LawIrV1,
+    ScalarSemanticsLawV1, SchemaDelta, TypeKind, WeslawError, WesleyError, WesleyIR,
 };
 use wesley_emit_rust::{
     emit_rust_with_operations, emit_rust_with_operations_and_hashes,
@@ -54,6 +55,11 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
             Ok(EXIT_OK)
         }
         Some("doctor") => run_doctor_command(&args[1..]),
+        Some("init-law") if wants_help(&args[1..]) => {
+            print_init_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("init-law") => run_init_law_command(&args[1..]),
         Some("schema") => run_schema_command(&args[1..]),
         Some("law") => run_law_command(&args[1..]),
         Some("emit") => run_emit_command(&args[1..]),
@@ -109,13 +115,53 @@ fn run_law_command(args: &[String]) -> Result<u8, CliError> {
 
             Ok(EXIT_OK)
         }
+        Some("lint") if wants_help(&args[1..]) => {
+            print_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("lint") => run_law_lint_command(&args[1..]),
         Some("diff") if wants_help(&args[1..]) => {
             print_law_help();
             Ok(EXIT_OK)
         }
         Some("diff") => run_law_diff_command(&args[1..]),
+        Some("explain") if wants_help(&args[1..]) => {
+            print_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("explain") => run_law_explain_command(&args[1..]),
+        Some("rebind") if wants_help(&args[1..]) => {
+            print_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("rebind") => run_law_rebind_command(&args[1..]),
         Some(command) => Err(CliError::usage(format!("unknown law command '{command}'"))),
     }
+}
+
+fn run_law_lint_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "law lint")?;
+    let law_path = options.required_law("law lint")?;
+    let law_source = read_file(&law_path, "law")?;
+    let law_ir = load_weslaw_yaml(&law_source)?;
+    let report = LawLintReport {
+        api_version: law_ir.api_version.clone(),
+        family: law_ir.family.clone(),
+        schema_hash: law_ir.schema_hash.clone(),
+        active_entry_count: law_ir.entries.len(),
+        law_hash: compute_law_hash_v1(&law_ir)?,
+    };
+
+    if options.json {
+        print_json(&report)?;
+    } else {
+        println!(
+            "Law lint passed: {} active entries in {} (lawHash {})",
+            report.active_entry_count, report.family, report.law_hash
+        );
+    }
+
+    Ok(EXIT_OK)
 }
 
 fn run_law_diff_command(args: &[String]) -> Result<u8, CliError> {
@@ -141,6 +187,103 @@ fn run_law_diff_command(args: &[String]) -> Result<u8, CliError> {
 
     print_law_diff(&report, options.output_format()?)?;
     Ok(exit_code)
+}
+
+fn run_init_law_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "init-law")?;
+    let schema_path = options.required_schema("init-law")?;
+    let family = options.required_family("init-law")?;
+    let schema_sdl = read_file(&schema_path, "schema")?;
+    let ir = lower_schema_sdl(&schema_sdl)?;
+    let schema_hash = format!("sha256:{}", compute_registry_hash(&ir)?);
+    let law_ir = lower_wes_channel_directives_to_law_ir_v1(
+        &ir,
+        &family,
+        &schema_hash,
+        Some(schema_path.display().to_string()),
+    )?;
+    let drafts = draft_suggestions_from_descriptions(&ir);
+    let output = render_weslaw_yaml(&law_ir, &drafts);
+
+    if let Some(out) = options.out.as_ref() {
+        write_file(out, &output, "weslaw scaffold")?;
+    } else {
+        print!("{output}");
+    }
+
+    Ok(EXIT_OK)
+}
+
+fn run_law_explain_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "law explain")?;
+    let law_path = options.required_law("law explain")?;
+    let subject = options.required_subject("law explain")?;
+    let law_source = read_file(&law_path, "law")?;
+    let law_ir = load_weslaw_yaml(&law_source)?;
+    let explanation = explain_law_subject(&law_ir, &subject)?;
+
+    if options.json {
+        print_json(&explanation)?;
+    } else {
+        print!("{}", explanation.to_text());
+    }
+
+    Ok(EXIT_OK)
+}
+
+fn run_law_rebind_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "law rebind")?;
+    let schema_path = options.required_schema("law rebind")?;
+    let law_path = options.required_law("law rebind")?;
+    let schema_sdl = read_file(&schema_path, "schema")?;
+    let law_source = read_file(&law_path, "law")?;
+    let ir = lower_schema_sdl(&schema_sdl)?;
+    let operations = list_schema_operations_sdl(&schema_sdl)?;
+    let old_law_ir = load_weslaw_yaml(&law_source)?;
+    let new_schema_hash = format!("sha256:{}", compute_registry_hash(&ir)?);
+    let mut report = LawRebindReport {
+        api_version: "wesley.law-rebind/v1",
+        old_schema_hash: old_law_ir.schema_hash.clone(),
+        new_schema_hash: new_schema_hash.clone(),
+        changed: old_law_ir.schema_hash != new_schema_hash,
+        accepted: false,
+        output: None,
+    };
+
+    if options.accept {
+        let out = options.required_out("law rebind --accept")?;
+        let rebound = replace_schema_hash_anchor(
+            &law_source,
+            &old_law_ir.schema_hash,
+            &new_schema_hash,
+            &law_path,
+        )?;
+        let rebound_law_ir = load_weslaw_yaml(&rebound)?;
+        build_contract_bundle_manifest_v1(&rebound_law_ir, &ir, &operations)?;
+        write_file(&out, &rebound, "rebound law")?;
+        report.accepted = true;
+        report.output = Some(out.display().to_string());
+    }
+
+    if options.json {
+        print_json(&report)?;
+    } else if report.accepted {
+        println!(
+            "Law rebind accepted: {} -> {} ({})",
+            report.old_schema_hash,
+            report.new_schema_hash,
+            report.output.as_deref().unwrap_or("-")
+        );
+    } else if report.changed {
+        println!(
+            "Law rebind required: {} -> {}",
+            report.old_schema_hash, report.new_schema_hash
+        );
+    } else {
+        println!("Law rebind not required: {}", report.new_schema_hash);
+    }
+
+    Ok(EXIT_OK)
 }
 
 fn run_normalize_sdl_command(args: &[String]) -> Result<u8, CliError> {
@@ -557,11 +700,14 @@ struct ParsedOptions {
     out: Option<PathBuf>,
     metadata_out: Option<PathBuf>,
     directive: Option<String>,
+    family: Option<String>,
+    subject: Option<String>,
     format: Option<String>,
     breaking_only: bool,
     exit_code: bool,
     json: bool,
     hash: bool,
+    accept: bool,
 }
 
 impl ParsedOptions {
@@ -607,6 +753,18 @@ impl ParsedOptions {
             .ok_or_else(|| CliError::usage(format!("missing --directive for `{command}`")))
     }
 
+    fn required_family(&self, command: &str) -> Result<String, CliError> {
+        self.family
+            .clone()
+            .ok_or_else(|| CliError::usage(format!("missing --family for `{command}`")))
+    }
+
+    fn required_subject(&self, command: &str) -> Result<String, CliError> {
+        self.subject
+            .clone()
+            .ok_or_else(|| CliError::usage(format!("missing subject for `{command}`")))
+    }
+
     fn output_format(&self) -> Result<OutputFormat, CliError> {
         if self.json {
             return Ok(OutputFormat::Json);
@@ -637,7 +795,12 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
                 index += 1;
                 options.old_schema = Some(PathBuf::from(required_value(args, index, "--old")?));
             }
-            "--law" if command == "law validate" || command.starts_with("emit ") => {
+            "--law"
+                if matches!(
+                    command,
+                    "law validate" | "law lint" | "law explain" | "law rebind"
+                ) || command.starts_with("emit ") =>
+            {
                 index += 1;
                 options.law = Some(PathBuf::from(required_value(args, index, "--law")?));
             }
@@ -668,6 +831,23 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--out" => {
                 index += 1;
                 options.out = Some(PathBuf::from(required_value(args, index, "--out")?));
+            }
+            "--family" if command == "init-law" => {
+                index += 1;
+                options.family = Some(required_value(args, index, "--family")?);
+            }
+            "--family" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--family' for `{command}`"
+                )));
+            }
+            "--accept" if command == "law rebind" => {
+                options.accept = true;
+            }
+            "--accept" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--accept' for `{command}`"
+                )));
             }
             "--metadata-out" if command.starts_with("emit ") => {
                 index += 1;
@@ -721,6 +901,11 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
                 return Err(CliError::usage(format!(
                     "unknown option '{value}' for `{command}`"
                 )));
+            }
+            value if command == "law explain" => {
+                if options.subject.replace(value.to_string()).is_some() {
+                    return Err(CliError::usage("pass exactly one subject to `law explain`"));
+                }
             }
             value => {
                 return Err(CliError::usage(format!(
@@ -974,6 +1159,55 @@ struct LawValidateReport {
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
+struct LawLintReport {
+    api_version: String,
+    family: String,
+    schema_hash: String,
+    active_entry_count: usize,
+    law_hash: String,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LawExplanation {
+    subject: String,
+    law_count: usize,
+    lines: Vec<String>,
+}
+
+impl LawExplanation {
+    fn to_text(&self) -> String {
+        let mut output = format!("Subject: {}\n", self.subject);
+        output.push_str(&format!("Bound laws: {}\n", self.law_count));
+        for line in &self.lines {
+            output.push_str(line);
+            output.push('\n');
+        }
+        output
+    }
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LawRebindReport {
+    api_version: &'static str,
+    old_schema_hash: String,
+    new_schema_hash: String,
+    changed: bool,
+    accepted: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    output: Option<String>,
+}
+
+struct DraftSuggestion {
+    id: String,
+    subject: String,
+    source: String,
+    text: String,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 struct EmitMetadata {
     schema_hash: String,
     schema_hash_qualified: String,
@@ -1086,6 +1320,169 @@ fn format_law_diff_summary(report: &LawDiffReportV1) -> String {
     )
 }
 
+fn draft_suggestions_from_descriptions(ir: &WesleyIR) -> Vec<DraftSuggestion> {
+    ir.types
+        .iter()
+        .filter_map(|definition| {
+            let description = definition.description.as_ref()?;
+            let (id_kind, subject_kind) = match definition.kind {
+                TypeKind::Object | TypeKind::Interface | TypeKind::Union => ("type", "type"),
+                TypeKind::Enum => ("enum", "enum"),
+                TypeKind::Scalar => ("scalar", "scalar"),
+                TypeKind::InputObject => ("input", "input"),
+            };
+            Some(DraftSuggestion {
+                id: format!("draft.description.{id_kind}.{}", definition.name),
+                subject: format!("{subject_kind}:{}", definition.name),
+                source: "description".to_string(),
+                text: description.clone(),
+            })
+        })
+        .collect()
+}
+
+fn render_weslaw_yaml(law_ir: &LawIrV1, drafts: &[DraftSuggestion]) -> String {
+    let mut output = String::new();
+    output.push_str("apiVersion: weslaw/v1\n");
+    output.push_str("schema:\n");
+    output.push_str(&format!("  family: {}\n", yaml_quote(&law_ir.family)));
+    output.push_str(&format!("  hash: {}\n", law_ir.schema_hash));
+    if let Some(source) = &law_ir.schema_source {
+        output.push_str(&format!("  source: {}\n", yaml_quote(source)));
+    }
+    if law_ir.entries.is_empty() && drafts.is_empty() {
+        output.push_str("laws: []\n");
+        return output;
+    }
+
+    output.push_str("laws:\n");
+
+    for entry in &law_ir.entries {
+        if let LawEntryBodyV1::ChannelLaw(body) = &entry.body {
+            output.push_str(&format!("  - id: {}\n", yaml_quote(&entry.id)));
+            output.push_str("    status: active\n");
+            output.push_str("    kind: channelLaw\n");
+            output.push_str(&format!("    subject: {}\n", yaml_quote(&entry.subject)));
+            output.push_str(&format!("    ordered: {}\n", body.ordered));
+            output.push_str(&format!("    version: {}\n", body.version));
+            output.push_str("    messages:\n");
+            for message in &body.messages {
+                output.push_str(&format!("      - field: {}\n", yaml_quote(&message.field)));
+                output.push_str(&format!("        type: {}\n", yaml_quote(&message.r#type)));
+            }
+        }
+    }
+
+    for draft in drafts {
+        output.push_str(&format!("  - id: {}\n", yaml_quote(&draft.id)));
+        output.push_str("    status: draft\n");
+        output.push_str(&format!("    subject: {}\n", yaml_quote(&draft.subject)));
+        output.push_str(&format!("    source: {}\n", yaml_quote(&draft.source)));
+        output.push_str(&format!("    suggestion: {}\n", yaml_quote(&draft.text)));
+    }
+
+    output
+}
+
+fn yaml_quote(value: &str) -> String {
+    serde_json::to_string(value).expect("string serialization should not fail")
+}
+
+fn explain_law_subject(law_ir: &LawIrV1, subject: &str) -> Result<LawExplanation, CliError> {
+    let mut lines = Vec::new();
+    let mut law_count = 0;
+    for entry in law_ir
+        .entries
+        .iter()
+        .filter(|entry| entry.subject == subject)
+    {
+        law_count += 1;
+        lines.push(format!("Law: {}", entry.id));
+        match &entry.body {
+            LawEntryBodyV1::ScalarSemantics(body) => explain_scalar_semantics(body, &mut lines),
+            LawEntryBodyV1::FootprintLaw(body) => explain_footprint(body, &mut lines),
+            LawEntryBodyV1::VariantLaw(_) => lines.push("Kind: variant law".to_string()),
+            LawEntryBodyV1::ChannelLaw(_) => lines.push("Kind: channel law".to_string()),
+            LawEntryBodyV1::InvariantLaw(_) => lines.push("Kind: invariant law".to_string()),
+        }
+    }
+
+    if law_count == 0 {
+        return Err(CliError::usage(format!(
+            "no active law entries found for subject `{subject}`"
+        )));
+    }
+
+    Ok(LawExplanation {
+        subject: subject.to_string(),
+        law_count,
+        lines,
+    })
+}
+
+fn explain_scalar_semantics(body: &ScalarSemanticsLawV1, lines: &mut Vec<String>) {
+    lines.push(format!(
+        "Kind: scalar semantics ({:?})",
+        body.representation
+    ));
+    if let Some(min) = body.min_inclusive {
+        lines.push(format!("Minimum: {min}"));
+    }
+    if let Some(max) = body.max_inclusive {
+        lines.push(format!("Maximum: {max}"));
+    }
+    if let Some(ordering) = body.ordering {
+        lines.push(format!("Ordering: {ordering:?}"));
+    }
+    if let Some(scope) = &body.scope {
+        lines.push(format!("Scope: {scope}"));
+    }
+    if !body.forbids.is_empty() {
+        lines.push(format!("Forbids: {}", serde_list(&body.forbids)));
+    }
+}
+
+fn explain_footprint(body: &FootprintLawV1, lines: &mut Vec<String>) {
+    lines.push("Kind: operation footprint".to_string());
+    push_named_list(lines, "Reads", &body.reads);
+    push_named_list(lines, "Writes", &body.writes);
+    push_named_list(lines, "Creates", &body.creates);
+    push_named_list(lines, "Forbids", &body.forbids);
+}
+
+fn push_named_list(lines: &mut Vec<String>, label: &str, values: &[String]) {
+    if !values.is_empty() {
+        lines.push(format!("{label}: {}", values.join(", ")));
+    }
+}
+
+fn serde_list<T: serde::Serialize>(values: &T) -> String {
+    match serde_json::to_value(values) {
+        Ok(serde_json::Value::Array(items)) => items
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .collect::<Vec<_>>()
+            .join(", "),
+        _ => "-".to_string(),
+    }
+}
+
+fn replace_schema_hash_anchor(
+    source: &str,
+    old_schema_hash: &str,
+    new_schema_hash: &str,
+    path: &Path,
+) -> Result<String, CliError> {
+    let count = source.matches(old_schema_hash).count();
+    if count != 1 {
+        return Err(CliError::usage(format!(
+            "expected exactly one schema hash anchor `{old_schema_hash}` in `{}`; found {count}",
+            path.display()
+        )));
+    }
+    Ok(source.replace(old_schema_hash, new_schema_hash))
+}
+
 fn flattened_schema_changes(delta: &SchemaDelta, breaking_only: bool) -> Vec<FlatChange> {
     let mut changes = Vec::new();
 
@@ -1182,12 +1579,16 @@ Usage:
 Commands:
   normalize-sdl            Print the Rust-core normalized SDL view
   doctor                   Run Rust-native health checks
+  init-law                 Scaffold weslaw/v1 from known SDL law directives
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema operations         List Query/Mutation/Subscription root operations
   schema diff               Compare GraphQL SDL states as Wesley L1 IR
   law validate              Validate weslaw against active GraphQL SDL
+  law lint                  Validate weslaw structure without schema binding
   law diff                  Compare weslaw semantic Law IR states
+  law explain               Explain active laws bound to one subject
+  law rebind                Re-anchor weslaw to an active schema hash
   emit rust                 Emit Rust models and operation bindings from GraphQL SDL
   emit typescript           Emit TypeScript declarations and operation bindings from GraphQL SDL
   operation selections      Resolve selected operation fields
@@ -1197,6 +1598,24 @@ Commands:
 Options:
   -h, --help     Show help
   -V, --version  Show version"
+    );
+}
+
+fn print_init_law_help() {
+    println!(
+        "\
+Wesley init-law
+
+Scaffolds weslaw/v1 from formally known SDL law directives and draft
+description-derived suggestions. Draft suggestions are not active law.
+
+Usage:
+  wesley init-law --schema <path> --family <name> [--out <path>]
+
+Options:
+  -s, --schema <path>  GraphQL SDL file
+  --family <name>      Contract family id for the generated law document
+  --out <path>         Optional output path; stdout when omitted"
     );
 }
 
@@ -1260,14 +1679,19 @@ fn print_law_help() {
 Wesley law commands
 
 Usage:
+  wesley law lint --law <path> [--json]
   wesley law validate --schema <path> --law <path> [--json]
   wesley law diff --old <path> --new <path> [--schema <path>] [--format markdown|json|summary]
+  wesley law explain --law <path> <subject> [--json]
+  wesley law rebind --schema <path> --law <path> [--accept --out <path>] [--json]
 
 Options:
   -s, --schema <path>  GraphQL SDL file used to validate the new law document
-  --law <path>         weslaw/v1 authoring file for validation
+  --law <path>         weslaw/v1 authoring file
   --old <path>         Old/base weslaw/v1 authoring file for diff
   --new <path>         New/target weslaw/v1 authoring file for diff
+  --accept             Write an explicitly accepted rebind output
+  --out <path>         Rebind output path
   --json               Emit JSON output
   --format <format>    Output format: markdown, json, or summary"
     );
