@@ -724,6 +724,19 @@ fn emit_commands_write_deterministic_metadata_sidecars() {
             .len(),
         64
     );
+    assert_eq!(
+        rust_json["schemaHashQualified"],
+        format!(
+            "sha256:{}",
+            rust_json["schemaHash"]
+                .as_str()
+                .expect("schema hash should be a string")
+        )
+    );
+    assert_eq!(
+        typescript_json["schemaHashQualified"],
+        rust_json["schemaHashQualified"]
+    );
     assert_eq!(rust_json["generator"], "wesley-emit-rust");
     assert_eq!(typescript_json["generator"], "wesley-emit-typescript");
     assert_eq!(

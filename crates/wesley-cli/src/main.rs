@@ -746,8 +746,14 @@ fn write_emit_metadata_if_requested(
         return Ok(());
     };
 
+    let schema_hash = compute_registry_hash(ir)?;
+    let schema_hash_qualified = manifest
+        .map(|manifest| manifest.schema_hash.clone())
+        .unwrap_or_else(|| format!("sha256:{schema_hash}"));
+
     let metadata = EmitMetadata {
-        schema_hash: compute_registry_hash(ir)?,
+        schema_hash,
+        schema_hash_qualified,
         law_hash: manifest.map(|manifest| manifest.law_hash.clone()),
         law_document_hash: manifest.and_then(|manifest| manifest.law_document_hash.clone()),
         profile_hash: manifest.map(|manifest| manifest.profile_hash.clone()),
@@ -927,6 +933,7 @@ struct LawValidateReport {
 #[serde(rename_all = "camelCase")]
 struct EmitMetadata {
     schema_hash: String,
+    schema_hash_qualified: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     law_hash: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

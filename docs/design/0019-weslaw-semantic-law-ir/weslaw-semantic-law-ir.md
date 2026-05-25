@@ -850,30 +850,42 @@ sequenceDiagram
 
 Initial `WLAW-046` through `WLAW-050` event classes:
 
-| Event                     | Meaning                                              |
-| ------------------------- | ---------------------------------------------------- |
-| `LAW_ADDED`               | New active law entry.                                |
-| `LAW_REMOVED`             | Active law entry removed.                            |
+| Event                      | Meaning                                                                  |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `LAW_BUNDLE_CHANGED`       | Bundle-level semantic fields changed.                                    |
+| `REGISTRY_CHANGED`         | Semantic registry facts changed.                                         |
+| `LAW_ADDED`                | New active law entry.                                                    |
+| `LAW_REMOVED`              | Active law entry removed.                                                |
+| `LAW_TAGS_CHANGED`         | Existing law classifier tags changed.                                    |
+| `LAW_CHANGED`              | Existing law changed outside a narrower v1 event class.                  |
 | `SCALAR_SEMANTICS_CHANGED` | Scalar representation, range, ordering, scope, or forbidden interpretation changed. |
-| `VARIANT_LAW_CHANGED`     | Variant discriminator or case requires/forbids changed. |
-| `FOOTPRINT_EXPANDED`      | Reads, writes, creates, or closure reach expanded.   |
-| `FOOTPRINT_CONTRACTED`    | Footprint reach contracted.                          |
-| `FOOTPRINT_CHANGED`       | Footprint changed in mixed or structural ways.       |
+| `VARIANT_LAW_CHANGED`      | Variant discriminator or case requires/forbids changed.                  |
+| `FOOTPRINT_EXPANDED`       | Reads, writes, creates, or closure reach expanded.                       |
+| `FOOTPRINT_CONTRACTED`     | Footprint reach contracted.                                              |
+| `FOOTPRINT_CHANGED`        | Footprint changed in mixed or structural ways.                           |
+| `SCHEMA_HASH_REBOUND`      | Law was explicitly rebound to a new schema hash.                         |
+
+Self-review repair added these classes before the next planned slice:
+
+| Event                     | Meaning                                           |
+| ------------------------- | ------------------------------------------------- |
+| `CHANNEL_VERSION_CHANGED` | Channel version changed.                         |
+| `CHANNEL_LAW_CHANGED`     | Channel law changed without a version change.    |
+| `PREDICATE_CHANGED`       | Invariant predicate changed.                     |
 
 Follow-on event classes:
 
 | Event                     | Meaning                                              |
 | ------------------------- | ---------------------------------------------------- |
-| `CHANNEL_VERSION_CHANGED` | Channel version or compatibility posture changed.    |
-| `PREDICATE_CHANGED`       | Invariant predicate changed.                         |
 | `LAW_STRENGTHENED`        | Constraint narrowed or forbidden behavior increased. |
 | `LAW_WEAKENED`            | Constraint widened or forbidden behavior decreased.  |
 | `BINDING_BROKEN`          | Previously bound law no longer binds.                |
-| `SCHEMA_HASH_REBOUND`     | Law was explicitly rebound to a new schema hash.     |
 
 The report records `oldSchemaHash`, `newSchemaHash`, `oldLawHash`,
 `newLawHash`, and an ordered `changes` array. v1 events carry
 `reviewPosture: "requires-review"` until policy/profile mapping exists.
+Law-specific events include `lawId`, `subject`, and `lawKind`; bundle-level
+events omit those fields.
 
 Example JSON:
 
@@ -1308,8 +1320,8 @@ lowering and adoption tooling begin.
 - [x] WLAW-049 Emit footprint law diff events.
 - [x] WLAW-050 Drift checkpoint: reassess scope, split v1/v1.1 if needed, and
       update this checklist before continuing.
-- [ ] WLAW-051 Emit channel law diff events.
-- [ ] WLAW-052 Emit typed invariant diff events.
+- [x] WLAW-051 Emit channel law diff events.
+- [x] WLAW-052 Emit typed invariant diff events.
 - [ ] WLAW-053 Add `LAW_STRENGTHENED` and `LAW_WEAKENED` classifications.
 - [ ] WLAW-054 Add `BINDING_BROKEN` and `SCHEMA_HASH_REBOUND`
       classifications.
@@ -1368,16 +1380,17 @@ What changed:
 
 - `schemas/wesley-law-diff-v1.schema.json` is now a v1 schema artifact, not a
   future-only placeholder.
-- The first implemented diff classes are added/removed entries, scalar
-  semantics, variant cases, and footprint expansion/contraction/mixed-change
-  events.
+- The first implemented diff classes are added/removed entries, bundle and
+  registry changes, law tag changes, scalar semantics, variant cases, footprint
+  expansion/contraction/mixed-change events, channel changes, invariant
+  predicate changes, and schema-hash rebound events.
 - `LAW_STRENGTHENED` and `LAW_WEAKENED` remain follow-on classifications
-  because they need the channel/invariant/binding cases to avoid ad hoc
+  because they need the binding cases and final CLI surface to avoid ad hoc
   semantics.
 
 Next pull:
 
-- Finish `WLAW-051` through `WLAW-059` before starting directive lowering.
+- Finish `WLAW-053` through `WLAW-059` before starting directive lowering.
 
 ## Non-Goals
 

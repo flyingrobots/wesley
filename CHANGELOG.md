@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **`weslaw` semantic diff review fixes**: Law diffs now classify existing
+  channel and invariant law modifications as modification events instead of
+  additions, emit registry/tag/schema-hash events so changed `lawHash` values
+  have a machine-readable cause, ignore programmatic draft entries in semantic
+  hash input, and include `schemaHashQualified` in emit metadata while retaining
+  the legacy bare `schemaHash` field.
 - **`weslaw` Law IR loader review fixes**: The loader now rejects wrong-typed
   optional sequence fields and invariant predicates with fields from another
   predicate operation, the published Law IR JSON Schema now discriminates each
@@ -41,10 +47,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **`weslaw` semantic diff substrate**: Added the versioned
   `wesley.law-diff/v1` JSON Schema and Rust-core law diff reports for
   added/removed law entries, scalar semantic field changes, variant case
-  changes, and footprint expansion/contraction/mixed-change events. The
-  `WLAW-050` drift checkpoint keeps the remaining semantic diff CLI,
-  channel/invariant events, binding-break classifications, and adoption tools
-  in the existing 75-slice runway.
+  changes, footprint expansion/contraction/mixed-change events, channel version
+  and channel body changes, invariant predicate changes, registry changes, law
+  tag changes, and schema-hash rebound events. The `WLAW-050` drift checkpoint
+  keeps the remaining semantic diff CLI, strengthened/weakened classifications,
+  binding-break classifications, and adoption tools in the existing 75-slice
+  runway.
 - **`weslaw` semantic Law IR design**: Added design packet `0019` defining
   `weslaw` as Wesley's semantic law layer for contract bundles, with typed Law
   IR, strict binding, schema-hash anchoring, canonical law hashes, structured

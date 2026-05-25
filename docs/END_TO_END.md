@@ -507,10 +507,11 @@ When `--law <path>` is supplied, emitters first build the same validated
 contract bundle manifest that `wesley law validate --json` reports. Rust output
 embeds `WESLEY_SCHEMA_HASH` and `WESLAW_HASH` constants so a generated artifact
 can identify the exact shape and semantic law that produced it. Metadata
-sidecars also include `lawHash`, `lawDocumentHash`, `profileHash`,
-`bundleHash`, and the Law IR codec. TypeScript currently records the law facts
-in metadata only; executable or declaration-level TypeScript hash constants can
-be added when that artifact path needs them.
+sidecars also include `schemaHashQualified`, `lawHash`, `lawDocumentHash`,
+`profileHash`, `bundleHash`, and the Law IR codec. The legacy bare
+`schemaHash` remains in metadata for compatibility. TypeScript currently
+records the law facts in metadata only; executable or declaration-level
+TypeScript hash constants can be added when that artifact path needs them.
 
 ```mermaid
 classDiagram

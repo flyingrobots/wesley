@@ -8,7 +8,7 @@ use wesley_core::{
     compute_registry_hash, diff_law_ir_v1, list_schema_operations_sdl, load_weslaw_yaml,
     lower_schema_sdl, to_canonical_law_ir_json, to_semantic_law_ir_json,
     validate_law_ir_v1_bindings, FootprintCardinalityV1, LawDiffEventKindV1, LawEntryBodyV1,
-    LawKindV1, PredicateV1, ScalarForbiddenInterpretationV1, ScalarRepresentationV1,
+    LawKindV1, LawStatusV1, PredicateV1, ScalarForbiddenInterpretationV1, ScalarRepresentationV1,
     WeslawDiagnosticCode, WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION, WESLEY_LAW_DIFF_API_VERSION,
     WESLEY_LAW_IR_API_VERSION, WESLEY_LAW_IR_CANONICAL_JSON_CODEC,
 };
@@ -597,7 +597,7 @@ laws:
     assert_eq!(report.changes.len(), 1);
     let change = &report.changes[0];
     assert_eq!(change.kind, LawDiffEventKindV1::ScalarSemanticsChanged);
-    assert_eq!(change.law_kind, LawKindV1::ScalarSemantics);
+    assert_eq!(change.law_kind, Some(LawKindV1::ScalarSemantics));
     assert_eq!(
         change
             .field_changes
@@ -772,6 +772,168 @@ laws:
     let mixed = diff_law_ir_v1(&baseline, &mixed_change).expect("mixed diff should compute");
     assert_eq!(mixed.changes.len(), 1);
     assert_eq!(mixed.changes[0].kind, LawDiffEventKindV1::FootprintChanged);
+}
+
+#[test]
+fn law_diff_v1_reports_channel_and_invariant_changes_as_modifications() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let old_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: warp-ttd.channel.protocol
+    status: active
+    kind: channelLaw
+    subject: channel:ttd.protocol@4
+    ordered: true
+    version: 4
+    messages:
+      - field: hostHello
+        type: HostHello
+  - id: continuum.invariant.translated-evidence
+    status: active
+    kind: invariantLaw
+    subject: type:TranslatedSubstrateEvidence
+    predicate:
+      op: fieldEquals
+      field: nativeContinuumWitness
+      value: false
+"#
+    ))
+    .expect("old law should lower");
+    let new_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: warp-ttd.channel.protocol
+    status: active
+    kind: channelLaw
+    subject: channel:ttd.protocol@4
+    ordered: true
+    version: 5
+    messages:
+      - field: hostHello
+        type: HostHello
+      - field: laneCatalog
+        type: LaneCatalog
+  - id: continuum.invariant.translated-evidence
+    status: active
+    kind: invariantLaw
+    subject: type:TranslatedSubstrateEvidence
+    predicate:
+      op: fieldEquals
+      field: nativeContinuumWitness
+      value: true
+"#
+    ))
+    .expect("new law should lower");
+
+    let report = diff_law_ir_v1(&old_ir, &new_ir).expect("law diff should compute");
+    assert_eq!(
+        report
+            .changes
+            .iter()
+            .map(|change| change.kind)
+            .collect::<Vec<_>>(),
+        vec![
+            LawDiffEventKindV1::PredicateChanged,
+            LawDiffEventKindV1::ChannelVersionChanged,
+        ]
+    );
+    assert!(
+        report
+            .changes
+            .iter()
+            .all(|change| change.kind != LawDiffEventKindV1::LawAdded),
+        "existing law modifications must not be reported as additions"
+    );
+}
+
+#[test]
+fn law_diff_v1_reports_registry_and_tag_hash_deltas() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let old_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+registries:
+  resources:
+    - id: Diagnostics
+      owner: jedit
+      kind: forbidden-runtime-domain
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    tags: [echo]
+    semantics:
+      representation: integer
+"#
+    ))
+    .expect("old law should lower");
+    let new_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+registries:
+  resources:
+    - id: Diagnostics
+      owner: echo
+      kind: forbidden-runtime-domain
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    tags: [echo, scalar]
+    semantics:
+      representation: integer
+"#
+    ))
+    .expect("new law should lower");
+
+    let report = diff_law_ir_v1(&old_ir, &new_ir).expect("law diff should compute");
+    assert_ne!(report.old_law_hash, report.new_law_hash);
+    assert_eq!(
+        report
+            .changes
+            .iter()
+            .map(|change| change.kind)
+            .collect::<Vec<_>>(),
+        vec![
+            LawDiffEventKindV1::RegistryChanged,
+            LawDiffEventKindV1::LawTagsChanged,
+        ]
+    );
+}
+
+#[test]
+fn semantic_law_hash_ignores_programmatic_draft_entries() {
+    let mut law_ir = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
+    ))
+    .expect("fixture should lower");
+    let baseline_hash = compute_law_hash_v1(&law_ir).expect("baseline hash should compute");
+    let mut draft = law_ir.entries[0].clone();
+    draft.id = "draft.echo.scalar.positiveInt.other".to_string();
+    draft.status = LawStatusV1::Draft;
+    draft.rationale = Some("Draft prose must not affect semantic hashes.".to_string());
+    if let LawEntryBodyV1::ScalarSemantics(body) = &mut draft.body {
+        body.min_inclusive = Some(999);
+    }
+    law_ir.entries.push(draft);
+
+    assert_eq!(
+        baseline_hash,
+        compute_law_hash_v1(&law_ir).expect("draft-bearing hash should compute")
+    );
 }
 
 #[test]

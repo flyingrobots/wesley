@@ -50,8 +50,9 @@ The historical package CLI is retired. Use the native commands:
 - **TypeScript**: `wesley emit typescript --schema <path> --out <path> [--law <path>]`
 - **Emit metadata**: add `--metadata-out <path>` to record schema hash,
   generator identity, generator version, and `rust-native` execution mode. When
-  `--law <path>` is supplied, metadata also records `lawHash`,
-  `lawDocumentHash`, `profileHash`, `bundleHash`, and the Law IR codec.
+  `--law <path>` is supplied, metadata also records `schemaHashQualified`,
+  `lawHash`, `lawDocumentHash`, `profileHash`, `bundleHash`, and the Law IR
+  codec.
 
 For legacy migration users still calling `pnpm wesley`, rewrite the caller.
 The direct replacements are `wesley schema lower`, `wesley schema hash`,

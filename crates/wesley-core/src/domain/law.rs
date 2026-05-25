@@ -578,11 +578,14 @@ pub struct LawDiffEventV1 {
     /// Event classification.
     pub kind: LawDiffEventKindV1,
     /// Stable law id affected by the event.
-    pub law_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub law_id: Option<String>,
     /// Subject coordinate affected by the event.
-    pub subject: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
     /// Law kind affected by the event.
-    pub law_kind: LawKindV1,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub law_kind: Option<LawKindV1>,
     /// Review posture for this initial diff event.
     pub review_posture: LawDiffReviewPostureV1,
     /// Field-level changes when a law body changed.
@@ -618,10 +621,18 @@ pub struct LawDiffEventV1 {
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LawDiffEventKindV1 {
+    /// Bundle-level semantic fields changed.
+    LawBundleChanged,
+    /// Semantic registry facts changed.
+    RegistryChanged,
     /// New active law entry.
     LawAdded,
     /// Active law entry removed.
     LawRemoved,
+    /// Existing law tags changed.
+    LawTagsChanged,
+    /// Existing law changed outside a narrower v1 event class.
+    LawChanged,
     /// Scalar semantic body changed.
     ScalarSemanticsChanged,
     /// Variant law body changed.
@@ -632,6 +643,14 @@ pub enum LawDiffEventKindV1 {
     FootprintContracted,
     /// Footprint changed in mixed or structural ways.
     FootprintChanged,
+    /// Channel version changed.
+    ChannelVersionChanged,
+    /// Channel law changed without a channel-version change.
+    ChannelLawChanged,
+    /// Typed invariant predicate changed.
+    PredicateChanged,
+    /// Schema hash anchor changed.
+    SchemaHashRebound,
 }
 
 /// Review posture for an initial semantic diff event.
@@ -807,7 +826,11 @@ pub fn diff_law_ir_v1(
 ) -> Result<LawDiffReportV1, WeslawError> {
     let old_entries = law_entry_index(&old_law_ir.entries, "$.old.entries")?;
     let new_entries = law_entry_index(&new_law_ir.entries, "$.new.entries")?;
+    let old_law_hash = compute_law_hash_v1(old_law_ir)?;
+    let new_law_hash = compute_law_hash_v1(new_law_ir)?;
     let mut changes = Vec::new();
+
+    push_bundle_level_diff_events(old_law_ir, new_law_ir, &mut changes)?;
 
     for old_id in old_entries.keys() {
         if !new_entries.contains_key(old_id) {
@@ -833,10 +856,6 @@ pub fn diff_law_ir_v1(
     {
         let old_entry = old_entries[law_id];
         let new_entry = new_entries[law_id];
-        if semantic_entry_value(old_entry)? == semantic_entry_value(new_entry)? {
-            continue;
-        }
-
         if old_entry.kind != new_entry.kind || old_entry.subject != new_entry.subject {
             changes.push(law_lifecycle_event(
                 LawDiffEventKindV1::LawRemoved,
@@ -846,24 +865,48 @@ pub fn diff_law_ir_v1(
             continue;
         }
 
+        if let Some(tags_event) = diff_law_tags(old_entry, new_entry)? {
+            changes.push(tags_event);
+        }
+        if semantic_body_value(old_entry)? == semantic_body_value(new_entry)? {
+            continue;
+        }
         if let Some(event) = diff_law_entry_bodies(old_entry, new_entry)? {
             changes.push(event);
         }
     }
 
+    if changes.is_empty() && old_law_hash != new_law_hash {
+        changes.push(bundle_diff_event(
+            LawDiffEventKindV1::LawBundleChanged,
+            vec![LawDiffFieldChangeV1 {
+                path: "lawHash".to_string(),
+                old: old_law_hash.clone().into(),
+                new: new_law_hash.clone().into(),
+            }],
+        ));
+    }
+
     changes.sort_by(|left, right| {
         left.law_id
-            .cmp(&right.law_id)
+            .as_deref()
+            .unwrap_or("")
+            .cmp(right.law_id.as_deref().unwrap_or(""))
             .then(left.kind.cmp(&right.kind))
-            .then(left.subject.cmp(&right.subject))
+            .then(
+                left.subject
+                    .as_deref()
+                    .unwrap_or("")
+                    .cmp(right.subject.as_deref().unwrap_or("")),
+            )
     });
 
     Ok(LawDiffReportV1 {
         api_version: WESLEY_LAW_DIFF_API_VERSION.to_string(),
         old_schema_hash: old_law_ir.schema_hash.clone(),
         new_schema_hash: new_law_ir.schema_hash.clone(),
-        old_law_hash: compute_law_hash_v1(old_law_ir)?,
-        new_law_hash: compute_law_hash_v1(new_law_ir)?,
+        old_law_hash,
+        new_law_hash,
         changes,
     })
 }
@@ -949,6 +992,76 @@ fn law_entry_index<'entry>(
     Ok(index)
 }
 
+fn push_bundle_level_diff_events(
+    old_law_ir: &LawIrV1,
+    new_law_ir: &LawIrV1,
+    changes: &mut Vec<LawDiffEventV1>,
+) -> Result<(), WeslawError> {
+    let mut bundle_changes = Vec::new();
+    push_value_change(
+        &mut bundle_changes,
+        "family",
+        &old_law_ir.family,
+        &new_law_ir.family,
+    )?;
+    if !bundle_changes.is_empty() {
+        changes.push(bundle_diff_event(
+            LawDiffEventKindV1::LawBundleChanged,
+            bundle_changes,
+        ));
+    }
+
+    let mut schema_changes = Vec::new();
+    push_value_change(
+        &mut schema_changes,
+        "schemaHash",
+        &old_law_ir.schema_hash,
+        &new_law_ir.schema_hash,
+    )?;
+    if !schema_changes.is_empty() {
+        changes.push(bundle_diff_event(
+            LawDiffEventKindV1::SchemaHashRebound,
+            schema_changes,
+        ));
+    }
+
+    let mut registry_changes = Vec::new();
+    push_json_change(
+        &mut registry_changes,
+        "registries",
+        semantic_registry_value(&old_law_ir.registries)?,
+        semantic_registry_value(&new_law_ir.registries)?,
+    );
+    if !registry_changes.is_empty() {
+        changes.push(bundle_diff_event(
+            LawDiffEventKindV1::RegistryChanged,
+            registry_changes,
+        ));
+    }
+
+    Ok(())
+}
+
+fn diff_law_tags(
+    old_entry: &LawEntryV1,
+    new_entry: &LawEntryV1,
+) -> Result<Option<LawDiffEventV1>, WeslawError> {
+    let mut field_changes = Vec::new();
+    push_json_change(
+        &mut field_changes,
+        "tags",
+        string_vec_value(&old_entry.tags, "$.old.entries.tags")?,
+        string_vec_value(&new_entry.tags, "$.new.entries.tags")?,
+    );
+    if field_changes.is_empty() {
+        return Ok(None);
+    }
+
+    let mut event = base_diff_event(LawDiffEventKindV1::LawTagsChanged, new_entry);
+    event.field_changes = field_changes;
+    Ok(Some(event))
+}
+
 fn diff_law_entry_bodies(
     old_entry: &LawEntryV1,
     new_entry: &LawEntryV1,
@@ -963,10 +1076,22 @@ fn diff_law_entry_bodies(
         (LawEntryBodyV1::FootprintLaw(old_body), LawEntryBodyV1::FootprintLaw(new_body)) => {
             diff_footprint_law(old_entry, new_entry, old_body, new_body)
         }
-        _ => Ok(Some(law_lifecycle_event(
-            LawDiffEventKindV1::LawAdded,
-            new_entry,
-        ))),
+        (LawEntryBodyV1::ChannelLaw(old_body), LawEntryBodyV1::ChannelLaw(new_body)) => {
+            diff_channel_law(old_entry, new_entry, old_body, new_body)
+        }
+        (LawEntryBodyV1::InvariantLaw(old_body), LawEntryBodyV1::InvariantLaw(new_body)) => {
+            diff_invariant_law(old_entry, new_entry, old_body, new_body)
+        }
+        _ => {
+            let mut event = base_diff_event(LawDiffEventKindV1::LawChanged, new_entry);
+            push_json_change(
+                &mut event.field_changes,
+                "body",
+                semantic_body_value(old_entry)?,
+                semantic_body_value(new_entry)?,
+            );
+            Ok(Some(event))
+        }
     }
 }
 
@@ -1169,16 +1294,105 @@ fn diff_footprint_law(
     Ok(Some(event))
 }
 
+fn diff_channel_law(
+    _old_entry: &LawEntryV1,
+    new_entry: &LawEntryV1,
+    old_body: &ChannelLawV1,
+    new_body: &ChannelLawV1,
+) -> Result<Option<LawDiffEventV1>, WeslawError> {
+    let mut field_changes = Vec::new();
+    push_value_change(
+        &mut field_changes,
+        "body.ordered",
+        old_body.ordered,
+        new_body.ordered,
+    )?;
+    push_value_change(
+        &mut field_changes,
+        "body.version",
+        old_body.version,
+        new_body.version,
+    )?;
+    push_json_change(
+        &mut field_changes,
+        "body.compatibility",
+        serde_json::to_value(&old_body.compatibility).map_err(canonicalization_error)?,
+        serde_json::to_value(&new_body.compatibility).map_err(canonicalization_error)?,
+    );
+    push_json_change(
+        &mut field_changes,
+        "body.messages",
+        serde_json::to_value(&old_body.messages).map_err(canonicalization_error)?,
+        serde_json::to_value(&new_body.messages).map_err(canonicalization_error)?,
+    );
+    if field_changes.is_empty() {
+        return Ok(None);
+    }
+
+    let kind = if old_body.version != new_body.version {
+        LawDiffEventKindV1::ChannelVersionChanged
+    } else {
+        LawDiffEventKindV1::ChannelLawChanged
+    };
+    let mut event = base_diff_event(kind, new_entry);
+    event.field_changes = field_changes;
+    Ok(Some(event))
+}
+
+fn diff_invariant_law(
+    _old_entry: &LawEntryV1,
+    new_entry: &LawEntryV1,
+    old_body: &InvariantLawV1,
+    new_body: &InvariantLawV1,
+) -> Result<Option<LawDiffEventV1>, WeslawError> {
+    let mut field_changes = Vec::new();
+    push_json_change(
+        &mut field_changes,
+        "body.predicate",
+        serde_json::to_value(&old_body.predicate).map_err(canonicalization_error)?,
+        serde_json::to_value(&new_body.predicate).map_err(canonicalization_error)?,
+    );
+    if field_changes.is_empty() {
+        return Ok(None);
+    }
+
+    let mut event = base_diff_event(LawDiffEventKindV1::PredicateChanged, new_entry);
+    event.field_changes = field_changes;
+    Ok(Some(event))
+}
+
 fn law_lifecycle_event(kind: LawDiffEventKindV1, entry: &LawEntryV1) -> LawDiffEventV1 {
     base_diff_event(kind, entry)
+}
+
+fn bundle_diff_event(
+    kind: LawDiffEventKindV1,
+    field_changes: Vec<LawDiffFieldChangeV1>,
+) -> LawDiffEventV1 {
+    LawDiffEventV1 {
+        kind,
+        law_id: None,
+        subject: None,
+        law_kind: None,
+        review_posture: LawDiffReviewPostureV1::RequiresReview,
+        field_changes,
+        added_reads: Vec::new(),
+        removed_reads: Vec::new(),
+        added_writes: Vec::new(),
+        removed_writes: Vec::new(),
+        added_creates: Vec::new(),
+        removed_creates: Vec::new(),
+        added_forbids: Vec::new(),
+        removed_forbids: Vec::new(),
+    }
 }
 
 fn base_diff_event(kind: LawDiffEventKindV1, entry: &LawEntryV1) -> LawDiffEventV1 {
     LawDiffEventV1 {
         kind,
-        law_id: entry.id.clone(),
-        subject: entry.subject.clone(),
-        law_kind: entry.kind,
+        law_id: Some(entry.id.clone()),
+        subject: Some(entry.subject.clone()),
+        law_kind: Some(entry.kind),
         review_posture: LawDiffReviewPostureV1::RequiresReview,
         field_changes: Vec::new(),
         added_reads: Vec::new(),
@@ -1286,6 +1500,7 @@ fn semantic_law_ir_value(value: &LawIrV1) -> Result<serde_json::Value, WeslawErr
     let entries = value
         .entries
         .iter()
+        .filter(|entry| entry.status == LawStatusV1::Active)
         .map(semantic_entry_value)
         .collect::<Result<Vec<_>, _>>()?;
 
