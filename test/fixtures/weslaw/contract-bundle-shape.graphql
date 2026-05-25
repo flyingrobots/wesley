@@ -147,10 +147,4 @@ type Query {
 type Mutation {
   replaceRangeAsTick(input: ReplaceRangeAsTickInput!): ReplaceRangeAsTickResult!
     @wes_op(name: "replaceRangeAsTick")
-    @wes_footprint(
-      reads: ["BufferWorldline", "RopeHead"]
-      writes: ["BufferWorldline"]
-      creates: ["TextBlob", "TickReceipt"]
-      forbids: ["Diagnostics"]
-    )
 }

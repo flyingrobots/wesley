@@ -233,6 +233,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **`weslaw` substrate self-audit**: Removed the inline footprint directive
+  shadow from the shared `weslaw` fixture schema, added guard coverage for the
+  fixture corpus, defined the missing footprint create-slot and update Law IR
+  shapes, and normalized scalar/explain-command spelling in the design packet.
 - **Retired package reappearance guard**: `cargo xtask docs-check` now fails if
   a package listed under `retiredPackages` quietly returns with a `package.json`.
 - **SHIPME fixture workflow trigger**: `cert-shipme.yml` now runs when

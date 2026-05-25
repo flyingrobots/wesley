@@ -261,6 +261,23 @@ FootprintClosureV1
   cardinality: one | optional | many
 ```
 
+Create-slot fields:
+
+```text
+FootprintCreateSlotV1
+  name: SlotName
+  kind: ResourceKind
+  cardinality: one | optional | many = one
+```
+
+Update fields:
+
+```text
+FootprintUpdateV1
+  slot: SlotName
+  fields: [FieldName]
+```
+
 Binding rules:
 
 - subject must bind to a root operation field;
@@ -269,6 +286,7 @@ Binding rules:
 - slot names are unique per footprint;
 - `bindFromArg` paths must bind through the operation argument shape;
 - `bindFromSlot` references must name an existing slot;
+- create-slot names are unique per footprint;
 - updates must target slots with write access;
 - `forbids` must not overlap `reads`, `writes`, `creates`, slot kinds,
   closure reads, or create-slot kinds.

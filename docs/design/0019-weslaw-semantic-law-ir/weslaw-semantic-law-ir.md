@@ -389,11 +389,14 @@ laws:
       representation: integer
       minInclusive: 1
       maxInclusive: 4294967295
-      forbidSilentNarrowingToGraphQLInt: true
+      forbids: [silentGraphQLIntNarrowing]
     rationale: >
       PositiveInt is a u32-domain runtime value. GraphQL Int narrowing would
       change the contract even though the visible scalar name stayed the same.
 ```
+
+The `weslaw/v1` YAML frontend nests scalar-specific fields under `semantics`.
+Lowering strips that authoring wrapper before producing the scalar Law IR body.
 
 Compiler expectations:
 
@@ -624,8 +627,8 @@ The following are valuable but should not block v1:
 | Profile-aware severity escalation | Belongs in Policy/Profile IR; should not be confused with semantic truth. |
 | Generated test scaffolding | Useful after residue and observation surfaces are stable. |
 | Runtime capability APIs from footprints | High payoff, but depends on stable footprint IR and target-owned runtime adapters. |
-| Law Matrix static site | Strong human legibility surface after `explain-law` and semantic diffs exist. |
-| LSP support | Should use the same engine as `explain-law`; do not build it first. |
+| Law Matrix static site | Strong human legibility surface after `wesley law explain` and semantic diffs exist. |
+| LSP support | Should use the same engine as `wesley law explain`; do not build it first. |
 | Wesley SDL+ | Authoring sugar only after Law IR is stable. |
 
 ## Binding Model
@@ -1012,8 +1015,8 @@ Expected output:
 - generated artifact implications;
 - policy/profile posture if supplied.
 
-`explain-law` should become the shared engine for future LSP hover support and
-the Law Matrix static site.
+`wesley law explain` should become the shared engine for future LSP hover
+support and the Law Matrix static site.
 
 ### `wesley init-law`
 

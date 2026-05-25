@@ -19,7 +19,7 @@ The schema hash anchors use the native Wesley `schema hash` output for
 `contract-bundle-shape.graphql`.
 
 ```text
-10df890a24bbcf0e9fd6c9a06ab461972f7565798ced88d06c45c470e1840c96
+ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
 ```
 
 ## Fixture Policy
