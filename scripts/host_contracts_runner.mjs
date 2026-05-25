@@ -1,4 +1,4 @@
-// Shared host-contracts runner for Node, Bun, and Deno
+// Shared host-contracts runner for Bun and Deno
 // - Runs the test harness and emits a single JSON object to stdout
 // - Sets an appropriate exit code across runtimes (0 when failed==0)
 // - Avoids any Node/Deno-specific imports so it can run everywhere

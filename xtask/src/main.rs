@@ -915,6 +915,7 @@ fn check_node_retirement_ledger() -> Result<(), Error> {
 
     let mut failures = Vec::new();
     check_node_package_dispositions(&root, &ledger, &mut failures)?;
+    check_retired_node_packages_absent(&root, &ledger, &mut failures);
     check_legacy_package_metadata(&root, &ledger, &mut failures)?;
     check_pnpm_wesley_front_door_docs(&root, &ledger, &mut failures)?;
     check_legacy_core_authority_changes(&root, &ledger, &mut failures)?;
@@ -971,6 +972,24 @@ fn check_node_package_dispositions(
     }
 
     Ok(())
+}
+
+fn check_retired_node_packages_absent(
+    root: &Path,
+    ledger: &serde_json::Value,
+    failures: &mut Vec<String>,
+) {
+    for entry in ledger_array(ledger, "retiredPackages", failures) {
+        let Some(path) = entry.get("path").and_then(serde_json::Value::as_str) else {
+            failures.push("node retirement retiredPackages entry is missing path".to_string());
+            continue;
+        };
+        if root.join(path).join("package.json").is_file() {
+            failures.push(format!(
+                "{path} is listed in retiredPackages but package.json exists; restore requires a new ledger disposition and explicit review"
+            ));
+        }
+    }
 }
 
 fn check_legacy_package_metadata(
@@ -2131,6 +2150,45 @@ mod tests {
                 "packages/wesley-cli/package.json must set `wesley.retirement.status` to `legacy-compatibility`",
                 "packages/wesley-cli/package.json must include `wesley.retirement.ledger`",
                 "packages/wesley-cli/package.json must include `wesley.retirement.disposition`",
+            ]
+        );
+        fs::remove_dir_all(root).expect("temp root should be removed");
+    }
+
+    #[test]
+    fn node_retirement_retired_packages_must_stay_absent() {
+        let root = env::temp_dir().join(format!(
+            "wesley-xtask-retired-package-{}",
+            std::process::id()
+        ));
+        let package_dir = root.join("packages/wesley-cli");
+        fs::create_dir_all(&package_dir).expect("temp package dir should be created");
+        fs::write(
+            package_dir.join("package.json"),
+            serde_json::json!({
+                "name": "@wesley/cli",
+                "version": "0.1.0",
+                "type": "module"
+            })
+            .to_string(),
+        )
+        .expect("temp package json should be written");
+        let ledger = serde_json::json!({
+            "retiredPackages": [
+                {
+                    "path": "packages/wesley-cli",
+                    "disposition": "deleted"
+                }
+            ]
+        });
+        let mut failures = Vec::new();
+
+        check_retired_node_packages_absent(&root, &ledger, &mut failures);
+
+        assert_eq!(
+            failures,
+            vec![
+                "packages/wesley-cli is listed in retiredPackages but package.json exists; restore requires a new ledger disposition and explicit review",
             ]
         );
         fs::remove_dir_all(root).expect("temp root should be removed");

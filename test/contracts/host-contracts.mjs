@@ -1,6 +1,6 @@
 /**
  * Host Contracts – shared, host-agnostic checks
- * Intent: quick viability tests across Node, Deno, Bun, Browser.
+ * Intent: quick viability tests across retained Deno, Bun, and browser hosts.
  * No Node built-ins here; only Web APIs available everywhere.
  */
 

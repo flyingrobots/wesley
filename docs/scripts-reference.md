@@ -30,10 +30,10 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 
 ## Test Harnesses
 
-| Helper                               | Purpose                                                                          | Notes                                                                                                                                                                                                                |
-| ------------------------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/host_contracts_runner.mjs`  | Shared runner used by Node, Deno, and Bun host‑contract entrypoints.             | Emits a single JSON result and sets exit code (0 when `failed === 0`). Entry scripts (`host_contracts_node.mjs`, `host_contracts_deno.mjs`, `host_contracts_bun.mjs`) simply `import { runAndReport }` and await it. |
-| `scripts/host_contracts_browser.mjs` | Builds the contracts bundle (Vite), serves it, runs Playwright, and prints JSON. | Honors `OUT_JSON`. When `ONLY_PARSE_OUT_JSON=1`, skips build/serve and only parses the file (useful for debugging). Logs verifyIr diagnostics to stderr when failures occur.                                         |
+| Helper                               | Purpose                                                                          | Notes                                                                                                                                                                                     |
+| ------------------------------------ | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/host_contracts_runner.mjs`  | Shared runner used by Deno and Bun host-contract entrypoints.                    | Emits a single JSON result and sets exit code (0 when `failed === 0`). Entry scripts (`host_contracts_deno.mjs`, `host_contracts_bun.mjs`) simply `import { runAndReport }` and await it. |
+| `scripts/host_contracts_browser.mjs` | Builds the contracts bundle (Vite), serves it, runs Playwright, and prints JSON. | Honors `OUT_JSON`. When `ONLY_PARSE_OUT_JSON=1`, skips build/serve and only parses the file (useful for debugging). Logs verifyIr diagnostics to stderr when failures occur.              |
 
 ## Progress & Badges
 

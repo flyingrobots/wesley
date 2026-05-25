@@ -78,6 +78,9 @@ load 'bats-plugins/bats-assert/load'
 
   run test ! -e .github/workflows/fuzzing.yml
   assert_success
+
+  run test ! -e scripts/host_contracts_node.mjs
+  assert_success
 }
 
 @test "cert-shipme anchors and paginates bot comments" {

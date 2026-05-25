@@ -90,6 +90,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Removed
 
+- **Node host-contract shadow**: Deleted the last `HOST=node` host-contract
+  entrypoint and made retained host-contract runs explicitly choose `browser`,
+  `deno`, or `bun`.
 - **Final legacy Node compiler surface**: Deleted `packages/wesley-core`,
   `packages/wesley-cli`, `packages/wesley-host-node`, and
   `packages/wesley-runtime-node`; removed their package workflows, CLI Bats
@@ -165,6 +168,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Post-retirement host lane language**: Live host docs, CI doctrine, and the
+  retirement ledger now call browser/Bun/Deno checks `External Host Experiment`
+  lanes instead of `Legacy Compatibility` lanes.
+- **Post-retirement backlog notes**: Host portability backlog cards now mark
+  pre-retirement Node-host acceptance text as obsolete instead of treating it as
+  live execution guidance.
 - **Holmes support ownership**: Holmes now carries its retained ledger,
   artifact-path, evidence-quality, and module-capability helpers locally rather
   than importing deleted JavaScript core/runtime packages.
@@ -215,6 +224,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Retired package reappearance guard**: `cargo xtask docs-check` now fails if
+  a package listed under `retiredPackages` quietly returns with a `package.json`.
 - **SHIPME fixture workflow trigger**: `cert-shipme.yml` now runs when
   `scripts/prepare-shipme-cert-fixture.mjs` changes, so certificate fixture
   regressions cannot bypass the SHIPME CI signal through path filtering.

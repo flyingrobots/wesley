@@ -1,8 +1,9 @@
 # Browser Host
 
-The browser host is a legacy compatibility experiment: a minimal, pure-ESM
-adapter for running Wesley logic in a real browser bundle. It is not on the
-Rust-native product path and should leave the repo when externalized or deleted.
+The browser host is an external host experiment: a minimal, pure-ESM adapter
+for running Wesley-adjacent smoke logic in a real browser bundle. It is not on
+the Rust-native product path and should leave the repo when externalized or
+deleted.
 
 - Package: `@wesley/host-browser`
 - Exports: `createBrowserRuntime()`, `runInBrowser(schema: string)`

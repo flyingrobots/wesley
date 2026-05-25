@@ -219,7 +219,7 @@ The closeout lives in
       with native CLI invocations wherever tests are not explicitly legacy tests.
 - [x] NR-050 Move remaining Node-host tests into a compatibility-only lane.
 - [x] NR-051 Add CI labels or job names that distinguish Rust product checks
-      from legacy compatibility checks.
+      from external host experiment checks.
 - [x] NR-052 Make `cargo xtask preflight` the ordinary product health check.
 - [x] NR-053 Make `cargo xtask legacy-preflight` optional for legacy package
       changes only.
@@ -359,6 +359,23 @@ The next pulls after this drift check are:
    authority.
 5. Revisit backlog cards that still mention deleted package paths and either
    archive, rewrite, or close them as obsolete.
+
+## Post-Retirement Freestyle Slice Log
+
+These celebration slices are not a new campaign. They are cleanup ballast after
+the 96-slice retirement closeout.
+
+- [x] PF-001 Remove the remaining `HOST=node` host-contract entrypoint and make
+      retained host-contract runs opt into `browser`, `deno`, or `bun`.
+- [x] PF-002 Rename live host-check doctrine from `Legacy Compatibility` to
+      `External Host Experiment`.
+- [x] PF-003 Add a Rust `xtask` guard that fails when a package listed in
+      `retiredPackages` quietly reappears with a `package.json`.
+- [x] PF-004 Refresh CI, host, and script docs so post-retirement operators see
+      product checks, repo hygiene, and external host experiments as separate
+      lanes.
+- [x] PF-005 Record the post-retirement cleanup in the changelog so the branch
+      tells the whole story after merge.
 
 The `ninelives` decision is made: use `ninelives` for Rust resilience seams and
 Alfred for JavaScript tooling seams. Keep the scope narrow: resilience policy

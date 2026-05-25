@@ -17,9 +17,10 @@ spine.
 - Bun: External host experiment. Runs a tiny self-contained SDL smoke without
   the retired JavaScript core/runtime packages.
 
-## Contracts suite (multi‑host)
+## Contracts Suite
 
-The unified “host contracts” tests validate a small set of invariants across all hosts:
+The unified host-contracts tests validate a small set of invariants across
+retained external host experiments:
 
 - Minimal SDL detects `@wes_table` types.
 - Max schema size guard emits `EINPUTSIZE`.
@@ -28,9 +29,6 @@ The unified “host contracts” tests validate a small set of invariants across
 Commands
 
 ```bash
-# Node
-HOST=node bats test/hosts/host-contracts.bats
-
 # Browser (Playwright under the hood)
 HOST=browser bats test/hosts/host-contracts.bats
 
