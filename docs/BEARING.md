@@ -333,6 +333,10 @@ The non-negotiables are narrow:
 - Wesley SDL+ is deferred until Law IR, binding, canonicalization, and diffs
   are stable.
 
+Working budget: **75 slices**. The first scope checkpoint is `WLAW-050`; do
+not treat slices `WLAW-051` through `WLAW-075` as locked until the checkpoint
+re-estimates the v1/v1.1 boundary.
+
 ## Tensions
 
 - **Rust Native Discipline**: The easy mistake after deletion is to recreate
@@ -380,15 +384,14 @@ runtime ownership into the base compiler.
 
 The next pulls after this drift check are:
 
-1. Define the Law IR v1 schema as a closed, versioned model.
-2. Define subject coordinates, non-shape law registries, and schema-hash
-   anchoring diagnostics.
-3. Implement strict Law IR binding and canonical `lawHash` rules before adding
-   ergonomic syntax.
-4. Lower one known formal Wesley directive family into Law IR and prove it
-   canonicalizes to the same output as authored `weslaw`.
-5. Add machine-readable semantic diff events so Holmes/BLADE can consume law
-   changes instead of raw text diffs.
+1. `WLAW-001` through `WLAW-010`: lock the Law IR v1 substrate, coordinate
+   grammar, canonicalization rules, diagnostics, fixture corpus, and examples.
+2. `WLAW-011` through `WLAW-020`: add the typed Law IR and YAML loader.
+3. `WLAW-021` through `WLAW-035`: add strict schema-bound law validation.
+4. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
+   bundle manifest fields.
+5. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
+   for the required drift checkpoint.
 
 ## Post-Retirement Freestyle Slice Log
 

@@ -12,7 +12,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `weslaw` as Wesley's semantic law layer for contract bundles, with typed Law
   IR, strict binding, schema-hash anchoring, canonical law hashes, structured
   semantic diffs, directive lowering, deferred SDL+ syntax, and explicit
-  separation between law, policy, evidence, and judgment.
+  separation between law, policy, evidence, and judgment. The packet now tracks
+  a 75-slice implementation runway with a mandatory scope checkpoint at
+  `WLAW-050`.
 - **Holmes assurance hexagon design**: Added design packet `0018` describing a
   ground-up Rust Holmes redesign with hexagonal architecture, CLI/API/MCP
   interfaces, dependency-injected ports, and a reporting abstraction where

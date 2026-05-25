@@ -1127,35 +1127,137 @@ layer because it creates false confidence.
 
 ## Implementation Slices
 
-Initial ten slices:
+Working budget: **75 slices**.
 
-1. Define the Law IR v1 schema as a closed, versioned model.
-2. Define the subject coordinate grammar and non-shape law registry model.
-3. Implement `weslaw/v1` YAML parsing into draft Law AST.
-4. Implement strict binding against Shape IR and schema hash anchors.
-5. Implement canonical Law IR serialization and `lawHash`.
-6. Implement compiler diagnostics for schema mismatch, unresolved subject,
-   wrong subject kind, duplicate id, unknown kind, unresolved reference, and
-   conflict.
-7. Lower one known formal directive family into Law IR and prove equivalent
-   YAML canonicalization.
-8. Emit machine-readable law diff events for scalar, variant, and footprint
-   changes.
-9. Add bundle manifest hash fields for schema, law, profile, and bundle.
-10. Add `wesley law explain` for one scalar and one operation subject.
+The budget is intentionally larger than the minimal compiler substrate because
+`weslaw` must become an operator-usable contract-bundle feature, not just an
+internal parser. Re-estimate after `WLAW-050` before committing to the final
+v1/v1.1 boundary.
 
-Second ten slices:
+### Phase 0: Design Lock
 
-1. Add `wesley law lint`.
-2. Add `wesley law validate`.
-3. Add `wesley law diff --json`.
-4. Add Markdown semantic diff summaries for CI.
-5. Add `wesley init-law` scaffolding from known directives.
-6. Add comment-derived draft suggestions with mandatory human promotion.
-7. Add `wesley law rebind` report generation.
-8. Add variant law validator generation for one target.
-9. Add scalar law validator generation for one target.
-10. Add Holmes/BLADE-facing semantic diff fixture.
+- [ ] WLAW-001 Publish the Law IR v1 schema note as a closed, versioned model.
+- [ ] WLAW-002 Define the subject coordinate grammar for schema and law
+      subjects.
+- [ ] WLAW-003 Define the non-shape law registry model for resources,
+      verifiers, channels, and capability domains.
+- [ ] WLAW-004 Define the law file discovery rules and explicit
+      schema-hash-anchor rules.
+- [ ] WLAW-005 Define canonicalization rules for ordering, defaults, comments,
+      source spans, set-like arrays, and order-sensitive arrays.
+- [ ] WLAW-006 Define the v1 diagnostic catalog and stable error codes.
+- [ ] WLAW-007 Define active versus draft law semantics.
+- [ ] WLAW-008 Define the v1 fixture corpus for accepted and rejected law
+      documents.
+- [ ] WLAW-009 Add the first `weslaw/v1` examples for scalar, variant,
+      footprint, channel, and typed invariant law.
+- [ ] WLAW-010 Update docs and changelog with the locked v1 substrate scope.
+
+### Phase 1: Law Loader And Typed IR
+
+- [ ] WLAW-011 Add Rust Law IR v1 types for common law entry metadata.
+- [ ] WLAW-012 Add Rust Law IR v1 types for `ScalarSemanticsLaw`.
+- [ ] WLAW-013 Add Rust Law IR v1 types for `VariantLaw`.
+- [ ] WLAW-014 Add Rust Law IR v1 types for `FootprintLaw`.
+- [ ] WLAW-015 Add Rust Law IR v1 types for `ChannelLaw`.
+- [ ] WLAW-016 Add Rust Law IR v1 types for typed `InvariantLaw`.
+- [ ] WLAW-017 Parse `weslaw/v1` YAML into a draft Law AST.
+- [ ] WLAW-018 Normalize draft Law AST into typed Law IR.
+- [ ] WLAW-019 Reject unknown law kinds and unknown fields with stable
+      diagnostics.
+- [ ] WLAW-020 Add fixture tests proving accepted YAML lowers into typed Law
+      IR.
+
+### Phase 2: Strict Binding
+
+- [ ] WLAW-021 Parse and validate schema-hash anchors.
+- [ ] WLAW-022 Fail loudly on schema-hash mismatch.
+- [ ] WLAW-023 Bind scalar subjects to Shape IR.
+- [ ] WLAW-024 Bind type, input, enum, and field subjects to Shape IR.
+- [ ] WLAW-025 Bind operation subjects to root operation fields.
+- [ ] WLAW-026 Bind variant discriminator fields and enum values.
+- [ ] WLAW-027 Bind footprint argument paths to operation input paths.
+- [ ] WLAW-028 Bind footprint resource kinds through schema coordinates or
+      explicit law registries.
+- [ ] WLAW-029 Bind channel subjects through known directives or law
+      registries.
+- [ ] WLAW-030 Bind typed invariant field references.
+- [ ] WLAW-031 Reject duplicate law ids across the active bundle.
+- [ ] WLAW-032 Reject wrong subject kind for each Law IR variant.
+- [ ] WLAW-033 Reject contradictory law entries in the same bundle.
+- [ ] WLAW-034 Add closest-match diagnostics for unresolved schema
+      coordinates.
+- [ ] WLAW-035 Add `wesley law validate` for full schema-bound validation.
+
+### Phase 3: Canonicalization And Hashes
+
+- [ ] WLAW-036 Implement canonical Law IR serialization.
+- [ ] WLAW-037 Compute `lawHash` from active semantic Law IR only.
+- [ ] WLAW-038 Exclude comments, source spans, and rationale prose from
+      `lawHash`.
+- [ ] WLAW-039 Compute optional `lawDocumentHash` for provenance-bearing
+      documents.
+- [ ] WLAW-040 Add canonicalization fixtures for key order and file-order
+      independence.
+- [ ] WLAW-041 Add canonicalization fixtures for omitted defaults versus
+      explicit defaults.
+- [ ] WLAW-042 Add canonicalization fixtures for set-like and order-sensitive
+      arrays.
+- [ ] WLAW-043 Add bundle manifest fields for `schemaHash`, `lawHash`,
+      `profileHash`, and `bundleHash`.
+- [ ] WLAW-044 Embed schema and law hash constants in one generated artifact
+      path.
+- [ ] WLAW-045 Update docs and changelog for canonical law hash behavior.
+
+### Phase 4: Semantic Diffs
+
+- [ ] WLAW-046 Define `wesley.law-diff/v1` JSON output.
+- [ ] WLAW-047 Emit scalar semantic diff events.
+- [ ] WLAW-048 Emit variant law diff events.
+- [ ] WLAW-049 Emit footprint law diff events.
+- [ ] WLAW-050 Drift checkpoint: reassess scope, split v1/v1.1 if needed, and
+      update this checklist before continuing.
+- [ ] WLAW-051 Emit channel law diff events.
+- [ ] WLAW-052 Emit typed invariant diff events.
+- [ ] WLAW-053 Add `LAW_STRENGTHENED` and `LAW_WEAKENED` classifications.
+- [ ] WLAW-054 Add `BINDING_BROKEN` and `SCHEMA_HASH_REBOUND`
+      classifications.
+- [ ] WLAW-055 Add `wesley law diff --json`.
+- [ ] WLAW-056 Generate Markdown summaries from structured diff events.
+- [ ] WLAW-057 Add CI-ready semantic diff fixture output.
+- [ ] WLAW-058 Add Holmes/BLADE-facing semantic diff fixtures.
+- [ ] WLAW-059 Update docs and changelog for law diff output.
+
+### Phase 5: Directive Lowering And Adoption Tools
+
+- [ ] WLAW-060 Lower one known formal directive family into Law IR.
+- [ ] WLAW-061 Prove directive-authored and YAML-authored law canonicalize to
+      the same Law IR.
+- [ ] WLAW-062 Add `wesley law lint` for structure-only validation.
+- [ ] WLAW-063 Add `wesley init-law` scaffolding from known formal directives.
+- [ ] WLAW-064 Add comment-derived draft suggestions with mandatory human
+      promotion.
+- [ ] WLAW-065 Add `wesley law explain scalar:<Name>`.
+- [ ] WLAW-066 Add `wesley law explain operation:<Root>.<Field>`.
+- [ ] WLAW-067 Add `wesley law rebind` report generation.
+- [ ] WLAW-068 Add explicit rebind acceptance flow for schema-hash anchor
+      updates.
+- [ ] WLAW-069 Update docs and changelog for law authoring and adoption
+      workflows.
+
+### Phase 6: First Consumer Payoff
+
+- [ ] WLAW-070 Generate scalar validators for one retained emitter or module
+      target.
+- [ ] WLAW-071 Generate variant validators for one retained emitter or module
+      target.
+- [ ] WLAW-072 Emit first footprint-to-capability report without claiming
+      runtime enforcement.
+- [ ] WLAW-073 Add profile/category-aware law coverage reporting.
+- [ ] WLAW-074 Add a minimal Law Matrix static report prototype or defer it
+      explicitly to v1.1 with evidence.
+- [ ] WLAW-075 Close the v1 packet with playback, retrospective, docs,
+      changelog, and release-readiness evidence.
 
 ## Non-Goals
 
