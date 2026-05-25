@@ -1,0 +1,150 @@
+"""
+Minimal schema used by the weslaw v1 substrate fixtures.
+
+This is not a product schema. It combines small Echo, jedit, Continuum, and
+warp-ttd-shaped surfaces so law fixtures can exercise scalar, variant,
+footprint, channel, and invariant subjects against one stable hash.
+"""
+
+directive @wes_channel(name: String!, version: Int!, ordered: Boolean!) on OBJECT
+directive @wes_op(name: String, readonly: Boolean, idempotent: Boolean) on FIELD_DEFINITION
+directive @wes_footprint(
+  reads: [String!]
+  writes: [String!]
+  creates: [String!]
+  forbids: [String!]
+) on FIELD_DEFINITION
+
+scalar Hash
+scalar PositiveInt
+scalar WorldlineTick
+
+enum SeekThen {
+  PAUSE
+  PLAY
+}
+
+enum PlaybackModeKind {
+  PAUSED
+  PLAY
+  STEP_FORWARD
+  STEP_BACK
+  SEEK
+}
+
+input PlaybackModeInput {
+  kind: PlaybackModeKind!
+  target: WorldlineTick
+  then: SeekThen
+}
+
+type BufferWorldline {
+  worldlineId: ID!
+  canonicalHeadId: ID!
+}
+
+type RopeHead {
+  headId: ID!
+  worldlineId: ID!
+}
+
+type RopeBranch {
+  branchId: ID!
+}
+
+type RopeLeaf {
+  leafId: ID!
+}
+
+type TextBlob {
+  blobId: ID!
+}
+
+type Anchor {
+  anchorId: ID!
+}
+
+type Tick {
+  tickId: ID!
+}
+
+type TickReceipt {
+  receiptId: ID!
+}
+
+input ReplaceRangeAsTickInput {
+  worldlineId: ID!
+  baseHeadId: ID!
+  startByte: Int!
+  endByte: Int!
+  insertText: String!
+}
+
+type ReplaceRangeAsTickResult {
+  worldline: BufferWorldline!
+  nextHead: RopeHead!
+  tick: Tick!
+  receipt: TickReceipt!
+}
+
+type TranslatedSubstrateEvidence {
+  evidenceId: ID!
+  nativeContinuumWitness: Boolean!
+  evidenceDigest: Hash!
+}
+
+type HostHello {
+  hostVersion: String!
+}
+
+type LaneCatalog {
+  laneCount: Int!
+}
+
+type PlaybackHeadSnapshot {
+  headId: String!
+}
+
+type PlaybackFrame {
+  frameIndex: Int!
+}
+
+type ReceiptSummary {
+  receiptId: String!
+}
+
+type EffectEmissionSummary {
+  emissionId: String!
+}
+
+type DeliveryObservationSummary {
+  observationId: String!
+  emissionId: String!
+}
+
+type ExecutionContext {
+  mode: String!
+}
+
+type TtdProtocolChannel
+  @wes_channel(name: "ttd.protocol", version: 4, ordered: true)
+{
+  hostHello: HostHello!
+  laneCatalog: LaneCatalog!
+  playbackHeadSnapshot: PlaybackHeadSnapshot!
+  playbackFrame: PlaybackFrame!
+  receiptSummary: ReceiptSummary!
+  effectEmissionSummary: EffectEmissionSummary!
+  deliveryObservationSummary: DeliveryObservationSummary!
+  executionContext: ExecutionContext!
+}
+
+type Query {
+  playbackHead(headId: String!): PlaybackHeadSnapshot!
+    @wes_op(name: "playbackHead", readonly: true)
+}
+
+type Mutation {
+  replaceRangeAsTick(input: ReplaceRangeAsTickInput!): ReplaceRangeAsTickResult!
+    @wes_op(name: "replaceRangeAsTick")
+}

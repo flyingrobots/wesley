@@ -8,6 +8,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **`weslaw` semantic Law IR design**: Added design packet `0019` defining
+  `weslaw` as Wesley's semantic law layer for contract bundles, with typed Law
+  IR, strict binding, schema-hash anchoring, canonical law hashes, structured
+  semantic diffs, directive lowering, deferred SDL+ syntax, and explicit
+  separation between law, policy, evidence, and judgment. The packet now tracks
+  a 75-slice implementation runway with a mandatory scope checkpoint at
+  `WLAW-050`, plus a locked `WLAW-001` through `WLAW-010` v1 substrate covering
+  Law IR, coordinate and registry grammar, canonicalization, diagnostics,
+  active/draft semantics, and accepted/rejected `weslaw/v1` fixtures.
 - **Holmes assurance hexagon design**: Added design packet `0018` describing a
   ground-up Rust Holmes redesign with hexagonal architecture, CLI/API/MCP
   interfaces, dependency-injected ports, and a reporting abstraction where
@@ -224,6 +233,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **`weslaw` substrate self-audit**: Removed the inline footprint directive
+  shadow from the shared `weslaw` fixture schema, added guard coverage for the
+  fixture corpus, defined the missing footprint create-slot and update Law IR
+  shapes, and normalized scalar/explain-command spelling in the design packet.
 - **Retired package reappearance guard**: `cargo xtask docs-check` now fails if
   a package listed under `retiredPackages` quietly returns with a `package.json`.
 - **SHIPME fixture workflow trigger**: `cert-shipme.yml` now runs when

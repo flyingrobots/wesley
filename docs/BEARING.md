@@ -11,6 +11,7 @@ timeline
     Phase 2 : v0.0.6 : Rust IR Parity : Boundary Proof
     Phase 3 : Binding Observatory : Module Runtime : Artifact Evidence
     Phase 4 : Legacy Node Retired : Rust-Native Release : Holmes Assurance
+    Phase 5 : weslaw : Semantic Law IR : Contract Bundle Physics
 ```
 
 ## Active Gravity
@@ -310,6 +311,37 @@ comments are one publisher, not the architecture. The JavaScript Holmes package
 no longer blocks legacy core/runtime deletion, but it is still a transitional
 assurance surface.
 
+### 11. weslaw Semantic Law IR
+
+The next architectural move is `weslaw`: a first-class semantic law layer for
+Wesley contract bundles. GraphQL SDL remains sovereign over structural shape.
+`weslaw` becomes sovereign over semantic law. The combined, bound, canonical
+contract bundle is the unit Wesley hashes, diffs, emits, explains, validates,
+and hands to assurance tools.
+
+The formal design lives in
+[0019-weslaw-semantic-law-ir](./design/0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md).
+
+The non-negotiables are narrow:
+
+- Law IR is the product; YAML, directives, and future SDL+ are frontends.
+- Active law binds strictly to schema coordinates and explicit law registries.
+- Law documents anchor to canonical schema hashes.
+- Semantic hashes are computed from normalized Law IR, not authored bytes.
+- Machine-readable law diffs are first-class outputs.
+- Policy, evidence, and judgment remain separate from semantic law.
+- Wesley SDL+ is deferred until Law IR, binding, canonicalization, and diffs
+  are stable.
+
+Working budget: **75 slices**. The first scope checkpoint is `WLAW-050`; do
+not treat slices `WLAW-051` through `WLAW-075` as locked until the checkpoint
+re-estimates the v1/v1.1 boundary.
+
+Status: **10 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+substrate docs, coordinate and registry grammar, canonicalization and
+diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
+examples.
+
 ## Tensions
 
 - **Rust Native Discipline**: The easy mistake after deletion is to recreate
@@ -331,11 +363,17 @@ assurance surface.
 - **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
   the database authority without editing or overwriting sibling work from this
   repo.
+- **Law Versus Runtime Meaning**: `weslaw` lets Wesley preserve and reason
+  about semantic law, but Echo, Continuum, jedit, warp-ttd, and
+  `wesley-postgres` still own target meaning and runtime behavior.
+- **Law IR Scope Control**: The first `weslaw` implementation must stay typed,
+  deterministic, and boring. It must not become an expression language, policy
+  engine, or YAML programming language.
 
 ## Next Target
 
-The immediate focus is **post-retirement hardening plus Holmes assurance
-redesign**.
+The immediate focus is **weslaw Law IR design, then Holmes assurance
+integration**.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
@@ -345,20 +383,18 @@ module-target dispatch coverage, the `0014` domain-empty boundary, the `0015`
 resilience boundary, and the `0016` binding observatory archive. Those remain
 historical proof floor. The `0017` packet now closes the retirement campaign.
 The `0018` packet names the assurance architecture that lets Holmes mature
-without pinning Wesley to legacy Node.
+without pinning Wesley to legacy Node. The `0019` packet names the semantic law
+architecture that lets Wesley compile meaning alongside shape without smuggling
+runtime ownership into the base compiler.
 
-The next pulls after this drift check are:
+The next pulls after this PR are:
 
-1. Guard the retired package set in CI and xtask so the old surface cannot
-   silently return.
-2. Keep `docs/END_TO_END.md` and public docs aligned with the Rust-native
-   product spine.
-3. Start the Holmes assurance hexagon by adding Rust domain/report contracts
-   and dependency-injected ports.
-4. Keep browser/Bun/Deno packages honest as host experiments, not compiler
-   authority.
-5. Revisit backlog cards that still mention deleted package paths and either
-   archive, rewrite, or close them as obsolete.
+1. `WLAW-011` through `WLAW-020`: add the typed Law IR and YAML loader.
+2. `WLAW-021` through `WLAW-035`: add strict schema-bound law validation.
+3. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
+   bundle manifest fields.
+4. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
+   for the required drift checkpoint.
 
 ## Post-Retirement Freestyle Slice Log
 
