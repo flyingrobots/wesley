@@ -104,7 +104,7 @@ pub struct LawIrV1 {
     pub schema_source: Option<String>,
     /// Non-shape registries visible to Law IR entries.
     pub registries: LawRegistrySetV1,
-    /// Normalized active or draft law entries.
+    /// Normalized active law entries.
     pub entries: Vec<LawEntryV1>,
 }
 
@@ -481,15 +481,18 @@ pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
     for (index, law_value) in laws.iter().enumerate() {
         let path = format!("$.laws[{index}]");
         let entry = parse_law_entry(law_value, &path)?;
-        if entry.status == LawStatusV1::Active && !active_ids.insert(entry.id.clone()) {
-            return Err(WeslawError::at_path(
-                WeslawDiagnosticCode::DuplicateId,
-                format!("{path}.id"),
-                format!("duplicate active law id {}", entry.id),
-            ));
+        if entry.status == LawStatusV1::Active {
+            if !active_ids.insert(entry.id.clone()) {
+                return Err(WeslawError::at_path(
+                    WeslawDiagnosticCode::DuplicateId,
+                    format!("{path}.id"),
+                    format!("duplicate active law id {}", entry.id),
+                ));
+            }
+            entries.push(entry);
         }
-        entries.push(entry);
     }
+    sort_law_ir_entries(&mut entries);
 
     Ok(LawIrV1 {
         api_version: WESLEY_LAW_IR_API_VERSION.to_string(),
@@ -508,7 +511,16 @@ pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
 /// and will be introduced separately because it excludes rationale and other
 /// provenance-only fields.
 pub fn to_canonical_law_ir_json(value: &LawIrV1) -> Result<String, serde_json::Error> {
-    to_canonical_json(value)
+    let mut normalized = value.clone();
+    normalized
+        .entries
+        .retain(|entry| entry.status == LawStatusV1::Active);
+    sort_law_ir_entries(&mut normalized.entries);
+    to_canonical_json(&normalized)
+}
+
+fn sort_law_ir_entries(entries: &mut [LawEntryV1]) {
+    entries.sort_by(|left, right| left.id.cmp(&right.id));
 }
 
 fn parse_registries(map: &Mapping) -> Result<LawRegistrySetV1, WeslawError> {
@@ -634,33 +646,74 @@ fn parse_scalar_semantics(map: &Mapping, path: &str) -> Result<ScalarSemanticsLa
             "forbids",
         ],
     )?;
-    Ok(ScalarSemanticsLawV1 {
-        representation: parse_scalar_representation(
-            required_string(
-                semantics,
-                "representation",
-                &format!("{path}.semantics.representation"),
-            )?,
+    let representation = parse_scalar_representation(
+        required_string(
+            semantics,
+            "representation",
             &format!("{path}.semantics.representation"),
         )?,
-        min_inclusive: optional_u64(
-            semantics,
-            "minInclusive",
-            &format!("{path}.semantics.minInclusive"),
-        )?,
-        max_inclusive: optional_u64(
-            semantics,
-            "maxInclusive",
-            &format!("{path}.semantics.maxInclusive"),
-        )?,
+        &format!("{path}.semantics.representation"),
+    )?;
+    let min_inclusive = optional_u64(
+        semantics,
+        "minInclusive",
+        &format!("{path}.semantics.minInclusive"),
+    )?;
+    let max_inclusive = optional_u64(
+        semantics,
+        "maxInclusive",
+        &format!("{path}.semantics.maxInclusive"),
+    )?;
+    let forbids = optional_string_list(semantics, "forbids", &format!("{path}.semantics.forbids"))?
+        .unwrap_or_default()
+        .into_iter()
+        .map(|item| parse_scalar_forbidden(item, &format!("{path}.semantics.forbids")))
+        .collect::<Result<Vec<_>, _>>()?;
+    validate_scalar_semantics(representation, min_inclusive, max_inclusive, &forbids, path)?;
+    Ok(ScalarSemanticsLawV1 {
+        representation,
+        min_inclusive,
+        max_inclusive,
         ordering: optional_string(semantics, "ordering", &format!("{path}.semantics.ordering"))?,
         scope: optional_string(semantics, "scope", &format!("{path}.semantics.scope"))?,
-        forbids: optional_string_list(semantics, "forbids", &format!("{path}.semantics.forbids"))?
-            .unwrap_or_default()
-            .into_iter()
-            .map(|item| parse_scalar_forbidden(item, &format!("{path}.semantics.forbids")))
-            .collect::<Result<Vec<_>, _>>()?,
+        forbids,
     })
+}
+
+fn validate_scalar_semantics(
+    representation: ScalarRepresentationV1,
+    min_inclusive: Option<u64>,
+    max_inclusive: Option<u64>,
+    forbids: &[ScalarForbiddenInterpretationV1],
+    path: &str,
+) -> Result<(), WeslawError> {
+    let is_integer = representation == ScalarRepresentationV1::Integer;
+    if !is_integer {
+        if min_inclusive.is_some() || max_inclusive.is_some() {
+            return Err(WeslawError::at_path(
+                WeslawDiagnosticCode::InvalidDocument,
+                format!("{path}.semantics.representation"),
+                "integer ranges require representation: integer",
+            ));
+        }
+        if forbids.contains(&ScalarForbiddenInterpretationV1::SilentGraphqlIntNarrowing) {
+            return Err(WeslawError::at_path(
+                WeslawDiagnosticCode::InvalidDocument,
+                format!("{path}.semantics.forbids"),
+                "silentGraphQLIntNarrowing is meaningful only for integer-like scalars",
+            ));
+        }
+    }
+    if let (Some(min), Some(max)) = (min_inclusive, max_inclusive) {
+        if min > max {
+            return Err(WeslawError::at_path(
+                WeslawDiagnosticCode::InvalidDocument,
+                format!("{path}.semantics.maxInclusive"),
+                "minInclusive must not exceed maxInclusive",
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn parse_variant_law(map: &Mapping, path: &str) -> Result<VariantLawV1, WeslawError> {

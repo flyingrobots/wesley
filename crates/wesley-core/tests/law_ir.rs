@@ -196,6 +196,69 @@ fn law_ir_v1_serializes_as_versioned_canonical_json() {
 }
 
 #[test]
+fn law_ir_v1_excludes_drafts_and_sorts_active_entries_by_id() {
+    let common_header = r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+  source: ../contract-bundle-shape.graphql
+laws:
+"#;
+    let scalar_law = r#"  - id: z.echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+      minInclusive: 1
+      maxInclusive: 4294967295
+      forbids: [silentGraphQLIntNarrowing]
+"#;
+    let invariant_law = r#"  - id: a.continuum.invariant.translated-evidence
+    status: active
+    kind: invariantLaw
+    subject: type:TranslatedSubstrateEvidence
+    predicate:
+      op: fieldEquals
+      field: nativeContinuumWitness
+      value: false
+"#;
+    let draft_law = r#"  - id: m.draft.scalar.example
+    status: draft
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+      minInclusive: 1
+"#;
+
+    let authored_order = format!("{common_header}{scalar_law}{draft_law}{invariant_law}");
+    let reversed_order = format!("{common_header}{invariant_law}{draft_law}{scalar_law}");
+
+    let law_ir = load_weslaw_yaml(&authored_order).expect("fixture should lower");
+    let ids = law_ir
+        .entries
+        .iter()
+        .map(|entry| entry.id.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        ids,
+        vec![
+            "a.continuum.invariant.translated-evidence",
+            "z.echo.scalar.positiveInt.u32-positive"
+        ]
+    );
+
+    let authored_json = to_canonical_law_ir_json(&law_ir).expect("Law IR should serialize");
+    let reversed_json = to_canonical_law_ir_json(
+        &load_weslaw_yaml(&reversed_order).expect("reversed fixture should lower"),
+    )
+    .expect("Law IR should serialize");
+    assert_eq!(authored_json, reversed_json);
+    assert!(!authored_json.contains("m.draft.scalar.example"));
+}
+
+#[test]
 fn law_ir_v1_json_schema_accepts_ir_and_rejects_kind_body_mismatch() {
     let schema: serde_json::Value =
         serde_json::from_str(&read_fixture("schemas/wesley-law-ir-v1.schema.json"))
@@ -214,7 +277,7 @@ fn law_ir_v1_json_schema_accepts_ir_and_rejects_kind_body_mismatch() {
         .collect::<Vec<_>>();
     assert!(valid_errors.is_empty(), "{valid_errors:#?}");
 
-    let mut mismatched_ir = valid_ir;
+    let mut mismatched_ir = valid_ir.clone();
     mismatched_ir["entries"][0]["kind"] = serde_json::Value::String("footprintLaw".to_string());
     let mismatch_errors = validator
         .iter_errors(&mismatched_ir)
@@ -223,6 +286,17 @@ fn law_ir_v1_json_schema_accepts_ir_and_rejects_kind_body_mismatch() {
     assert!(
         !mismatch_errors.is_empty(),
         "Law IR schema must reject kind/body mismatches"
+    );
+
+    let mut draft_ir = valid_ir;
+    draft_ir["entries"][0]["status"] = serde_json::Value::String("draft".to_string());
+    let draft_errors = validator
+        .iter_errors(&draft_ir)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        !draft_errors.is_empty(),
+        "Law IR schema must reject draft entries"
     );
 }
 
@@ -263,6 +337,21 @@ fn rejected_weslaw_fixtures_emit_stable_diagnostic_codes() {
             "test/fixtures/weslaw/rejected/external-extra-predicate-field.weslaw.yaml",
             "test/fixtures/weslaw/rejected/external-extra-predicate-field.expected.txt",
             WeslawDiagnosticCode::UnknownField,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/scalar-range-on-non-integer.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/scalar-range-on-non-integer.expected.txt",
+            WeslawDiagnosticCode::InvalidDocument,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/scalar-min-greater-than-max.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/scalar-min-greater-than-max.expected.txt",
+            WeslawDiagnosticCode::InvalidDocument,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/scalar-forbid-non-integer.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/scalar-forbid-non-integer.expected.txt",
+            WeslawDiagnosticCode::InvalidDocument,
         ),
     ];
 
