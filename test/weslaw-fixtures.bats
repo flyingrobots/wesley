@@ -36,6 +36,7 @@ load 'bats-plugins/bats-assert/load'
         "schemas/wesley-contract-bundle-manifest-v1.schema.json",
         "wesley.contract-bundle-manifest/v1",
       ],
+      ["schemas/wesley-law-diff-v1.schema.json", "wesley.law-diff/v1"],
     ];
     function sortJson(value) {
       if (Array.isArray(value)) return value.map(sortJson);

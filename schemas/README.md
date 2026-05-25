@@ -10,6 +10,8 @@ This directory hosts machine-readable schemas that underpin Wesley’s generator
   the normalized `wesley.law-ir/v1` representation.
 - `wesley-contract-bundle-manifest-v1.schema.json` – Versioned, canonical JSON
   Schema describing the emitted `wesley.contract-bundle-manifest/v1` shape.
+- `wesley-law-diff-v1.schema.json` – Versioned, canonical JSON Schema
+  describing machine-readable `wesley.law-diff/v1` semantic law diff reports.
 - `evidence-map.schema.json` – JSON Schema for the evidence bundle map emitted by HOLMES/-SHIPME flows.
 - `scores.schema.json` – JSON Schema for holmes `scores.json` output.
 

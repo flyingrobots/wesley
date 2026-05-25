@@ -38,6 +38,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   embeds `WESLEY_SCHEMA_HASH` and `WESLAW_HASH` constants in generated Rust,
   and emit metadata sidecars record law, profile, bundle, and Law IR codec
   hashes when a law file is supplied.
+- **`weslaw` semantic diff substrate**: Added the versioned
+  `wesley.law-diff/v1` JSON Schema and Rust-core law diff reports for
+  added/removed law entries, scalar semantic field changes, variant case
+  changes, and footprint expansion/contraction/mixed-change events. The
+  `WLAW-050` drift checkpoint keeps the remaining semantic diff CLI,
+  channel/invariant events, binding-break classifications, and adoption tools
+  in the existing 75-slice runway.
 - **`weslaw` semantic Law IR design**: Added design packet `0019` defining
   `weslaw` as Wesley's semantic law layer for contract bundles, with typed Law
   IR, strict binding, schema-hash anchoring, canonical law hashes, structured

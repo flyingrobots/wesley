@@ -5,12 +5,12 @@ use yaml_rust2::{Yaml, YamlLoader};
 
 use wesley_core::{
     build_contract_bundle_manifest_v1, compute_law_hash_set_v1, compute_law_hash_v1,
-    compute_registry_hash, list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl,
-    to_canonical_law_ir_json, to_semantic_law_ir_json, validate_law_ir_v1_bindings,
-    FootprintCardinalityV1, LawEntryBodyV1, LawKindV1, PredicateV1,
-    ScalarForbiddenInterpretationV1, ScalarRepresentationV1, WeslawDiagnosticCode,
-    WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION, WESLEY_LAW_IR_API_VERSION,
-    WESLEY_LAW_IR_CANONICAL_JSON_CODEC,
+    compute_registry_hash, diff_law_ir_v1, list_schema_operations_sdl, load_weslaw_yaml,
+    lower_schema_sdl, to_canonical_law_ir_json, to_semantic_law_ir_json,
+    validate_law_ir_v1_bindings, FootprintCardinalityV1, LawDiffEventKindV1, LawEntryBodyV1,
+    LawKindV1, PredicateV1, ScalarForbiddenInterpretationV1, ScalarRepresentationV1,
+    WeslawDiagnosticCode, WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION, WESLEY_LAW_DIFF_API_VERSION,
+    WESLEY_LAW_IR_API_VERSION, WESLEY_LAW_IR_CANONICAL_JSON_CODEC,
 };
 
 fn repo_path(path: &str) -> PathBuf {
@@ -485,6 +485,293 @@ fn contract_bundle_manifest_records_schema_law_profile_and_bundle_hashes() {
         .map(|error| error.to_string())
         .collect::<Vec<_>>();
     assert!(errors.is_empty(), "{errors:#?}");
+}
+
+#[test]
+fn law_diff_v1_reports_added_and_removed_entries_and_satisfies_schema() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let old_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: b.echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+"#
+    ))
+    .expect("old law should lower");
+    let new_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: a.echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: kind
+      enum: PlaybackModeKind
+    cases:
+      - value: PAUSED
+        forbids: [target, then]
+"#
+    ))
+    .expect("new law should lower");
+
+    let report = diff_law_ir_v1(&old_ir, &new_ir).expect("law diff should compute");
+    assert_eq!(report.api_version, WESLEY_LAW_DIFF_API_VERSION);
+    assert_eq!(report.old_schema_hash, schema_hash);
+    assert_eq!(report.new_schema_hash, schema_hash);
+    assert!(report.old_law_hash.starts_with("sha256:"));
+    assert!(report.new_law_hash.starts_with("sha256:"));
+    assert_eq!(
+        report
+            .changes
+            .iter()
+            .map(|change| change.kind)
+            .collect::<Vec<_>>(),
+        vec![LawDiffEventKindV1::LawAdded, LawDiffEventKindV1::LawRemoved]
+    );
+
+    let schema: serde_json::Value =
+        serde_json::from_str(&read_fixture("schemas/wesley-law-diff-v1.schema.json"))
+            .expect("law diff schema should parse");
+    let validator = jsonschema::validator_for(&schema).expect("law diff schema should compile");
+    let report_json = serde_json::to_value(&report).expect("law diff report should serialize");
+    let errors = validator
+        .iter_errors(&report_json)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(errors.is_empty(), "{errors:#?}");
+}
+
+#[test]
+fn law_diff_v1_reports_scalar_semantic_changes_without_rationale_noise() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let old_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    rationale: old prose
+    semantics:
+      representation: integer
+      minInclusive: 1
+      maxInclusive: 100
+"#
+    ))
+    .expect("old scalar law should lower");
+    let new_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    rationale: new prose
+    semantics:
+      representation: integer
+      minInclusive: 2
+      maxInclusive: 90
+      forbids: [silentGraphQLIntNarrowing]
+"#
+    ))
+    .expect("new scalar law should lower");
+
+    let report = diff_law_ir_v1(&old_ir, &new_ir).expect("law diff should compute");
+    assert_eq!(report.changes.len(), 1);
+    let change = &report.changes[0];
+    assert_eq!(change.kind, LawDiffEventKindV1::ScalarSemanticsChanged);
+    assert_eq!(change.law_kind, LawKindV1::ScalarSemantics);
+    assert_eq!(
+        change
+            .field_changes
+            .iter()
+            .map(|field| field.path.as_str())
+            .collect::<Vec<_>>(),
+        vec!["body.minInclusive", "body.maxInclusive", "body.forbids"]
+    );
+    assert!(
+        !serde_json::to_string(change)
+            .expect("change should serialize")
+            .contains("rationale"),
+        "semantic diff must not include rationale prose"
+    );
+}
+
+#[test]
+fn law_diff_v1_reports_variant_case_changes() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let old_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: kind
+      enum: PlaybackModeKind
+    cases:
+      - value: PAUSED
+        forbids: [target, then]
+      - value: SEEK
+        requires: [target]
+"#
+    ))
+    .expect("old variant law should lower");
+    let new_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: kind
+      enum: PlaybackModeKind
+    cases:
+      - value: PAUSED
+        forbids: [target]
+      - value: SEEK
+        requires: [target, then]
+"#
+    ))
+    .expect("new variant law should lower");
+
+    let report = diff_law_ir_v1(&old_ir, &new_ir).expect("law diff should compute");
+    assert_eq!(report.changes.len(), 1);
+    let change = &report.changes[0];
+    assert_eq!(change.kind, LawDiffEventKindV1::VariantLawChanged);
+    assert_eq!(
+        change
+            .field_changes
+            .iter()
+            .map(|field| field.path.as_str())
+            .collect::<Vec<_>>(),
+        vec!["body.cases.PAUSED.forbids", "body.cases.SEEK.requires"]
+    );
+}
+
+#[test]
+fn law_diff_v1_reports_footprint_expansion_contraction_and_mixed_changes() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let baseline = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [BufferWorldline]
+    writes: [BufferWorldline]
+    creates: [Tick]
+    forbids: [Diagnostics, UiState]
+"#
+    ))
+    .expect("baseline footprint law should lower");
+    let expanded = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [BufferWorldline, TextBlob]
+    writes: [BufferWorldline]
+    creates: [Tick, TickReceipt]
+    forbids: [UiState]
+"#
+    ))
+    .expect("expanded footprint law should lower");
+    let contracted = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [BufferWorldline]
+    writes: []
+    creates: [Tick]
+    forbids: [Diagnostics, GitWitness, UiState]
+"#
+    ))
+    .expect("contracted footprint law should lower");
+    let mixed_change = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [BufferWorldline, TextBlob]
+    writes: [BufferWorldline]
+    creates: [Tick]
+    forbids: [Diagnostics, GitWitness, UiState]
+"#
+    ))
+    .expect("mixed footprint law should lower");
+
+    let expansion = diff_law_ir_v1(&baseline, &expanded).expect("expansion diff should compute");
+    assert_eq!(expansion.changes.len(), 1);
+    assert_eq!(
+        expansion.changes[0].kind,
+        LawDiffEventKindV1::FootprintExpanded
+    );
+    assert_eq!(expansion.changes[0].added_reads, vec!["TextBlob"]);
+    assert_eq!(expansion.changes[0].added_creates, vec!["TickReceipt"]);
+    assert_eq!(expansion.changes[0].removed_forbids, vec!["Diagnostics"]);
+
+    let contraction =
+        diff_law_ir_v1(&baseline, &contracted).expect("contraction diff should compute");
+    assert_eq!(contraction.changes.len(), 1);
+    assert_eq!(
+        contraction.changes[0].kind,
+        LawDiffEventKindV1::FootprintContracted
+    );
+    assert_eq!(
+        contraction.changes[0].removed_writes,
+        vec!["BufferWorldline"]
+    );
+    assert_eq!(contraction.changes[0].added_forbids, vec!["GitWitness"]);
+
+    let mixed = diff_law_ir_v1(&baseline, &mixed_change).expect("mixed diff should compute");
+    assert_eq!(mixed.changes.len(), 1);
+    assert_eq!(mixed.changes[0].kind, LawDiffEventKindV1::FootprintChanged);
 }
 
 #[test]

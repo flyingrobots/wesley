@@ -334,11 +334,11 @@ The non-negotiables are narrow:
 - Wesley SDL+ is deferred until Law IR, binding, canonicalization, and diffs
   are stable.
 
-Working budget: **75 slices**. The first scope checkpoint is `WLAW-050`; do
-not treat slices `WLAW-051` through `WLAW-075` as locked until the checkpoint
-re-estimates the v1/v1.1 boundary.
+Working budget: **75 slices**. The first scope checkpoint was `WLAW-050`; it
+kept the remaining runway intact and confirmed that structured semantic diffs
+need one more completion pull before adoption tooling starts.
 
-Status: **45 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+Status: **50 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
 substrate docs, coordinate and registry grammar, canonicalization and
 diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
 examples. `WLAW-011` through `WLAW-020` add the Rust Law IR v1 types, the
@@ -352,7 +352,11 @@ closest-match subject hints, and the explicit `wesley law validate` command.
 `lawHash`, provenance-bearing `lawDocumentHash`, empty-profile `profileHash`,
 contract `bundleHash`, a versioned contract bundle manifest schema, manifest
 output from `wesley law validate --json`, `--law`-backed emit metadata, and Rust
-generated hash constants.
+generated hash constants. `WLAW-046` through `WLAW-050` add
+`wesley.law-diff/v1`, Rust-core semantic diff reports, added/removed law
+events, scalar semantic change events, variant case change events, footprint
+expansion/contraction/mixed-change events, and the first checkpoint on the
+remaining runway.
 
 ## Tensions
 
@@ -401,10 +405,14 @@ runtime ownership into the base compiler.
 
 The next pulls after this PR are:
 
-1. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
-   for the required drift checkpoint.
-2. Re-estimate `WLAW-051` through `WLAW-075` after the `WLAW-050` checkpoint
-   proves whether the v1/v1.1 boundary still holds.
+1. `WLAW-051` through `WLAW-059`: finish semantic diff breadth with
+   channel/invariant events, strengthened/weakened and binding-break
+   classifications, `wesley law diff --json`, Markdown summaries, CI fixtures,
+   Holmes/BLADE-facing fixtures, and docs/changelog.
+2. `WLAW-060` through `WLAW-069`: start directive lowering and adoption tools
+   only after the diff surface is coherent.
+3. `WLAW-070` through `WLAW-075`: deliver the first consumer payoff and packet
+   closeout unless the adoption phase exposes a v1/v1.1 split.
 
 ## Post-Retirement Freestyle Slice Log
 

@@ -47,12 +47,13 @@ weslaw/v1
 
 These identifiers are separate on purpose:
 
-| Identifier                        | Owns                                           |
-| --------------------------------- | ---------------------------------------------- |
-| `weslaw/v1`                       | Authored YAML shape and migration affordances. |
-| `wesley.law-ir/v1`                | Typed semantic model after frontend lowering.  |
-| `wesley.law-ir.canonical-json.v1` | Canonical bytes used for `lawHash`.            |
-| `wesley.contract-bundle-manifest/v1` | Emitted manifest tying shape, law, profile, and bundle hashes together. |
+| Identifier                             | Owns                                           |
+| -------------------------------------- | ---------------------------------------------- |
+| `weslaw/v1`                            | Authored YAML shape and migration affordances. |
+| `wesley.law-ir/v1`                     | Typed semantic model after frontend lowering.  |
+| `wesley.law-ir.canonical-json.v1`      | Canonical bytes used for `lawHash`.            |
+| `wesley.contract-bundle-manifest/v1`   | Emitted manifest tying shape, law, profile, and bundle hashes together. |
+| `wesley.law-diff/v1`                   | Machine-readable semantic law diff report.     |
 
 ## Published Schema Artifacts
 
@@ -65,6 +66,7 @@ The first schema artifacts are:
 | `schemas/wesley-law-ir-v1.schema.json`                   | JSON Schema for the typed Law IR v1 JSON representation.         |
 | `schemas/weslaw-v1.schema.json`                          | JSON Schema for the parsed `weslaw/v1` authoring document shape. |
 | `schemas/wesley-contract-bundle-manifest-v1.schema.json` | JSON Schema for the emitted contract bundle manifest.            |
+| `schemas/wesley-law-diff-v1.schema.json`                 | JSON Schema for machine-readable semantic law diff reports.      |
 
 The JSON Schema files validate structure. They are not the canonical hash input,
 and they are not necessarily the permanent source-authoring format for the

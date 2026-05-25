@@ -807,7 +807,7 @@ Initial schema artifacts:
 | `schemas/wesley-law-ir-v1.schema.json`                    | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON.                      |
 | `schemas/weslaw-v1.schema.json`                           | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
 | `schemas/wesley-contract-bundle-manifest-v1.schema.json`  | v1 implementation requirement | JSON Schema for emitted contract bundle manifests.         |
-| `schemas/wesley-law-diff-v1.schema.json`                  | diff phase requirement        | JSON Schema for machine-readable law diff events.          |
+| `schemas/wesley-law-diff-v1.schema.json`                  | v1 implementation requirement | JSON Schema for machine-readable law diff events.          |
 
 These schemas validate public structure. They are not semantic hash inputs.
 Changing comments, descriptions, `$id`, or schema annotations must not change
@@ -848,20 +848,32 @@ sequenceDiagram
     Diff->>Holmes: JSON diff events
 ```
 
-v1 diff event classes:
+Initial `WLAW-046` through `WLAW-050` event classes:
 
 | Event                     | Meaning                                              |
 | ------------------------- | ---------------------------------------------------- |
 | `LAW_ADDED`               | New active law entry.                                |
 | `LAW_REMOVED`             | Active law entry removed.                            |
-| `LAW_STRENGTHENED`        | Constraint narrowed or forbidden behavior increased. |
-| `LAW_WEAKENED`            | Constraint widened or forbidden behavior decreased.  |
+| `SCALAR_SEMANTICS_CHANGED` | Scalar representation, range, ordering, scope, or forbidden interpretation changed. |
+| `VARIANT_LAW_CHANGED`     | Variant discriminator or case requires/forbids changed. |
 | `FOOTPRINT_EXPANDED`      | Reads, writes, creates, or closure reach expanded.   |
 | `FOOTPRINT_CONTRACTED`    | Footprint reach contracted.                          |
+| `FOOTPRINT_CHANGED`       | Footprint changed in mixed or structural ways.       |
+
+Follow-on event classes:
+
+| Event                     | Meaning                                              |
+| ------------------------- | ---------------------------------------------------- |
 | `CHANNEL_VERSION_CHANGED` | Channel version or compatibility posture changed.    |
+| `PREDICATE_CHANGED`       | Invariant predicate changed.                         |
+| `LAW_STRENGTHENED`        | Constraint narrowed or forbidden behavior increased. |
+| `LAW_WEAKENED`            | Constraint widened or forbidden behavior decreased.  |
 | `BINDING_BROKEN`          | Previously bound law no longer binds.                |
 | `SCHEMA_HASH_REBOUND`     | Law was explicitly rebound to a new schema hash.     |
-| `PREDICATE_CHANGED`       | Invariant predicate changed.                         |
+
+The report records `oldSchemaHash`, `newSchemaHash`, `oldLawHash`,
+`newLawHash`, and an ordered `changes` array. v1 events carry
+`reviewPosture: "requires-review"` until policy/profile mapping exists.
 
 Example JSON:
 
@@ -1208,8 +1220,9 @@ Working budget: **75 slices**.
 
 The budget is intentionally larger than the minimal compiler substrate because
 `weslaw` must become an operator-usable contract-bundle feature, not just an
-internal parser. Re-estimate after `WLAW-050` before committing to the final
-v1/v1.1 boundary.
+internal parser. The `WLAW-050` checkpoint confirmed that the 75-slice runway
+still fits, with one more semantic-diff completion pull before directive
+lowering and adoption tooling begin.
 
 ### Phase 0: Design Lock
 
@@ -1289,11 +1302,11 @@ v1/v1.1 boundary.
 
 ### Phase 4: Semantic Diffs
 
-- [ ] WLAW-046 Define `wesley.law-diff/v1` JSON output.
-- [ ] WLAW-047 Emit scalar semantic diff events.
-- [ ] WLAW-048 Emit variant law diff events.
-- [ ] WLAW-049 Emit footprint law diff events.
-- [ ] WLAW-050 Drift checkpoint: reassess scope, split v1/v1.1 if needed, and
+- [x] WLAW-046 Define `wesley.law-diff/v1` JSON output.
+- [x] WLAW-047 Emit scalar semantic diff events.
+- [x] WLAW-048 Emit variant law diff events.
+- [x] WLAW-049 Emit footprint law diff events.
+- [x] WLAW-050 Drift checkpoint: reassess scope, split v1/v1.1 if needed, and
       update this checklist before continuing.
 - [ ] WLAW-051 Emit channel law diff events.
 - [ ] WLAW-052 Emit typed invariant diff events.
@@ -1336,6 +1349,35 @@ v1/v1.1 boundary.
       explicitly to v1.1 with evidence.
 - [ ] WLAW-075 Close the v1 packet with playback, retrospective, docs,
       changelog, and release-readiness evidence.
+
+## WLAW-050 Drift Checkpoint
+
+The checkpoint result is **continue with the 75-slice runway**.
+
+What held:
+
+- Law IR, binding, canonicalization, manifest hashes, and initial semantic diff
+  reports are still a coherent substrate.
+- The diff model is rightly data-first: reports are structured JSON events, not
+  Markdown prose with metadata inferred later.
+- `wesley law diff --json` should remain after channel/invariant and
+  binding-break classifications, so the first CLI surface does not ship as a
+  half-width diff command.
+
+What changed:
+
+- `schemas/wesley-law-diff-v1.schema.json` is now a v1 schema artifact, not a
+  future-only placeholder.
+- The first implemented diff classes are added/removed entries, scalar
+  semantics, variant cases, and footprint expansion/contraction/mixed-change
+  events.
+- `LAW_STRENGTHENED` and `LAW_WEAKENED` remain follow-on classifications
+  because they need the channel/invariant/binding cases to avoid ad hoc
+  semantics.
+
+Next pull:
+
+- Finish `WLAW-051` through `WLAW-059` before starting directive lowering.
 
 ## Non-Goals
 
