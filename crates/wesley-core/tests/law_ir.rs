@@ -1,0 +1,190 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use wesley_core::{
+    load_weslaw_yaml, to_canonical_law_ir_json, LawEntryBodyV1, LawKindV1, PredicateV1,
+    ScalarForbiddenInterpretationV1, ScalarRepresentationV1, WeslawDiagnosticCode,
+    WESLEY_LAW_IR_API_VERSION,
+};
+
+fn repo_path(path: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join(path)
+}
+
+fn read_fixture(path: &str) -> String {
+    fs::read_to_string(repo_path(path)).expect("fixture should be readable")
+}
+
+#[test]
+fn accepted_weslaw_fixtures_satisfy_authoring_json_schema() {
+    let schema: serde_json::Value =
+        serde_json::from_str(&read_fixture("schemas/weslaw-v1.schema.json"))
+            .expect("schema should parse");
+    let validator = jsonschema::validator_for(&schema).expect("schema should compile");
+
+    let fixtures = [
+        "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/variant-playback-mode.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/channel-ttd-protocol.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/invariant-translated-evidence.weslaw.yaml",
+    ];
+
+    for fixture in fixtures {
+        let yaml: serde_yml::Value =
+            serde_yml::from_str(&read_fixture(fixture)).expect("fixture should parse as YAML");
+        let json = serde_json::to_value(yaml).expect("fixture should convert to JSON");
+        let errors = validator
+            .iter_errors(&json)
+            .map(|error| error.to_string())
+            .collect::<Vec<_>>();
+        assert!(errors.is_empty(), "{fixture}: {errors:#?}");
+    }
+}
+
+#[test]
+fn accepted_weslaw_fixtures_lower_into_typed_law_ir() {
+    let scalar = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
+    ))
+    .expect("scalar fixture should lower");
+
+    assert_eq!(scalar.api_version, WESLEY_LAW_IR_API_VERSION);
+    assert_eq!(scalar.family, "weslaw-fixture-contract-bundle");
+    assert_eq!(
+        scalar.schema_hash,
+        "sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6"
+    );
+    assert_eq!(scalar.entries.len(), 1);
+
+    let scalar_entry = &scalar.entries[0];
+    assert_eq!(scalar_entry.id, "echo.scalar.positiveInt.u32-positive");
+    assert_eq!(scalar_entry.kind, LawKindV1::ScalarSemantics);
+    assert_eq!(scalar_entry.subject, "scalar:PositiveInt");
+    assert_eq!(scalar_entry.tags, vec!["echo", "scalar"]);
+    let LawEntryBodyV1::ScalarSemantics(body) = &scalar_entry.body else {
+        panic!("expected scalar semantics body");
+    };
+    assert_eq!(body.representation, ScalarRepresentationV1::Integer);
+    assert_eq!(body.min_inclusive, Some(1));
+    assert_eq!(body.max_inclusive, Some(4_294_967_295));
+    assert_eq!(
+        body.forbids,
+        vec![ScalarForbiddenInterpretationV1::SilentGraphqlIntNarrowing]
+    );
+
+    let variant = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/variant-playback-mode.weslaw.yaml",
+    ))
+    .expect("variant fixture should lower");
+    let LawEntryBodyV1::VariantLaw(body) = &variant.entries[0].body else {
+        panic!("expected variant body");
+    };
+    assert_eq!(body.discriminator.field, "kind");
+    assert_eq!(body.discriminator.r#enum, "PlaybackModeKind");
+    assert_eq!(body.cases.len(), 5);
+    assert_eq!(body.cases[4].value, "SEEK");
+    assert_eq!(body.cases[4].requires, vec!["target", "then"]);
+
+    let footprint = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+    ))
+    .expect("footprint fixture should lower");
+    let LawEntryBodyV1::FootprintLaw(body) = &footprint.entries[0].body else {
+        panic!("expected footprint body");
+    };
+    assert_eq!(body.reads.len(), 6);
+    assert_eq!(body.slots[0].name, "worldline");
+    assert_eq!(body.closures[1].name, "affectedAnchors");
+    assert_eq!(
+        body.create_slots[0].cardinality.as_deref(),
+        Some("optional")
+    );
+    assert_eq!(body.updates[0].slot, "worldline");
+
+    let channel = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/channel-ttd-protocol.weslaw.yaml",
+    ))
+    .expect("channel fixture should lower");
+    let LawEntryBodyV1::ChannelLaw(body) = &channel.entries[0].body else {
+        panic!("expected channel body");
+    };
+    assert!(body.ordered);
+    assert_eq!(body.version, 4);
+    assert_eq!(body.messages.len(), 8);
+
+    let invariant = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/invariant-translated-evidence.weslaw.yaml",
+    ))
+    .expect("invariant fixture should lower");
+    let LawEntryBodyV1::InvariantLaw(body) = &invariant.entries[0].body else {
+        panic!("expected invariant body");
+    };
+    assert_eq!(
+        body.predicate,
+        PredicateV1::FieldEquals {
+            field: "nativeContinuumWitness".to_string(),
+            value: serde_json::Value::Bool(false),
+        }
+    );
+}
+
+#[test]
+fn law_ir_v1_serializes_as_versioned_canonical_json() {
+    let law_ir = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
+    ))
+    .expect("fixture should lower");
+
+    let json = to_canonical_law_ir_json(&law_ir).expect("Law IR should serialize");
+    let parsed: serde_json::Value = serde_json::from_str(&json).expect("JSON should parse");
+    assert!(!json.contains('\n'));
+    assert!(!json.contains("  "));
+    assert_eq!(parsed["apiVersion"], WESLEY_LAW_IR_API_VERSION);
+    assert!(
+        json.contains("silentGraphQLIntNarrowing"),
+        "closed enum spelling must preserve the GraphQL acronym"
+    );
+    assert_eq!(
+        json,
+        wesley_core::to_canonical_json(&parsed).expect("parsed value should re-canonicalize")
+    );
+}
+
+#[test]
+fn rejected_weslaw_fixtures_emit_stable_diagnostic_codes() {
+    let cases = [
+        (
+            "test/fixtures/weslaw/rejected/duplicate-id.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/duplicate-id.expected.txt",
+            WeslawDiagnosticCode::DuplicateId,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/raw-expression-invariant.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/raw-expression-invariant.expected.txt",
+            WeslawDiagnosticCode::RawExprRejected,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/unknown-kind.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/unknown-kind.expected.txt",
+            WeslawDiagnosticCode::UnknownKind,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/unknown-field.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/unknown-field.expected.txt",
+            WeslawDiagnosticCode::UnknownField,
+        ),
+    ];
+
+    for (path, expected_path, code) in cases {
+        let error = load_weslaw_yaml(&read_fixture(path)).expect_err(path);
+        assert_eq!(error.code, code, "{path}");
+        assert_eq!(
+            error.code.as_str(),
+            read_fixture(expected_path).trim(),
+            "{path}"
+        );
+    }
+}

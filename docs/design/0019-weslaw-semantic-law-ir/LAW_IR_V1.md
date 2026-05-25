@@ -53,6 +53,30 @@ These identifiers are separate on purpose:
 | `wesley.law-ir/v1` | Typed semantic model after frontend lowering. |
 | `wesley.law-ir.canonical-json.v1` | Canonical bytes used for `lawHash`. |
 
+## Published Schema Artifacts
+
+Law IR v1 must ship with machine-readable schemas. This is not optional.
+
+The first schema artifacts are:
+
+| Artifact | Purpose |
+| --- | --- |
+| `schemas/wesley-law-ir-v1.schema.json` | JSON Schema for the typed Law IR v1 JSON representation. |
+| `schemas/weslaw-v1.schema.json` | JSON Schema for the parsed `weslaw/v1` authoring document shape. |
+
+The JSON Schema files validate structure. They are not the canonical hash input,
+and they are not necessarily the permanent source-authoring format for the
+schema contracts themselves. Wesley may author them directly in JSON at first,
+then later generate them from Rust types, generate Rust types from them, or move
+to another schema-authoring system if that proves cleaner.
+
+`lawHash` still comes from bound, normalized Law IR bytes under
+`wesley.law-ir.canonical-json.v1`.
+
+If a future frontend or canonical codec is not JSON, Wesley must still publish a
+machine-readable schema contract for that representation before treating it as a
+supported interface.
+
 ## Bundle Shape
 
 Law IR is compiled as part of a contract bundle:

@@ -106,6 +106,10 @@ home.
   non-shape symbols are fatal errors.
 - Law documents must anchor to a canonical schema hash. Normal compilation
   fails when the active schema hash does not match the law anchor.
+- Law IR and the `weslaw/v1` authoring shape must publish machine-readable
+  schemas. If the representation is JSON, that means JSON Schema under
+  `schemas/`; if a later representation is not JSON, it still needs a published
+  schema contract.
 - Hashes are computed from normalized Law IR, not YAML bytes.
 - Semantic law hashes exclude comments, formatting, source spans, and rationale
   prose.
@@ -770,6 +774,33 @@ The codec owns:
 - null omission rules;
 - array semantics.
 
+### Published Schemas
+
+`weslaw` is a compiler contract, not an undocumented Rust struct. Every
+externally consumed representation needs a schema artifact.
+
+Initial schema artifacts:
+
+| Artifact | Status | Purpose |
+| --- | --- | --- |
+| `schemas/wesley-law-ir-v1.schema.json` | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON. |
+| `schemas/weslaw-v1.schema.json` | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
+| `schemas/wesley-law-diff-v1.schema.json` | diff phase requirement | JSON Schema for machine-readable law diff events. |
+
+These schemas validate public structure. They are not semantic hash inputs.
+Changing comments, descriptions, `$id`, or schema annotations must not change
+`lawHash` unless the underlying Law IR semantics also change.
+
+JSON is acceptable as the first schema-authoring format, but the design should
+not freeze the project there. The open implementation choice is how Rust owns
+these schema artifacts over time:
+
+- handwritten schemas checked into `schemas/`;
+- generated schemas from Rust types with checked-in outputs;
+- generated Rust types from checked-in schemas.
+
+The requirement to publish schemas is not open.
+
 ## Semantic Diff Model
 
 Law diffs are first-class outputs. Human summaries are generated from
@@ -1175,18 +1206,19 @@ v1/v1.1 boundary.
 
 ### Phase 1: Law Loader And Typed IR
 
-- [ ] WLAW-011 Add Rust Law IR v1 types for common law entry metadata.
-- [ ] WLAW-012 Add Rust Law IR v1 types for `ScalarSemanticsLaw`.
-- [ ] WLAW-013 Add Rust Law IR v1 types for `VariantLaw`.
-- [ ] WLAW-014 Add Rust Law IR v1 types for `FootprintLaw`.
-- [ ] WLAW-015 Add Rust Law IR v1 types for `ChannelLaw`.
-- [ ] WLAW-016 Add Rust Law IR v1 types for typed `InvariantLaw`.
-- [ ] WLAW-017 Parse `weslaw/v1` YAML into a draft Law AST.
-- [ ] WLAW-018 Normalize draft Law AST into typed Law IR.
-- [ ] WLAW-019 Reject unknown law kinds and unknown fields with stable
+- [x] WLAW-011 Add Rust Law IR v1 types for common law entry metadata.
+- [x] WLAW-012 Add Rust Law IR v1 types for `ScalarSemanticsLaw`.
+- [x] WLAW-013 Add Rust Law IR v1 types for `VariantLaw`.
+- [x] WLAW-014 Add Rust Law IR v1 types for `FootprintLaw`.
+- [x] WLAW-015 Add Rust Law IR v1 types for `ChannelLaw`.
+- [x] WLAW-016 Add Rust Law IR v1 types for typed `InvariantLaw`.
+- [x] WLAW-017 Parse `weslaw/v1` YAML through the v1 structure loader and
+      publish the initial `weslaw/v1` authoring schema artifact.
+- [x] WLAW-018 Normalize loader output into typed Law IR.
+- [x] WLAW-019 Reject unknown law kinds and unknown fields with stable
       diagnostics.
-- [ ] WLAW-020 Add fixture tests proving accepted YAML lowers into typed Law
-      IR.
+- [x] WLAW-020 Add fixture tests proving accepted YAML lowers into typed Law
+      IR and the accepted fixtures satisfy the published authoring schema.
 
 ### Phase 2: Strict Binding
 
@@ -1296,8 +1328,9 @@ v1/v1.1 boundary.
 
 ## Open Decisions
 
-1. Which Law IR schema definition format should be canonical in the Rust
-   implementation?
+1. Which schema-artifact ownership model should the Rust implementation use:
+   handwritten schemas checked into `schemas/`, schemas generated from Rust
+   types, or Rust types generated from checked-in schemas?
 2. Should evidence posture enter v1, or wait for v1.1 after scalar, variant,
    footprint, channel, and typed invariant law prove the model?
 3. Which known directive family should be lowered first?

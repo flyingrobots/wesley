@@ -16,7 +16,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   a 75-slice implementation runway with a mandatory scope checkpoint at
   `WLAW-050`, plus a locked `WLAW-001` through `WLAW-010` v1 substrate covering
   Law IR, coordinate and registry grammar, canonicalization, diagnostics,
-  active/draft semantics, and accepted/rejected `weslaw/v1` fixtures.
+  active/draft semantics, and accepted/rejected `weslaw/v1` fixtures. The next
+  packet adds Rust Law IR v1 types, a `weslaw/v1` structure loader, stable
+  duplicate-id/raw-expression/unknown-kind/unknown-field diagnostics, fixture
+  lowering tests, and versioned canonical JSON Schema artifacts for
+  `weslaw/v1` and `wesley.law-ir/v1`.
 - **Holmes assurance hexagon design**: Added design packet `0018` describing a
   ground-up Rust Holmes redesign with hexagonal architecture, CLI/API/MCP
   interfaces, dependency-injected ports, and a reporting abstraction where

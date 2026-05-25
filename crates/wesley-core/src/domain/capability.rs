@@ -123,19 +123,14 @@ pub enum CapabilityPortabilityFloor {
 }
 
 /// Runtime state model declared by a module capability.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum CapabilityRuntimeModel {
     /// Capability output must depend only on its explicit input envelope.
+    #[default]
     Stateless,
     /// Capability requests explicit host-created resource handles.
     ResourceHandles,
-}
-
-impl Default for CapabilityRuntimeModel {
-    fn default() -> Self {
-        Self::Stateless
-    }
 }
 
 /// Module-provided target capability metadata.

@@ -161,7 +161,7 @@ fn host_contract_reports_incompatible_capability_abi_before_execution() {
     };
 
     let report = host.evaluate_contract(&target);
-    assert_eq!(report.accepted, false);
+    assert!(!report.accepted);
     assert_eq!(report.diagnostics.len(), 1);
     assert_eq!(report.diagnostics[0].code, "WASM_ABI_UNSUPPORTED");
     assert_eq!(report.diagnostics[0].target, "future-wasm");
