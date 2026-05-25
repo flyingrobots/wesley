@@ -1,21 +1,21 @@
 # Hosts and Runtimes
 
-This page tracks historical host compatibility surfaces and host-specific
-notes. These packages are compatibility evidence during Node retirement, not
-the Rust-native product spine.
+This page tracks retained host experiments and host-specific notes. These
+packages are smoke evidence and portability probes, not the Rust-native product
+spine.
 
 ## Summary
 
 - Rust native CLI: Product front door. Compiler truth and ordinary health checks
   live in `crates/`.
-- Node.js (host-node): Legacy compatibility. Historical CLI and adapters live
-  here until deletion.
-- Browser (host-browser): Legacy compatibility. Pure ESM, no Node builtins;
+- Node.js (host-node): Retired. The historical CLI wrapper and Node adapters
+  were deleted during the legacy Node retirement campaign.
+- Browser (host-browser): External host experiment. Pure ESM, no Node builtins;
   in-memory FS only; minimal SDL detector used in smokes.
-- Deno: Legacy compatibility. Imports `@wesley/core` through compatibility
-  harnesses only.
-- Bun: Legacy compatibility. Imports `@wesley/core` through compatibility
-  harnesses only.
+- Deno: External host experiment. Runs a tiny self-contained SDL smoke without
+  the retired JavaScript core/runtime packages.
+- Bun: External host experiment. Runs a tiny self-contained SDL smoke without
+  the retired JavaScript core/runtime packages.
 
 ## Contracts suite (multi‑host)
 
@@ -43,9 +43,9 @@ HOST=bun bats test/hosts/host-contracts.bats
 
 ## Node.js (host-node)
 
-- Package: `packages/wesley-host-node`
-- Entrypoint: `packages/wesley-host-node/bin/wesley.mjs`
-- Notes: All Node‑specific adapters (fs, child_process, pino logging) live here. CLI Bats suites provide deep coverage.
+- Status: retired.
+- Notes: the historical Node wrapper, Node-specific adapters, and CLI Bats
+  suites were removed. Use the native Rust `wesley` binary for product work.
 
 ## Browser (host-browser)
 
@@ -59,20 +59,19 @@ HOST=bun bats test/hosts/host-contracts.bats
 
 ## Deno and Bun
 
-- No dedicated host packages yet; smokes import `@wesley/core` directly.
-- Deno uses `deno.json` import maps to resolve `@wesley/core` to source.
-- Bun runs ESM sources directly.
+- Packages: `packages/wesley-host-deno`, `packages/wesley-host-bun`
+- Deno and Bun smokes import their package-local experiment entrypoints.
+- Neither host experiment depends on the retired JavaScript core/runtime
+  packages.
 
 ## CI
 
 - Rust product: `.github/workflows/rust-native.yml` runs `cargo xtask preflight`
   under the `Rust Product - Native CLI` workflow name.
-- Browser: `.github/workflows/browser-smoke.yml` runs compatibility contracts
-  through Playwright under a `Legacy Compatibility` workflow name.
-- Deno/Bun: `.github/workflows/runtime-smokes.yml` runs compatibility contracts
-  with `HOST=deno` and `HOST=bun`.
-- Node: the same compatibility workflow includes `HOST=node`; package workflows
-  keep historical Node-host behavior honest until deletion.
+- Browser: `.github/workflows/browser-smoke.yml` runs the external browser host
+  experiment through Playwright.
+- Deno/Bun: `.github/workflows/runtime-smokes.yml` runs external host smokes.
+- Node: no retained Node host package or workflow remains.
 
 ## Progress & Maturity
 

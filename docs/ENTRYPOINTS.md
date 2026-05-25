@@ -21,10 +21,9 @@ The deeper source of truth is still the Rust library under `crates/wesley-core`.
 New compiler behavior should start there, then grow a native CLI command when it
 needs one.
 
-The Node packages still exist, but they are not a second Wesley. They are the
-historical package toolchain: old CLI commands, generators, host adapters,
-module loading, and evidence tooling that have not yet been extracted, retired,
-or ported. Their migration map lives in
+The retired Node compiler packages are no longer a second Wesley. JavaScript
+remains for Holmes assurance, website/docs tooling, repository scripts, and host
+smoke experiments outside compiler authority. The migration map lives in
 [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md).
 
 ## What Lives Where
@@ -35,12 +34,10 @@ or ported. Their migration map lives in
 | Native Wesley command   | `crates/wesley-cli/`                  | Rust product CLI                    | Provides Rust-native health checks, SDL normalization, schema lowering, schema hashing, schema operation listing, schema diffing, Rust/TypeScript emission, operation selection analysis, and directive argument extraction from Rust crates. |
 | Rust model emitter      | `crates/wesley-emit-rust/`            | Rust projection crate               | Emits Rust data models and root operation request/response bindings from Wesley L1 IR plus `SchemaOperation` data through a structured Rust item/type AST and printer.                                                                        |
 | Rust TypeScript emitter | `crates/wesley-emit-typescript/`      | Rust projection crate               | Emits TypeScript declarations, root operation request/response bindings, and operation metadata constants from Wesley L1 IR plus `SchemaOperation` data through a structured TypeScript declaration AST and printer.                          |
-| Repo automation         | `xtask/`                              | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the legacy preflight bridge.                                                                                                                                              |
-| Legacy JS core          | `packages/wesley-core/`               | Legacy/tooling                      | Historical JavaScript compiler domain, module registry, hashes, generation pipeline, and runtime helpers.                                                                                                                                     |
-| Legacy JS CLI           | `packages/wesley-cli/`                | Legacy/tooling                      | Historical command framework for generate/transform/typescript/zod/diff/cert/Holmes-era flows.                                                                                                                                                |
-| Legacy Node host        | `packages/wesley-host-node/`          | Legacy/tooling                      | Node executable wrapper and runtime adapter around the JS CLI.                                                                                                                                                                                |
-| Legacy evidence tooling | `packages/wesley-holmes/`             | Legacy/tooling                      | Holmes/Moriarty-era evidence, verification, and counterfactual tooling.                                                                                                                                                                       |
-| Root Node workspace     | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing                  | Keeps old packages, docs checks, package tests, and website tooling installable. It is not the Wesley product entry point.                                                                                                                    |
+| Repo automation         | `xtask/`                              | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the JavaScript package preflight bridge.                                                                                                                                  |
+| Assurance tooling       | `packages/wesley-holmes/`             | Non-compiler package                | Holmes/Moriarty-era evidence, verification, reporting, runtime-run inspection, and counterfactual tooling.                                                                                                                                    |
+| Host smoke experiments  | `packages/wesley-host-*`              | Non-compiler packages               | Browser, Bun, and Deno smoke adapters with local parser/hash behavior.                                                                                                                                                                        |
+| Root Node workspace     | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing                  | Keeps retained JS packages, docs checks, package tests, and website tooling installable. It is not the Wesley product entry point.                                                                                                            |
 
 ## What Rust Wesley Does Today
 
@@ -83,49 +80,46 @@ wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```
 
-## What Node Wesley Does Today
+## What JavaScript Does Today
 
-Node Wesley is the historical toolchain.
+JavaScript is supporting tooling, not compiler authority.
 
-It can still run older package workflows such as:
+It can still run workflows such as:
 
 - package preflight and package tests
-- legacy TypeScript/Zod compatibility projection
-- module-loaded compile/transform flows
-- Node host execution
 - Holmes/Moriarty evidence tooling
+- browser/Bun/Deno host smoke experiments
 - website and docs-support tooling
 
-Certificate, SHIPME, Holmes/Moriarty, run-ledger, and package-evidence
-commands are assurance or compatibility surfaces. They are not native compiler
-front-door commands, and new Rust compiler work should not depend on them.
-
-Those surfaces are useful, but they are not the architectural center. When a
-Node surface is still needed, either keep it clearly marked as legacy tooling or
-move the capability to the owning module/repo. Do not add new core compiler
-truth to the Node side.
+Holmes/Moriarty, run-ledger, and package-evidence commands are assurance
+surfaces. They are not native compiler-front-door commands, and new Rust
+compiler work should not depend on them.
 
 ## Retired Surfaces
 
 | Former surface                   | Outcome  | Replacement / owner                                                                                |
 | -------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| `packages/wesley-core/`          | Deleted  | Rust crates own retained compiler authority.                                                       |
+| `packages/wesley-cli/`           | Deleted  | The Rust CLI owns the product front door.                                                          |
+| `packages/wesley-host-node/`     | Deleted  | No retained workflow shells through the old Node executable wrapper.                               |
+| `packages/wesley-runtime-node/`  | Deleted  | Holmes-local support owns retained ledger and module capability helpers.                           |
 | `packages/wesley-generator-js/`  | Deleted  | Generic TypeScript output belongs in Rust emitters; Zod is CLI-local compatibility debt.           |
 | `packages/wesley-generator-vue/` | Deleted  | Vue projection behavior belongs in an external target module or product owner, not generic Wesley. |
 | JS/Rust parity release authority | Archived | Rust self-consistency and native fixture truth are the product release gate.                       |
 
 ## How To Choose
 
-| If you are doing this                                                   | Use this                                                               |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Adding or changing compiler semantics                                   | `crates/wesley-core/`                                                  |
-| Adding a user-facing Wesley command                                     | `crates/wesley-cli/`                                                   |
-| Running Rust health checks                                              | `cargo xtask preflight`                                                |
-| Checking docs links/truth/local-path hygiene                            | `cargo xtask docs-check`                                               |
-| Preparing native release artifacts                                      | `cargo xtask release-check`                                            |
-| Touching old JS packages, pnpm workspace files, or legacy package tests | `cargo xtask legacy-preflight`                                         |
-| Using an old generator that only exists in JS                           | Externalize it to its owning module or port it to Rust                 |
-| Implementing Echo footprint honesty                                     | Echo-owned tooling, not generic Wesley                                 |
-| Implementing Postgres migrations or SQL projection                      | `wesley-postgres` or another external target module, not `wesley-core` |
+| If you are doing this                                                 | Use this                                                               |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Adding or changing compiler semantics                                 | `crates/wesley-core/`                                                  |
+| Adding a user-facing Wesley command                                   | `crates/wesley-cli/`                                                   |
+| Running Rust health checks                                            | `cargo xtask preflight`                                                |
+| Checking docs links/truth/local-path hygiene                          | `cargo xtask docs-check`                                               |
+| Preparing native release artifacts                                    | `cargo xtask release-check`                                            |
+| Touching retained JS packages, pnpm workspace files, or package tests | `cargo xtask legacy-preflight`                                         |
+| Using an old generator that only exists in JS                         | Externalize it to its owning module or port it to Rust                 |
+| Implementing Echo footprint honesty                                   | Echo-owned tooling, not generic Wesley                                 |
+| Implementing Postgres migrations or SQL projection                    | `wesley-postgres` or another external target module, not `wesley-core` |
 
 ## Crates.io Alpha Packages
 
@@ -145,15 +139,14 @@ There should be one brain and one body:
 
 - **Brain**: `crates/wesley-core`
 - **Body**: `crates/wesley-cli`
-- **Legacy support surfaces**: `packages/`, kept only while they still carry
-  unported generator, host, evidence, or package-maintenance value
+- **Non-compiler JS surfaces**: `packages/`, kept only for assurance, host
+  smoke experiments, or package-maintenance value
 
-Until this migration is complete, any document or workflow that presents
-`pnpm wesley` as Wesley's main command surface is stale by default.
+Any document or workflow that presents `pnpm wesley` as Wesley's main command
+surface is stale by default.
 
-If an old script still calls `pnpm wesley`, first ask whether it is really
-using a retained compatibility-only command. Generic schema work should move as
-follows:
+If an old script still calls `pnpm wesley`, it should be deleted or rewritten.
+Generic schema work should use:
 
 | Legacy call                              | Native path                                                                        |
 | ---------------------------------------- | ---------------------------------------------------------------------------------- |

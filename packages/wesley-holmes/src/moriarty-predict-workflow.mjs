@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { GENERATED_ARTIFACT_DIR, generatedArtifactPathCandidates } from '@wesley/core';
+import { GENERATED_ARTIFACT_DIR, generatedArtifactPathCandidates } from './support/artifacts.mjs';
 import { Moriarty } from './Moriarty.mjs';
 import { attachRuntimeRun, loadRuntimeRunRecord } from './runtime-run.mjs';
 import {

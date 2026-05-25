@@ -2,14 +2,16 @@
 
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
-Wesley’s tooling still revolves around the heartbeat we built for the MVP: **Transform → Plan → Rehearse → Ship**. Each milestone in the roadmap adds capabilities to one or more steps in that ladder.
+Wesley's tooling still revolves around the heartbeat we built for the MVP:
+**Transform -> Plan -> Rehearse -> Ship**. Each milestone in the roadmap adds
+capabilities to one or more steps in that ladder.
 
-| Phase     | What happens                                                                                                     | Delivered by                                       |
-| --------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Transform | Parse GraphQL SDL to our canonical IR and emit artifacts (SQL, pgTAP, TypeScript/Zod, evidence bundle).          | `wesley-core`, generators, `wesley-host-node`      |
-| Plan      | Diff schema changes, produce phased migrations (expand/backfill/validate/switch/contract) with lock annotations. | `wesley-core` planner and CLI `plan` command       |
-| Rehearse  | Execute the plan in a controlled environment, capture timings/locks/tests, record verdicts.                      | Shadow REALM tooling (`wesley shadow`, CI harness) |
-| Ship      | Aggregate evidence, compute HOLMES scores, gate releases, and archive approvals in SHIPME.                       | HOLMES CLI, evidence schemas                       |
+| Phase     | What happens                                                                                                    | Delivered by                                           |
+| --------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Transform | Parse GraphQL SDL to canonical Rust IR and emit explicitly selected artifacts.                                  | `crates/wesley-core`, `crates/wesley-cli`, emit crates |
+| Plan      | Diff schema changes and produce bounded migration or target plans when a module owns that semantics.            | Rust schema diff today; external modules for domains   |
+| Rehearse  | Execute domain-specific plans in controlled environments and capture timings, locks, tests, and verdicts.       | Owning module or product repo                          |
+| Ship      | Aggregate evidence, compute HOLMES scores, gate releases, and archive approvals in SHIPME or successor tooling. | HOLMES assurance tooling                               |
 
 ## Sequence diagram
 
@@ -21,7 +23,7 @@ sequenceDiagram
     participant Rehearse
     participant Ship
 
-    Git->>Transform: wesley generate
+    Git->>Transform: wesley schema lower / wesley emit
     Transform->>Plan: IR + artifacts
     Plan->>Rehearse: phased SQL + explain
     Rehearse->>Ship: realm.json + metrics

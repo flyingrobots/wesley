@@ -10,11 +10,11 @@ load 'bats-plugins/bats-assert/load'
 
   run bash -lc "grep -F 'uses: ./.github/actions/install-bats' .github/workflows/runtime-smokes.yml | wc -l || true"
   assert_success
-  # One per job (deno, bun, node)
+  # One per retained host experiment job.
   [ "$output" -ge 1 ]
 }
 
-@test "CI names distinguish Rust product checks from legacy compatibility checks" {
+@test "CI names distinguish Rust product checks from external host experiments" {
   run bash -lc "grep -F 'name: Rust Product - Native CLI' .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
@@ -23,27 +23,31 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'name: Legacy Compatibility - Runtime Smokes' .github/workflows/runtime-smokes.yml | wc -l"
+  run bash -lc "grep -F 'name: External Host Experiments - Runtime Smokes' .github/workflows/runtime-smokes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'Legacy compatibility - Node host smoke' .github/workflows/runtime-smokes.yml | wc -l"
+  run bash -lc "grep -F 'External host experiment - Deno smoke' .github/workflows/runtime-smokes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'name: Legacy Compatibility - Browser Smoke' .github/workflows/browser-smoke.yml | wc -l"
+  run bash -lc "grep -F 'External host experiment - Bun smoke' .github/workflows/runtime-smokes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'name: Legacy Compatibility - pkg-host-bun' .github/workflows/pkg-host-bun.yml | wc -l"
+  run bash -lc "grep -F 'Node host smoke' .github/workflows/runtime-smokes.yml | wc -l || true"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -F 'name: External Host Experiment - Browser Smoke' .github/workflows/browser-smoke.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'name: Legacy Compatibility - pkg-host-deno' .github/workflows/pkg-host-deno.yml | wc -l"
+  run bash -lc "grep -F 'name: External Host Experiment - pkg-host-bun' .github/workflows/pkg-host-bun.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'name: Legacy Compatibility - pkg-host-node' .github/workflows/pkg-host-node.yml | wc -l"
+  run bash -lc "grep -F 'name: External Host Experiment - pkg-host-deno' .github/workflows/pkg-host-deno.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 }
@@ -62,18 +66,18 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 0 ]
 }
 
-@test "CLI quick workflow is legacy-only and does not add a host-node smoke" {
-  run bash -lc "grep -F 'name: Legacy Compatibility - CLI Quick Check' .github/workflows/cli-quick.yml | wc -l"
+@test "deleted legacy workflow files do not return" {
+  run test ! -e .github/workflows/cli-quick.yml
   assert_success
-  [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'Legacy compatibility - CLI quick' .github/workflows/cli-quick.yml | wc -l"
+  run test ! -e .github/workflows/cli-tests.yml
   assert_success
-  [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'node ../wesley-host-node/bin/wesley.mjs --version' .github/workflows/cli-quick.yml | wc -l || true"
+  run test ! -e .github/workflows/pkg-host-node.yml
   assert_success
-  [ "$output" -eq 0 ]
+
+  run test ! -e .github/workflows/fuzzing.yml
+  assert_success
 }
 
 @test "cert-shipme anchors and paginates bot comments" {
@@ -101,9 +105,9 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'transform --schema test/fixtures/blade/schema-v1.graphql --emit-bundle --out-dir out' .github/workflows/cert-shipme.yml | wc -l"
+  run bash -lc "grep -F 'transform --schema test/fixtures/blade/schema-v1.graphql --emit-bundle --out-dir out' .github/workflows/cert-shipme.yml | wc -l || true"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -eq 0 ]
 
   run bash -lc "grep -F 'Prepare passing SHIPME certificate fixture' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -119,7 +123,7 @@ load 'bats-plugins/bats-assert/load'
 
   run bash -lc "grep -F '.wesley-cache/holmes-report.json' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -ge 1 ]
 
   run bash -lc "grep -F 'Wait for HOLMES suite comment' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -178,16 +182,6 @@ load 'bats-plugins/bats-assert/load'
   [ -z "$output" ]
 }
 
-@test "property fuzzing workflow runs wesley-core fuzz suite" {
-  run bash -lc "grep -F 'Property-based fuzzing with fast-check' .github/workflows/fuzzing.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'pnpm --filter @wesley/core test:fuzz' .github/workflows/fuzzing.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-}
-
 @test "architecture boundaries workflow excludes product scaffold from required packages" {
   run bash -lc "grep -F 'wesley-scaffold-multitenant' .github/workflows/architecture-boundaries.yml | wc -l"
   assert_success
@@ -205,8 +199,17 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
-@test "@wesley/cli package test script is compatible with Node 20 test runner globs" {
-  run node -e "const pkg = JSON.parse(require('node:fs').readFileSync('packages/wesley-cli/package.json', 'utf8')); if (pkg.scripts.test.includes('\\\"test/*.test.mjs\\\"')) { throw new Error('quoted test glob is not expanded by Node 20'); } if (!pkg.scripts.test.includes('node --test test/*.test.mjs')) { throw new Error('expected shell-expanded test glob'); }"
+@test "deleted legacy Node packages no longer have manifests" {
+  run test ! -e packages/wesley-core/package.json
+  assert_success
+
+  run test ! -e packages/wesley-cli/package.json
+  assert_success
+
+  run test ! -e packages/wesley-host-node/package.json
+  assert_success
+
+  run test ! -e packages/wesley-runtime-node/package.json
   assert_success
 }
 

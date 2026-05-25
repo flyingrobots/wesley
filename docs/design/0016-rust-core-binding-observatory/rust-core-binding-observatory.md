@@ -2,7 +2,7 @@
 title: Rust core binding observatory
 legend: EVIDENCE
 packet: 0016-rust-core-binding-observatory
-status: active
+status: archived
 ---
 
 # Rust core binding observatory
@@ -11,15 +11,16 @@ status: active
 
 v0.0.6 made the Rust compiler truth harder to drift: Rust L1 fixtures,
 JS/Rust parity projections, parser acceptance evidence, module-boundary
-fixtures, and the first Rust CLI wall-clock baseline are now repo-visible.
+fixtures, and the first Rust CLI wall-clock baseline became repo-visible.
 
 The next weak claim is not "can Rust lower this schema?" It is:
 
 > How should the legacy Node toolchain call the Rust compiler core without
 > guessing about latency, memory, packaging, fallback, or rollback?
 
-This packet exists to turn that question into evidence before Wesley chooses a
-production Node binding or retires more legacy Node lowering behavior.
+This packet turned that question into migration evidence. Wesley then chose the
+cleaner path: delete the legacy Node compiler surface instead of embedding the
+Rust compiler through a Node binding.
 
 ## Hill
 
@@ -49,7 +50,7 @@ still need implementation.
 
 ## Report Contract
 
-The observatory report is emitted by:
+The retired observatory report was emitted by:
 
 ```bash
 pnpm perf:bindings -- --json
@@ -105,7 +106,7 @@ flowchart TD
 
 No Node cutover is allowed from this packet alone.
 
-A future cutover decision must combine:
+A future non-Rust host binding decision must combine:
 
 - correctness parity over named projections
 - Rust CLI latency baseline
@@ -119,7 +120,8 @@ A future cutover decision must combine:
 
 - This packet does not choose N-API.
 - This packet does not choose WASM as the hot path.
-- This packet does not retire legacy JS lowering.
+- This packet did not retire legacy JS lowering by itself; that happened in the
+  later Node retirement campaign.
 - This packet does not claim browser or edge host readiness.
 - This packet does not use Echo, jedit, Continuum, or PostgreSQL workloads as
   generic Wesley proof.
@@ -140,5 +142,7 @@ A future cutover decision must combine:
 - [EVIDENCE_rust-core-binding-and-memory-baselines.md](./EVIDENCE_rust-core-binding-and-memory-baselines.md)
 - [RUNTIME_node-rust-core-binding-strategy.md](./RUNTIME_node-rust-core-binding-strategy.md)
 - [Rust core performance baseline](../0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)
-- [`scripts/measure-ir-performance.mjs`](../../../scripts/measure-ir-performance.mjs)
-- [`test/ir-performance-baseline.bats`](../../../test/ir-performance-baseline.bats)
+- Historical script: `scripts/measure-ir-performance.mjs` was deleted during
+  legacy Node retirement.
+- Historical test: `test/ir-performance-baseline.bats` was deleted during
+  legacy Node retirement.

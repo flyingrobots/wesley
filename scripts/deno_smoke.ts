@@ -1,8 +1,10 @@
-// Deno smoke: import @wesley/core via import map and exercise a tiny bit
-import { SystemClock } from '@wesley/core';
+// Deno smoke: exercise the Deno host adapter without the retired JS core.
+import { runInDeno } from '../packages/wesley-host-deno/mod.ts';
 
-const clock = new SystemClock();
-const now = clock.now();
-// Simple token so CI can assert easily
-const token = `DENO_SMOKE_OK:${now.substring(0, 10)}`;
-console.log(token);
+const result = await runInDeno(/* GraphQL */ `
+  type Widget @wes_table {
+    id: ID! @wes_pk
+  }
+`);
+
+console.log(result.token);

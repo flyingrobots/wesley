@@ -1,21 +1,22 @@
-# Node Host
+# Retired Node Host
 
-The Node.js host is a legacy compatibility surface. It composes Wesley's
-historical `@wesley/core` engine with Node-specific adapters and exposes the
-old JavaScript CLI while the Rust-native CLI takes over product authority.
+The Node.js host was the legacy compatibility surface that composed the
+historical JavaScript core with Node-specific adapters. It has been retired.
+Use the native Rust `wesley` binary for product compiler work.
 
-- Package: `@wesley/host-node`
-- Entrypoint: `packages/wesley-host-node/bin/wesley.mjs`
-- Logging: pino (pretty in dev)
-- FS: Node fs/promises
-- Child process: used for optional shell helpers
+- Package: deleted.
+- Entrypoint: deleted.
+- Replacement: `cargo install --locked --path crates/wesley-cli`, then
+  `wesley --help`.
+- Retained JavaScript surfaces: Holmes assurance tooling and the browser, Bun,
+  and Deno host experiments.
 
 Quick checks
 
 ```bash
-pnpm --filter @wesley/host-node run test
-node packages/wesley-host-node/bin/wesley.mjs --version
+cargo xtask preflight
+cargo wesley --help
 ```
 
-Use native `wesley` examples for new product documentation. Node host examples
-belong in legacy compatibility or migration contexts only.
+Historical Node host examples belong only in migration or retrospective
+contexts.

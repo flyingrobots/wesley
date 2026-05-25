@@ -1,6 +1,10 @@
 #!/usr/bin/env bun
-import { SystemClock } from '../packages/wesley-core/src/index.mjs';
+import { runInBun } from '../packages/wesley-host-bun/src/index.mjs';
 
-const clock = new SystemClock();
-const token = `BUN_SMOKE_OK:${clock.now().slice(0, 10)}`;
-console.log(token);
+const result = await runInBun(/* GraphQL */ `
+  type Widget @wes_table {
+    id: ID! @wes_pk
+  }
+`);
+
+console.log(result.token);

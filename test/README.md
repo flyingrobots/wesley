@@ -6,20 +6,19 @@ All automated tests live under `test/`. This guide explains prerequisites, local
 
 - Node.js ≥ 18.17 and `pnpm` (matching the repo’s `packageManager` field).
 - `pnpm install` at the repository root to hydrate workspaces.
-- The CLI end-to-end suites rely on [Bats](https://github.com/bats-core/bats-core). Install it locally (`brew install bats-core`, `apt install bats`, etc.) or rely on CI. Run `pnpm run setup:bats-plugins` once to vendor the required plugins.
+- Repo-level and host-contract suites rely on [Bats](https://github.com/bats-core/bats-core). Install it locally (`brew install bats-core`, `apt install bats`, etc.) or rely on CI. Run `pnpm run setup:bats-plugins` once to vendor the required plugins.
 
 For a full smoke run: `pnpm run bootstrap` (installs, preflight, workspace tests).
 
 ## Suites & Commands
 
-| Test File                  | Run It With                                                                      | Fixtures/Data                           | Recommended Environment    |
-| -------------------------- | -------------------------------------------------------------------------------- | --------------------------------------- | -------------------------- |
-| `test/cli-generators.bats` | `BATS_LIB_PATH=packages/wesley-cli/test pnpm exec bats test/cli-generators.bats` | Creates temporary schema inline         | Local Node runtime (no DB) |
-| `test/holmes-e2e.bats`     | `BATS_LIB_PATH=packages/wesley-cli/test pnpm exec bats test/holmes-e2e.bats`     | `test/fixtures/examples/schema.graphql` | Local Node runtime         |
+| Test File              | Run It With                                              | Fixtures/Data                   | Recommended Environment |
+| ---------------------- | -------------------------------------------------------- | ------------------------------- | ----------------------- |
+| `test/holmes-e2e.bats` | `BATS_LIB_PATH=test pnpm exec bats test/holmes-e2e.bats` | Generated SHIPME fixture bundle | Local Node runtime      |
 
 ### Notes
 
-- All CLI Bats suites obey `WESLEY_REPO_ROOT` and use the fixtures described in `test/fixtures/README.md`.
+- Repo-level Bats suites use the fixtures described in `test/fixtures/README.md`.
 
 ## Fixture Layout
 
@@ -35,9 +34,8 @@ Highlights:
 
 Workspace packages expose their own test commands:
 
-- `pnpm --filter @wesley/core test`
-- `pnpm --filter @wesley/cli test`
 - `pnpm --filter @wesley/holmes test`
+- `pnpm --filter @wesley/host-browser test`
 
 See the package READMEs for additional guidance.
 
@@ -45,8 +43,7 @@ See the package READMEs for additional guidance.
 
 GitHub Actions runs the relevant subsets:
 
-- `.github/workflows/ci.yml` — main pipeline (unit + core checks).
-- `.github/workflows/cli-tests.yml` — CLI bats suite.
+- `.github/workflows/ci.yml` — main pipeline.
 - `.github/workflows/wesley-holmes.yml` — HOLMES evidence checks.
 - `.github/workflows/preflight.yml` — hygiene checks (docs links, ESLint purity, dependency boundaries).
 
@@ -56,12 +53,11 @@ These small suites are gated in CI and only run when relevant files change. To r
 
 ```bash
 pnpm run setup:bats-plugins
-BATS_LIB_PATH=packages/wesley-cli/test \
+BATS_LIB_PATH=test \
   bats test/serve-static*.bats \
     test/progress-*.bats \
     test/domain-empty-boundary.bats \
     test/ir-fixtures.bats \
-    test/ir-parity-sentinel.bats \
     test/ci-*.bats \
     test/browser-contracts-*.bats
 ```

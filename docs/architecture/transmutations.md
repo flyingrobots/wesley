@@ -4,20 +4,23 @@
 
 Wesley compiles GraphQL SDL into executable artifacts: SQL, TypeScript, Zod schemas, Rust codecs, Vue composables, and more. Each compilation path is a **transmutation**: a declared mapping from authored source, through Wesley IR, into one emitted artifact family with evidence that proves bounded properties of the result.
 
-This document specifies the transmutation system: how projects declare what they build, how Wesley executes it, and how HOLMES verifies it.
+This document records the historical JavaScript transmutation design. The
+legacy Node implementation it described has been retired; use it as archaeology
+when designing future Rust or external-module transmutation surfaces, not as
+current API documentation.
 
 ## Status
 
-**Implemented in part**.
+**Archived after legacy Node retirement**.
 
-Shipped today:
+Historical shipped surface:
 
 - the CLI transmutation registry is executable rather than name-only
 - lowering is separated enough that command surfaces can consume Wesley IR directly
 - a built-in `null-generator` witness proves a new transmutation can be added through registration without editing orchestration internals
 - the active `legacy-supabase` path now consumes explicit emission context instead of reaching back into schema-shaped filesystem state
 
-Still follow-on work:
+Remaining design ideas:
 
 - broader generator surfaces still need the same IR-only contract and evidence discipline
 - parts of this document remain design direction rather than shipped behavior and should be read that way
@@ -572,7 +575,7 @@ This lets HOLMES report: _"backend transmutation: users.graphql is fully certifi
 
 ## Project Organization
 
-### Current Structure
+### Retired JavaScript Structure
 
 ```
 packages/
@@ -583,18 +586,22 @@ packages/
 ├── wesley-host-browser/
 ├── wesley-host-bun/
 ├── wesley-host-deno/
-└── wesley-host-node/
+└── wesley-host-node/              # retired
 ```
 
-### Proposed Structure
+Those package paths are no longer current. Retained JavaScript packages are
+limited to Holmes assurance tooling and external host experiments; compiler
+authority lives in `crates/`.
+
+### Historical Proposed Structure
 
 Group packages by role. Generators become transmutation modules — each one knows how to transmute schemas into a specific artifact domain and prove it did so correctly.
 
 ```
 packages/
-├── core/                          # @wesley/core — pure domain
+├── core/                          # retired JavaScript core package
 │
-├── cli/                           # @wesley/cli — command framework
+├── cli/                           # retired JavaScript command framework
 │
 ├── transmute-supabase/            # @wesley/transmute-supabase
 │   ├── src/
@@ -793,15 +800,18 @@ If a generator needs a domain-specific shape (e.g., JS generators need `Schema`)
 
 **Files**:
 
-- `packages/wesley-cli/src/utils/table-projections.mjs` — keep remaining
-  table-shaped TypeScript/Zod compatibility local until the legacy CLI exits
+- Historical `packages/wesley-cli/src/utils/table-projections.mjs` path — this
+  was deleted with the legacy CLI
 - external PostgreSQL/Supabase module package — align `emitDDL()` etc.
-- `packages/wesley-core/src/application/LoweringEngine.mjs` — centralize SDL/IR/domain lowering before orchestration
-- `packages/wesley-cli/src/commands/typescript.mjs`, `zod.mjs` — remove inline adapter calls
+- Historical `packages/wesley-core/src/application/LoweringEngine.mjs` path —
+  Rust lowering now owns generic compiler authority
+- Historical `packages/wesley-cli/src/commands/typescript.mjs` and `zod.mjs`
+  paths — TypeScript moved to Rust, and Zod left generic Wesley core
 
 #### 0b. Merge GenerationPipeline / PluginRunner duality
 
-**Problem**: Two overlapping orchestration systems in `@wesley/core/application/`:
+**Problem**: Two overlapping historical orchestration systems existed in the
+JavaScript core application layer:
 
 | System               | Owns                                            | Missing                          |
 | -------------------- | ----------------------------------------------- | -------------------------------- |
@@ -834,10 +844,8 @@ graph LR
 
 **Files**:
 
-- `packages/wesley-core/src/application/GenerationPipeline.mjs` — absorb into TransmutationRunner
-- `packages/wesley-core/src/application/PluginRunner.mjs` — absorb into TransmutationRunner
-- `packages/wesley-core/src/application/EvidenceMap.mjs` — wire into runner
-- `packages/wesley-core/src/application/Scoring.mjs` — wire into runner
+- Historical `GenerationPipeline.mjs`, `PluginRunner.mjs`, `EvidenceMap.mjs`,
+  and `Scoring.mjs` paths were deleted with the legacy JavaScript core
 
 #### 0c. Keep transmutation task graphs descriptor-only
 
@@ -871,7 +879,8 @@ hosts or modules can feed the descriptor into a compatible executor. Benefits:
 
 **Files**:
 
-- `packages/wesley-core/src/application/TransmutationRunner.mjs` — descriptor builder
+- Historical `packages/wesley-core/src/application/TransmutationRunner.mjs`
+  path was deleted with the legacy JavaScript core
 - external modules or owning runtimes — execution policy, retries, concurrency, and resource locks
 
 #### 0d. Standardize named exports (resolves CR-33)
@@ -892,7 +901,8 @@ hosts or modules can feed the descriptor into a compatible executor. Benefits:
 
 Transmutation evidence needs to capture errors structurally. Inconsistent shapes make that unreliable.
 
-**Fix**: Introduce `WesleyError` base class in `@wesley/core`:
+**Fix**: The historical fix was to introduce a `WesleyError` base class in the
+JavaScript core:
 
 ```javascript
 class WesleyError extends Error {

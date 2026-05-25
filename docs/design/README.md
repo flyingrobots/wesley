@@ -39,7 +39,9 @@ Current packets:
   plus the
   [leaf package deletion audit](./0017-rust-native-front-door-and-node-retirement/LEAF_PACKAGE_DELETION_AUDIT.md)
   and
-  [generator JS deletion audit](./0017-rust-native-front-door-and-node-retirement/GENERATOR_JS_DELETION_AUDIT.md)
+  [generator JS deletion audit](./0017-rust-native-front-door-and-node-retirement/GENERATOR_JS_DELETION_AUDIT.md),
+  ending with the
+  [final closeout](./0017-rust-native-front-door-and-node-retirement/FINAL_CLOSEOUT.md)
 - [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md): Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement

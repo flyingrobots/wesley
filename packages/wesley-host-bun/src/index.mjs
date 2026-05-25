@@ -1,5 +1,3 @@
-import { GenerationPipeline } from '../../wesley-core/src/index.mjs';
-
 class MemoryFileSystem {
   constructor() {
     this._m = new Map();
@@ -20,6 +18,8 @@ class MemoryFileSystem {
   }
 }
 
+const SMOKE_GENERATED_AT = '1970-01-01T00:00:00.000Z';
+
 async function sha256Hex(input) {
   const enc = new TextEncoder();
   const data = enc.encode(typeof input === 'string' ? input : JSON.stringify(input));
@@ -32,7 +32,7 @@ async function sha256Hex(input) {
 export async function createBunRuntime() {
   const logger = console;
   const fs = new MemoryFileSystem();
-  const clock = { now: () => new Date() };
+  const clock = { now: () => new Date(SMOKE_GENERATED_AT) };
   // NOTE: Minimal regex-based SDL detector; not production-quality.
   // - Does not support multi-line directives or complex GraphQL syntax
   // - Used only for smoke-level tests to keep the bundle small
@@ -54,7 +54,7 @@ export async function createBunRuntime() {
         }
         return {
           version: '1.0.0',
-          metadata: { generatedAt: new Date().toISOString() },
+          metadata: { generatedAt: clock.now().toISOString() },
           tables,
           enums: [],
           scalars: [],
@@ -71,22 +71,8 @@ export async function createBunRuntime() {
 
 export async function runInBun(schema) {
   const rt = await createBunRuntime();
-  const diffEngine = {
-    async diff() {
-      return { steps: [] };
-    },
-    async generateMigration() {
-      return null;
-    }
-  };
-  const pipeline = new GenerationPipeline({
-    parser: rt.parsers.graphql,
-    diffEngine,
-    fileSystem: undefined,
-    logger: rt.logger
-  });
-  const bundle = await pipeline.execute(schema, { sha: 'bun-smoke' });
-  const tables = Array.isArray(bundle?.schema?.tables) ? bundle.schema.tables.length : 0;
-  const token = `BUN_HOST_OK:${tables}:${(await rt.crypto.sha256Hex(bundle.schema)).slice(0, 12)}`;
+  const ir = await rt.parsers.graphql.parse(schema);
+  const tables = Array.isArray(ir?.tables) ? ir.tables.length : 0;
+  const token = `BUN_HOST_OK:${tables}:${(await rt.crypto.sha256Hex(ir)).slice(0, 12)}`;
   return { ok: true, token, tables };
 }

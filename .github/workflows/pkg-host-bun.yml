@@ -1,4 +1,4 @@
-name: Legacy Compatibility - pkg-host-bun
+name: External Host Experiment - pkg-host-bun
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   bun-host:
-    name: Legacy compatibility - host-bun package
+    name: External host experiment - host-bun package
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

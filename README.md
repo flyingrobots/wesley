@@ -211,24 +211,20 @@ work. Legacy package commands now warn when a native replacement exists.
 
 <!-- BEGIN:OVERALL_STATUS -->
 
-| Stage | Progress    |
-| ----- | ----------- |
-| MVP   | 66% → Alpha |
+| Stage | Progress   |
+| ----- | ---------- |
+| Alpha | 50% → Beta |
 
 <!-- END:OVERALL_STATUS -->
 
 <!-- BEGIN:PACKAGE_MATRIX -->
 
-| Package                | Status               | Stage | Progress    | CI                                                                                                                     | Notes                                                                        |
-| ---------------------- | -------------------- | ----- | ----------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `@wesley/core`         | Legacy Compatibility | MVP   | 45% → Alpha | ![pkg-core.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-core.yml/badge.svg?branch=main)           | Historical JS core; Rust compiler authority lives in crates/wesley-core      |
-| `@wesley/cli`          | Legacy Compatibility | Alpha | 50% → Beta  | ![pkg-cli.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-cli.yml/badge.svg?branch=main)             | Historical Node command framework; native Rust CLI is the product front door |
-| `@wesley/host-node`    | Legacy Compatibility | MVP   | 50% → Alpha | ![pkg-host-node.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-node.yml/badge.svg?branch=main) | Legacy Node wrapper; use the native Rust CLI for product work                |
-| `@wesley/host-browser` | Legacy Compatibility | MVP   | 40% → Alpha | ![browser-smoke.yml](https://github.com/flyingrobots/wesley/actions/workflows/browser-smoke.yml/badge.svg?branch=main) | Host experiment pending deletion or externalization                          |
-| `@wesley/holmes`       | Legacy Compatibility | Alpha | 50% → Beta  | ![pkg-holmes.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-holmes.yml/badge.svg?branch=main)       | Assurance tooling pending explicit non-compiler boundary                     |
-| `@wesley/runtime-node` | Legacy Compatibility | MVP   | 0% → Alpha  | —                                                                                                                      | Legacy Node module loading and host utilities                                |
-| `@wesley/host-deno`    | Legacy Compatibility | Alpha | 50% → Beta  | ![pkg-host-deno.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-deno.yml/badge.svg?branch=main) | Host experiment pending deletion or externalization                          |
-| `@wesley/host-bun`     | Legacy Compatibility | Alpha | 50% → Beta  | ![pkg-host-bun.yml](https://github.com/flyingrobots/wesley/actions/workflows/pkg-host-bun.yml/badge.svg?branch=main)   | Host experiment pending deletion or externalization                          |
+| Package                | Status                   | Stage | Progress    | CI  | Notes                                                                    |
+| ---------------------- | ------------------------ | ----- | ----------- | --- | ------------------------------------------------------------------------ |
+| `@wesley/holmes`       | Assurance                | Alpha | 50% → Beta  | —   | Self-contained assurance tooling outside compiler authority              |
+| `@wesley/host-browser` | External host experiment | MVP   | 40% → Alpha | —   | Browser host smoke adapter with no dependency on retired JS core/runtime |
+| `@wesley/host-deno`    | External host experiment | Alpha | 50% → Beta  | —   | Deno host smoke adapter with no dependency on retired JS core/runtime    |
+| `@wesley/host-bun`     | External host experiment | Alpha | 50% → Beta  | —   | Bun host smoke adapter with no dependency on retired JS core/runtime     |
 
 <!-- END:PACKAGE_MATRIX -->
 

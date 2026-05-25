@@ -266,23 +266,25 @@ This keeps the predictor conservative: activity doesn’t “buy” readiness, i
 Wesley and HOLMES are separate packages:
 
 ```
-@wesley/core        # Pure domain logic, zero dependencies
-@wesley/host-node   # Platform adapters (fs, graphql parser)
-@wesley/cli         # Main CLI for generation
-@wesley/continuum   # Continuum-specific profiles and witness policy
-@wesley/holmes      # Sidecar intelligence package
+crates/wesley-core       # Rust compiler authority
+crates/wesley-cli        # Native product CLI
+@wesley/holmes           # Sidecar intelligence package
+@wesley/host-browser     # External host experiment
+@wesley/host-bun         # External host experiment
+@wesley/host-deno        # External host experiment
 ```
 
 ## Commands
 
-### Wesley (Main Generator)
+### Wesley (Native Compiler)
 
 ```bash
-# Generate with evidence tracking
-wesley generate --schema schema.graphql --emit-bundle
+# Emit artifacts through the native CLI
+wesley emit rust --schema schema.graphql --out generated/model.rs
+wesley emit typescript --schema schema.graphql --out generated/types.ts
 
-# Run tests
-wesley test
+# Run product checks
+cargo xtask preflight
 ```
 
 ### HOLMES (Sidecar Intelligence)

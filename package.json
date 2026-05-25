@@ -26,14 +26,9 @@
     "validate": "pnpm lint && pnpm format:check && pnpm test",
     "generate:example": "cargo run --bin wesley -- emit typescript --schema test/fixtures/examples/ecommerce.graphql --out test/fixtures/examples/out/ecommerce.d.ts --metadata-out test/fixtures/examples/out/ecommerce.metadata.json",
     "clean": "node scripts/clean.mjs",
-    "wesley": "node packages/wesley-host-node/bin/wesley.mjs",
     "meta:fix-packages": "node scripts/fix-package-metadata.mjs",
     "ci": "cargo xtask preflight && pnpm validate && pnpm generate:example",
-    "fixtures:ir": "node scripts/generate-ir-fixtures.mjs",
-    "parity:ir": "node scripts/check-ir-parity.mjs",
-    "parity:parser": "node scripts/check-parser-parity.mjs",
-    "perf:ir": "node scripts/measure-ir-performance.mjs",
-    "perf:bindings": "node scripts/measure-ir-performance.mjs --observatory"
+    "fixtures:ir": "node scripts/generate-ir-fixtures.mjs"
   },
   "keywords": [
     "graphql",

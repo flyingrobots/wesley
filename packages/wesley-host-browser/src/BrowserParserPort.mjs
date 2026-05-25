@@ -54,6 +54,7 @@ const SCALAR_SET = new Set([
   'Time',
   'JSON'
 ]);
+const SMOKE_GENERATED_AT = '1970-01-01T00:00:00.000Z';
 
 function parseFields(body) {
   const lines = body
@@ -160,7 +161,7 @@ export class BrowserParserPort {
     }
     return {
       version: '1.0.0',
-      metadata: { generatedAt: new Date().toISOString() },
+      metadata: { generatedAt: SMOKE_GENERATED_AT },
       tables,
       enums: [],
       scalars: [],

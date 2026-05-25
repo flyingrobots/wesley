@@ -1,9 +1,9 @@
 # Legacy Generator Plugins
 
 Wesley's current extension direction is Rust-first core APIs plus external
-modules for domain targets. This page documents the legacy Node generator plugin
-contract that still exists while the older package surfaces are being retired or
-extracted.
+modules for domain targets. This page documents the retired Node generator
+plugin contract as migration context. The older package surfaces are gone; keep
+new generator work in Rust emitters or external modules.
 
 For new work, start with [Extending Wesley](./extending.md). Add generic
 compiler facts in Rust, and put domain targets in external modules or crates.
@@ -16,9 +16,7 @@ The smallest possible generator plugin:
 
 ```mjs
 // my-plugin.mjs
-import { GeneratorPlugin } from '@wesley/core';
-
-export class HelloPlugin extends GeneratorPlugin {
+export class HelloPlugin {
   get apiVersion() {
     return '1';
   }
@@ -82,7 +80,7 @@ export default {
 SDL string
   |
   v
-parse (core)
+parse (retired JavaScript core)
   |
   v
 schema object  ──────>  plugin.plan(schema, context)
@@ -106,7 +104,8 @@ Plugins never touch the filesystem. They receive data and return data.
 
 ## The GeneratorPlugin Interface
 
-Extend `GeneratorPlugin` from `@wesley/core`, or supply a plain object with the same shape (duck-typed).
+The retired JavaScript runner accepted a plain object with this duck-typed
+shape. Do not add new code against this interface in Wesley core.
 
 ### `apiVersion` (required, getter)
 
@@ -213,25 +212,46 @@ When `PluginRunner` is created with `bestEffort: true`, a failing plugin is skip
 
 ## Testing Your Plugin
 
-Wesley ships a test harness that runs the full lifecycle (init, plan, generate) in memory with no filesystem, no real clock, and no logger output.
+The retired JavaScript core shipped a test harness that ran the full lifecycle
+in memory with no filesystem, no real clock, and no logger output. New external
+modules should own their own harnesses or use package-local helpers.
 
 ```mjs
 // my-plugin.test.mjs
 import { describe, it, expect } from 'vitest';
-import { testGenerator, testGeneratorPlan, expectArtifact } from '@wesley/core/testing';
 import { HelloPlugin } from './my-plugin.mjs';
 
 const sdl = `type User @wes_table { id: ID! @wes_pk }`;
 
+async function testGenerator(plugin, sdl, config = {}) {
+  await plugin.init?.(config);
+  const context = {
+    config,
+    emission: { outDir: 'out' },
+    logger: { info() {}, warn() {}, error() {}, debug() {} },
+    clock: { now: () => '2020-01-01T00:00:00.000Z' },
+    runId: 'test-run-0'
+  };
+  const plan = await plugin.plan({ sdl }, context);
+  return plugin.generate(plan, context);
+}
+
+function expectArtifact(artifacts, path) {
+  expect(artifacts[path]).toBeDefined();
+  return {
+    toContain: (text) => expect(artifacts[path]).toContain(text)
+  };
+}
+
 describe('HelloPlugin', () => {
   it('generates hello.txt', async () => {
     const artifacts = await testGenerator(new HelloPlugin(), sdl);
-    expectArtifact(artifacts, 'hello.txt').toExist();
     expectArtifact(artifacts, 'hello.txt').toContain('Hello from Wesley');
   });
 
   it('declares artifacts in plan', async () => {
-    const plan = await testGeneratorPlan(new HelloPlugin(), sdl);
+    const plugin = new HelloPlugin();
+    const plan = await plugin.plan({ sdl }, { emission: { outDir: 'out' } });
     expect(plan.artifacts).toHaveLength(1);
     expect(plan.artifacts[0].path).toBe('hello.txt');
   });
@@ -240,20 +260,14 @@ describe('HelloPlugin', () => {
     const artifacts = await testGenerator(new HelloPlugin(), sdl, {
       format: 'yaml'
     });
-    expectArtifact(artifacts, 'hello.txt').toExist();
+    expect(artifacts['hello.txt']).toBeDefined();
   });
 });
 ```
 
-### Harness API
-
-| Function            | Signature                                                               | Description                             |
-| ------------------- | ----------------------------------------------------------------------- | --------------------------------------- |
-| `testGenerator`     | `(plugin, sdl, config?) => Promise<Record<string, string\|Uint8Array>>` | Runs full lifecycle, returns artifacts  |
-| `testGeneratorPlan` | `(plugin, sdl, config?) => Promise<GenerationPlan>`                     | Runs init + plan only, returns the plan |
-| `expectArtifact`    | `(artifacts, path) => { toExist(), toContain(str), toMatchJSON(obj) }`  | Fluent assertions on a single artifact  |
-
-The harness uses a deterministic clock (`2020-01-01T00:00:00.000Z`), a null logger, and a fixed `runId` of `test-run-0` for snapshot-friendly output.
+The example harness uses a deterministic clock
+(`2020-01-01T00:00:00.000Z`), a null logger, and a fixed `runId` of
+`test-run-0` for snapshot-friendly output.
 
 ---
 

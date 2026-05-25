@@ -49,4 +49,5 @@ three repositories by hand.
 - Current ownership note: this product-specific surface is extraction context,
   not active Wesley core doctrine.
 - [GUIDE.md](../../GUIDE.md)
-- [packages/wesley-cli/README.md](../../../packages/wesley-cli/README.md)
+- Historical package note: the former `packages/wesley-cli/README.md` was
+  deleted during legacy Node retirement.

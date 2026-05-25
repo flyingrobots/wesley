@@ -12,7 +12,7 @@ permissions:
 jobs:
   enforce-boundaries:
     runs-on: ubuntu-latest
-    name: Enforce Hexagonal Architecture Boundaries
+    name: Enforce Rust-Native Architecture Boundaries
 
     steps:
       - name: Harden runner
@@ -37,17 +37,17 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Check architecture boundaries
         run: |
-          echo "🏗️  Checking hexagonal architecture boundaries..."
-          pnpm dlx dependency-cruiser --config .dependency-cruiser.mjs packages/
+          echo "Checking package architecture boundaries..."
+          pnpm exec depcruise --config .dependency-cruiser.mjs packages/
 
       - name: Generate architecture diagram
         run: |
-          echo "📊 Generating architecture diagram..."
-          pnpm dlx dependency-cruiser --config .dependency-cruiser.mjs \
+          echo "Generating architecture diagram..."
+          pnpm exec depcruise --config .dependency-cruiser.mjs \
             --output-type archi packages/ > architecture.svg
 
       - name: Upload architecture diagram
@@ -58,114 +58,56 @@ jobs:
           path: architecture.svg
           retention-days: 30
 
-      - name: Check package.json dependencies
+      - name: Validate retired Node packages stay retired
         run: |
-          echo "📦 Validating package.json dependencies..."
-
-          # Core should not depend on Node.js specific packages
-          if grep -E '"(fs-extra|path|os|child_process)"' packages/wesley-core/package.json; then
-            echo "❌ wesley-core should not have Node.js dependencies"
-            exit 1
-          fi
-
-          # CLI should not depend on host adapter
-          if grep -E '"@wesley/host-node"' packages/wesley-cli/package.json; then
-            echo "❌ wesley-cli should not depend on host adapter"
-            exit 1
-          fi
-
-          echo "✅ package.json dependencies are valid"
-
-      - name: Validate import statements (lightweight)
-        run: |
-          echo "🔍 Checking import statements for boundary violations (lightweight)..."
-
-          # Quick smoke: disallow node:* imports in core (ESM specifiers)
-          NODE_MATCHES=$(grep -RIl --include='*.mjs' -E "from ['\"]node:|require\(['\"]node:" packages/wesley-core/src || true)
-          if [[ -n "$NODE_MATCHES" ]]; then
-            echo "❌ Found node:* imports in wesley-core"
-            echo "$NODE_MATCHES"
-            exit 1
-          fi
-
-          # Quick smoke: CLI must not import host directly
-          if find packages/wesley-cli/src -name "*.mjs" -exec grep -l "from ['\"]@wesley/host-node" {} \; | grep .; then
-            echo "❌ Found host-node imports in wesley-cli"
-            exit 1
-          fi
-
-          echo "✅ Lightweight import checks passed"
-
-      # ESLint purity rules enforce no process/node:* in core; skip manual grep
-
-      - name: Run ESLint for core (purity rules)
-        run: |
-          echo "🔎 Running ESLint restricted-imports check for wesley-core..."
-          pnpm exec eslint "packages/wesley-core/src/**/*.mjs" --max-warnings=0
-
-      - name: Validate ENSIGN structure
-        run: |
-          echo "🏛️  Validating ENSIGN package structure..."
-
-          # Check that all required packages exist
-          required_packages=(
-            "wesley-core"
-            "wesley-host-node"
-            "wesley-cli"
+          set -euo pipefail
+          retired=(
+            packages/wesley-core/package.json
+            packages/wesley-cli/package.json
+            packages/wesley-host-node/package.json
+            packages/wesley-runtime-node/package.json
           )
 
-          for package in "${required_packages[@]}"; do
-            if [ ! -d "packages/$package" ]; then
-              echo "❌ Missing required package: $package"
-              exit 1
-            fi
-
-            if [ ! -f "packages/$package/package.json" ]; then
-              echo "❌ Missing package.json for: $package"
-              exit 1
-            fi
-
-            if [ ! -d "packages/$package/src" ]; then
-              echo "❌ Missing src directory for: $package"
+          for package_manifest in "${retired[@]}"; do
+            if [ -e "$package_manifest" ]; then
+              echo "Retired legacy package returned: $package_manifest" >&2
               exit 1
             fi
           done
 
-          echo "✅ ENSIGN package structure is valid"
+      - name: Validate retained package imports
+        run: |
+          set -euo pipefail
+          if grep -RIl --include='*.mjs' --include='*.ts' \
+            -E "@wesley/(core|cli|runtime-node)|wesley-host-node|packages/wesley-(core|cli|host-node|runtime-node)" \
+            packages scripts | grep -v '^scripts/preflight.mjs$' | grep .; then
+            echo "Retired legacy package import or executable reference found." >&2
+            exit 1
+          fi
 
       - name: Generate boundary report
         if: always()
         run: |
-          echo "📋 Generating architecture boundary report..."
-
           cat > boundary-report.md << 'EOF'
           # Architecture Boundary Report
 
-          ## ENSIGN Reorganization Status
+          ## Rust-Native Front Door Status
 
-          ### Completed ✅
-          - Core domain extracted from god module
-          - Retained generic emitters moved to Rust-native crates
-          - CLI and Node.js code evicted from core
-          - Task graph descriptors live in @wesley/core without a JS task runtime
-          - Package boundaries defined and enforced
+          ### Completed
 
-          ### Package Structure
+          - The product front door is the Rust `wesley` binary.
+          - Legacy JS compiler authority packages are retired.
+          - Holmes remains a self-contained assurance package, not compiler authority.
+          - Browser, Bun, and Deno packages remain external host experiments without JS core/runtime imports.
 
-          ```
-          wesley/
-          ├── packages/
-          │   ├── wesley-core/              # Pure domain logic
-          │   ├── wesley-host-node/         # Node.js adapters
-          │   └── wesley-cli/               # Legacy compatibility CLI
-          ```
+          ### Retired Package Guard
 
-          ### Dependency Rules
+          The workflow fails if any of these manifests return:
 
-          1. **Core** → Only other core modules (hexagonal center)
-          2. **Adapters** → Can use core + platform libraries
-          3. **Generators** → Generic emitters live in Rust crates or external target modules
-          4. **Task descriptors** → @wesley/core can describe graphs; external executors own scheduling
+          - `packages/wesley-core/package.json`
+          - `packages/wesley-cli/package.json`
+          - `packages/wesley-host-node/package.json`
+          - `packages/wesley-runtime-node/package.json`
 
           Generated at: $(date)
           EOF

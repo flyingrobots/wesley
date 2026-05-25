@@ -1,75 +1,43 @@
 {
   "project": {
-    "requiredForAlpha": ["@wesley/core", "@wesley/cli"],
-    "requiredForBeta": ["@wesley/core", "@wesley/cli"],
-    "requiredForV1": ["@wesley/core", "@wesley/cli"],
+    "requiredForAlpha": ["@wesley/holmes"],
+    "requiredForBeta": ["@wesley/holmes"],
+    "requiredForV1": ["@wesley/holmes"],
     "weights": {
-      "@wesley/core": 0.25,
-      "@wesley/cli": 0.15,
-      "@wesley/host-node": 0.15,
-      "@wesley/holmes": 0.1,
-      "@wesley/host-browser": 0,
-      "@wesley/host-deno": 0,
-      "@wesley/host-bun": 0,
-      "@wesley/runtime-node": 0
+      "@wesley/holmes": 0.4,
+      "@wesley/host-browser": 0.2,
+      "@wesley/host-deno": 0.2,
+      "@wesley/host-bun": 0.2
     }
   },
   "packages": [
     {
-      "name": "@wesley/core",
-      "status": "Legacy Compatibility",
-      "ci": "pkg-core.yml",
-      "readme": "packages/wesley-core/README.md",
-      "notes": "Historical JS core; Rust compiler authority lives in crates/wesley-core"
-    },
-    {
-      "name": "@wesley/cli",
-      "status": "Legacy Compatibility",
-      "ci": "pkg-cli.yml",
-      "readme": "packages/wesley-cli/README.md",
-      "notes": "Historical Node command framework; native Rust CLI is the product front door"
-    },
-    {
-      "name": "@wesley/host-node",
-      "status": "Legacy Compatibility",
-      "ci": "pkg-host-node.yml",
-      "readme": "packages/wesley-host-node/README.md",
-      "notes": "Legacy Node wrapper; use the native Rust CLI for product work"
+      "name": "@wesley/holmes",
+      "status": "Assurance",
+      "ci": "pkg-holmes.yml",
+      "readme": "packages/wesley-holmes/README.md",
+      "notes": "Self-contained assurance tooling outside compiler authority"
     },
     {
       "name": "@wesley/host-browser",
-      "status": "Legacy Compatibility",
+      "status": "External host experiment",
       "ci": "browser-smoke.yml",
       "readme": "packages/wesley-host-browser/README.md",
-      "notes": "Host experiment pending deletion or externalization"
-    },
-    {
-      "name": "@wesley/holmes",
-      "status": "Legacy Compatibility",
-      "ci": "pkg-holmes.yml",
-      "readme": "packages/wesley-holmes/README.md",
-      "notes": "Assurance tooling pending explicit non-compiler boundary"
-    },
-    {
-      "name": "@wesley/runtime-node",
-      "status": "Legacy Compatibility",
-      "ci": null,
-      "readme": "packages/wesley-runtime-node/README.md",
-      "notes": "Legacy Node module loading and host utilities"
+      "notes": "Browser host smoke adapter with no dependency on retired JS core/runtime"
     },
     {
       "name": "@wesley/host-deno",
-      "status": "Legacy Compatibility",
+      "status": "External host experiment",
       "ci": "pkg-host-deno.yml",
       "readme": "packages/wesley-host-deno/README.md",
-      "notes": "Host experiment pending deletion or externalization"
+      "notes": "Deno host smoke adapter with no dependency on retired JS core/runtime"
     },
     {
       "name": "@wesley/host-bun",
-      "status": "Legacy Compatibility",
+      "status": "External host experiment",
       "ci": "pkg-host-bun.yml",
       "readme": "packages/wesley-host-bun/README.md",
-      "notes": "Host experiment pending deletion or externalization"
+      "notes": "Bun host smoke adapter with no dependency on retired JS core/runtime"
     }
   ]
 }

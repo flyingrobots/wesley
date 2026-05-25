@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Legacy compatibility assurance and evidence tooling",
+  "description": "Self-contained assurance and evidence tooling outside Wesley compiler authority",
   "wesley": {
     "retirement": {
       "status": "legacy-compatibility",
@@ -29,8 +29,6 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@wesley/core": "workspace:*",
-    "@wesley/runtime-node": "workspace:*",
     "commander": "^14.0.2"
   },
   "keywords": [

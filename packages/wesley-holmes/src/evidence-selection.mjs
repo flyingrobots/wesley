@@ -1,26 +1,30 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import {
-  classifyEvidenceLocation as classifyEvidenceLocationCore,
-  pickBestEvidenceLocation as pickBestEvidenceLocationCore,
-  summarizeEvidenceKinds as summarizeEvidenceKindsCore,
-  summarizeEvidenceQuality as summarizeEvidenceQualityCore
-} from '@wesley/core';
+  classifyEvidenceLocation as classifyEvidenceLocationWithResolver,
+  pickBestEvidenceLocation as pickBestEvidenceLocationWithResolver,
+  summarizeEvidenceKinds as summarizeEvidenceKindsWithResolver,
+  summarizeEvidenceQuality as summarizeEvidenceQualityWithResolver
+} from './support/evidence-quality.mjs';
 
 export function summarizeEvidenceQuality(payload, resolver = readLocalEvidenceContent) {
-  return summarizeEvidenceQualityCore(payload, resolver);
+  return summarizeEvidenceQualityWithResolver(payload, resolver);
 }
 
 export function summarizeEvidenceKinds(evidence, resolver = readLocalEvidenceContent) {
-  return summarizeEvidenceKindsCore(evidence, resolver);
+  return summarizeEvidenceKindsWithResolver(evidence, resolver);
 }
 
 export function pickBestEvidenceLocation(evidence, resolver = readLocalEvidenceContent) {
-  return pickBestEvidenceLocationCore(evidence, resolver);
+  return pickBestEvidenceLocationWithResolver(evidence, resolver);
 }
 
 export function classifyEvidenceLocation(location, resolver = readLocalEvidenceContent) {
-  return classifyEvidenceLocationCore(location, resolver);
+  return classifyEvidenceLocationWithResolver(location, resolver);
+}
+
+export function summarizeEvidenceQualityFromLocalFiles(payload) {
+  return summarizeEvidenceQualityWithResolver(payload, readLocalEvidenceContent);
 }
 
 export function readLocalEvidenceContent(file) {

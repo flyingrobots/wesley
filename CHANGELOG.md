@@ -90,6 +90,17 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Removed
 
+- **Final legacy Node compiler surface**: Deleted `packages/wesley-core`,
+  `packages/wesley-cli`, `packages/wesley-host-node`, and
+  `packages/wesley-runtime-node`; removed their package workflows, CLI Bats
+  suites, root `pnpm wesley` bridge, lockfile importers, progress rows, and
+  stale dependency-cruiser/preflight shadows.
+- **Legacy parity and performance scripts**: Removed JS/Rust parity and
+  JavaScript performance observatory scripts after the Rust-native compiler
+  spine became the release gate.
+- **Legacy Node CI workflows**: Removed package-only CLI/core/host-node,
+  fuzzing, quick CLI, and legacy parity/performance workflow coverage that
+  depended on the retired Node compiler stack.
 - **Legacy JavaScript generator package**: Deleted
   `packages/wesley-generator-js`, removed its package workflow, lockfile
   importer, progress row, host shims, and `models` command. Retained generic
@@ -154,6 +165,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Holmes support ownership**: Holmes now carries its retained ledger,
+  artifact-path, evidence-quality, and module-capability helpers locally rather
+  than importing deleted JavaScript core/runtime packages.
+- **Host experiment ownership**: Browser, Bun, and Deno host experiments now
+  run self-contained smoke lowerers instead of importing the deleted JavaScript
+  core.
+- **Node retirement closeout docs**: BEARING, END_TO_END, ENTRYPOINTS,
+  ARCHITECTURE, DIRECTIVES, GUIDE, legacy migration, and design packet `0017`
+  now describe the 96/96-slice closeout and the post-retirement Rust-native
+  direction.
 - **Legacy CLI quick workflow**: Reclassified the CLI quick-check workflow as a
   legacy compatibility check and removed its extra direct host-node smoke; the
   package tests remain the compatibility proof.

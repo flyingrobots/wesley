@@ -8,7 +8,7 @@ fi
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-export BATS_LIB_PATH=packages/wesley-cli/test
+export BATS_LIB_PATH=test
 export TERM=xterm
 export BATS_NO_COLOR=1
 
@@ -17,8 +17,8 @@ timeout 60s bash scripts/setup-bats-plugins.sh || {
   exit 1
 }
 
-rm -rf test/bats-plugins 2>/dev/null || true
-ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/bats-plugins
+rm -rf test/hosts/bats-plugins 2>/dev/null || true
+ln -sfn "$PWD/test/bats-plugins" test/hosts/bats-plugins
 
 files=(
   test/serve-static-unit.bats
@@ -26,8 +26,6 @@ files=(
   test/progress-dry-run.bats
   test/domain-empty-boundary.bats
   test/ir-fixtures.bats
-  test/ir-performance-baseline.bats
-  test/ir-parity-sentinel.bats
   test/progress-safety.bats
   test/ci-browser-smoke.bats
   test/ci-pkg-host-bun.bats

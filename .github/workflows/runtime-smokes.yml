@@ -1,4 +1,4 @@
-name: Legacy Compatibility - Runtime Smokes
+name: External Host Experiments - Runtime Smokes
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   deno-smoke:
-    name: Legacy compatibility - Deno host smoke
+    name: External host experiment - Deno smoke
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -34,17 +34,17 @@ jobs:
           deno lint --config deno.json scripts/deno_smoke.ts
       - name: Deno host contracts (Bats)
         env:
-          BATS_LIB_PATH: packages/wesley-cli/test
+          BATS_LIB_PATH: test
           TERM: xterm
           BATS_NO_COLOR: '1'
         run: |
           rm -rf test/hosts/bats-plugins || true
-          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
           timeout 2m bash scripts/setup-bats-plugins.sh
+          ln -sfn "$PWD/test/bats-plugins" test/hosts/bats-plugins
           HOST=deno bats -t test/hosts/host-contracts.bats
 
   bun-smoke:
-    name: Legacy compatibility - Bun host smoke
+    name: External host experiment - Bun smoke
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -60,46 +60,11 @@ jobs:
           bun-version: 1.2.20
       - name: Bun host contracts (Bats)
         env:
-          BATS_LIB_PATH: packages/wesley-cli/test
+          BATS_LIB_PATH: test
           TERM: xterm
           BATS_NO_COLOR: '1'
         run: |
           rm -rf test/hosts/bats-plugins || true
-          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
           timeout 2m bash scripts/setup-bats-plugins.sh
+          ln -sfn "$PWD/test/bats-plugins" test/hosts/bats-plugins
           HOST=bun bats -t test/hosts/host-contracts.bats
-
-  node-smoke:
-    name: Legacy compatibility - Node host smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
-        with:
-          version: 9.15.9
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - name: Enable corepack (pnpm)
-        run: corepack enable
-      - name: Install deps (frozen)
-        run: pnpm install --frozen-lockfile
-      - name: Install bats
-        uses: ./.github/actions/install-bats
-      - name: Node host contracts (Bats)
-        env:
-          BATS_LIB_PATH: packages/wesley-cli/test
-          TERM: xterm
-          BATS_NO_COLOR: '1'
-        run: |
-          rm -rf test/hosts/bats-plugins || true
-          ln -sfn "$PWD/packages/wesley-cli/test/bats-plugins" test/hosts/bats-plugins
-          timeout 2m bash scripts/setup-bats-plugins.sh
-          HOST=node bats -t test/hosts/host-contracts.bats

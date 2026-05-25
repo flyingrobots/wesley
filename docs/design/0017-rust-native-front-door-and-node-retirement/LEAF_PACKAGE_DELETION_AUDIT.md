@@ -2,10 +2,9 @@
 
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
-This audit records the NR-082 through NR-094 cleanup tranche. It is not the
-final Node retirement closeout: `packages/wesley-core/`, `packages/wesley-cli/`,
-`packages/wesley-host-node/`, `packages/wesley-runtime-node/`, and
-`packages/wesley-holmes/` still have explicit open gates.
+This audit records the NR-082 through NR-094 cleanup tranche. The later final
+closeout is recorded in
+[`FINAL_CLOSEOUT.md`](./FINAL_CLOSEOUT.md).
 
 ## Deleted Packages
 
@@ -26,11 +25,11 @@ final Node retirement closeout: `packages/wesley-core/`, `packages/wesley-cli/`,
 
 ## Preserved JavaScript Tooling
 
-| Slice  | Decision                                                                                                                                                                                                 |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NR-089 | JavaScript remains for repository tooling, docs/site generation, website builds, and legacy compatibility lanes. It is not product compiler authority.                                                   |
-| NR-090 | `@git-stunts/alfred` remains a root dev dependency only for JavaScript tooling seams that run bounded child processes. Current users are parity/performance scripts and `scripts/resilient-process.mjs`. |
-| NR-091 | `ninelives` remains the Rust resilience primitive in `crates/wesley-core` and `xtask`; it is the chosen policy library for cooperative Rust compiler and capability seams.                               |
+| Slice  | Decision                                                                                                                                                                   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NR-089 | JavaScript remains for repository tooling, docs/site generation, website builds, and legacy compatibility lanes. It is not product compiler authority.                     |
+| NR-090 | `@git-stunts/alfred` remains a root dev dependency only for JavaScript tooling seams that run bounded child processes.                                                     |
+| NR-091 | `ninelives` remains the Rust resilience primitive in `crates/wesley-core` and `xtask`; it is the chosen policy library for cooperative Rust compiler and capability seams. |
 
 ## Stale Shadow Audit
 
@@ -65,14 +64,9 @@ larger `wesley-core` deletion/extraction gate closes.
 
 ## Remaining Open Gates
 
-| Slice  | Surface                         | Reason it remains open                                                                            |
-| ------ | ------------------------------- | ------------------------------------------------------------------------------------------------- |
-| NR-076 | `packages/wesley-core/`         | Still feeds Holmes, compatibility packages, legacy CLI compatibility code, and migration scripts. |
-| NR-077 | `packages/wesley-cli/`          | Still owns legacy assurance/runtime commands and compatibility tests.                             |
-| NR-078 | `packages/wesley-host-node/`    | Still needed for compatibility workflows and legacy CLI smoke tests.                              |
-| NR-079 | `packages/wesley-runtime-node/` | Still used by Holmes/runtime evidence and parser/parity migration scripts.                        |
-| NR-095 | Final closeout                  | Blocked until NR-076 through NR-080 are actually closed or externally extracted.                  |
-| NR-096 | Remove active campaign          | Blocked until final closeout is merged.                                                           |
+None in the legacy Node retirement campaign. NR-076 through NR-079 were closed
+by deleting the final compatibility packages, and NR-095/NR-096 are closed by
+the final closeout.
 
 ## Verification
 

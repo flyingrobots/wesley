@@ -5,14 +5,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createModuleCapabilityRegistry } from '@wesley/core';
-
 import {
   COUNTERFACTUAL_CURRENT_PATH,
   analyzeCounterfactual,
   defaultCounterfactualPolicy
 } from '../src/index.mjs';
 import { buildMoriartyPrediction } from '../src/moriarty-predict-workflow.mjs';
+import { createModuleCapabilityRegistry } from '../src/support/module-capabilities.mjs';
 
 const fixtureModulePath = fileURLToPath(
   new URL('./fixtures/counterfactual-provider-module.mjs', import.meta.url)
