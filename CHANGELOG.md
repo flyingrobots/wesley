@@ -49,10 +49,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   added/removed law entries, scalar semantic field changes, variant case
   changes, footprint expansion/contraction/mixed-change events, channel version
   and channel body changes, invariant predicate changes, registry changes, law
-  tag changes, and schema-hash rebound events. The `WLAW-050` drift checkpoint
-  keeps the remaining semantic diff CLI, strengthened/weakened classifications,
-  binding-break classifications, and adoption tools in the existing 75-slice
-  runway.
+  tag changes, schema-hash rebound events, strengthened/weakened law
+  classifications, and binding-break events. The native
+  `wesley law diff --old <path> --new <path> --json` command emits
+  machine-readable semantic diff reports; `--format markdown` generates PR-ready
+  summaries; CI and Holmes/BLADE-facing fixture outputs now exercise the public
+  diff schema.
 - **`weslaw` semantic Law IR design**: Added design packet `0019` defining
   `weslaw` as Wesley's semantic law layer for contract bundles, with typed Law
   IR, strict binding, schema-hash anchoring, canonical law hashes, structured

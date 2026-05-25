@@ -406,6 +406,8 @@ wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> --format summary --exit-code
 wesley law validate --schema <schema.graphql> --law <law.weslaw.yaml> --json
+wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> --json
+wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> --format markdown
 wesley operation selections --operation <path> --schema <path> --json
 wesley operation directive-args --operation <path> --directive <name> --json
 ```
@@ -419,6 +421,9 @@ These commands are boring on purpose. They answer compiler questions:
 - Which semantic law entries bind to this schema, and which `lawHash`,
   `lawDocumentHash`, `profileHash`, and `bundleHash` identify the bound
   contract bundle?
+- Which semantic law changed between two law versions, and is the change a
+  strengthening, weakening, footprint expansion/contraction, channel version
+  change, predicate change, schema-hash rebound, or binding break?
 - Which response paths or schema-coordinate selections does an operation use?
 - Which directive arguments are present on an operation?
 
@@ -431,6 +436,9 @@ flowchart TD
     IR --> LawBind[Strict law binding]
     LawDoc[weslaw/v1 document] --> LawBind
     LawBind --> LawManifest[Contract bundle manifest]
+    LawDoc --> LawDiff[Semantic law diff]
+    LawDiff --> LawDiffJson[JSON diff report]
+    LawDiff --> LawDiffMarkdown[Markdown review summary]
 
     Operation[GraphQL operation document] --> OpParse[Operation parser]
     OpParse --> ResponsePaths[Response-path selections]
@@ -441,6 +449,9 @@ flowchart TD
 
     Hash --> CI[CI and fixture evidence]
     LawManifest --> CI
+    LawDiffJson --> CI
+    LawDiffJson --> Assurance[Holmes/BLADE]
+    LawDiffMarkdown --> Review
     Delta --> Review[Human review]
     RootOps --> Emitters[Operation binding emitters]
     ResponsePaths --> Witness[Witness inputs]

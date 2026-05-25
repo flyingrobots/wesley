@@ -596,7 +596,7 @@ laws:
     let report = diff_law_ir_v1(&old_ir, &new_ir).expect("law diff should compute");
     assert_eq!(report.changes.len(), 1);
     let change = &report.changes[0];
-    assert_eq!(change.kind, LawDiffEventKindV1::ScalarSemanticsChanged);
+    assert_eq!(change.kind, LawDiffEventKindV1::LawStrengthened);
     assert_eq!(change.law_kind, Some(LawKindV1::ScalarSemantics));
     assert_eq!(
         change
@@ -612,6 +612,50 @@ laws:
             .contains("rationale"),
         "semantic diff must not include rationale prose"
     );
+}
+
+#[test]
+fn law_diff_v1_reports_weakening_scalar_changes() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let old_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+      minInclusive: 10
+      maxInclusive: 90
+      forbids: [silentGraphQLIntNarrowing]
+"#
+    ))
+    .expect("old scalar law should lower");
+    let new_ir = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+      minInclusive: 1
+      maxInclusive: 100
+"#
+    ))
+    .expect("new scalar law should lower");
+
+    let report = diff_law_ir_v1(&old_ir, &new_ir).expect("law diff should compute");
+    assert_eq!(report.changes.len(), 1);
+    assert_eq!(report.changes[0].kind, LawDiffEventKindV1::LawWeakened);
 }
 
 #[test]
@@ -671,6 +715,87 @@ laws:
             .map(|field| field.path.as_str())
             .collect::<Vec<_>>(),
         vec!["body.cases.PAUSED.forbids", "body.cases.SEEK.requires"]
+    );
+}
+
+#[test]
+fn law_diff_v1_reports_variant_strengthening_and_weakening() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let baseline = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: kind
+      enum: PlaybackModeKind
+    cases:
+      - value: PAUSED
+        forbids: [target]
+      - value: SEEK
+        requires: [target]
+"#
+    ))
+    .expect("baseline variant law should lower");
+    let strengthened = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: kind
+      enum: PlaybackModeKind
+    cases:
+      - value: PAUSED
+        forbids: [target, then]
+      - value: SEEK
+        requires: [target, then]
+"#
+    ))
+    .expect("strengthened variant law should lower");
+    let weakened = load_weslaw_yaml(&format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: kind
+      enum: PlaybackModeKind
+    cases:
+      - value: PAUSED
+      - value: SEEK
+"#
+    ))
+    .expect("weakened variant law should lower");
+
+    let strengthened_report =
+        diff_law_ir_v1(&baseline, &strengthened).expect("law diff should compute");
+    assert_eq!(strengthened_report.changes.len(), 1);
+    assert_eq!(
+        strengthened_report.changes[0].kind,
+        LawDiffEventKindV1::LawStrengthened
+    );
+
+    let weakened_report = diff_law_ir_v1(&baseline, &weakened).expect("law diff should compute");
+    assert_eq!(weakened_report.changes.len(), 1);
+    assert_eq!(
+        weakened_report.changes[0].kind,
+        LawDiffEventKindV1::LawWeakened
     );
 }
 
@@ -912,6 +1037,26 @@ laws:
             LawDiffEventKindV1::LawTagsChanged,
         ]
     );
+}
+
+#[test]
+fn law_diff_v1_fixture_outputs_satisfy_published_schema() {
+    let schema: serde_json::Value =
+        serde_json::from_str(&read_fixture("schemas/wesley-law-diff-v1.schema.json"))
+            .expect("law diff schema should parse");
+    let validator = jsonschema::validator_for(&schema).expect("law diff schema should compile");
+    for fixture_path in [
+        "test/fixtures/weslaw/diff/ci-semantic-diff.json",
+        "test/fixtures/weslaw/diff/holmes-blade-binding-broken.json",
+    ] {
+        let report_json: serde_json::Value =
+            serde_json::from_str(&read_fixture(fixture_path)).expect("fixture should parse");
+        let errors = validator
+            .iter_errors(&report_json)
+            .map(|error| error.to_string())
+            .collect::<Vec<_>>();
+        assert!(errors.is_empty(), "{fixture_path}: {errors:#?}");
+    }
 }
 
 #[test]

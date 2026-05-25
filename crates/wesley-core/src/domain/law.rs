@@ -308,7 +308,7 @@ pub enum ScalarOrderingV1 {
 }
 
 /// Closed forbidden scalar interpretation enum.
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub enum ScalarForbiddenInterpretationV1 {
     /// Generated code must not silently narrow the value to GraphQL signed int.
@@ -631,6 +631,10 @@ pub enum LawDiffEventKindV1 {
     LawRemoved,
     /// Existing law tags changed.
     LawTagsChanged,
+    /// Existing law was monotonically strengthened.
+    LawStrengthened,
+    /// Existing law was monotonically weakened.
+    LawWeakened,
     /// Existing law changed outside a narrower v1 event class.
     LawChanged,
     /// Scalar semantic body changed.
@@ -649,6 +653,8 @@ pub enum LawDiffEventKindV1 {
     ChannelLawChanged,
     /// Typed invariant predicate changed.
     PredicateChanged,
+    /// A law no longer binds to the active schema or law registry.
+    BindingBroken,
     /// Schema hash anchor changed.
     SchemaHashRebound,
 }
@@ -887,19 +893,7 @@ pub fn diff_law_ir_v1(
         ));
     }
 
-    changes.sort_by(|left, right| {
-        left.law_id
-            .as_deref()
-            .unwrap_or("")
-            .cmp(right.law_id.as_deref().unwrap_or(""))
-            .then(left.kind.cmp(&right.kind))
-            .then(
-                left.subject
-                    .as_deref()
-                    .unwrap_or("")
-                    .cmp(right.subject.as_deref().unwrap_or("")),
-            )
-    });
+    sort_law_diff_events(&mut changes);
 
     Ok(LawDiffReportV1 {
         api_version: WESLEY_LAW_DIFF_API_VERSION.to_string(),
@@ -909,6 +903,69 @@ pub fn diff_law_ir_v1(
         new_law_hash,
         changes,
     })
+}
+
+/// Records a schema-bound validation failure as a structured law diff event.
+///
+/// This lets CI and assurance consumers receive a machine-readable diff report
+/// even when the target `weslaw` document no longer binds to the active schema.
+pub fn record_law_binding_error_v1(report: &mut LawDiffReportV1, error: &WeslawError) {
+    let mut error_value = serde_json::json!({
+        "code": error.code.as_str(),
+        "message": error.message,
+    });
+    if let Some(path) = &error.path {
+        error_value["path"] = path.clone().into();
+    }
+    report.changes.push(bundle_diff_event(
+        LawDiffEventKindV1::BindingBroken,
+        vec![LawDiffFieldChangeV1 {
+            path: "binding".to_string(),
+            old: serde_json::Value::Null,
+            new: error_value,
+        }],
+    ));
+    sort_law_diff_events(&mut report.changes);
+}
+
+/// Formats a `wesley.law-diff/v1` report as a Markdown review summary.
+pub fn format_law_diff_markdown_v1(report: &LawDiffReportV1) -> String {
+    let mut output = String::new();
+    output.push_str("# Wesley Law Diff\n\n");
+    output.push_str("| Field | Value |\n");
+    output.push_str("| --- | --- |\n");
+    output.push_str(&format!("| API version | `{}` |\n", report.api_version));
+    output.push_str(&format!(
+        "| Old schema hash | `{}` |\n",
+        report.old_schema_hash
+    ));
+    output.push_str(&format!(
+        "| New schema hash | `{}` |\n",
+        report.new_schema_hash
+    ));
+    output.push_str(&format!("| Old law hash | `{}` |\n", report.old_law_hash));
+    output.push_str(&format!("| New law hash | `{}` |\n", report.new_law_hash));
+    output.push('\n');
+
+    if report.changes.is_empty() {
+        output.push_str("No semantic law changes detected.\n");
+        return output;
+    }
+
+    output.push_str("## Changes\n\n");
+    output.push_str("| Kind | Law | Subject | Summary |\n");
+    output.push_str("| --- | --- | --- | --- |\n");
+    for change in &report.changes {
+        output.push_str(&format!(
+            "| `{}` | {} | {} | {} |\n",
+            law_diff_kind_text(change.kind),
+            markdown_code_or_dash(change.law_id.as_deref()),
+            markdown_code_or_dash(change.subject.as_deref()),
+            markdown_escape(&law_diff_event_summary(change)),
+        ));
+    }
+
+    output
 }
 
 /// Validates active Law IR v1 entries against Shape IR and root operations.
@@ -990,6 +1047,112 @@ fn law_entry_index<'entry>(
         }
     }
     Ok(index)
+}
+
+fn sort_law_diff_events(changes: &mut [LawDiffEventV1]) {
+    changes.sort_by(|left, right| {
+        left.law_id
+            .as_deref()
+            .unwrap_or("")
+            .cmp(right.law_id.as_deref().unwrap_or(""))
+            .then(left.kind.cmp(&right.kind))
+            .then(
+                left.subject
+                    .as_deref()
+                    .unwrap_or("")
+                    .cmp(right.subject.as_deref().unwrap_or("")),
+            )
+    });
+}
+
+fn law_diff_kind_text(kind: LawDiffEventKindV1) -> &'static str {
+    match kind {
+        LawDiffEventKindV1::LawBundleChanged => "LAW_BUNDLE_CHANGED",
+        LawDiffEventKindV1::RegistryChanged => "REGISTRY_CHANGED",
+        LawDiffEventKindV1::LawAdded => "LAW_ADDED",
+        LawDiffEventKindV1::LawRemoved => "LAW_REMOVED",
+        LawDiffEventKindV1::LawTagsChanged => "LAW_TAGS_CHANGED",
+        LawDiffEventKindV1::LawStrengthened => "LAW_STRENGTHENED",
+        LawDiffEventKindV1::LawWeakened => "LAW_WEAKENED",
+        LawDiffEventKindV1::LawChanged => "LAW_CHANGED",
+        LawDiffEventKindV1::ScalarSemanticsChanged => "SCALAR_SEMANTICS_CHANGED",
+        LawDiffEventKindV1::VariantLawChanged => "VARIANT_LAW_CHANGED",
+        LawDiffEventKindV1::FootprintExpanded => "FOOTPRINT_EXPANDED",
+        LawDiffEventKindV1::FootprintContracted => "FOOTPRINT_CONTRACTED",
+        LawDiffEventKindV1::FootprintChanged => "FOOTPRINT_CHANGED",
+        LawDiffEventKindV1::ChannelVersionChanged => "CHANNEL_VERSION_CHANGED",
+        LawDiffEventKindV1::ChannelLawChanged => "CHANNEL_LAW_CHANGED",
+        LawDiffEventKindV1::PredicateChanged => "PREDICATE_CHANGED",
+        LawDiffEventKindV1::BindingBroken => "BINDING_BROKEN",
+        LawDiffEventKindV1::SchemaHashRebound => "SCHEMA_HASH_REBOUND",
+    }
+}
+
+fn markdown_code_or_dash(value: Option<&str>) -> String {
+    value
+        .map(|value| format!("`{}`", markdown_escape(value)))
+        .unwrap_or_else(|| "-".to_string())
+}
+
+fn markdown_escape(value: &str) -> String {
+    value.replace('|', "\\|").replace('\n', "<br>")
+}
+
+fn law_diff_event_summary(event: &LawDiffEventV1) -> String {
+    match event.kind {
+        LawDiffEventKindV1::LawStrengthened => {
+            format!("law strengthened: {}", summarize_field_changes(event))
+        }
+        LawDiffEventKindV1::LawWeakened => {
+            format!("law weakened: {}", summarize_field_changes(event))
+        }
+        LawDiffEventKindV1::BindingBroken => {
+            format!("binding broken: {}", summarize_field_changes(event))
+        }
+        LawDiffEventKindV1::FootprintExpanded => {
+            let mut parts = Vec::new();
+            push_array_summary(&mut parts, "added reads", &event.added_reads);
+            push_array_summary(&mut parts, "added writes", &event.added_writes);
+            push_array_summary(&mut parts, "added creates", &event.added_creates);
+            push_array_summary(&mut parts, "removed forbids", &event.removed_forbids);
+            join_or_field_changes(parts, event)
+        }
+        LawDiffEventKindV1::FootprintContracted => {
+            let mut parts = Vec::new();
+            push_array_summary(&mut parts, "removed reads", &event.removed_reads);
+            push_array_summary(&mut parts, "removed writes", &event.removed_writes);
+            push_array_summary(&mut parts, "removed creates", &event.removed_creates);
+            push_array_summary(&mut parts, "added forbids", &event.added_forbids);
+            join_or_field_changes(parts, event)
+        }
+        _ => summarize_field_changes(event),
+    }
+}
+
+fn push_array_summary(parts: &mut Vec<String>, label: &str, values: &[String]) {
+    if !values.is_empty() {
+        parts.push(format!("{label}: {}", values.join(", ")));
+    }
+}
+
+fn join_or_field_changes(parts: Vec<String>, event: &LawDiffEventV1) -> String {
+    if parts.is_empty() {
+        summarize_field_changes(event)
+    } else {
+        parts.join("; ")
+    }
+}
+
+fn summarize_field_changes(event: &LawDiffEventV1) -> String {
+    if event.field_changes.is_empty() {
+        return "no field-level detail".to_string();
+    }
+    event
+        .field_changes
+        .iter()
+        .map(|change| change.path.as_str())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn push_bundle_level_diff_events(
@@ -1095,6 +1258,85 @@ fn diff_law_entry_bodies(
     }
 }
 
+#[derive(Default)]
+struct SemanticDirection {
+    strengthened: bool,
+    weakened: bool,
+    structural: bool,
+}
+
+impl SemanticDirection {
+    fn mark_strengthened(&mut self) {
+        self.strengthened = true;
+    }
+
+    fn mark_weakened(&mut self) {
+        self.weakened = true;
+    }
+
+    fn mark_structural(&mut self) {
+        self.structural = true;
+    }
+
+    fn note_min_change(&mut self, old: Option<u64>, new: Option<u64>) {
+        match (old, new) {
+            (None, Some(_)) => self.mark_strengthened(),
+            (Some(_), None) => self.mark_weakened(),
+            (Some(old), Some(new)) if new > old => self.mark_strengthened(),
+            (Some(old), Some(new)) if new < old => self.mark_weakened(),
+            _ => {}
+        }
+    }
+
+    fn note_max_change(&mut self, old: Option<u64>, new: Option<u64>) {
+        match (old, new) {
+            (None, Some(_)) => self.mark_strengthened(),
+            (Some(_), None) => self.mark_weakened(),
+            (Some(old), Some(new)) if new < old => self.mark_strengthened(),
+            (Some(old), Some(new)) if new > old => self.mark_weakened(),
+            _ => {}
+        }
+    }
+
+    fn note_scalar_forbids_change(
+        &mut self,
+        old: &[ScalarForbiddenInterpretationV1],
+        new: &[ScalarForbiddenInterpretationV1],
+    ) {
+        let old_values = old.iter().copied().collect::<BTreeSet<_>>();
+        let new_values = new.iter().copied().collect::<BTreeSet<_>>();
+        if new_values.difference(&old_values).next().is_some() {
+            self.mark_strengthened();
+        }
+        if old_values.difference(&new_values).next().is_some() {
+            self.mark_weakened();
+        }
+    }
+
+    fn note_required_or_forbidden_change(
+        &mut self,
+        old: &[String],
+        new: &[String],
+        path: &str,
+    ) -> Result<(), WeslawError> {
+        if !set_added(old, new, path)?.is_empty() {
+            self.mark_strengthened();
+        }
+        if !set_removed(old, new, path)?.is_empty() {
+            self.mark_weakened();
+        }
+        Ok(())
+    }
+
+    fn event_kind(&self, fallback: LawDiffEventKindV1) -> LawDiffEventKindV1 {
+        match (self.structural, self.strengthened, self.weakened) {
+            (false, true, false) => LawDiffEventKindV1::LawStrengthened,
+            (false, false, true) => LawDiffEventKindV1::LawWeakened,
+            _ => fallback,
+        }
+    }
+}
+
 fn diff_scalar_semantics(
     _old_entry: &LawEntryV1,
     new_entry: &LawEntryV1,
@@ -1102,36 +1344,49 @@ fn diff_scalar_semantics(
     new_body: &ScalarSemanticsLawV1,
 ) -> Result<Option<LawDiffEventV1>, WeslawError> {
     let mut field_changes = Vec::new();
+    let mut direction = SemanticDirection::default();
+    if old_body.representation != new_body.representation {
+        direction.mark_structural();
+    }
     push_value_change(
         &mut field_changes,
         "body.representation",
         old_body.representation,
         new_body.representation,
     )?;
+    direction.note_min_change(old_body.min_inclusive, new_body.min_inclusive);
     push_value_change(
         &mut field_changes,
         "body.minInclusive",
         old_body.min_inclusive,
         new_body.min_inclusive,
     )?;
+    direction.note_max_change(old_body.max_inclusive, new_body.max_inclusive);
     push_value_change(
         &mut field_changes,
         "body.maxInclusive",
         old_body.max_inclusive,
         new_body.max_inclusive,
     )?;
+    if old_body.ordering != new_body.ordering {
+        direction.mark_structural();
+    }
     push_value_change(
         &mut field_changes,
         "body.ordering",
         old_body.ordering,
         new_body.ordering,
     )?;
+    if old_body.scope != new_body.scope {
+        direction.mark_structural();
+    }
     push_value_change(
         &mut field_changes,
         "body.scope",
         &old_body.scope,
         &new_body.scope,
     )?;
+    direction.note_scalar_forbids_change(&old_body.forbids, &new_body.forbids);
     push_json_change(
         &mut field_changes,
         "body.forbids",
@@ -1143,7 +1398,10 @@ fn diff_scalar_semantics(
         return Ok(None);
     }
 
-    let mut event = base_diff_event(LawDiffEventKindV1::ScalarSemanticsChanged, new_entry);
+    let mut event = base_diff_event(
+        direction.event_kind(LawDiffEventKindV1::ScalarSemanticsChanged),
+        new_entry,
+    );
     event.field_changes = field_changes;
     Ok(Some(event))
 }
@@ -1155,12 +1413,19 @@ fn diff_variant_law(
     new_body: &VariantLawV1,
 ) -> Result<Option<LawDiffEventV1>, WeslawError> {
     let mut field_changes = Vec::new();
+    let mut direction = SemanticDirection::default();
+    if old_body.discriminator.field != new_body.discriminator.field {
+        direction.mark_structural();
+    }
     push_value_change(
         &mut field_changes,
         "body.discriminator.field",
         &old_body.discriminator.field,
         &new_body.discriminator.field,
     )?;
+    if old_body.discriminator.r#enum != new_body.discriminator.r#enum {
+        direction.mark_structural();
+    }
     push_value_change(
         &mut field_changes,
         "body.discriminator.enum",
@@ -1172,6 +1437,7 @@ fn diff_variant_law(
     let new_cases = variant_case_index(&new_body.cases, "$.new.entries.body.cases")?;
     for old_case in old_cases.keys() {
         if !new_cases.contains_key(old_case) {
+            direction.mark_structural();
             push_json_change(
                 &mut field_changes,
                 &format!("body.cases.{old_case}"),
@@ -1182,6 +1448,7 @@ fn diff_variant_law(
     }
     for new_case in new_cases.keys() {
         if !old_cases.contains_key(new_case) {
+            direction.mark_structural();
             push_json_change(
                 &mut field_changes,
                 &format!("body.cases.{new_case}"),
@@ -1196,12 +1463,22 @@ fn diff_variant_law(
     {
         let old_case = old_cases[case_value];
         let new_case = new_cases[case_value];
+        direction.note_required_or_forbidden_change(
+            &old_case.requires,
+            &new_case.requires,
+            "$.entries.body.cases.requires",
+        )?;
         push_json_change(
             &mut field_changes,
             &format!("body.cases.{case_value}.requires"),
             string_vec_value(&old_case.requires, "$.old.entries.body.cases.requires")?,
             string_vec_value(&new_case.requires, "$.new.entries.body.cases.requires")?,
         );
+        direction.note_required_or_forbidden_change(
+            &old_case.forbids,
+            &new_case.forbids,
+            "$.entries.body.cases.forbids",
+        )?;
         push_json_change(
             &mut field_changes,
             &format!("body.cases.{case_value}.forbids"),
@@ -1214,7 +1491,10 @@ fn diff_variant_law(
         return Ok(None);
     }
 
-    let mut event = base_diff_event(LawDiffEventKindV1::VariantLawChanged, new_entry);
+    let mut event = base_diff_event(
+        direction.event_kind(LawDiffEventKindV1::VariantLawChanged),
+        new_entry,
+    );
     event.field_changes = field_changes;
     Ok(Some(event))
 }

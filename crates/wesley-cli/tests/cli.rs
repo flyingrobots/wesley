@@ -13,6 +13,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("schema operations"));
     assert!(stdout.contains("schema diff"));
     assert!(stdout.contains("law validate"));
+    assert!(stdout.contains("law diff"));
     assert!(stdout.contains("doctor"));
     assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
@@ -32,6 +33,110 @@ fn removed_footprint_checker_is_not_a_wesley_command() {
     let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
     assert!(stdout.is_empty());
     assert!(stderr.contains("unknown command 'check-footprint'"));
+}
+
+#[test]
+fn law_diff_json_emits_structured_semantic_events() {
+    let output = wesley()
+        .args(["law", "diff", "--old"])
+        .arg(fixture("test/fixtures/weslaw/diff/old.weslaw.yaml"))
+        .arg("--new")
+        .arg(fixture("test/fixtures/weslaw/diff/new.weslaw.yaml"))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["apiVersion"], "wesley.law-diff/v1");
+    assert!(report["oldLawHash"]
+        .as_str()
+        .expect("old law hash should be a string")
+        .starts_with("sha256:"));
+    assert_eq!(
+        report["changes"]
+            .as_array()
+            .expect("changes should be an array")
+            .iter()
+            .map(|change| change["kind"].as_str().expect("kind should be a string"))
+            .collect::<Vec<_>>(),
+        vec!["LAW_WEAKENED", "LAW_WEAKENED", "FOOTPRINT_EXPANDED"]
+    );
+    assert_eq!(
+        stdout,
+        std::fs::read_to_string(fixture("test/fixtures/weslaw/diff/ci-semantic-diff.json",))
+            .expect("CI semantic diff fixture should read")
+    );
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_diff_markdown_summarizes_structured_events() {
+    let output = wesley()
+        .args(["law", "diff", "--old"])
+        .arg(fixture("test/fixtures/weslaw/diff/old.weslaw.yaml"))
+        .arg("--new")
+        .arg(fixture("test/fixtures/weslaw/diff/new.weslaw.yaml"))
+        .arg("--format")
+        .arg("markdown")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("# Wesley Law Diff"));
+    assert!(stdout.contains("| `LAW_WEAKENED` | `echo.scalar.positiveInt.u32-positive` |"));
+    assert!(stdout.contains("| `FOOTPRINT_EXPANDED` | `jedit.op.replaceRangeAsTick.footprint` |"));
+    assert_eq!(
+        stdout,
+        std::fs::read_to_string(fixture("test/fixtures/weslaw/diff/ci-semantic-diff.md",))
+            .expect("CI semantic diff Markdown fixture should read")
+    );
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_diff_reports_binding_breaks_against_active_schema() {
+    let output = wesley()
+        .args(["law", "diff", "--old"])
+        .arg(fixture("test/fixtures/weslaw/diff/old.weslaw.yaml"))
+        .arg("--new")
+        .arg(fixture(
+            "test/fixtures/weslaw/diff/binding-broken.weslaw.yaml",
+        ))
+        .arg("--schema")
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+    let changes = report["changes"]
+        .as_array()
+        .expect("changes should be an array");
+
+    assert!(changes
+        .iter()
+        .any(|change| change["kind"] == "BINDING_BROKEN"));
+    assert!(stdout.contains("WESLAW_UNRESOLVED_SUBJECT"));
+    assert_eq!(
+        stdout,
+        std::fs::read_to_string(fixture(
+            "test/fixtures/weslaw/diff/holmes-blade-binding-broken.json",
+        ))
+        .expect("Holmes/BLADE binding fixture should read")
+    );
+    assert!(stderr.is_empty());
 }
 
 #[test]

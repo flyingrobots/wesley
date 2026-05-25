@@ -338,7 +338,7 @@ Working budget: **75 slices**. The first scope checkpoint was `WLAW-050`; it
 kept the remaining runway intact and confirmed that structured semantic diffs
 need one more completion pull before adoption tooling starts.
 
-Status: **52 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+Status: **59 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
 substrate docs, coordinate and registry grammar, canonicalization and
 diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
 examples. `WLAW-011` through `WLAW-020` add the Rust Law IR v1 types, the
@@ -356,8 +356,11 @@ generated hash constants. `WLAW-046` through `WLAW-050` add
 `wesley.law-diff/v1`, Rust-core semantic diff reports, added/removed law
 events, scalar semantic change events, variant case change events, footprint
 expansion/contraction/mixed-change events, and the first checkpoint on the
-remaining runway. `WLAW-051` and `WLAW-052` add channel law and typed invariant
-diff events as part of the self-review repair loop.
+remaining runway. `WLAW-051` through `WLAW-059` add channel law and typed
+invariant diff events, strengthened/weakened law classifications,
+binding-break and schema-hash rebound reporting, `wesley law diff --json`,
+Markdown summaries, CI-ready semantic diff fixtures, Holmes/BLADE-facing
+fixtures, and the matching docs/changelog update.
 
 ## Tensions
 
@@ -406,13 +409,9 @@ runtime ownership into the base compiler.
 
 The next pulls after this PR are:
 
-1. `WLAW-053` through `WLAW-059`: finish semantic diff breadth with
-   strengthened/weakened and binding-break classifications, `wesley law diff
-   --json`, Markdown summaries, CI fixtures, Holmes/BLADE-facing fixtures, and
-   docs/changelog.
-2. `WLAW-060` through `WLAW-069`: start directive lowering and adoption tools
+1. `WLAW-060` through `WLAW-069`: start directive lowering and adoption tools
    only after the diff surface is coherent.
-3. `WLAW-070` through `WLAW-075`: deliver the first consumer payoff and packet
+2. `WLAW-070` through `WLAW-075`: deliver the first consumer payoff and packet
    closeout unless the adoption phase exposes a v1/v1.1 split.
 
 ## Post-Retirement Freestyle Slice Log

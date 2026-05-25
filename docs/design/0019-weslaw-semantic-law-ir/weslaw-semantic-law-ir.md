@@ -873,7 +873,7 @@ Self-review repair added these classes before the next planned slice:
 | `CHANNEL_LAW_CHANGED`     | Channel law changed without a version change.    |
 | `PREDICATE_CHANGED`       | Invariant predicate changed.                     |
 
-Follow-on event classes:
+Semantic-diff completion classes:
 
 | Event                     | Meaning                                              |
 | ------------------------- | ---------------------------------------------------- |
@@ -1076,7 +1076,7 @@ Output formats:
 
 - JSON for Holmes/BLADE/Moriarty/CI consumers;
 - Markdown for PR comments;
-- terminal text for operators.
+- summary text for operators.
 
 ### `wesley law explain`
 
@@ -1322,14 +1322,14 @@ lowering and adoption tooling begin.
       update this checklist before continuing.
 - [x] WLAW-051 Emit channel law diff events.
 - [x] WLAW-052 Emit typed invariant diff events.
-- [ ] WLAW-053 Add `LAW_STRENGTHENED` and `LAW_WEAKENED` classifications.
-- [ ] WLAW-054 Add `BINDING_BROKEN` and `SCHEMA_HASH_REBOUND`
+- [x] WLAW-053 Add `LAW_STRENGTHENED` and `LAW_WEAKENED` classifications.
+- [x] WLAW-054 Add `BINDING_BROKEN` and `SCHEMA_HASH_REBOUND`
       classifications.
-- [ ] WLAW-055 Add `wesley law diff --json`.
-- [ ] WLAW-056 Generate Markdown summaries from structured diff events.
-- [ ] WLAW-057 Add CI-ready semantic diff fixture output.
-- [ ] WLAW-058 Add Holmes/BLADE-facing semantic diff fixtures.
-- [ ] WLAW-059 Update docs and changelog for law diff output.
+- [x] WLAW-055 Add `wesley law diff --json`.
+- [x] WLAW-056 Generate Markdown summaries from structured diff events.
+- [x] WLAW-057 Add CI-ready semantic diff fixture output.
+- [x] WLAW-058 Add Holmes/BLADE-facing semantic diff fixtures.
+- [x] WLAW-059 Update docs and changelog for law diff output.
 
 ### Phase 5: Directive Lowering And Adoption Tools
 
@@ -1372,9 +1372,9 @@ What held:
   reports are still a coherent substrate.
 - The diff model is rightly data-first: reports are structured JSON events, not
   Markdown prose with metadata inferred later.
-- `wesley law diff --json` should remain after channel/invariant and
-  binding-break classifications, so the first CLI surface does not ship as a
-  half-width diff command.
+- `wesley law diff --json` now follows channel/invariant, strengthened/weakened,
+  schema-hash rebound, and binding-break classifications, so the first CLI
+  surface ships with a coherent machine-readable diff width.
 
 What changed:
 
@@ -1390,7 +1390,8 @@ What changed:
 
 Next pull:
 
-- Finish `WLAW-053` through `WLAW-059` before starting directive lowering.
+- Start `WLAW-060` through `WLAW-069`: directive lowering, law lint/init-law,
+  explain, and rebind adoption tooling.
 
 ## Non-Goals
 

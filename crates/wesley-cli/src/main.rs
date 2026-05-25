@@ -5,11 +5,12 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use wesley_core::{
-    build_contract_bundle_manifest_v1, compute_content_hash, compute_registry_hash,
-    diff_schema_sdl, extract_operation_directive_args, list_schema_operations_sdl,
-    load_weslaw_yaml, lower_schema_sdl, normalize_schema_sdl, resolve_operation_selections,
-    resolve_operation_selections_with_schema, ContractBundleManifestV1, SchemaDelta, WeslawError,
-    WesleyError, WesleyIR,
+    build_contract_bundle_manifest_v1, compute_content_hash, compute_registry_hash, diff_law_ir_v1,
+    diff_schema_sdl, extract_operation_directive_args, format_law_diff_markdown_v1,
+    list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl, normalize_schema_sdl,
+    record_law_binding_error_v1, resolve_operation_selections,
+    resolve_operation_selections_with_schema, ContractBundleManifestV1, LawDiffReportV1,
+    SchemaDelta, WeslawError, WesleyError, WesleyIR,
 };
 use wesley_emit_rust::{
     emit_rust_with_operations, emit_rust_with_operations_and_hashes,
@@ -108,8 +109,38 @@ fn run_law_command(args: &[String]) -> Result<u8, CliError> {
 
             Ok(EXIT_OK)
         }
+        Some("diff") if wants_help(&args[1..]) => {
+            print_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("diff") => run_law_diff_command(&args[1..]),
         Some(command) => Err(CliError::usage(format!("unknown law command '{command}'"))),
     }
+}
+
+fn run_law_diff_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "law diff")?;
+    let old_path = options.required_old("law diff")?;
+    let new_path = options.required_new("law diff")?;
+    let old_law_source = read_file(&old_path, "old law")?;
+    let new_law_source = read_file(&new_path, "new law")?;
+    let old_law_ir = load_weslaw_yaml(&old_law_source)?;
+    let new_law_ir = load_weslaw_yaml(&new_law_source)?;
+    let mut report = diff_law_ir_v1(&old_law_ir, &new_law_ir)?;
+    let mut exit_code = EXIT_OK;
+
+    if let Some(schema_path) = options.schema.as_ref() {
+        let schema_sdl = read_file(schema_path, "schema")?;
+        let ir = lower_schema_sdl(&schema_sdl)?;
+        let operations = list_schema_operations_sdl(&schema_sdl)?;
+        if let Err(error) = build_contract_bundle_manifest_v1(&new_law_ir, &ir, &operations) {
+            record_law_binding_error_v1(&mut report, &error);
+            exit_code = EXIT_FAILURE;
+        }
+    }
+
+    print_law_diff(&report, options.output_format()?)?;
+    Ok(exit_code)
 }
 
 fn run_normalize_sdl_command(args: &[String]) -> Result<u8, CliError> {
@@ -552,6 +583,18 @@ impl ParsedOptions {
             .ok_or_else(|| CliError::usage(format!("missing --law for `{command}`")))
     }
 
+    fn required_old(&self, command: &str) -> Result<PathBuf, CliError> {
+        self.old_schema
+            .clone()
+            .ok_or_else(|| CliError::usage(format!("missing --old for `{command}`")))
+    }
+
+    fn required_new(&self, command: &str) -> Result<PathBuf, CliError> {
+        self.new_schema
+            .clone()
+            .ok_or_else(|| CliError::usage(format!("missing --new for `{command}`")))
+    }
+
     fn required_out(&self, command: &str) -> Result<PathBuf, CliError> {
         self.out
             .clone()
@@ -570,11 +613,11 @@ impl ParsedOptions {
         }
 
         match self.format.as_deref().unwrap_or("text") {
-            "text" => Ok(OutputFormat::Text),
+            "text" | "markdown" => Ok(OutputFormat::Text),
             "json" => Ok(OutputFormat::Json),
             "summary" => Ok(OutputFormat::Summary),
             format => Err(CliError::usage(format!(
-                "unknown output format '{format}'; expected text, json, or summary"
+                "unknown output format '{format}'; expected text, markdown, json, or summary"
             ))),
         }
     }
@@ -1020,6 +1063,29 @@ fn print_schema_delta(
     Ok(())
 }
 
+fn print_law_diff(report: &LawDiffReportV1, output_format: OutputFormat) -> Result<(), CliError> {
+    match output_format {
+        OutputFormat::Json => print_json(report)?,
+        OutputFormat::Text => println!("{}", format_law_diff_markdown_v1(report)),
+        OutputFormat::Summary => println!("{}", format_law_diff_summary(report)),
+    }
+
+    Ok(())
+}
+
+fn format_law_diff_summary(report: &LawDiffReportV1) -> String {
+    if report.changes.is_empty() {
+        return "No semantic law changes detected.".to_string();
+    }
+
+    format!(
+        "{} semantic law change(s), oldLawHash {}, newLawHash {}",
+        report.changes.len(),
+        report.old_law_hash,
+        report.new_law_hash
+    )
+}
+
 fn flattened_schema_changes(delta: &SchemaDelta, breaking_only: bool) -> Vec<FlatChange> {
     let mut changes = Vec::new();
 
@@ -1121,6 +1187,7 @@ Commands:
   schema operations         List Query/Mutation/Subscription root operations
   schema diff               Compare GraphQL SDL states as Wesley L1 IR
   law validate              Validate weslaw against active GraphQL SDL
+  law diff                  Compare weslaw semantic Law IR states
   emit rust                 Emit Rust models and operation bindings from GraphQL SDL
   emit typescript           Emit TypeScript declarations and operation bindings from GraphQL SDL
   operation selections      Resolve selected operation fields
@@ -1194,11 +1261,15 @@ Wesley law commands
 
 Usage:
   wesley law validate --schema <path> --law <path> [--json]
+  wesley law diff --old <path> --new <path> [--schema <path>] [--format markdown|json|summary]
 
 Options:
-  -s, --schema <path>  GraphQL SDL file
-  --law <path>         weslaw/v1 authoring file
-  --json               Emit JSON output"
+  -s, --schema <path>  GraphQL SDL file used to validate the new law document
+  --law <path>         weslaw/v1 authoring file for validation
+  --old <path>         Old/base weslaw/v1 authoring file for diff
+  --new <path>         New/target weslaw/v1 authoring file for diff
+  --json               Emit JSON output
+  --format <format>    Output format: markdown, json, or summary"
     );
 }
 
