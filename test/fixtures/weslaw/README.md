@@ -12,8 +12,8 @@ then serve as Rust parser and published-schema fixtures for `WLAW-011` through
 | Path | Purpose |
 | --- | --- |
 | `contract-bundle-shape.graphql` | Minimal GraphQL shape used by accepted and rejected law fixtures. |
-| `accepted/*.weslaw.yaml` | Law documents that future `wesley law validate` must accept. |
-| `rejected/*.weslaw.yaml` | Law documents that future validation must reject. |
+| `accepted/*.weslaw.yaml` | Law documents that `wesley law validate` must accept. |
+| `rejected/*.weslaw.yaml` | Law documents that validation must reject. |
 | `rejected/*.expected.txt` | Stable diagnostic code expected for each rejected fixture. |
 
 The schema hash anchors use the native Wesley `schema hash` output for
@@ -31,5 +31,5 @@ ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
 - External repos remain the owners of their runtime and protocol meaning.
 - Accepted fixtures must lower into typed Law IR and satisfy
   `schemas/weslaw-v1.schema.json`.
-- Rejected fixtures pin stable structure diagnostic codes before full
-  schema-bound binding lands in `WLAW-021` through `WLAW-035`.
+- Rejected fixtures pin stable structure and binding diagnostic codes for the
+  strict schema-bound validation pass.

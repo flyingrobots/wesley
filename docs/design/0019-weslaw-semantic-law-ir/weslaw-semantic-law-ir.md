@@ -1226,24 +1226,24 @@ v1/v1.1 boundary.
 
 ### Phase 2: Strict Binding
 
-- [ ] WLAW-021 Parse and validate schema-hash anchors.
-- [ ] WLAW-022 Fail loudly on schema-hash mismatch.
-- [ ] WLAW-023 Bind scalar subjects to Shape IR.
-- [ ] WLAW-024 Bind type, input, enum, and field subjects to Shape IR.
-- [ ] WLAW-025 Bind operation subjects to root operation fields.
-- [ ] WLAW-026 Bind variant discriminator fields and enum values.
-- [ ] WLAW-027 Bind footprint argument paths to operation input paths.
-- [ ] WLAW-028 Bind footprint resource kinds through schema coordinates or
+- [x] WLAW-021 Parse and validate schema-hash anchors.
+- [x] WLAW-022 Fail loudly on schema-hash mismatch.
+- [x] WLAW-023 Bind scalar subjects to Shape IR.
+- [x] WLAW-024 Bind type, input, enum, and field subjects to Shape IR.
+- [x] WLAW-025 Bind operation subjects to root operation fields.
+- [x] WLAW-026 Bind variant discriminator fields and enum values.
+- [x] WLAW-027 Bind footprint argument paths to operation input paths.
+- [x] WLAW-028 Bind footprint resource kinds through schema coordinates or
       explicit law registries.
-- [ ] WLAW-029 Bind channel subjects through known directives or law
+- [x] WLAW-029 Bind channel subjects through known directives or law
       registries.
-- [ ] WLAW-030 Bind typed invariant field references.
-- [ ] WLAW-031 Reject duplicate law ids across the active bundle.
-- [ ] WLAW-032 Reject wrong subject kind for each Law IR variant.
-- [ ] WLAW-033 Reject contradictory law entries in the same bundle.
-- [ ] WLAW-034 Add closest-match diagnostics for unresolved schema
+- [x] WLAW-030 Bind typed invariant field references.
+- [x] WLAW-031 Reject duplicate law ids across the active bundle.
+- [x] WLAW-032 Reject wrong subject kind for each Law IR variant.
+- [x] WLAW-033 Reject contradictory law entries in the same bundle.
+- [x] WLAW-034 Add closest-match diagnostics for unresolved schema
       coordinates.
-- [ ] WLAW-035 Add `wesley law validate` for full schema-bound validation.
+- [x] WLAW-035 Add `wesley law validate` for full schema-bound validation.
 
 ### Phase 3: Canonicalization And Hashes
 

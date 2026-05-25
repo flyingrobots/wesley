@@ -338,13 +338,16 @@ Working budget: **75 slices**. The first scope checkpoint is `WLAW-050`; do
 not treat slices `WLAW-051` through `WLAW-075` as locked until the checkpoint
 re-estimates the v1/v1.1 boundary.
 
-Status: **20 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+Status: **35 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
 substrate docs, coordinate and registry grammar, canonicalization and
 diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
 examples. `WLAW-011` through `WLAW-020` add the Rust Law IR v1 types, the
 `weslaw/v1` YAML structure loader, stable structure diagnostics, fixture
 lowering tests, and versioned canonical JSON Schema artifacts for the authored
-and normalized law surfaces.
+and normalized law surfaces. `WLAW-021` through `WLAW-035` add strict
+schema-hash anchoring, schema and operation subject binding, kind-specific
+variant/footprint/channel/invariant reference binding, conflict diagnostics,
+closest-match subject hints, and the explicit `wesley law validate` command.
 
 ## Tensions
 
@@ -393,11 +396,12 @@ runtime ownership into the base compiler.
 
 The next pulls after this PR are:
 
-1. `WLAW-021` through `WLAW-035`: add strict schema-bound law validation.
-2. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
+1. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
    bundle manifest fields.
-3. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
+2. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
    for the required drift checkpoint.
+3. Re-estimate `WLAW-051` through `WLAW-075` after the `WLAW-050` checkpoint
+   proves whether the v1/v1.1 boundary still holds.
 
 ## Post-Retirement Freestyle Slice Log
 

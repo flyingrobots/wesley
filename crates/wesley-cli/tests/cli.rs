@@ -12,6 +12,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("schema lower"));
     assert!(stdout.contains("schema operations"));
     assert!(stdout.contains("schema diff"));
+    assert!(stdout.contains("law validate"));
     assert!(stdout.contains("doctor"));
     assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
@@ -31,6 +32,51 @@ fn removed_footprint_checker_is_not_a_wesley_command() {
     let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
     assert!(stdout.is_empty());
     assert!(stderr.contains("unknown command 'check-footprint'"));
+}
+
+#[test]
+fn law_validate_accepts_schema_bound_weslaw() {
+    let output = wesley()
+        .args(["law", "validate", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("Law validation passed: 1 active entries bound to sha256:"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_validate_reports_schema_hash_mismatch() {
+    let output = wesley()
+        .args(["law", "validate", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/rejected/schema-hash-mismatch.weslaw.yaml",
+        ))
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.is_empty());
+    assert!(stderr.contains("WESLAW_SCHEMA_HASH_MISMATCH"));
+    assert!(stderr.contains("$.schema.hash"));
 }
 
 #[test]

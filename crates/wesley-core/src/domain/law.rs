@@ -10,7 +10,8 @@ use thiserror::Error;
 use yaml_rust2::yaml::Hash as Mapping;
 use yaml_rust2::{Yaml, YamlLoader};
 
-use super::ir::to_canonical_json;
+use super::ir::{to_canonical_json, Field, TypeDefinition, TypeKind, WesleyIR};
+use super::operation::{OperationType, SchemaOperation};
 
 /// Authored `weslaw` document API version accepted by the v1 loader.
 pub const WESLAW_API_VERSION: &str = "weslaw/v1";
@@ -38,6 +39,18 @@ pub enum WeslawDiagnosticCode {
     UnknownKind,
     /// A document object contained a field outside the v1 schema.
     UnknownField,
+    /// A schema hash anchor did not match the active Shape IR hash.
+    SchemaHashMismatch,
+    /// A subject coordinate did not use the accepted v1 grammar.
+    InvalidCoordinate,
+    /// A subject coordinate did not resolve against Shape IR or law registries.
+    UnresolvedSubject,
+    /// A referenced field, enum value, argument path, resource, or verifier did not bind.
+    UnresolvedReference,
+    /// A law entry kind was not valid for the resolved subject kind.
+    WrongSubjectKind,
+    /// Active laws or their internal clauses contradicted each other.
+    Conflict,
 }
 
 impl WeslawDiagnosticCode {
@@ -51,6 +64,12 @@ impl WeslawDiagnosticCode {
             Self::RawExprRejected => "WESLAW_RAW_EXPR_REJECTED",
             Self::UnknownKind => "WESLAW_UNKNOWN_KIND",
             Self::UnknownField => "WESLAW_UNKNOWN_FIELD",
+            Self::SchemaHashMismatch => "WESLAW_SCHEMA_HASH_MISMATCH",
+            Self::InvalidCoordinate => "WESLAW_INVALID_COORDINATE",
+            Self::UnresolvedSubject => "WESLAW_UNRESOLVED_SUBJECT",
+            Self::UnresolvedReference => "WESLAW_UNRESOLVED_REFERENCE",
+            Self::WrongSubjectKind => "WESLAW_WRONG_SUBJECT_KIND",
+            Self::Conflict => "WESLAW_CONFLICT",
         }
     }
 }
@@ -469,6 +488,16 @@ pub enum PredicateV1 {
     },
 }
 
+/// Report emitted when active Law IR entries bind successfully.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct LawBindingReportV1 {
+    /// Active Shape IR hash used for this validation pass.
+    pub schema_hash: String,
+    /// Number of active entries bound against the Shape IR.
+    pub bound_entry_count: usize,
+}
+
 /// Loads an authored `weslaw/v1` YAML document into normalized Law IR v1.
 pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
     let documents = YamlLoader::load_from_str(source)
@@ -496,6 +525,7 @@ pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
     reject_unknown_fields(schema, "$.schema", &["family", "hash", "source"])?;
     let family = required_string(schema, "family", "$.schema.family")?;
     let schema_hash = required_string(schema, "hash", "$.schema.hash")?;
+    validate_schema_hash_anchor(&schema_hash, "$.schema.hash")?;
     let schema_source = optional_string(schema, "source", "$.schema.source")?;
 
     let registries = match mapping_get(root, "registries") {
@@ -546,8 +576,1022 @@ pub fn to_canonical_law_ir_json(value: &LawIrV1) -> Result<String, serde_json::E
     to_canonical_json(&normalized)
 }
 
+/// Validates active Law IR v1 entries against Shape IR and root operations.
+///
+/// This is the strict binding gate for `WLAW-021` through `WLAW-035`: the law
+/// document must target the active schema hash, each active subject must parse,
+/// schema-backed subjects must resolve, kind-specific references must bind, and
+/// the bundle must expose contradictory active law instead of silently
+/// accepting it.
+pub fn validate_law_ir_v1_bindings(
+    law_ir: &LawIrV1,
+    schema_ir: &WesleyIR,
+    operations: &[SchemaOperation],
+    active_schema_hash: &str,
+) -> Result<LawBindingReportV1, WeslawError> {
+    validate_schema_hash_anchor(active_schema_hash, "activeSchemaHash")?;
+    if law_ir.schema_hash != active_schema_hash {
+        return Err(WeslawError::at_path(
+            WeslawDiagnosticCode::SchemaHashMismatch,
+            "$.schema.hash",
+            format!(
+                "law document expects schema hash {}; active schema hash is {}",
+                law_ir.schema_hash, active_schema_hash
+            ),
+        ));
+    }
+
+    let context = BindingContext {
+        schema_ir,
+        operations,
+        law_ir,
+    };
+
+    let mut unique_subject_entries = HashSet::new();
+    for (index, entry) in law_ir.entries.iter().enumerate() {
+        let law_path = format!("$.laws[{index}]");
+        let subject_path = format!("{law_path}.subject");
+        let coordinate = parse_subject_coordinate(&entry.subject, &subject_path)?;
+        if law_kind_has_unique_subject(entry.kind)
+            && !unique_subject_entries.insert(format!("{:?}:{}", entry.kind, entry.subject))
+        {
+            return Err(conflict(
+                entry,
+                &subject_path,
+                format!(
+                    "more than one active {:?} entry targets {}",
+                    entry.kind, entry.subject
+                ),
+            ));
+        }
+        context.bind_entry(entry, coordinate, &law_path)?;
+    }
+
+    Ok(LawBindingReportV1 {
+        schema_hash: active_schema_hash.to_string(),
+        bound_entry_count: law_ir.entries.len(),
+    })
+}
+
 fn sort_law_ir_entries(entries: &mut [LawEntryV1]) {
     entries.sort_by(|left, right| left.id.cmp(&right.id));
+}
+
+struct BindingContext<'a> {
+    schema_ir: &'a WesleyIR,
+    operations: &'a [SchemaOperation],
+    law_ir: &'a LawIrV1,
+}
+
+impl BindingContext<'_> {
+    fn bind_entry(
+        &self,
+        entry: &LawEntryV1,
+        coordinate: SubjectCoordinate<'_>,
+        path: &str,
+    ) -> Result<(), WeslawError> {
+        match entry.kind {
+            LawKindV1::ScalarSemantics => self.bind_scalar_semantics(entry, coordinate, path),
+            LawKindV1::VariantLaw => self.bind_variant_law(entry, coordinate, path),
+            LawKindV1::FootprintLaw => self.bind_footprint_law(entry, coordinate, path),
+            LawKindV1::ChannelLaw => self.bind_channel_law(entry, coordinate, path),
+            LawKindV1::InvariantLaw => self.bind_invariant_law(entry, coordinate, path),
+        }
+    }
+
+    fn bind_scalar_semantics(
+        &self,
+        entry: &LawEntryV1,
+        coordinate: SubjectCoordinate<'_>,
+        path: &str,
+    ) -> Result<(), WeslawError> {
+        let SubjectCoordinate::Scalar(name) = coordinate else {
+            return Err(wrong_subject_kind(entry, path, "scalar:<Name>"));
+        };
+        self.require_type(name, TypeKind::Scalar, entry, path)?;
+        Ok(())
+    }
+
+    fn bind_variant_law(
+        &self,
+        entry: &LawEntryV1,
+        coordinate: SubjectCoordinate<'_>,
+        path: &str,
+    ) -> Result<(), WeslawError> {
+        let SubjectCoordinate::Input(name) = coordinate else {
+            return Err(wrong_subject_kind(entry, path, "input:<Name>"));
+        };
+        let input = self.require_type(name, TypeKind::InputObject, entry, path)?;
+        let LawEntryBodyV1::VariantLaw(body) = &entry.body else {
+            return Err(wrong_subject_kind(entry, path, "variant law body"));
+        };
+
+        let discriminator = self.require_input_field(
+            input,
+            &body.discriminator.field,
+            entry,
+            format!("{path}.discriminator.field"),
+        )?;
+        if discriminator.r#type.base != body.discriminator.r#enum {
+            return Err(unresolved_reference(
+                entry,
+                format!("{path}.discriminator.enum"),
+                format!(
+                    "discriminator field {} has type {}, not enum {}",
+                    body.discriminator.field, discriminator.r#type.base, body.discriminator.r#enum
+                ),
+            ));
+        }
+        let enum_type = self.require_type_reference(
+            &body.discriminator.r#enum,
+            TypeKind::Enum,
+            entry,
+            format!("{path}.discriminator.enum"),
+        )?;
+
+        for (case_index, case) in body.cases.iter().enumerate() {
+            let case_path = format!("{path}.cases[{case_index}]");
+            if !enum_type
+                .enum_values
+                .iter()
+                .any(|candidate| candidate == &case.value)
+            {
+                return Err(unresolved_reference(
+                    entry,
+                    format!("{case_path}.value"),
+                    format!(
+                        "enum {} has no value {}",
+                        body.discriminator.r#enum, case.value
+                    ),
+                ));
+            }
+            for field in &case.requires {
+                self.require_input_field(input, field, entry, format!("{case_path}.requires"))?;
+            }
+            for field in &case.forbids {
+                self.require_input_field(input, field, entry, format!("{case_path}.forbids"))?;
+            }
+            if let Some(field) = first_overlap(&case.requires, &case.forbids) {
+                return Err(conflict(
+                    entry,
+                    case_path,
+                    format!(
+                        "variant case {} both requires and forbids {field}",
+                        case.value
+                    ),
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn bind_footprint_law(
+        &self,
+        entry: &LawEntryV1,
+        coordinate: SubjectCoordinate<'_>,
+        path: &str,
+    ) -> Result<(), WeslawError> {
+        let SubjectCoordinate::Operation {
+            operation_type,
+            field,
+        } = coordinate
+        else {
+            return Err(wrong_subject_kind(
+                entry,
+                path,
+                "operation:Query.<field>, operation:Mutation.<field>, or operation:Subscription.<field>",
+            ));
+        };
+        let operation = self.require_operation(operation_type, field, entry, path)?;
+        let LawEntryBodyV1::FootprintLaw(body) = &entry.body else {
+            return Err(wrong_subject_kind(entry, path, "footprint law body"));
+        };
+
+        for resource in body
+            .reads
+            .iter()
+            .chain(body.writes.iter())
+            .chain(body.creates.iter())
+            .chain(body.forbids.iter())
+            .chain(body.slots.iter().map(|slot| &slot.kind))
+            .chain(
+                body.closures
+                    .iter()
+                    .flat_map(|closure| closure.reads.iter()),
+            )
+            .chain(body.create_slots.iter().map(|slot| &slot.kind))
+        {
+            self.require_resource(resource, entry, format!("{path}.resources"))?;
+        }
+
+        let mut slot_names = HashSet::new();
+        for (slot_index, slot) in body.slots.iter().enumerate() {
+            let slot_path = format!("{path}.slots[{slot_index}]");
+            if !slot_names.insert(slot.name.as_str()) {
+                return Err(conflict(
+                    entry,
+                    format!("{slot_path}.name"),
+                    format!("duplicate footprint slot {}", slot.name),
+                ));
+            }
+            self.require_arg_path(
+                operation,
+                &slot.bind_from_arg,
+                entry,
+                format!("{slot_path}.bindFromArg"),
+            )?;
+        }
+
+        let mut create_slot_names = HashSet::new();
+        for (slot_index, slot) in body.create_slots.iter().enumerate() {
+            if !create_slot_names.insert(slot.name.as_str()) {
+                return Err(conflict(
+                    entry,
+                    format!("{path}.createSlots[{slot_index}].name"),
+                    format!("duplicate create slot {}", slot.name),
+                ));
+            }
+        }
+
+        for (closure_index, closure) in body.closures.iter().enumerate() {
+            let closure_path = format!("{path}.closures[{closure_index}]");
+            if !slot_names.contains(closure.from_slot.as_str()) {
+                return Err(unresolved_reference(
+                    entry,
+                    format!("{closure_path}.fromSlot"),
+                    format!("closure source slot {} is not declared", closure.from_slot),
+                ));
+            }
+            for binding in &closure.arg_bindings {
+                if !slot_names.contains(binding.as_str()) {
+                    self.require_arg_path(
+                        operation,
+                        binding,
+                        entry,
+                        format!("{closure_path}.argBindings"),
+                    )?;
+                }
+            }
+        }
+
+        for (update_index, update) in body.updates.iter().enumerate() {
+            if !slot_names.contains(update.slot.as_str()) {
+                return Err(unresolved_reference(
+                    entry,
+                    format!("{path}.updates[{update_index}].slot"),
+                    format!("update slot {} is not declared", update.slot),
+                ));
+            }
+        }
+
+        let touched_resources = body
+            .reads
+            .iter()
+            .chain(body.writes.iter())
+            .chain(body.creates.iter())
+            .chain(body.slots.iter().map(|slot| &slot.kind))
+            .chain(
+                body.closures
+                    .iter()
+                    .flat_map(|closure| closure.reads.iter()),
+            )
+            .chain(body.create_slots.iter().map(|slot| &slot.kind))
+            .cloned()
+            .collect::<Vec<_>>();
+        if let Some(resource) = first_overlap(&body.forbids, &touched_resources) {
+            return Err(conflict(
+                entry,
+                format!("{path}.forbids"),
+                format!("resource {resource} is both forbidden and used"),
+            ));
+        }
+        Ok(())
+    }
+
+    fn bind_channel_law(
+        &self,
+        entry: &LawEntryV1,
+        coordinate: SubjectCoordinate<'_>,
+        path: &str,
+    ) -> Result<(), WeslawError> {
+        let SubjectCoordinate::Channel { name, version } = coordinate else {
+            return Err(wrong_subject_kind(entry, path, "channel:<name>@<version>"));
+        };
+        let LawEntryBodyV1::ChannelLaw(body) = &entry.body else {
+            return Err(wrong_subject_kind(entry, path, "channel law body"));
+        };
+        if body.version != version {
+            return Err(WeslawError::at_path(
+                WeslawDiagnosticCode::InvalidDocument,
+                path,
+                format!(
+                    "channel subject {} expects version {version}, but law body declares version {}",
+                    entry.subject, body.version
+                ),
+            ));
+        }
+        let carrier = self
+            .channel_carrier(name, version)
+            .ok_or_else(|| unresolved_subject(entry, path, Vec::new()))?;
+        let carrier_type = self.require_type_reference(
+            carrier,
+            TypeKind::Object,
+            entry,
+            format!("{path}.carrier"),
+        )?;
+        for (message_index, message) in body.messages.iter().enumerate() {
+            let message_path = format!("{path}.messages[{message_index}]");
+            let field = self.require_field_on_type(
+                carrier_type,
+                &message.field,
+                entry,
+                format!("{message_path}.field"),
+            )?;
+            if field.r#type.base != message.r#type {
+                return Err(unresolved_reference(
+                    entry,
+                    format!("{message_path}.type"),
+                    format!(
+                        "channel field {} has type {}, not {}",
+                        message.field, field.r#type.base, message.r#type
+                    ),
+                ));
+            }
+            self.require_type_reference(
+                &message.r#type,
+                TypeKind::Object,
+                entry,
+                format!("{message_path}.type"),
+            )?;
+        }
+        Ok(())
+    }
+
+    fn bind_invariant_law(
+        &self,
+        entry: &LawEntryV1,
+        coordinate: SubjectCoordinate<'_>,
+        path: &str,
+    ) -> Result<(), WeslawError> {
+        match coordinate {
+            SubjectCoordinate::Type(name) => {
+                self.require_type(name, TypeKind::Object, entry, path)?;
+            }
+            SubjectCoordinate::Input(name) => {
+                self.require_type(name, TypeKind::InputObject, entry, path)?;
+            }
+            SubjectCoordinate::Enum(name) => {
+                self.require_type(name, TypeKind::Enum, entry, path)?;
+            }
+            SubjectCoordinate::Field { owner, field } => {
+                self.require_field(owner, field, entry, path)?;
+            }
+            SubjectCoordinate::Operation {
+                operation_type,
+                field,
+            } => {
+                self.require_operation(operation_type, field, entry, path)?;
+            }
+            SubjectCoordinate::Family(name) if name == self.law_ir.family => {}
+            _ => {
+                return Err(wrong_subject_kind(
+                    entry,
+                    path,
+                    "type:<Name>, input:<Name>, enum:<Name>, field:<Type>.<field>, operation:<Root>.<field>, or family:<name>",
+                ));
+            }
+        }
+        let LawEntryBodyV1::InvariantLaw(body) = &entry.body else {
+            return Err(wrong_subject_kind(entry, path, "invariant law body"));
+        };
+        match &body.predicate {
+            PredicateV1::FieldEquals { field, .. } => {
+                self.require_predicate_field(
+                    coordinate,
+                    field,
+                    entry,
+                    format!("{path}.predicate.field"),
+                )?;
+            }
+            PredicateV1::External { verifier, .. } => {
+                if !self
+                    .law_ir
+                    .registries
+                    .verifiers
+                    .iter()
+                    .any(|candidate| candidate.id == *verifier)
+                {
+                    return Err(unresolved_reference(
+                        entry,
+                        format!("{path}.predicate.verifier"),
+                        format!("verifier {verifier} is not declared"),
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn require_type(
+        &self,
+        name: &str,
+        expected_kind: TypeKind,
+        entry: &LawEntryV1,
+        path: &str,
+    ) -> Result<&TypeDefinition, WeslawError> {
+        match self.find_type(name) {
+            Some(definition) if definition.kind == expected_kind => Ok(definition),
+            Some(_) => Err(wrong_subject_kind(
+                entry,
+                path,
+                expected_kind_label(expected_kind),
+            )),
+            None => Err(unresolved_subject(
+                entry,
+                path,
+                self.closest_type_subjects(name),
+            )),
+        }
+    }
+
+    fn require_type_reference(
+        &self,
+        name: &str,
+        expected_kind: TypeKind,
+        entry: &LawEntryV1,
+        path: impl Into<String>,
+    ) -> Result<&TypeDefinition, WeslawError> {
+        match self.find_type(name) {
+            Some(definition) if definition.kind == expected_kind => Ok(definition),
+            Some(definition) => Err(unresolved_reference(
+                entry,
+                path,
+                format!(
+                    "type {name} has kind {:?}, expected {:?}",
+                    definition.kind, expected_kind
+                ),
+            )),
+            None => Err(unresolved_reference(
+                entry,
+                path,
+                format!("type {name} is not declared"),
+            )),
+        }
+    }
+
+    fn require_input_field<'a>(
+        &self,
+        input: &'a TypeDefinition,
+        field: &str,
+        entry: &LawEntryV1,
+        path: impl Into<String>,
+    ) -> Result<&'a Field, WeslawError> {
+        if input.kind != TypeKind::InputObject {
+            return Err(unresolved_reference(
+                entry,
+                path,
+                format!("{} is not an input object", input.name),
+            ));
+        }
+        self.require_field_on_type(input, field, entry, path)
+    }
+
+    fn require_field_on_type<'a>(
+        &self,
+        definition: &'a TypeDefinition,
+        field: &str,
+        entry: &LawEntryV1,
+        path: impl Into<String>,
+    ) -> Result<&'a Field, WeslawError> {
+        let path = path.into();
+        definition
+            .fields
+            .iter()
+            .find(|candidate| candidate.name == field)
+            .ok_or_else(|| {
+                unresolved_reference(
+                    entry,
+                    path,
+                    format!("{} has no field {field}", definition.name),
+                )
+            })
+    }
+
+    fn require_field(
+        &self,
+        owner: &str,
+        field: &str,
+        entry: &LawEntryV1,
+        path: &str,
+    ) -> Result<(), WeslawError> {
+        let Some(definition) = self.find_type(owner) else {
+            return Err(unresolved_subject(
+                entry,
+                path,
+                self.closest_type_subjects(owner),
+            ));
+        };
+        if !matches!(
+            definition.kind,
+            TypeKind::Object | TypeKind::Interface | TypeKind::InputObject
+        ) {
+            return Err(wrong_subject_kind(
+                entry,
+                path,
+                "field:<ObjectOrInterfaceOrInput>.<field>",
+            ));
+        }
+        if definition
+            .fields
+            .iter()
+            .any(|candidate| candidate.name == field)
+        {
+            Ok(())
+        } else {
+            Err(unresolved_subject(
+                entry,
+                path,
+                definition
+                    .fields
+                    .iter()
+                    .map(|candidate| format!("field:{owner}.{}", candidate.name))
+                    .collect(),
+            ))
+        }
+    }
+
+    fn require_operation(
+        &self,
+        operation_type: OperationType,
+        field: &str,
+        entry: &LawEntryV1,
+        path: &str,
+    ) -> Result<&SchemaOperation, WeslawError> {
+        if let Some(operation) = self.operations.iter().find(|candidate| {
+            candidate.operation_type == operation_type && candidate.field_name == field
+        }) {
+            Ok(operation)
+        } else {
+            Err(unresolved_subject(
+                entry,
+                path,
+                self.closest_operation_subjects(operation_type),
+            ))
+        }
+    }
+
+    fn require_resource(
+        &self,
+        resource: &str,
+        entry: &LawEntryV1,
+        path: impl Into<String>,
+    ) -> Result<(), WeslawError> {
+        if self.find_type(resource).is_some()
+            || self
+                .law_ir
+                .registries
+                .resources
+                .iter()
+                .any(|candidate| candidate.id == resource)
+        {
+            Ok(())
+        } else {
+            Err(unresolved_reference(
+                entry,
+                path,
+                format!("resource {resource} is neither a GraphQL type nor registry entry"),
+            ))
+        }
+    }
+
+    fn require_arg_path(
+        &self,
+        operation: &SchemaOperation,
+        arg_path: &str,
+        entry: &LawEntryV1,
+        path: impl Into<String>,
+    ) -> Result<(), WeslawError> {
+        let path = path.into();
+        let mut segments = arg_path.split('.');
+        let Some(arg_name) = segments.next() else {
+            return Err(unresolved_reference(entry, path, "empty argument path"));
+        };
+        let Some(argument) = operation
+            .arguments
+            .iter()
+            .find(|candidate| candidate.name == arg_name)
+        else {
+            return Err(unresolved_reference(
+                entry,
+                path,
+                format!(
+                    "operation {}.{} has no argument {arg_name}",
+                    operation_type_coordinate(operation.operation_type),
+                    operation.field_name
+                ),
+            ));
+        };
+
+        let mut current_type = argument.r#type.base.as_str();
+        for segment in segments {
+            let definition = self.require_type_reference(
+                current_type,
+                TypeKind::InputObject,
+                entry,
+                path.clone(),
+            )?;
+            let field = self.require_input_field(definition, segment, entry, path.clone())?;
+            current_type = field.r#type.base.as_str();
+        }
+        Ok(())
+    }
+
+    fn require_predicate_field(
+        &self,
+        coordinate: SubjectCoordinate<'_>,
+        field_path: &str,
+        entry: &LawEntryV1,
+        path: impl Into<String>,
+    ) -> Result<(), WeslawError> {
+        let path = path.into();
+        let root = match coordinate {
+            SubjectCoordinate::Type(name) | SubjectCoordinate::Input(name) => name,
+            SubjectCoordinate::Field { owner, .. } => owner,
+            _ => {
+                return Err(unresolved_reference(
+                    entry,
+                    path.clone(),
+                    "fieldEquals predicates require a type, input, or field subject",
+                ));
+            }
+        };
+        let mut current_type = root;
+        for segment in field_path.split('.') {
+            let definition = self.find_type(current_type).ok_or_else(|| {
+                unresolved_reference(
+                    entry,
+                    path.clone(),
+                    format!("type {current_type} is not declared"),
+                )
+            })?;
+            let field = self.require_field_on_type(definition, segment, entry, path.clone())?;
+            current_type = field.r#type.base.as_str();
+        }
+        Ok(())
+    }
+
+    fn find_type(&self, name: &str) -> Option<&TypeDefinition> {
+        self.schema_ir
+            .types
+            .iter()
+            .find(|candidate| candidate.name == name)
+    }
+
+    fn closest_type_subjects(&self, name: &str) -> Vec<String> {
+        let mut candidates = self
+            .schema_ir
+            .types
+            .iter()
+            .filter(|candidate| shares_prefix(&candidate.name, name))
+            .map(|candidate| {
+                format!(
+                    "{}:{}",
+                    coordinate_prefix_for_type(candidate.kind),
+                    candidate.name
+                )
+            })
+            .collect::<Vec<_>>();
+        candidates.sort();
+        candidates
+    }
+
+    fn closest_operation_subjects(&self, operation_type: OperationType) -> Vec<String> {
+        let mut candidates = self
+            .operations
+            .iter()
+            .filter(|candidate| candidate.operation_type == operation_type)
+            .map(|candidate| {
+                format!(
+                    "operation:{}.{}",
+                    operation_type_coordinate(candidate.operation_type),
+                    candidate.field_name
+                )
+            })
+            .collect::<Vec<_>>();
+        candidates.sort();
+        candidates
+    }
+
+    fn channel_carrier(&self, name: &str, version: u64) -> Option<&str> {
+        if let Some(channel) = self
+            .law_ir
+            .registries
+            .channels
+            .iter()
+            .find(|channel| channel.name == name && channel.version == version)
+        {
+            return Some(channel.carrier.as_str());
+        }
+
+        self.schema_ir
+            .types
+            .iter()
+            .find(|definition| {
+                definition
+                    .directives
+                    .get("wes_channel")
+                    .is_some_and(|value| {
+                        value.get("name").and_then(serde_json::Value::as_str) == Some(name)
+                            && value.get("version").and_then(serde_json::Value::as_u64)
+                                == Some(version)
+                    })
+            })
+            .map(|definition| definition.name.as_str())
+    }
+}
+
+#[derive(Clone, Copy)]
+enum SubjectCoordinate<'a> {
+    Scalar(&'a str),
+    Type(&'a str),
+    Input(&'a str),
+    Enum(&'a str),
+    Field {
+        owner: &'a str,
+        field: &'a str,
+    },
+    Operation {
+        operation_type: OperationType,
+        field: &'a str,
+    },
+    Channel {
+        name: &'a str,
+        version: u64,
+    },
+    Family(&'a str),
+}
+
+fn parse_subject_coordinate<'a>(
+    subject: &'a str,
+    path: &str,
+) -> Result<SubjectCoordinate<'a>, WeslawError> {
+    if let Some(name) = subject.strip_prefix("scalar:") {
+        require_graphql_name(name, subject, path)?;
+        return Ok(SubjectCoordinate::Scalar(name));
+    }
+    if let Some(name) = subject.strip_prefix("type:") {
+        require_graphql_name(name, subject, path)?;
+        return Ok(SubjectCoordinate::Type(name));
+    }
+    if let Some(name) = subject.strip_prefix("input:") {
+        require_graphql_name(name, subject, path)?;
+        return Ok(SubjectCoordinate::Input(name));
+    }
+    if let Some(name) = subject.strip_prefix("enum:") {
+        require_graphql_name(name, subject, path)?;
+        return Ok(SubjectCoordinate::Enum(name));
+    }
+    if let Some(rest) = subject.strip_prefix("field:") {
+        let (owner, field) = split_once(rest, '.', subject, path)?;
+        require_graphql_name(owner, subject, path)?;
+        require_graphql_name(field, subject, path)?;
+        return Ok(SubjectCoordinate::Field { owner, field });
+    }
+    if let Some(rest) = subject.strip_prefix("operation:") {
+        let (root, field) = split_once(rest, '.', subject, path)?;
+        let operation_type = parse_operation_type(root, subject, path)?;
+        require_graphql_name(field, subject, path)?;
+        return Ok(SubjectCoordinate::Operation {
+            operation_type,
+            field,
+        });
+    }
+    if let Some(rest) = subject.strip_prefix("channel:") {
+        let (name, version_text) = split_once(rest, '@', subject, path)?;
+        require_dotted_name(name, subject, path)?;
+        let version = version_text.parse::<u64>().map_err(|_| {
+            invalid_coordinate(subject, path, "channel version must be an unsigned integer")
+        })?;
+        return Ok(SubjectCoordinate::Channel { name, version });
+    }
+    if let Some(name) = subject.strip_prefix("family:") {
+        require_dotted_name(name, subject, path)?;
+        return Ok(SubjectCoordinate::Family(name));
+    }
+
+    Err(invalid_coordinate(
+        subject,
+        path,
+        "unknown subject coordinate prefix",
+    ))
+}
+
+fn validate_schema_hash_anchor(schema_hash: &str, path: &str) -> Result<(), WeslawError> {
+    let Some(hex) = schema_hash.strip_prefix("sha256:") else {
+        return Err(WeslawError::at_path(
+            WeslawDiagnosticCode::InvalidDocument,
+            path,
+            "schema hash must use sha256:<64 lowercase hex>",
+        ));
+    };
+    if hex.len() == 64
+        && hex
+            .chars()
+            .all(|character| character.is_ascii_hexdigit() && !character.is_ascii_uppercase())
+    {
+        Ok(())
+    } else {
+        Err(WeslawError::at_path(
+            WeslawDiagnosticCode::InvalidDocument,
+            path,
+            "schema hash must use sha256:<64 lowercase hex>",
+        ))
+    }
+}
+
+fn split_once<'a>(
+    value: &'a str,
+    delimiter: char,
+    subject: &str,
+    path: &str,
+) -> Result<(&'a str, &'a str), WeslawError> {
+    let Some((left, right)) = value.split_once(delimiter) else {
+        return Err(invalid_coordinate(
+            subject,
+            path,
+            "missing coordinate delimiter",
+        ));
+    };
+    if left.is_empty() || right.is_empty() || right.contains(delimiter) {
+        return Err(invalid_coordinate(
+            subject,
+            path,
+            "invalid coordinate segments",
+        ));
+    }
+    Ok((left, right))
+}
+
+fn parse_operation_type(
+    value: &str,
+    subject: &str,
+    path: &str,
+) -> Result<OperationType, WeslawError> {
+    match value {
+        "Query" => Ok(OperationType::Query),
+        "Mutation" => Ok(OperationType::Mutation),
+        "Subscription" => Ok(OperationType::Subscription),
+        _ => Err(invalid_coordinate(
+            subject,
+            path,
+            "operation root must be Query, Mutation, or Subscription",
+        )),
+    }
+}
+
+fn require_graphql_name(name: &str, subject: &str, path: &str) -> Result<(), WeslawError> {
+    let mut chars = name.chars();
+    let Some(first) = chars.next() else {
+        return Err(invalid_coordinate(subject, path, "empty GraphQL name"));
+    };
+    if !(first == '_' || first.is_ascii_alphabetic()) {
+        return Err(invalid_coordinate(subject, path, "invalid GraphQL name"));
+    }
+    if chars.all(|character| character == '_' || character.is_ascii_alphanumeric()) {
+        Ok(())
+    } else {
+        Err(invalid_coordinate(subject, path, "invalid GraphQL name"))
+    }
+}
+
+fn require_dotted_name(value: &str, subject: &str, path: &str) -> Result<(), WeslawError> {
+    if value.split('.').all(is_dotted_token) {
+        Ok(())
+    } else {
+        Err(invalid_coordinate(subject, path, "invalid dotted name"))
+    }
+}
+
+fn is_dotted_token(value: &str) -> bool {
+    let mut chars = value.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    first.is_ascii_lowercase()
+        && chars.all(|character| {
+            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
+        })
+}
+
+fn invalid_coordinate(subject: &str, path: &str, detail: &str) -> WeslawError {
+    WeslawError::at_path(
+        WeslawDiagnosticCode::InvalidCoordinate,
+        path,
+        format!("{detail}: {subject}"),
+    )
+}
+
+fn unresolved_subject(entry: &LawEntryV1, path: &str, closest_matches: Vec<String>) -> WeslawError {
+    let mut message = format!(
+        "unresolved subject coordinate {} for law {}",
+        entry.subject, entry.id
+    );
+    if !closest_matches.is_empty() {
+        message.push_str("; closest matches: ");
+        message.push_str(&closest_matches.join(", "));
+    }
+    WeslawError::at_path(
+        WeslawDiagnosticCode::UnresolvedSubject,
+        subject_path(path),
+        message,
+    )
+}
+
+fn wrong_subject_kind(entry: &LawEntryV1, path: &str, expected: &str) -> WeslawError {
+    WeslawError::at_path(
+        WeslawDiagnosticCode::WrongSubjectKind,
+        subject_path(path),
+        format!(
+            "law {} with kind {:?} requires subject kind {expected}, got {}",
+            entry.id, entry.kind, entry.subject
+        ),
+    )
+}
+
+fn unresolved_reference(
+    entry: &LawEntryV1,
+    path: impl Into<String>,
+    detail: impl Into<String>,
+) -> WeslawError {
+    WeslawError::at_path(
+        WeslawDiagnosticCode::UnresolvedReference,
+        path,
+        format!(
+            "law {} has unresolved reference: {}",
+            entry.id,
+            detail.into()
+        ),
+    )
+}
+
+fn conflict(entry: &LawEntryV1, path: impl Into<String>, detail: impl Into<String>) -> WeslawError {
+    WeslawError::at_path(
+        WeslawDiagnosticCode::Conflict,
+        path,
+        format!("law {} is contradictory: {}", entry.id, detail.into()),
+    )
+}
+
+fn subject_path(path: &str) -> String {
+    if path.ends_with(".subject") {
+        path.to_string()
+    } else {
+        format!("{path}.subject")
+    }
+}
+
+fn expected_kind_label(kind: TypeKind) -> &'static str {
+    match kind {
+        TypeKind::Object => "type:<Name>",
+        TypeKind::Interface => "interface:<Name>",
+        TypeKind::Union => "union:<Name>",
+        TypeKind::Enum => "enum:<Name>",
+        TypeKind::Scalar => "scalar:<Name>",
+        TypeKind::InputObject => "input:<Name>",
+    }
+}
+
+fn coordinate_prefix_for_type(kind: TypeKind) -> &'static str {
+    match kind {
+        TypeKind::Object | TypeKind::Interface | TypeKind::Union => "type",
+        TypeKind::Enum => "enum",
+        TypeKind::Scalar => "scalar",
+        TypeKind::InputObject => "input",
+    }
+}
+
+fn operation_type_coordinate(operation_type: OperationType) -> &'static str {
+    match operation_type {
+        OperationType::Query => "Query",
+        OperationType::Mutation => "Mutation",
+        OperationType::Subscription => "Subscription",
+    }
+}
+
+fn law_kind_has_unique_subject(kind: LawKindV1) -> bool {
+    !matches!(kind, LawKindV1::InvariantLaw)
+}
+
+fn first_overlap(left: &[String], right: &[String]) -> Option<String> {
+    let right = right.iter().collect::<HashSet<_>>();
+    left.iter()
+        .filter(|candidate| right.contains(candidate))
+        .min()
+        .cloned()
+}
+
+fn shares_prefix(left: &str, right: &str) -> bool {
+    left.starts_with(right) || right.starts_with(left)
 }
 
 fn parse_registries(map: &Mapping) -> Result<LawRegistrySetV1, WeslawError> {

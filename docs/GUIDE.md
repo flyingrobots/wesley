@@ -44,6 +44,7 @@ The historical package CLI is retired. Use the native commands:
 - **Lower**: `wesley schema lower --schema <path> --json`
 - **Hash**: `wesley schema hash --schema <path>`
 - **Diff**: `wesley schema diff --old <old> --new <new> --format summary`
+- **Law**: `wesley law validate --schema <schema> --law <law>`
 
 - **Rust**: `wesley emit rust --schema <path> --out <path>`
 - **TypeScript**: `wesley emit typescript --schema <path> --out <path>`

@@ -6,9 +6,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use wesley_core::{
     compute_content_hash, compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
-    list_schema_operations_sdl, lower_schema_sdl, normalize_schema_sdl,
-    resolve_operation_selections, resolve_operation_selections_with_schema, SchemaDelta,
-    WesleyError, WesleyIR,
+    list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl, normalize_schema_sdl,
+    resolve_operation_selections, resolve_operation_selections_with_schema,
+    validate_law_ir_v1_bindings, SchemaDelta, WeslawError, WesleyError, WesleyIR,
 };
 use wesley_emit_rust::{
     emit_rust_with_operations, GENERATOR_NAME as RUST_GENERATOR_NAME,
@@ -53,6 +53,7 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
         }
         Some("doctor") => run_doctor_command(&args[1..]),
         Some("schema") => run_schema_command(&args[1..]),
+        Some("law") => run_law_command(&args[1..]),
         Some("emit") => run_emit_command(&args[1..]),
         Some("operation") => run_operation_command(&args[1..]),
         Some("version") | Some("--version") | Some("-V") => {
@@ -60,6 +61,43 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
             Ok(EXIT_OK)
         }
         Some(command) => Err(CliError::usage(format!("unknown command '{command}'"))),
+    }
+}
+
+fn run_law_command(args: &[String]) -> Result<u8, CliError> {
+    match args.first().map(String::as_str) {
+        None | Some("--help") | Some("-h") => {
+            print_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("validate") if wants_help(&args[1..]) => {
+            print_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("validate") => {
+            let options = parse_options(&args[1..], "law validate")?;
+            let schema_path = options.required_schema("law validate")?;
+            let law_path = options.required_law("law validate")?;
+            let schema_sdl = read_file(&schema_path, "schema")?;
+            let law_source = read_file(&law_path, "law")?;
+            let ir = lower_schema_sdl(&schema_sdl)?;
+            let operations = list_schema_operations_sdl(&schema_sdl)?;
+            let schema_hash = format!("sha256:{}", compute_registry_hash(&ir)?);
+            let law_ir = load_weslaw_yaml(&law_source)?;
+            let report = validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)?;
+
+            if options.json {
+                print_json(&report)?;
+            } else {
+                println!(
+                    "Law validation passed: {} active entries bound to {}",
+                    report.bound_entry_count, report.schema_hash
+                );
+            }
+
+            Ok(EXIT_OK)
+        }
+        Some(command) => Err(CliError::usage(format!("unknown law command '{command}'"))),
     }
 }
 
@@ -448,6 +486,7 @@ fn print_doctor_text(report: &DoctorReport) {
 #[derive(Default)]
 struct ParsedOptions {
     schema: Option<PathBuf>,
+    law: Option<PathBuf>,
     old_schema: Option<PathBuf>,
     new_schema: Option<PathBuf>,
     revision: Option<String>,
@@ -473,6 +512,12 @@ impl ParsedOptions {
         self.operation
             .clone()
             .ok_or_else(|| CliError::usage(format!("missing --operation for `{command}`")))
+    }
+
+    fn required_law(&self, command: &str) -> Result<PathBuf, CliError> {
+        self.law
+            .clone()
+            .ok_or_else(|| CliError::usage(format!("missing --law for `{command}`")))
     }
 
     fn required_out(&self, command: &str) -> Result<PathBuf, CliError> {
@@ -516,6 +561,15 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--old" => {
                 index += 1;
                 options.old_schema = Some(PathBuf::from(required_value(args, index, "--old")?));
+            }
+            "--law" if command == "law validate" => {
+                index += 1;
+                options.law = Some(PathBuf::from(required_value(args, index, "--law")?));
+            }
+            "--law" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--law' for `{command}`"
+                )));
             }
             "--new" => {
                 index += 1;
@@ -978,6 +1032,7 @@ Commands:
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema operations         List Query/Mutation/Subscription root operations
   schema diff               Compare GraphQL SDL states as Wesley L1 IR
+  law validate              Validate weslaw against active GraphQL SDL
   emit rust                 Emit Rust models and operation bindings from GraphQL SDL
   emit typescript           Emit TypeScript declarations and operation bindings from GraphQL SDL
   operation selections      Resolve selected operation fields
@@ -1044,6 +1099,21 @@ Options:
     );
 }
 
+fn print_law_help() {
+    println!(
+        "\
+Wesley law commands
+
+Usage:
+  wesley law validate --schema <path> --law <path> [--json]
+
+Options:
+  -s, --schema <path>  GraphQL SDL file
+  --law <path>         weslaw/v1 authoring file
+  --json               Emit JSON output"
+    );
+}
+
 fn print_emit_help() {
     println!(
         "\
@@ -1088,6 +1158,7 @@ enum CliError {
         source: String,
     },
     Core(WesleyError),
+    Law(WeslawError),
     Git(String),
     Json(String),
 }
@@ -1100,7 +1171,9 @@ impl CliError {
     fn exit_code(&self) -> u8 {
         match self {
             Self::Usage(_) => EXIT_USAGE,
-            Self::Io { .. } | Self::Core(_) | Self::Git(_) | Self::Json(_) => EXIT_FAILURE,
+            Self::Io { .. } | Self::Core(_) | Self::Law(_) | Self::Git(_) | Self::Json(_) => {
+                EXIT_FAILURE
+            }
         }
     }
 }
@@ -1122,6 +1195,13 @@ impl std::fmt::Display for CliError {
                 path.display()
             ),
             Self::Core(error) => write!(formatter, "{error}"),
+            Self::Law(error) => {
+                write!(formatter, "{}: {}", error.code.as_str(), error.message)?;
+                if let Some(path) = &error.path {
+                    write!(formatter, " ({path})")?;
+                }
+                Ok(())
+            }
             Self::Git(error) => write!(formatter, "git error: {error}"),
             Self::Json(error) => write!(formatter, "failed to serialize JSON output: {error}"),
         }
@@ -1131,6 +1211,12 @@ impl std::fmt::Display for CliError {
 impl From<WesleyError> for CliError {
     fn from(error: WesleyError) -> Self {
         Self::Core(error)
+    }
+}
+
+impl From<WeslawError> for CliError {
+    fn from(error: WeslawError) -> Self {
+        Self::Law(error)
     }
 }
 

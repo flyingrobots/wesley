@@ -21,6 +21,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **`weslaw` strict schema binding**: Added Rust-core validation that requires
+  active `weslaw/v1` documents to match the active `sha256:<64 lowercase hex>`
+  schema hash, binds scalar/type/input/enum/field/operation/channel/family
+  subject coordinates against Shape IR or explicit law registries, validates
+  variant discriminator fields and enum values, validates footprint resource
+  kinds and argument paths, validates typed invariant field and verifier
+  references, rejects wrong subject kinds and contradictory active law, emits
+  stable binding diagnostics, and exposes the strict pass through
+  `wesley law validate --schema <path> --law <path>`.
 - **`weslaw` semantic Law IR design**: Added design packet `0019` defining
   `weslaw` as Wesley's semantic law layer for contract bundles, with typed Law
   IR, strict binding, schema-hash anchoring, canonical law hashes, structured

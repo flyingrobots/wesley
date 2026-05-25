@@ -4,9 +4,10 @@ use std::path::{Path, PathBuf};
 use yaml_rust2::{Yaml, YamlLoader};
 
 use wesley_core::{
-    load_weslaw_yaml, to_canonical_law_ir_json, FootprintCardinalityV1, LawEntryBodyV1, LawKindV1,
-    PredicateV1, ScalarForbiddenInterpretationV1, ScalarRepresentationV1, WeslawDiagnosticCode,
-    WESLEY_LAW_IR_API_VERSION,
+    compute_registry_hash, list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl,
+    to_canonical_law_ir_json, validate_law_ir_v1_bindings, FootprintCardinalityV1, LawEntryBodyV1,
+    LawKindV1, PredicateV1, ScalarForbiddenInterpretationV1, ScalarRepresentationV1,
+    WeslawDiagnosticCode, WESLEY_LAW_IR_API_VERSION,
 };
 
 fn repo_path(path: &str) -> PathBuf {
@@ -17,6 +18,31 @@ fn repo_path(path: &str) -> PathBuf {
 
 fn read_fixture(path: &str) -> String {
     fs::read_to_string(repo_path(path)).expect("fixture should be readable")
+}
+
+fn contract_bundle_shape() -> (
+    wesley_core::WesleyIR,
+    Vec<wesley_core::SchemaOperation>,
+    String,
+) {
+    let sdl = read_fixture("test/fixtures/weslaw/contract-bundle-shape.graphql");
+    let ir = lower_schema_sdl(&sdl).expect("fixture schema should lower");
+    let operations = list_schema_operations_sdl(&sdl).expect("fixture operations should list");
+    let schema_hash = format!(
+        "sha256:{}",
+        compute_registry_hash(&ir).expect("schema hash should compute")
+    );
+
+    (ir, operations, schema_hash)
+}
+
+fn bind_law_source(
+    source: &str,
+) -> Result<wesley_core::LawBindingReportV1, wesley_core::WeslawError> {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let law_ir = load_weslaw_yaml(source)?;
+
+    validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)
 }
 
 fn yaml_fixture_to_json(source: &str) -> serde_json::Value {
@@ -415,6 +441,343 @@ fn law_ir_v1_json_schema_accepts_ir_and_rejects_kind_body_mismatch() {
         !ordering_errors.is_empty(),
         "Law IR schema must reject unknown scalar ordering values"
     );
+}
+
+#[test]
+fn law_ir_v1_loader_rejects_malformed_schema_hash_anchors() {
+    let source = r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+"#;
+
+    let error = load_weslaw_yaml(source).expect_err("malformed schema hash should fail");
+    assert_eq!(error.code, WeslawDiagnosticCode::InvalidDocument);
+    assert_eq!(error.path.as_deref(), Some("$.schema.hash"));
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_schema_hash_mismatch() {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let law_ir = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/rejected/schema-hash-mismatch.weslaw.yaml",
+    ))
+    .expect("structure-valid law should lower");
+
+    let error = validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)
+        .expect_err("schema hash mismatch must fail before subject binding");
+    assert_eq!(error.code, WeslawDiagnosticCode::SchemaHashMismatch);
+    assert_eq!(error.code.as_str(), "WESLAW_SCHEMA_HASH_MISMATCH");
+    assert_eq!(error.path.as_deref(), Some("$.schema.hash"));
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_unresolved_subjects() {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let law_ir = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/rejected/unresolved-subject.weslaw.yaml",
+    ))
+    .expect("structure-valid law should lower");
+
+    let error = validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)
+        .expect_err("unresolved operation subject must fail");
+    assert_eq!(error.code, WeslawDiagnosticCode::UnresolvedSubject);
+    assert_eq!(error.code.as_str(), "WESLAW_UNRESOLVED_SUBJECT");
+    assert_eq!(error.path.as_deref(), Some("$.laws[0].subject"));
+    assert!(error.message.contains("operation:Mutation.replaceRange"));
+    assert!(error
+        .message
+        .contains("operation:Mutation.replaceRangeAsTick"));
+}
+
+#[test]
+fn law_ir_v1_binding_accepts_schema_and_operation_subjects() {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let law_source = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+registries:
+  verifiers:
+    - id: continuum-law-checker
+      owner: continuum
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+      minInclusive: 1
+  - id: echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: kind
+      enum: PlaybackModeKind
+    cases:
+      - value: PAUSED
+        forbids: [target, then]
+  - id: continuum.invariant.translated-evidence
+    status: active
+    kind: invariantLaw
+    subject: type:TranslatedSubstrateEvidence
+    predicate:
+      op: fieldEquals
+      field: nativeContinuumWitness
+      value: false
+  - id: continuum.invariant.playback-mode-kind
+    status: active
+    kind: invariantLaw
+    subject: enum:PlaybackModeKind
+    predicate:
+      op: external
+      verifier: continuum-law-checker
+      ref: continuum.invariants.playbackModeKind
+  - id: continuum.invariant.buffer-worldline-id
+    status: active
+    kind: invariantLaw
+    subject: field:BufferWorldline.worldlineId
+    predicate:
+      op: external
+      verifier: continuum-law-checker
+      ref: continuum.invariants.bufferWorldlineId
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [BufferWorldline]
+"#
+    );
+    let law_ir = load_weslaw_yaml(&law_source).expect("law should lower");
+
+    let report = validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)
+        .expect("accepted subject coordinates should bind");
+
+    assert_eq!(report.schema_hash, schema_hash);
+    assert_eq!(report.bound_entry_count, 6);
+}
+
+#[test]
+fn accepted_weslaw_fixtures_bind_to_contract_bundle_shape() {
+    let fixtures = [
+        "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/variant-playback-mode.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/channel-ttd-protocol.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/invariant-translated-evidence.weslaw.yaml",
+    ];
+
+    for fixture in fixtures {
+        let report = bind_law_source(&read_fixture(fixture)).expect(fixture);
+        assert_eq!(report.bound_entry_count, 1, "{fixture}");
+    }
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_wrong_subject_kind_for_law_kind() {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let source = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: type:BufferWorldline
+    semantics:
+      representation: integer
+"#
+    );
+    let law_ir = load_weslaw_yaml(&source).expect("law should lower");
+
+    let error = validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)
+        .expect_err("scalar semantics must target a scalar subject");
+
+    assert_eq!(error.code, WeslawDiagnosticCode::WrongSubjectKind);
+    assert_eq!(error.code.as_str(), "WESLAW_WRONG_SUBJECT_KIND");
+    assert_eq!(error.path.as_deref(), Some("$.laws[0].subject"));
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_unbound_variant_references() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let source = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: missingKind
+      enum: PlaybackModeKind
+    cases:
+      - value: PAUSED
+"#
+    );
+
+    let error = bind_law_source(&source).expect_err("missing discriminator should fail");
+    assert_eq!(error.code, WeslawDiagnosticCode::UnresolvedReference);
+    assert_eq!(error.code.as_str(), "WESLAW_UNRESOLVED_REFERENCE");
+    assert_eq!(error.path.as_deref(), Some("$.laws[0].discriminator.field"));
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_unbound_footprint_arg_paths() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let source = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [BufferWorldline]
+    slots:
+      - name: worldline
+        kind: BufferWorldline
+        bindFromArg: input.missingWorldlineId
+"#
+    );
+
+    let error = bind_law_source(&source).expect_err("missing argument path should fail");
+    assert_eq!(error.code, WeslawDiagnosticCode::UnresolvedReference);
+    assert_eq!(
+        error.path.as_deref(),
+        Some("$.laws[0].slots[0].bindFromArg")
+    );
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_unbound_footprint_resources() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let source = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [MissingResource]
+"#
+    );
+
+    let error = bind_law_source(&source).expect_err("missing resource should fail");
+    assert_eq!(error.code, WeslawDiagnosticCode::UnresolvedReference);
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_contradictory_variant_and_footprint_law() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let variant = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.variant.playback-mode
+    status: active
+    kind: variantLaw
+    subject: input:PlaybackModeInput
+    discriminator:
+      field: kind
+      enum: PlaybackModeKind
+    cases:
+      - value: SEEK
+        requires: [target]
+        forbids: [target]
+"#
+    );
+    let variant_error = bind_law_source(&variant).expect_err("contradictory variant should fail");
+    assert_eq!(variant_error.code, WeslawDiagnosticCode::Conflict);
+
+    let footprint = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [BufferWorldline]
+    forbids: [BufferWorldline]
+"#
+    );
+    let footprint_error =
+        bind_law_source(&footprint).expect_err("contradictory footprint should fail");
+    assert_eq!(footprint_error.code, WeslawDiagnosticCode::Conflict);
+
+    let duplicate_subject = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+  - id: echo.scalar.positiveInt.other
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: string
+"#
+    );
+    let duplicate_error =
+        bind_law_source(&duplicate_subject).expect_err("duplicate scalar law subject should fail");
+    assert_eq!(duplicate_error.code, WeslawDiagnosticCode::Conflict);
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_unbound_invariant_predicate_fields() {
+    let (_, _, schema_hash) = contract_bundle_shape();
+    let source = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+laws:
+  - id: continuum.invariant.translated-evidence
+    status: active
+    kind: invariantLaw
+    subject: type:TranslatedSubstrateEvidence
+    predicate:
+      op: fieldEquals
+      field: missingWitness
+      value: false
+"#
+    );
+
+    let error = bind_law_source(&source).expect_err("missing predicate field should fail");
+    assert_eq!(error.code, WeslawDiagnosticCode::UnresolvedReference);
+    assert_eq!(error.path.as_deref(), Some("$.laws[0].predicate.field"));
 }
 
 #[test]

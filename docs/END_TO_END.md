@@ -405,6 +405,7 @@ wesley schema lower --schema <path> --json
 wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> --format summary --exit-code
+wesley law validate --schema <schema.graphql> --law <law.weslaw.yaml>
 wesley operation selections --operation <path> --schema <path> --json
 wesley operation directive-args --operation <path> --directive <name> --json
 ```
