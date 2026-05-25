@@ -14,7 +14,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   semantic diffs, directive lowering, deferred SDL+ syntax, and explicit
   separation between law, policy, evidence, and judgment. The packet now tracks
   a 75-slice implementation runway with a mandatory scope checkpoint at
-  `WLAW-050`.
+  `WLAW-050`, plus a locked `WLAW-001` through `WLAW-010` v1 substrate covering
+  Law IR, coordinate and registry grammar, canonicalization, diagnostics,
+  active/draft semantics, and accepted/rejected `weslaw/v1` fixtures.
 - **Holmes assurance hexagon design**: Added design packet `0018` describing a
   ground-up Rust Holmes redesign with hexagonal architecture, CLI/API/MCP
   interfaces, dependency-injected ports, and a reporting abstraction where

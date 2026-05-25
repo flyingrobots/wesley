@@ -119,6 +119,23 @@ home.
 - Wesley SDL+ is deferred until the Law IR, binder, canonicalization, and diffs
   are stable.
 
+## Design Lock Artifacts
+
+This packet's first implementation PR locks the v1 substrate through companion
+specs and fixtures:
+
+- [Law IR v1](./LAW_IR_V1.md) defines the closed semantic model, law kinds,
+  active/draft behavior, and v1 non-goals.
+- [Coordinates And Registries](./COORDINATES_AND_REGISTRIES.md) defines subject
+  coordinates, non-shape resource/verifier/channel registries, schema-hash
+  anchors, and explicit discovery.
+- [Canonicalization And Diagnostics](./CANONICALIZATION_AND_DIAGNOSTICS.md)
+  defines canonical byte rules, hash inputs, active versus draft semantics, and
+  the v1 diagnostic catalog.
+- [weslaw fixtures](../../../test/fixtures/weslaw/README.md) define accepted
+  and rejected substrate examples for scalar, variant, footprint, channel, and
+  invariant law.
+
 ## Vocabulary
 
 | Term | Meaning |
@@ -1136,22 +1153,22 @@ v1/v1.1 boundary.
 
 ### Phase 0: Design Lock
 
-- [ ] WLAW-001 Publish the Law IR v1 schema note as a closed, versioned model.
-- [ ] WLAW-002 Define the subject coordinate grammar for schema and law
+- [x] WLAW-001 Publish the Law IR v1 schema note as a closed, versioned model.
+- [x] WLAW-002 Define the subject coordinate grammar for schema and law
       subjects.
-- [ ] WLAW-003 Define the non-shape law registry model for resources,
+- [x] WLAW-003 Define the non-shape law registry model for resources,
       verifiers, channels, and capability domains.
-- [ ] WLAW-004 Define the law file discovery rules and explicit
+- [x] WLAW-004 Define the law file discovery rules and explicit
       schema-hash-anchor rules.
-- [ ] WLAW-005 Define canonicalization rules for ordering, defaults, comments,
+- [x] WLAW-005 Define canonicalization rules for ordering, defaults, comments,
       source spans, set-like arrays, and order-sensitive arrays.
-- [ ] WLAW-006 Define the v1 diagnostic catalog and stable error codes.
-- [ ] WLAW-007 Define active versus draft law semantics.
-- [ ] WLAW-008 Define the v1 fixture corpus for accepted and rejected law
+- [x] WLAW-006 Define the v1 diagnostic catalog and stable error codes.
+- [x] WLAW-007 Define active versus draft law semantics.
+- [x] WLAW-008 Define the v1 fixture corpus for accepted and rejected law
       documents.
-- [ ] WLAW-009 Add the first `weslaw/v1` examples for scalar, variant,
+- [x] WLAW-009 Add the first `weslaw/v1` examples for scalar, variant,
       footprint, channel, and typed invariant law.
-- [ ] WLAW-010 Update docs and changelog with the locked v1 substrate scope.
+- [x] WLAW-010 Update docs and changelog with the locked v1 substrate scope.
 
 ### Phase 1: Law Loader And Typed IR
 

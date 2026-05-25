@@ -45,7 +45,12 @@ Current packets:
 - [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md): Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters
 - [`0019`](./0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md): `weslaw`
   semantic Law IR for contract bundles, strict binding, canonical law hashes,
-  semantic diffs, and deferred SDL+ syntax
+  semantic diffs, and deferred SDL+ syntax, including the v1
+  [Law IR](./0019-weslaw-semantic-law-ir/LAW_IR_V1.md),
+  [coordinate and registry](./0019-weslaw-semantic-law-ir/COORDINATES_AND_REGISTRIES.md),
+  and
+  [canonicalization and diagnostic](./0019-weslaw-semantic-law-ir/CANONICALIZATION_AND_DIAGNOSTICS.md)
+  substrate notes
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

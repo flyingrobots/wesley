@@ -337,6 +337,11 @@ Working budget: **75 slices**. The first scope checkpoint is `WLAW-050`; do
 not treat slices `WLAW-051` through `WLAW-075` as locked until the checkpoint
 re-estimates the v1/v1.1 boundary.
 
+Status: **10 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+substrate docs, coordinate and registry grammar, canonicalization and
+diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
+examples.
+
 ## Tensions
 
 - **Rust Native Discipline**: The easy mistake after deletion is to recreate
@@ -382,15 +387,13 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The next pulls after this drift check are:
+The next pulls after this PR are:
 
-1. `WLAW-001` through `WLAW-010`: lock the Law IR v1 substrate, coordinate
-   grammar, canonicalization rules, diagnostics, fixture corpus, and examples.
-2. `WLAW-011` through `WLAW-020`: add the typed Law IR and YAML loader.
-3. `WLAW-021` through `WLAW-035`: add strict schema-bound law validation.
-4. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
+1. `WLAW-011` through `WLAW-020`: add the typed Law IR and YAML loader.
+2. `WLAW-021` through `WLAW-035`: add strict schema-bound law validation.
+3. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
    bundle manifest fields.
-5. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
+4. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
    for the required drift checkpoint.
 
 ## Post-Retirement Freestyle Slice Log

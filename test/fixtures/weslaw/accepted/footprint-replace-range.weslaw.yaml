@@ -1,0 +1,64 @@
+apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:10df890a24bbcf0e9fd6c9a06ab461972f7565798ced88d06c45c470e1840c96
+  source: ../contract-bundle-shape.graphql
+registries:
+  resources:
+    - id: AstState
+      owner: jedit
+      kind: forbidden-runtime-domain
+    - id: Diagnostics
+      owner: jedit
+      kind: forbidden-runtime-domain
+    - id: GitWitness
+      owner: jedit
+      kind: forbidden-runtime-domain
+    - id: UiState
+      owner: jedit
+      kind: forbidden-runtime-domain
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    tags: [jedit, footprint]
+    reads: [Anchor, BufferWorldline, RopeBranch, RopeHead, RopeLeaf, TextBlob]
+    writes: [BufferWorldline]
+    creates: [RopeBranch, RopeHead, RopeLeaf, TextBlob, Tick, TickReceipt]
+    forbids: [AstState, Diagnostics, GitWitness, UiState]
+    slots:
+      - name: worldline
+        kind: BufferWorldline
+        bindFromArg: input.worldlineId
+        access: [read, write]
+      - name: baseHead
+        kind: RopeHead
+        bindFromArg: input.baseHeadId
+        access: [read]
+    closures:
+      - name: touchedRope
+        fromSlot: baseHead
+        operator: ropeRangeClosure
+        argBindings: [input.startByte, input.endByte]
+        reads: [RopeBranch, RopeLeaf, TextBlob]
+        cardinality: many
+      - name: affectedAnchors
+        fromSlot: worldline
+        operator: anchorsIntersectingEditWindow
+        argBindings: [baseHead, input.startByte, input.endByte]
+        reads: [Anchor]
+        cardinality: many
+    createSlots:
+      - name: newBlob
+        kind: TextBlob
+        cardinality: optional
+      - name: nextHead
+        kind: RopeHead
+      - name: tick
+        kind: Tick
+      - name: receipt
+        kind: TickReceipt
+    updates:
+      - slot: worldline
+        fields: [canonicalHeadId]

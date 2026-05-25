@@ -1,0 +1,15 @@
+apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  source: ../contract-bundle-shape.graphql
+laws:
+  - id: echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+      minInclusive: 1
+      maxInclusive: 4294967295
+      forbids: [silentGraphQLIntNarrowing]
