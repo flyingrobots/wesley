@@ -7,7 +7,9 @@ and where the line sits between generic compiler facts and domain-owned law.
 
 For runnable commands, use [ENTRYPOINTS.md](./ENTRYPOINTS.md). For the ultimate
 runtime-optic direction, use [NORTHSTAR.md](./NORTHSTAR.md). For the current
-direction and active tensions, use [BEARING.md](./BEARING.md).
+direction and active tensions, use [BEARING.md](./BEARING.md). For the formal
+semantic-law design, use
+[`weslaw` Semantic Law IR](./design/0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md).
 
 ## Contract Substrate
 
@@ -75,6 +77,10 @@ The generic claim is bounded: Wesley can preserve the root operation, argument
 type, result type, directive names, and directive arguments. An Echo-owned
 extension can then decide whether `@wes_footprint` is honest, sufficient, or
 admissible for Echo runtime law.
+
+The `weslaw` design promotes this preserved law-shaped data into a future
+typed Law IR so semantic laws can be bound, hashed, diffed, and explained
+without making generic Wesley the owner of target runtime meaning.
 
 For runtime optic artifacts, `@wes_footprint` is admission-facing v0 metadata.
 It is legal only on the selected root field, must declare `reads` and `writes`
