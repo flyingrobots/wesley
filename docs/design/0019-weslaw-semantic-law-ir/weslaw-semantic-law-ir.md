@@ -774,6 +774,27 @@ The codec owns:
 - null omission rules;
 - array semantics.
 
+### Contract Bundle Manifest
+
+After strict binding succeeds, Wesley emits a versioned
+`wesley.contract-bundle-manifest/v1` manifest. The manifest records:
+
+- `schemaHash`: the active canonical Shape IR hash, prefixed with `sha256:`;
+- `lawHash`: the semantic active Law IR hash;
+- `lawDocumentHash`: a provenance-bearing hash that includes retained
+  rationale and document-level provenance;
+- `profileHash`: the active policy/profile hash, currently the known empty
+  profile hash until Policy IR exists;
+- `bundleHash`: a canonical hash over schema, law, profile, codec, compiler,
+  and compiler-version identity;
+- `lawIrCodec` and `bundleHashCodec`: explicit canonicalization codec ids;
+- `compiler` and `compilerVersion`: the Wesley compiler identity that built
+  the manifest;
+- `lawEntryCount`: the number of active law entries bound into the bundle.
+
+The public manifest shape is published at
+`schemas/wesley-contract-bundle-manifest-v1.schema.json`.
+
 ### Published Schemas
 
 `weslaw` is a compiler contract, not an undocumented Rust struct. Every
@@ -781,11 +802,12 @@ externally consumed representation needs a schema artifact.
 
 Initial schema artifacts:
 
-| Artifact                                 | Status                        | Purpose                                                    |
-| ---------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
-| `schemas/wesley-law-ir-v1.schema.json`   | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON.                      |
-| `schemas/weslaw-v1.schema.json`          | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
-| `schemas/wesley-law-diff-v1.schema.json` | diff phase requirement        | JSON Schema for machine-readable law diff events.          |
+| Artifact                                                  | Status                        | Purpose                                                    |
+| --------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
+| `schemas/wesley-law-ir-v1.schema.json`                    | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON.                      |
+| `schemas/weslaw-v1.schema.json`                           | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
+| `schemas/wesley-contract-bundle-manifest-v1.schema.json`  | v1 implementation requirement | JSON Schema for emitted contract bundle manifests.         |
+| `schemas/wesley-law-diff-v1.schema.json`                  | diff phase requirement        | JSON Schema for machine-readable law diff events.          |
 
 These schemas validate public structure. They are not semantic hash inputs.
 Changing comments, descriptions, `$id`, or schema annotations must not change
@@ -1247,23 +1269,23 @@ v1/v1.1 boundary.
 
 ### Phase 3: Canonicalization And Hashes
 
-- [ ] WLAW-036 Implement canonical Law IR serialization.
-- [ ] WLAW-037 Compute `lawHash` from active semantic Law IR only.
-- [ ] WLAW-038 Exclude comments, source spans, and rationale prose from
+- [x] WLAW-036 Implement canonical Law IR serialization.
+- [x] WLAW-037 Compute `lawHash` from active semantic Law IR only.
+- [x] WLAW-038 Exclude comments, source spans, and rationale prose from
       `lawHash`.
-- [ ] WLAW-039 Compute optional `lawDocumentHash` for provenance-bearing
+- [x] WLAW-039 Compute optional `lawDocumentHash` for provenance-bearing
       documents.
-- [ ] WLAW-040 Add canonicalization fixtures for key order and file-order
+- [x] WLAW-040 Add canonicalization fixtures for key order and file-order
       independence.
-- [ ] WLAW-041 Add canonicalization fixtures for omitted defaults versus
+- [x] WLAW-041 Add canonicalization fixtures for omitted defaults versus
       explicit defaults.
-- [ ] WLAW-042 Add canonicalization fixtures for set-like and order-sensitive
+- [x] WLAW-042 Add canonicalization fixtures for set-like and order-sensitive
       arrays.
-- [ ] WLAW-043 Add bundle manifest fields for `schemaHash`, `lawHash`,
+- [x] WLAW-043 Add bundle manifest fields for `schemaHash`, `lawHash`,
       `profileHash`, and `bundleHash`.
-- [ ] WLAW-044 Embed schema and law hash constants in one generated artifact
+- [x] WLAW-044 Embed schema and law hash constants in one generated artifact
       path.
-- [ ] WLAW-045 Update docs and changelog for canonical law hash behavior.
+- [x] WLAW-045 Update docs and changelog for canonical law hash behavior.
 
 ### Phase 4: Semantic Diffs
 
@@ -1339,10 +1361,10 @@ v1/v1.1 boundary.
    footprint, channel, and typed invariant law prove the model?
 3. Which known directive family should be lowered first?
 4. Which target should receive the first generated scalar/variant validators?
-5. Should bundle manifests record both `compilerVersion` and canonicalization
-   codec version separately?
-6. Should `lawDocumentHash` be emitted by default or only when provenance
-   output is requested?
+
+Resolved in `WLAW-036` through `WLAW-045`: bundle manifests record compiler
+identity, compiler version, Law IR codec, and bundle-hash codec separately;
+`lawDocumentHash` is emitted by default when a validated manifest is built.
 
 ## Sensei Rule
 

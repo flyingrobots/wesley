@@ -75,8 +75,8 @@ wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> [--format text|json|summary] [--exit-code]
 wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--exit-code]
 wesley law validate --schema <schema.graphql> --law <law.weslaw.yaml> [--json]
-wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
-wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
+wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
+wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```

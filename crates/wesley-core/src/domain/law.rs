@@ -10,7 +10,10 @@ use thiserror::Error;
 use yaml_rust2::yaml::Hash as Mapping;
 use yaml_rust2::{Yaml, YamlLoader};
 
-use super::ir::{to_canonical_json, Field, TypeDefinition, TypeKind, WesleyIR};
+use super::ir::{
+    compute_content_hash, compute_registry_hash, to_canonical_json, Field, TypeDefinition,
+    TypeKind, WesleyIR,
+};
 use super::operation::{OperationType, SchemaOperation};
 
 /// Authored `weslaw` document API version accepted by the v1 loader.
@@ -21,6 +24,16 @@ pub const WESLEY_LAW_IR_API_VERSION: &str = "wesley.law-ir/v1";
 
 /// Canonical JSON codec name for future Law IR hashing.
 pub const WESLEY_LAW_IR_CANONICAL_JSON_CODEC: &str = "wesley.law-ir.canonical-json.v1";
+
+/// Contract bundle manifest API version emitted by the v1 hash path.
+pub const WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION: &str = "wesley.contract-bundle-manifest/v1";
+
+/// Contract bundle canonical hash input codec.
+pub const WESLEY_CONTRACT_BUNDLE_HASH_INPUT_CODEC: &str =
+    "wesley.contract-bundle.hash-input.canonical-json.v1";
+
+/// Empty policy/profile API version used until Policy IR exists.
+pub const WESLEY_EMPTY_PROFILE_API_VERSION: &str = "wesley.policy-profile.empty/v1";
 
 /// Diagnostic codes emitted by the `weslaw/v1` structure loader.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -498,6 +511,45 @@ pub struct LawBindingReportV1 {
     pub bound_entry_count: usize,
 }
 
+/// Contract bundle manifest emitted after schema-bound Law IR validation.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ContractBundleManifestV1 {
+    /// Manifest API version.
+    pub api_version: String,
+    /// Canonical Shape IR hash, prefixed with `sha256:`.
+    pub schema_hash: String,
+    /// Canonical active semantic Law IR hash.
+    pub law_hash: String,
+    /// Optional provenance-bearing law document hash.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub law_document_hash: Option<String>,
+    /// Canonical policy/profile hash. v1 uses the known empty profile.
+    pub profile_hash: String,
+    /// Hash over schema, law, profile, compiler, and codec identities.
+    pub bundle_hash: String,
+    /// Law IR semantic byte codec.
+    pub law_ir_codec: String,
+    /// Bundle hash input codec.
+    pub bundle_hash_codec: String,
+    /// Compiler crate identity.
+    pub compiler: String,
+    /// Compiler crate version.
+    pub compiler_version: String,
+    /// Bound active Law IR entry count.
+    pub law_entry_count: usize,
+}
+
+/// Hashes computed from a bound active Law IR document.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct LawHashSetV1 {
+    /// Canonical active semantic Law IR hash.
+    pub law_hash: String,
+    /// Provenance-bearing law document hash.
+    pub law_document_hash: String,
+}
+
 /// Loads an authored `weslaw/v1` YAML document into normalized Law IR v1.
 pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
     let documents = YamlLoader::load_from_str(source)
@@ -576,6 +628,70 @@ pub fn to_canonical_law_ir_json(value: &LawIrV1) -> Result<String, serde_json::E
     to_canonical_json(&normalized)
 }
 
+/// Serializes canonical active semantic Law IR v1 bytes for `lawHash`.
+///
+/// The semantic form excludes authoring provenance such as `schemaSource`,
+/// resource notes, entry status, and rationale prose. It sorts set-like arrays,
+/// materializes v1 defaults, and preserves order-sensitive arrays such as
+/// channel messages.
+pub fn to_semantic_law_ir_json(value: &LawIrV1) -> Result<String, WeslawError> {
+    let semantic = semantic_law_ir_value(value)?;
+    to_canonical_json(&semantic).map_err(canonicalization_error)
+}
+
+/// Computes the `sha256:<hex>` hash over canonical active semantic Law IR v1.
+pub fn compute_law_hash_v1(value: &LawIrV1) -> Result<String, WeslawError> {
+    Ok(prefixed_sha256(&to_semantic_law_ir_json(value)?))
+}
+
+/// Computes law hashes from active semantic and provenance-bearing Law IR bytes.
+pub fn compute_law_hash_set_v1(value: &LawIrV1) -> Result<LawHashSetV1, WeslawError> {
+    let law_hash = compute_law_hash_v1(value)?;
+    let document_json = to_canonical_law_ir_json(value).map_err(canonicalization_error)?;
+    let law_document_hash = prefixed_sha256(&document_json);
+
+    Ok(LawHashSetV1 {
+        law_hash,
+        law_document_hash,
+    })
+}
+
+/// Builds the first contract bundle manifest after strict law binding succeeds.
+pub fn build_contract_bundle_manifest_v1(
+    law_ir: &LawIrV1,
+    schema_ir: &WesleyIR,
+    operations: &[SchemaOperation],
+) -> Result<ContractBundleManifestV1, WeslawError> {
+    let schema_hash =
+        prefixed_sha256_hex(&compute_registry_hash(schema_ir).map_err(canonicalization_error)?);
+    let binding = validate_law_ir_v1_bindings(law_ir, schema_ir, operations, &schema_hash)?;
+    let law_hashes = compute_law_hash_set_v1(law_ir)?;
+    let profile_hash = empty_profile_hash_v1()?;
+    let bundle_hash = compute_bundle_hash_v1(
+        &schema_hash,
+        &law_hashes.law_hash,
+        &profile_hash,
+        WESLEY_LAW_IR_CANONICAL_JSON_CODEC,
+        WESLEY_CONTRACT_BUNDLE_HASH_INPUT_CODEC,
+        "wesley-core",
+        env!("CARGO_PKG_VERSION"),
+    )?;
+
+    Ok(ContractBundleManifestV1 {
+        api_version: WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION.to_string(),
+        schema_hash,
+        law_hash: law_hashes.law_hash,
+        law_document_hash: Some(law_hashes.law_document_hash),
+        profile_hash,
+        bundle_hash,
+        law_ir_codec: WESLEY_LAW_IR_CANONICAL_JSON_CODEC.to_string(),
+        bundle_hash_codec: WESLEY_CONTRACT_BUNDLE_HASH_INPUT_CODEC.to_string(),
+        compiler: "wesley-core".to_string(),
+        compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+        law_entry_count: binding.bound_entry_count,
+    })
+}
+
 /// Validates active Law IR v1 entries against Shape IR and root operations.
 ///
 /// This is the strict binding gate for `WLAW-021` through `WLAW-035`: the law
@@ -635,6 +751,361 @@ pub fn validate_law_ir_v1_bindings(
 
 fn sort_law_ir_entries(entries: &mut [LawEntryV1]) {
     entries.sort_by(|left, right| left.id.cmp(&right.id));
+}
+
+fn semantic_law_ir_value(value: &LawIrV1) -> Result<serde_json::Value, WeslawError> {
+    let entries = value
+        .entries
+        .iter()
+        .map(semantic_entry_value)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(serde_json::json!({
+        "apiVersion": value.api_version,
+        "family": value.family,
+        "schemaHash": value.schema_hash,
+        "registries": semantic_registry_value(&value.registries)?,
+        "entries": entries,
+    }))
+}
+
+fn semantic_registry_value(
+    registries: &LawRegistrySetV1,
+) -> Result<serde_json::Value, WeslawError> {
+    let mut resources = registries
+        .resources
+        .iter()
+        .map(|resource| {
+            Ok(serde_json::json!({
+                "id": resource.id,
+                "owner": resource.owner,
+                "kind": resource.kind,
+            }))
+        })
+        .collect::<Result<Vec<_>, WeslawError>>()?;
+    sort_values_by_string_field(&mut resources, "id", "$.registries.resources")?;
+
+    let mut verifiers = registries
+        .verifiers
+        .iter()
+        .map(|verifier| {
+            Ok(serde_json::json!({
+                "id": verifier.id,
+                "owner": verifier.owner,
+                "inputContracts": sorted_unique_strings(
+                    &verifier.input_contracts,
+                    "$.registries.verifiers.inputContracts",
+                )?,
+            }))
+        })
+        .collect::<Result<Vec<_>, WeslawError>>()?;
+    sort_values_by_string_field(&mut verifiers, "id", "$.registries.verifiers")?;
+
+    let mut channels = registries
+        .channels
+        .iter()
+        .map(|channel| {
+            Ok(serde_json::json!({
+                "name": channel.name,
+                "version": channel.version,
+                "carrier": channel.carrier,
+            }))
+        })
+        .collect::<Result<Vec<_>, WeslawError>>()?;
+    channels.sort_by(|left, right| {
+        let left_key = (
+            string_field(left, "name").unwrap_or_default(),
+            u64_field(left, "version").unwrap_or_default(),
+        );
+        let right_key = (
+            string_field(right, "name").unwrap_or_default(),
+            u64_field(right, "version").unwrap_or_default(),
+        );
+        left_key.cmp(&right_key)
+    });
+
+    Ok(serde_json::json!({
+        "resources": resources,
+        "verifiers": verifiers,
+        "channels": channels,
+    }))
+}
+
+fn semantic_entry_value(entry: &LawEntryV1) -> Result<serde_json::Value, WeslawError> {
+    Ok(serde_json::json!({
+        "id": entry.id,
+        "kind": law_kind_text(entry.kind),
+        "subject": entry.subject,
+        "tags": sorted_unique_strings(&entry.tags, "$.entries.tags")?,
+        "body": semantic_body_value(entry)?,
+    }))
+}
+
+fn semantic_body_value(entry: &LawEntryV1) -> Result<serde_json::Value, WeslawError> {
+    match &entry.body {
+        LawEntryBodyV1::ScalarSemantics(body) => semantic_scalar_body_value(body),
+        LawEntryBodyV1::VariantLaw(body) => semantic_variant_body_value(body),
+        LawEntryBodyV1::FootprintLaw(body) => semantic_footprint_body_value(body),
+        LawEntryBodyV1::ChannelLaw(body) => semantic_channel_body_value(body),
+        LawEntryBodyV1::InvariantLaw(body) => {
+            serde_json::to_value(body).map_err(canonicalization_error)
+        }
+    }
+}
+
+fn semantic_scalar_body_value(
+    body: &ScalarSemanticsLawV1,
+) -> Result<serde_json::Value, WeslawError> {
+    let mut object = serde_json::Map::new();
+    object.insert(
+        "representation".to_string(),
+        serde_json::to_value(body.representation).map_err(canonicalization_error)?,
+    );
+    if let Some(min) = body.min_inclusive {
+        object.insert("minInclusive".to_string(), min.into());
+    }
+    if let Some(max) = body.max_inclusive {
+        object.insert("maxInclusive".to_string(), max.into());
+    }
+    if let Some(ordering) = body.ordering {
+        object.insert(
+            "ordering".to_string(),
+            serde_json::to_value(ordering).map_err(canonicalization_error)?,
+        );
+    }
+    if let Some(scope) = &body.scope {
+        object.insert("scope".to_string(), scope.clone().into());
+    }
+    let forbids = body
+        .forbids
+        .iter()
+        .map(|item| serde_json::to_value(item).map_err(canonicalization_error))
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .map(|value| {
+            value
+                .as_str()
+                .expect("forbidden interpretation should serialize as a string")
+                .to_string()
+        })
+        .collect::<Vec<_>>();
+    object.insert(
+        "forbids".to_string(),
+        sorted_unique_strings(&forbids, "$.entries.body.forbids")?.into(),
+    );
+    Ok(serde_json::Value::Object(object))
+}
+
+fn semantic_variant_body_value(body: &VariantLawV1) -> Result<serde_json::Value, WeslawError> {
+    let mut cases = body
+        .cases
+        .iter()
+        .map(|case| {
+            Ok(serde_json::json!({
+                "value": case.value,
+                "requires": sorted_unique_strings(&case.requires, "$.entries.body.cases.requires")?,
+                "forbids": sorted_unique_strings(&case.forbids, "$.entries.body.cases.forbids")?,
+            }))
+        })
+        .collect::<Result<Vec<_>, WeslawError>>()?;
+    sort_values_by_string_field(&mut cases, "value", "$.entries.body.cases")?;
+
+    Ok(serde_json::json!({
+        "discriminator": {
+            "field": body.discriminator.field,
+            "enum": body.discriminator.r#enum,
+        },
+        "cases": cases,
+    }))
+}
+
+fn semantic_footprint_body_value(body: &FootprintLawV1) -> Result<serde_json::Value, WeslawError> {
+    let mut slots = body
+        .slots
+        .iter()
+        .map(|slot| {
+            Ok(serde_json::json!({
+                "name": slot.name,
+                "kind": slot.kind,
+                "bindFromArg": slot.bind_from_arg,
+                "access": sorted_unique_strings(&slot.access, "$.entries.body.slots.access")?,
+            }))
+        })
+        .collect::<Result<Vec<_>, WeslawError>>()?;
+    sort_values_by_string_field(&mut slots, "name", "$.entries.body.slots")?;
+
+    let mut closures = body
+        .closures
+        .iter()
+        .map(|closure| {
+            Ok(serde_json::json!({
+                "name": closure.name,
+                "fromSlot": closure.from_slot,
+                "operator": closure.operator,
+                "argBindings": closure.arg_bindings,
+                "reads": sorted_unique_strings(&closure.reads, "$.entries.body.closures.reads")?,
+                "cardinality": closure.cardinality,
+            }))
+        })
+        .collect::<Result<Vec<_>, WeslawError>>()?;
+    sort_values_by_string_field(&mut closures, "name", "$.entries.body.closures")?;
+
+    let mut create_slots = body
+        .create_slots
+        .iter()
+        .map(|slot| {
+            Ok(serde_json::json!({
+                "name": slot.name,
+                "kind": slot.kind,
+                "cardinality": slot.cardinality.unwrap_or(FootprintCardinalityV1::One),
+            }))
+        })
+        .collect::<Result<Vec<_>, WeslawError>>()?;
+    sort_values_by_string_field(&mut create_slots, "name", "$.entries.body.createSlots")?;
+
+    let mut updates = body
+        .updates
+        .iter()
+        .map(|update| {
+            Ok(serde_json::json!({
+                "slot": update.slot,
+                "fields": sorted_unique_strings(&update.fields, "$.entries.body.updates.fields")?,
+            }))
+        })
+        .collect::<Result<Vec<_>, WeslawError>>()?;
+    sort_values_by_string_field(&mut updates, "slot", "$.entries.body.updates")?;
+
+    Ok(serde_json::json!({
+        "reads": sorted_unique_strings(&body.reads, "$.entries.body.reads")?,
+        "writes": sorted_unique_strings(&body.writes, "$.entries.body.writes")?,
+        "creates": sorted_unique_strings(&body.creates, "$.entries.body.creates")?,
+        "forbids": sorted_unique_strings(&body.forbids, "$.entries.body.forbids")?,
+        "slots": slots,
+        "closures": closures,
+        "createSlots": create_slots,
+        "updates": updates,
+    }))
+}
+
+fn semantic_channel_body_value(body: &ChannelLawV1) -> Result<serde_json::Value, WeslawError> {
+    let mut object = serde_json::Map::new();
+    object.insert("ordered".to_string(), body.ordered.into());
+    object.insert("version".to_string(), body.version.into());
+    if let Some(compatibility) = &body.compatibility {
+        object.insert(
+            "compatibility".to_string(),
+            serde_json::to_value(compatibility).map_err(canonicalization_error)?,
+        );
+    }
+    object.insert(
+        "messages".to_string(),
+        serde_json::to_value(&body.messages).map_err(canonicalization_error)?,
+    );
+    Ok(serde_json::Value::Object(object))
+}
+
+fn compute_bundle_hash_v1(
+    schema_hash: &str,
+    law_hash: &str,
+    profile_hash: &str,
+    law_ir_codec: &str,
+    bundle_hash_codec: &str,
+    compiler: &str,
+    compiler_version: &str,
+) -> Result<String, WeslawError> {
+    let input = serde_json::json!({
+        "schemaHash": schema_hash,
+        "lawHash": law_hash,
+        "profileHash": profile_hash,
+        "lawIrCodec": law_ir_codec,
+        "bundleHashCodec": bundle_hash_codec,
+        "compiler": compiler,
+        "compilerVersion": compiler_version,
+    });
+    let bytes = to_canonical_json(&input).map_err(canonicalization_error)?;
+    Ok(prefixed_sha256(&bytes))
+}
+
+fn empty_profile_hash_v1() -> Result<String, WeslawError> {
+    let input = serde_json::json!({
+        "apiVersion": WESLEY_EMPTY_PROFILE_API_VERSION,
+        "entries": [],
+    });
+    let bytes = to_canonical_json(&input).map_err(canonicalization_error)?;
+    Ok(prefixed_sha256(&bytes))
+}
+
+fn sorted_unique_strings(values: &[String], path: &str) -> Result<Vec<String>, WeslawError> {
+    let mut sorted = values.to_vec();
+    sorted.sort();
+    if let Some((duplicate, _)) = sorted
+        .windows(2)
+        .find_map(|window| (window[0] == window[1]).then(|| (&window[0], &window[1])))
+    {
+        return Err(WeslawError::at_path(
+            WeslawDiagnosticCode::Conflict,
+            path,
+            format!("duplicate set-like value {duplicate}"),
+        ));
+    }
+    Ok(sorted)
+}
+
+fn sort_values_by_string_field(
+    values: &mut [serde_json::Value],
+    field: &str,
+    path: &str,
+) -> Result<(), WeslawError> {
+    values.sort_by(|left, right| {
+        string_field(left, field)
+            .unwrap_or_default()
+            .cmp(string_field(right, field).unwrap_or_default())
+    });
+    if let Some(duplicate) = values.windows(2).find_map(|window| {
+        let left = string_field(&window[0], field)?;
+        let right = string_field(&window[1], field)?;
+        (left == right).then_some(left)
+    }) {
+        return Err(WeslawError::at_path(
+            WeslawDiagnosticCode::Conflict,
+            path,
+            format!("duplicate set-like key {duplicate}"),
+        ));
+    }
+    Ok(())
+}
+
+fn string_field<'a>(value: &'a serde_json::Value, field: &str) -> Option<&'a str> {
+    value.get(field).and_then(serde_json::Value::as_str)
+}
+
+fn u64_field(value: &serde_json::Value, field: &str) -> Option<u64> {
+    value.get(field).and_then(serde_json::Value::as_u64)
+}
+
+fn law_kind_text(kind: LawKindV1) -> &'static str {
+    match kind {
+        LawKindV1::ScalarSemantics => "scalarSemantics",
+        LawKindV1::VariantLaw => "variantLaw",
+        LawKindV1::FootprintLaw => "footprintLaw",
+        LawKindV1::ChannelLaw => "channelLaw",
+        LawKindV1::InvariantLaw => "invariantLaw",
+    }
+}
+
+fn prefixed_sha256(value: &str) -> String {
+    prefixed_sha256_hex(&compute_content_hash(value))
+}
+
+fn prefixed_sha256_hex(value: &str) -> String {
+    format!("sha256:{value}")
+}
+
+fn canonicalization_error(error: impl std::fmt::Display) -> WeslawError {
+    WeslawError::new(
+        WeslawDiagnosticCode::InvalidDocument,
+        format!("Law IR canonicalization failed: {error}"),
+    )
 }
 
 struct BindingContext<'a> {

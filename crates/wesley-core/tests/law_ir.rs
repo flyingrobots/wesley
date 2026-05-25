@@ -4,10 +4,13 @@ use std::path::{Path, PathBuf};
 use yaml_rust2::{Yaml, YamlLoader};
 
 use wesley_core::{
+    build_contract_bundle_manifest_v1, compute_law_hash_set_v1, compute_law_hash_v1,
     compute_registry_hash, list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl,
-    to_canonical_law_ir_json, validate_law_ir_v1_bindings, FootprintCardinalityV1, LawEntryBodyV1,
-    LawKindV1, PredicateV1, ScalarForbiddenInterpretationV1, ScalarRepresentationV1,
-    WeslawDiagnosticCode, WESLEY_LAW_IR_API_VERSION,
+    to_canonical_law_ir_json, to_semantic_law_ir_json, validate_law_ir_v1_bindings,
+    FootprintCardinalityV1, LawEntryBodyV1, LawKindV1, PredicateV1,
+    ScalarForbiddenInterpretationV1, ScalarRepresentationV1, WeslawDiagnosticCode,
+    WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION, WESLEY_LAW_IR_API_VERSION,
+    WESLEY_LAW_IR_CANONICAL_JSON_CODEC,
 };
 
 fn repo_path(path: &str) -> PathBuf {
@@ -266,6 +269,222 @@ fn law_ir_v1_serializes_as_versioned_canonical_json() {
         json,
         wesley_core::to_canonical_json(&parsed).expect("parsed value should re-canonicalize")
     );
+}
+
+#[test]
+fn law_hash_uses_semantic_canonical_json_and_excludes_rationale() {
+    let common_header = r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+"#;
+    let first = format!(
+        r#"{common_header}  source: ../first.graphql
+registries:
+  resources:
+    - id: Diagnostics
+      owner: jedit
+      kind: forbidden-runtime-domain
+      notes: first note
+laws:
+  - id: z.echo.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    tags: [scalar, echo]
+    rationale: First rationale.
+    semantics:
+      representation: integer
+      forbids: [silentGraphQLIntNarrowing]
+  - id: a.jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [BufferWorldline, TextBlob]
+"#
+    );
+    let second = format!(
+        r#"{common_header}  source: ../second.graphql
+registries:
+  resources:
+    - kind: forbidden-runtime-domain
+      owner: jedit
+      id: Diagnostics
+      notes: second note
+laws:
+  - id: a.jedit.op.replaceRangeAsTick.footprint
+    kind: footprintLaw
+    status: active
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [TextBlob, BufferWorldline]
+  - id: z.echo.scalar.positiveInt.u32-positive
+    kind: scalarSemantics
+    status: active
+    subject: scalar:PositiveInt
+    rationale: Different prose.
+    tags: [echo, scalar]
+    semantics:
+      forbids: [silentGraphQLIntNarrowing]
+      representation: integer
+"#
+    );
+
+    let first_ir = load_weslaw_yaml(&first).expect("first law should lower");
+    let second_ir = load_weslaw_yaml(&second).expect("second law should lower");
+
+    assert_eq!(
+        compute_law_hash_v1(&first_ir).expect("first law hash should compute"),
+        compute_law_hash_v1(&second_ir).expect("second law hash should compute")
+    );
+    assert_ne!(
+        compute_law_hash_set_v1(&first_ir)
+            .expect("first law document hash should compute")
+            .law_document_hash,
+        compute_law_hash_set_v1(&second_ir)
+            .expect("second law document hash should compute")
+            .law_document_hash
+    );
+
+    let semantic_json = to_semantic_law_ir_json(&first_ir).expect("semantic JSON should compute");
+    assert!(!semantic_json.contains("rationale"));
+    assert!(!semantic_json.contains("schemaSource"));
+    assert!(!semantic_json.contains("notes"));
+    assert!(!semantic_json.contains("status"));
+}
+
+#[test]
+fn law_hash_materializes_defaults_and_preserves_channel_message_order() {
+    let omitted_defaults = load_weslaw_yaml(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    closures:
+      - name: touchedRope
+        fromSlot: baseHead
+        operator: ropeRangeClosure
+    createSlots:
+      - name: nextHead
+        kind: RopeHead
+"#,
+    )
+    .expect("omitted defaults should lower");
+    let explicit_defaults = load_weslaw_yaml(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    createSlots:
+      - name: nextHead
+        kind: RopeHead
+        cardinality: one
+    closures:
+      - name: touchedRope
+        fromSlot: baseHead
+        operator: ropeRangeClosure
+        cardinality: one
+"#,
+    )
+    .expect("explicit defaults should lower");
+
+    assert_eq!(
+        compute_law_hash_v1(&omitted_defaults).expect("omitted hash should compute"),
+        compute_law_hash_v1(&explicit_defaults).expect("explicit hash should compute")
+    );
+
+    let ordered_channel = load_weslaw_yaml(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+laws:
+  - id: warp-ttd.channel.protocol
+    status: active
+    kind: channelLaw
+    subject: channel:ttd.protocol@4
+    ordered: true
+    version: 4
+    messages:
+      - field: hostHello
+        type: HostHello
+      - field: laneCatalog
+        type: LaneCatalog
+"#,
+    )
+    .expect("ordered channel should lower");
+    let reversed_channel = load_weslaw_yaml(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+laws:
+  - id: warp-ttd.channel.protocol
+    status: active
+    kind: channelLaw
+    subject: channel:ttd.protocol@4
+    ordered: true
+    version: 4
+    messages:
+      - field: laneCatalog
+        type: LaneCatalog
+      - field: hostHello
+        type: HostHello
+"#,
+    )
+    .expect("reversed channel should lower");
+
+    assert_ne!(
+        compute_law_hash_v1(&ordered_channel).expect("ordered hash should compute"),
+        compute_law_hash_v1(&reversed_channel).expect("reversed hash should compute")
+    );
+}
+
+#[test]
+fn contract_bundle_manifest_records_schema_law_profile_and_bundle_hashes() {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let law_ir = load_weslaw_yaml(&read_fixture(
+        "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+    ))
+    .expect("fixture should lower");
+
+    let manifest = build_contract_bundle_manifest_v1(&law_ir, &ir, &operations)
+        .expect("bundle manifest should build");
+
+    assert_eq!(
+        manifest.api_version,
+        WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION
+    );
+    assert_eq!(manifest.schema_hash, schema_hash);
+    assert!(manifest.law_hash.starts_with("sha256:"));
+    assert!(manifest.profile_hash.starts_with("sha256:"));
+    assert!(manifest.bundle_hash.starts_with("sha256:"));
+    assert_eq!(manifest.law_ir_codec, WESLEY_LAW_IR_CANONICAL_JSON_CODEC);
+    assert_eq!(manifest.law_entry_count, 1);
+    assert!(manifest.law_document_hash.is_some());
+
+    let schema: serde_json::Value = serde_json::from_str(&read_fixture(
+        "schemas/wesley-contract-bundle-manifest-v1.schema.json",
+    ))
+    .expect("contract bundle manifest schema should parse");
+    let validator =
+        jsonschema::validator_for(&schema).expect("contract bundle manifest schema should compile");
+    let manifest_json =
+        serde_json::to_value(&manifest).expect("contract bundle manifest should serialize");
+    let errors = validator
+        .iter_errors(&manifest_json)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(errors.is_empty(), "{errors:#?}");
 }
 
 #[test]

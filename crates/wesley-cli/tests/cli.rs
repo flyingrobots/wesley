@@ -57,6 +57,51 @@ fn law_validate_accepts_schema_bound_weslaw() {
 }
 
 #[test]
+fn law_validate_json_emits_bundle_manifest_hashes() {
+    let output = wesley()
+        .args(["law", "validate", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["boundEntryCount"], 1);
+    assert!(report["schemaHash"]
+        .as_str()
+        .expect("schema hash should be a string")
+        .starts_with("sha256:"));
+    assert!(report["lawHash"]
+        .as_str()
+        .expect("law hash should be a string")
+        .starts_with("sha256:"));
+    assert!(report["lawDocumentHash"]
+        .as_str()
+        .expect("law document hash should be a string")
+        .starts_with("sha256:"));
+    assert!(report["profileHash"]
+        .as_str()
+        .expect("profile hash should be a string")
+        .starts_with("sha256:"));
+    assert_eq!(report["bundleHash"], report["manifest"]["bundleHash"]);
+    assert_eq!(
+        report["manifest"]["apiVersion"],
+        "wesley.contract-bundle-manifest/v1"
+    );
+    assert!(stderr.is_empty());
+}
+
+#[test]
 fn law_validate_reports_schema_hash_mismatch() {
     let output = wesley()
         .args(["law", "validate", "--schema"])
@@ -696,6 +741,52 @@ fn emit_commands_write_deterministic_metadata_sidecars() {
 }
 
 #[test]
+fn emit_rust_with_law_embeds_schema_and_law_hash_constants() {
+    let dir = temp_dir("emit-rust-law-hashes");
+    let out = dir.join("generated").join("model.rs");
+    let metadata = dir.join("generated").join("model.metadata.json");
+
+    let output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .arg("--out")
+        .arg(&out)
+        .arg("--metadata-out")
+        .arg(&metadata)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let generated = std::fs::read_to_string(&out).expect("Rust output should read");
+    let metadata_json: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&metadata).expect("metadata should read"))
+            .expect("metadata should be JSON");
+
+    assert!(generated.contains("pub const WESLEY_SCHEMA_HASH: &'static str = \"sha256:"));
+    assert!(generated.contains("pub const WESLAW_HASH: &'static str = \"sha256:"));
+    assert_eq!(
+        metadata_json["lawHash"],
+        generated_hash_literal(&generated, "WESLAW_HASH")
+    );
+    assert!(metadata_json["bundleHash"]
+        .as_str()
+        .expect("bundle hash should be a string")
+        .starts_with("sha256:"));
+    assert!(metadata_json["profileHash"]
+        .as_str()
+        .expect("profile hash should be a string")
+        .starts_with("sha256:"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
 fn emit_commands_include_jedit_operation_bindings() {
     let dir = temp_dir("emit-jedit-operation-bindings");
     let rust_out = dir.join("generated").join("model.rs");
@@ -958,6 +1049,14 @@ fn temp_dir(name: &str) -> std::path::PathBuf {
     ));
     std::fs::create_dir_all(&path).expect("temp directory should create");
     path
+}
+
+fn generated_hash_literal(generated: &str, constant: &str) -> serde_json::Value {
+    let marker = format!("pub const {constant}: &'static str = \"");
+    let start = generated.find(&marker).expect("hash constant should exist") + marker.len();
+    let rest = &generated[start..];
+    let end = rest.find("\";").expect("hash constant should terminate");
+    serde_json::Value::String(rest[..end].to_string())
 }
 
 fn run_git<const N: usize>(repo: &std::path::Path, args: [&str; N]) {

@@ -5,7 +5,8 @@ This corpus supports design packet
 
 The files define the first v1 substrate target for `WLAW-008` and `WLAW-009`,
 then serve as Rust parser and published-schema fixtures for `WLAW-011` through
-`WLAW-020`.
+`WLAW-020`, strict binding fixtures for `WLAW-021` through `WLAW-035`, and
+canonical law hash fixtures for `WLAW-036` through `WLAW-045`.
 
 ## Files
 
@@ -33,3 +34,5 @@ ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
   `schemas/weslaw-v1.schema.json`.
 - Rejected fixtures pin stable structure and binding diagnostic codes for the
   strict schema-bound validation pass.
+- Accepted fixtures also feed canonical Law IR hash, contract bundle manifest,
+  and generated-artifact provenance tests.

@@ -122,11 +122,11 @@ The contract bundle records:
 | `lawHash` | canonical active semantic Law IR. |
 | `profileHash` | canonical Policy/Profile IR, or a known empty-profile hash. |
 | `bundleHash` | schema hash, law hash, profile hash, compiler identity, and codec ids. |
-| `lawDocumentHash` | optional provenance-bearing law document hash. |
+| `lawDocumentHash` | provenance-bearing law document hash emitted with validated manifests. |
 
-`lawHash` must not include rationale prose or comments. `lawDocumentHash` may
-include rationale and provenance so audits can distinguish semantic changes
-from documentation changes.
+`lawHash` must not include rationale prose or comments. `lawDocumentHash`
+includes retained rationale and provenance so audits can distinguish semantic
+changes from documentation changes.
 
 ## Active Versus Draft
 

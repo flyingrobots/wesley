@@ -30,6 +30,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   references, rejects wrong subject kinds and contradictory active law, emits
   stable binding diagnostics, and exposes the strict pass through
   `wesley law validate --schema <path> --law <path>`.
+- **`weslaw` canonical law hashes**: Added canonical semantic Law IR
+  serialization, `lawHash`, provenance-bearing `lawDocumentHash`, empty-profile
+  `profileHash`, contract `bundleHash`, and a versioned
+  `wesley.contract-bundle-manifest/v1` JSON Schema. `wesley law validate` with
+  `--json` now emits the bundle manifest, `wesley emit rust --law <path>`
+  embeds `WESLEY_SCHEMA_HASH` and `WESLAW_HASH` constants in generated Rust,
+  and emit metadata sidecars record law, profile, bundle, and Law IR codec
+  hashes when a law file is supplied.
 - **`weslaw` semantic Law IR design**: Added design packet `0019` defining
   `weslaw` as Wesley's semantic law layer for contract bundles, with typed Law
   IR, strict binding, schema-hash anchoring, canonical law hashes, structured

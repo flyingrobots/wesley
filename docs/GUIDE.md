@@ -44,12 +44,14 @@ The historical package CLI is retired. Use the native commands:
 - **Lower**: `wesley schema lower --schema <path> --json`
 - **Hash**: `wesley schema hash --schema <path>`
 - **Diff**: `wesley schema diff --old <old> --new <new> --format summary`
-- **Law**: `wesley law validate --schema <schema> --law <law>`
+- **Law**: `wesley law validate --schema <schema> --law <law> [--json]`
 
-- **Rust**: `wesley emit rust --schema <path> --out <path>`
-- **TypeScript**: `wesley emit typescript --schema <path> --out <path>`
+- **Rust**: `wesley emit rust --schema <path> --out <path> [--law <path>]`
+- **TypeScript**: `wesley emit typescript --schema <path> --out <path> [--law <path>]`
 - **Emit metadata**: add `--metadata-out <path>` to record schema hash,
-  generator identity, generator version, and `rust-native` execution mode.
+  generator identity, generator version, and `rust-native` execution mode. When
+  `--law <path>` is supplied, metadata also records `lawHash`,
+  `lawDocumentHash`, `profileHash`, `bundleHash`, and the Law IR codec.
 
 For legacy migration users still calling `pnpm wesley`, rewrite the caller.
 The direct replacements are `wesley schema lower`, `wesley schema hash`,

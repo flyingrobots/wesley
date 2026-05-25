@@ -5,14 +5,15 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 use wesley_core::{
-    compute_content_hash, compute_registry_hash, diff_schema_sdl, extract_operation_directive_args,
-    list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl, normalize_schema_sdl,
-    resolve_operation_selections, resolve_operation_selections_with_schema,
-    validate_law_ir_v1_bindings, SchemaDelta, WeslawError, WesleyError, WesleyIR,
+    build_contract_bundle_manifest_v1, compute_content_hash, compute_registry_hash,
+    diff_schema_sdl, extract_operation_directive_args, list_schema_operations_sdl,
+    load_weslaw_yaml, lower_schema_sdl, normalize_schema_sdl, resolve_operation_selections,
+    resolve_operation_selections_with_schema, ContractBundleManifestV1, SchemaDelta, WeslawError,
+    WesleyError, WesleyIR,
 };
 use wesley_emit_rust::{
-    emit_rust_with_operations, GENERATOR_NAME as RUST_GENERATOR_NAME,
-    GENERATOR_VERSION as RUST_GENERATOR_VERSION,
+    emit_rust_with_operations, emit_rust_with_operations_and_hashes,
+    GENERATOR_NAME as RUST_GENERATOR_NAME, GENERATOR_VERSION as RUST_GENERATOR_VERSION,
 };
 use wesley_emit_typescript::{
     emit_typescript_with_operations, GENERATOR_NAME as TYPESCRIPT_GENERATOR_NAME,
@@ -82,16 +83,26 @@ fn run_law_command(args: &[String]) -> Result<u8, CliError> {
             let law_source = read_file(&law_path, "law")?;
             let ir = lower_schema_sdl(&schema_sdl)?;
             let operations = list_schema_operations_sdl(&schema_sdl)?;
-            let schema_hash = format!("sha256:{}", compute_registry_hash(&ir)?);
             let law_ir = load_weslaw_yaml(&law_source)?;
-            let report = validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)?;
+            let manifest = build_contract_bundle_manifest_v1(&law_ir, &ir, &operations)?;
 
             if options.json {
-                print_json(&report)?;
+                print_json(&LawValidateReport {
+                    schema_hash: manifest.schema_hash.clone(),
+                    law_hash: manifest.law_hash.clone(),
+                    law_document_hash: manifest.law_document_hash.clone(),
+                    profile_hash: manifest.profile_hash.clone(),
+                    bundle_hash: manifest.bundle_hash.clone(),
+                    bound_entry_count: manifest.law_entry_count,
+                    manifest,
+                })?;
             } else {
                 println!(
-                    "Law validation passed: {} active entries bound to {}",
-                    report.bound_entry_count, report.schema_hash
+                    "Law validation passed: {} active entries bound to {} (lawHash {}, bundleHash {})",
+                    manifest.law_entry_count,
+                    manifest.schema_hash,
+                    manifest.law_hash,
+                    manifest.bundle_hash
                 );
             }
 
@@ -223,12 +234,27 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let sdl = read_file(&schema_path, "schema")?;
             let ir = lower_schema_sdl(&sdl)?;
             let operations = list_schema_operations_sdl(&sdl)?;
-            let rust = emit_rust_with_operations(&ir, &operations);
+            let manifest = load_contract_bundle_manifest_if_requested(
+                options.law.as_deref(),
+                &ir,
+                &operations,
+            )?;
+            let rust = if let Some(manifest) = &manifest {
+                emit_rust_with_operations_and_hashes(
+                    &ir,
+                    &operations,
+                    &manifest.schema_hash,
+                    &manifest.law_hash,
+                )
+            } else {
+                emit_rust_with_operations(&ir, &operations)
+            };
 
             write_file(&out_path, &rust, "Rust output")?;
             write_emit_metadata_if_requested(
                 options.metadata_out.as_deref(),
                 &ir,
+                manifest.as_ref(),
                 RUST_GENERATOR_NAME,
                 RUST_GENERATOR_VERSION,
             )?;
@@ -245,12 +271,18 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let sdl = read_file(&schema_path, "schema")?;
             let ir = lower_schema_sdl(&sdl)?;
             let operations = list_schema_operations_sdl(&sdl)?;
+            let manifest = load_contract_bundle_manifest_if_requested(
+                options.law.as_deref(),
+                &ir,
+                &operations,
+            )?;
             let typescript = emit_typescript_with_operations(&ir, &operations);
 
             write_file(&out_path, &typescript, "TypeScript output")?;
             write_emit_metadata_if_requested(
                 options.metadata_out.as_deref(),
                 &ir,
+                manifest.as_ref(),
                 TYPESCRIPT_GENERATOR_NAME,
                 TYPESCRIPT_GENERATOR_VERSION,
             )?;
@@ -562,7 +594,7 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
                 index += 1;
                 options.old_schema = Some(PathBuf::from(required_value(args, index, "--old")?));
             }
-            "--law" if command == "law validate" => {
+            "--law" if command == "law validate" || command.starts_with("emit ") => {
                 index += 1;
                 options.law = Some(PathBuf::from(required_value(args, index, "--law")?));
             }
@@ -706,6 +738,7 @@ fn write_file(path: &Path, content: &str, label: &str) -> Result<(), CliError> {
 fn write_emit_metadata_if_requested(
     path: Option<&Path>,
     ir: &WesleyIR,
+    manifest: Option<&ContractBundleManifestV1>,
     generator: &'static str,
     generator_version: &'static str,
 ) -> Result<(), CliError> {
@@ -715,6 +748,11 @@ fn write_emit_metadata_if_requested(
 
     let metadata = EmitMetadata {
         schema_hash: compute_registry_hash(ir)?,
+        law_hash: manifest.map(|manifest| manifest.law_hash.clone()),
+        law_document_hash: manifest.and_then(|manifest| manifest.law_document_hash.clone()),
+        profile_hash: manifest.map(|manifest| manifest.profile_hash.clone()),
+        bundle_hash: manifest.map(|manifest| manifest.bundle_hash.clone()),
+        law_ir_codec: manifest.map(|manifest| manifest.law_ir_codec.clone()),
         generator,
         generator_version,
         execution_mode: RUST_NATIVE_EXECUTION_MODE,
@@ -723,6 +761,27 @@ fn write_emit_metadata_if_requested(
     json.push('\n');
 
     write_file(path, &json, "emit metadata")
+}
+
+fn load_contract_bundle_manifest_if_requested(
+    law_path: Option<&Path>,
+    ir: &WesleyIR,
+    operations: &[wesley_core::SchemaOperation],
+) -> Result<Option<ContractBundleManifestV1>, CliError> {
+    let Some(law_path) = law_path else {
+        return Ok(None);
+    };
+
+    let law_source = fs::read_to_string(law_path).map_err(|source| CliError::Io {
+        label: "law".to_string(),
+        path: law_path.to_path_buf(),
+        source: source.to_string(),
+    })?;
+    let law_ir = load_weslaw_yaml(&law_source)?;
+
+    Ok(Some(build_contract_bundle_manifest_v1(
+        &law_ir, ir, operations,
+    )?))
 }
 
 fn read_schema_diff_inputs(options: &ParsedOptions) -> Result<(String, String), CliError> {
@@ -854,8 +913,30 @@ struct FlatChange {
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
+struct LawValidateReport {
+    schema_hash: String,
+    law_hash: String,
+    law_document_hash: Option<String>,
+    profile_hash: String,
+    bundle_hash: String,
+    bound_entry_count: usize,
+    manifest: ContractBundleManifestV1,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 struct EmitMetadata {
     schema_hash: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    law_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    law_document_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    profile_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bundle_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    law_ir_codec: Option<String>,
     generator: &'static str,
     generator_version: &'static str,
     execution_mode: &'static str,
@@ -1123,11 +1204,12 @@ Emits model declarations and root operation bindings when the schema declares
 Query, Mutation, or Subscription fields.
 
 Usage:
-  wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
-  wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
+  wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
+  wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
 
 Options:
   -s, --schema <path>    GraphQL SDL file
+  --law <path>           Optional weslaw/v1 file for bundle hashes
   --out <path>           Output file
   --metadata-out <path>  Deterministic metadata JSON sidecar"
     );

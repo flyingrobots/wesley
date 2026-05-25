@@ -52,6 +52,7 @@ These identifiers are separate on purpose:
 | `weslaw/v1`                       | Authored YAML shape and migration affordances. |
 | `wesley.law-ir/v1`                | Typed semantic model after frontend lowering.  |
 | `wesley.law-ir.canonical-json.v1` | Canonical bytes used for `lawHash`.            |
+| `wesley.contract-bundle-manifest/v1` | Emitted manifest tying shape, law, profile, and bundle hashes together. |
 
 ## Published Schema Artifacts
 
@@ -59,10 +60,11 @@ Law IR v1 must ship with machine-readable schemas. This is not optional.
 
 The first schema artifacts are:
 
-| Artifact                               | Purpose                                                          |
-| -------------------------------------- | ---------------------------------------------------------------- |
-| `schemas/wesley-law-ir-v1.schema.json` | JSON Schema for the typed Law IR v1 JSON representation.         |
-| `schemas/weslaw-v1.schema.json`        | JSON Schema for the parsed `weslaw/v1` authoring document shape. |
+| Artifact                                                 | Purpose                                                          |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| `schemas/wesley-law-ir-v1.schema.json`                   | JSON Schema for the typed Law IR v1 JSON representation.         |
+| `schemas/weslaw-v1.schema.json`                          | JSON Schema for the parsed `weslaw/v1` authoring document shape. |
+| `schemas/wesley-contract-bundle-manifest-v1.schema.json` | JSON Schema for the emitted contract bundle manifest.            |
 
 The JSON Schema files validate structure. They are not the canonical hash input,
 and they are not necessarily the permanent source-authoring format for the
