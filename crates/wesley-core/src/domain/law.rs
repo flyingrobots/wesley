@@ -364,7 +364,7 @@ pub struct FootprintClosureV1 {
     /// Resource kinds read by the closure.
     pub reads: Vec<String>,
     /// Cardinality label.
-    pub cardinality: String,
+    pub cardinality: FootprintCardinalityV1,
 }
 
 /// Footprint create-slot descriptor.
@@ -377,7 +377,20 @@ pub struct CreateSlotV1 {
     pub kind: String,
     /// Optional cardinality label.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cardinality: Option<String>,
+    pub cardinality: Option<FootprintCardinalityV1>,
+}
+
+/// Closed footprint cardinality vocabulary accepted by Law IR v1.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum FootprintCardinalityV1 {
+    /// Exactly one resource.
+    #[serde(rename = "one")]
+    One,
+    /// Zero or one resource.
+    Optional,
+    /// Zero or more resources.
+    Many,
 }
 
 /// Footprint update descriptor.
@@ -845,7 +858,10 @@ fn parse_footprint_closure(value: &Yaml, path: &str) -> Result<FootprintClosureV
         arg_bindings: optional_string_list(map, "argBindings", &format!("{path}.argBindings"))?
             .unwrap_or_default(),
         reads: optional_string_list(map, "reads", &format!("{path}.reads"))?.unwrap_or_default(),
-        cardinality: required_string(map, "cardinality", &format!("{path}.cardinality"))?,
+        cardinality: optional_string(map, "cardinality", &format!("{path}.cardinality"))?
+            .map(|value| parse_footprint_cardinality(value, &format!("{path}.cardinality")))
+            .transpose()?
+            .unwrap_or(FootprintCardinalityV1::One),
     })
 }
 
@@ -855,7 +871,9 @@ fn parse_create_slot(value: &Yaml, path: &str) -> Result<CreateSlotV1, WeslawErr
     Ok(CreateSlotV1 {
         name: required_string(map, "name", &format!("{path}.name"))?,
         kind: required_string(map, "kind", &format!("{path}.kind"))?,
-        cardinality: optional_string(map, "cardinality", &format!("{path}.cardinality"))?,
+        cardinality: optional_string(map, "cardinality", &format!("{path}.cardinality"))?
+            .map(|value| parse_footprint_cardinality(value, &format!("{path}.cardinality")))
+            .transpose()?,
     })
 }
 
@@ -1033,6 +1051,22 @@ fn parse_scalar_ordering(value: String, path: &str) -> Result<ScalarOrderingV1, 
             WeslawDiagnosticCode::InvalidDocument,
             path,
             format!("unknown scalar ordering {value}"),
+        )),
+    }
+}
+
+fn parse_footprint_cardinality(
+    value: String,
+    path: &str,
+) -> Result<FootprintCardinalityV1, WeslawError> {
+    match value.as_str() {
+        "one" => Ok(FootprintCardinalityV1::One),
+        "optional" => Ok(FootprintCardinalityV1::Optional),
+        "many" => Ok(FootprintCardinalityV1::Many),
+        _ => Err(WeslawError::at_path(
+            WeslawDiagnosticCode::InvalidDocument,
+            path,
+            format!("unknown footprint cardinality {value}"),
         )),
     }
 }

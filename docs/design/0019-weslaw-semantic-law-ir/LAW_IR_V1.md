@@ -284,7 +284,7 @@ FootprintClosureV1
   operator: string
   argBindings: [ArgPath | SlotName]
   reads: [ResourceKind]
-  cardinality: one | optional | many
+  cardinality: one | optional | many = one
 ```
 
 Create-slot fields:

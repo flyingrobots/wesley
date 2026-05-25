@@ -15,7 +15,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   draft entries and sorts active entries by id, scalar semantic relationship
   rules are enforced during loading, draft scaffolding is filtered before active
   kind/body validation, scalar ordering is a closed v1 vocabulary, and the
-  scalar semantics docs now match the shipped v1 surface.
+  scalar semantics docs now match the shipped v1 surface. Footprint closure
+  cardinality now accepts the authoring-schema default of `one` when omitted and
+  rejects values outside the closed `one`/`optional`/`many` vocabulary.
 
 ### Added
 

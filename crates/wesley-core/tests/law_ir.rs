@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use yaml_rust2::{Yaml, YamlLoader};
 
 use wesley_core::{
-    load_weslaw_yaml, to_canonical_law_ir_json, LawEntryBodyV1, LawKindV1, PredicateV1,
-    ScalarForbiddenInterpretationV1, ScalarRepresentationV1, WeslawDiagnosticCode,
+    load_weslaw_yaml, to_canonical_law_ir_json, FootprintCardinalityV1, LawEntryBodyV1, LawKindV1,
+    PredicateV1, ScalarForbiddenInterpretationV1, ScalarRepresentationV1, WeslawDiagnosticCode,
     WESLEY_LAW_IR_API_VERSION,
 };
 
@@ -106,6 +106,31 @@ laws:
         draft_errors.is_empty(),
         "draft scaffolding should satisfy the authoring schema: {draft_errors:#?}"
     );
+
+    let invalid_cardinality = r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+laws:
+  - id: jedit.op.replaceRangeAsTick.bad-cardinality
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    closures:
+      - name: touchedRope
+        fromSlot: baseHead
+        operator: ropeRangeClosure
+        cardinality: several
+"#;
+    let invalid_cardinality_json = yaml_fixture_to_json(invalid_cardinality);
+    let cardinality_errors = validator
+        .iter_errors(&invalid_cardinality_json)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        !cardinality_errors.is_empty(),
+        "authoring schema must reject unknown cardinality values"
+    );
 }
 
 #[test]
@@ -163,8 +188,8 @@ fn accepted_weslaw_fixtures_lower_into_typed_law_ir() {
     assert_eq!(body.slots[0].name, "worldline");
     assert_eq!(body.closures[1].name, "affectedAnchors");
     assert_eq!(
-        body.create_slots[0].cardinality.as_deref(),
-        Some("optional")
+        body.create_slots[0].cardinality,
+        Some(FootprintCardinalityV1::Optional)
     );
     assert_eq!(body.updates[0].slot, "worldline");
 
@@ -314,6 +339,30 @@ laws:
 }
 
 #[test]
+fn footprint_closure_cardinality_defaults_to_one_when_omitted() {
+    let source = r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+laws:
+  - id: jedit.op.replaceRangeAsTick.footprint
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    closures:
+      - name: touchedRope
+        fromSlot: baseHead
+        operator: ropeRangeClosure
+"#;
+
+    let law_ir = load_weslaw_yaml(source).expect("schema-valid closure should lower");
+    let LawEntryBodyV1::FootprintLaw(body) = &law_ir.entries[0].body else {
+        panic!("expected footprint law body");
+    };
+    assert_eq!(body.closures[0].cardinality, FootprintCardinalityV1::One);
+}
+
+#[test]
 fn law_ir_v1_json_schema_accepts_ir_and_rejects_kind_body_mismatch() {
     let schema: serde_json::Value =
         serde_json::from_str(&read_fixture("schemas/wesley-law-ir-v1.schema.json"))
@@ -424,6 +473,11 @@ fn rejected_weslaw_fixtures_emit_stable_diagnostic_codes() {
         (
             "test/fixtures/weslaw/rejected/scalar-unknown-ordering.weslaw.yaml",
             "test/fixtures/weslaw/rejected/scalar-unknown-ordering.expected.txt",
+            WeslawDiagnosticCode::InvalidDocument,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/footprint-unknown-cardinality.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/footprint-unknown-cardinality.expected.txt",
             WeslawDiagnosticCode::InvalidDocument,
         ),
     ];
