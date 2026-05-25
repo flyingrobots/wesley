@@ -84,6 +84,28 @@ fn accepted_weslaw_fixtures_satisfy_authoring_json_schema() {
             .collect::<Vec<_>>();
         assert!(errors.is_empty(), "{fixture}: {errors:#?}");
     }
+
+    let draft_scaffolding = r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+laws:
+  - id: draft.future-law
+    status: draft
+    kind: futureLaw
+    subject: law:future
+    expr: "forall x in Future: x.ready == true"
+    futureOnlyField: preserved-for-review
+"#;
+    let draft_json = yaml_fixture_to_json(draft_scaffolding);
+    let draft_errors = validator
+        .iter_errors(&draft_json)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        draft_errors.is_empty(),
+        "draft scaffolding should satisfy the authoring schema: {draft_errors:#?}"
+    );
 }
 
 #[test]
@@ -259,6 +281,39 @@ laws:
 }
 
 #[test]
+fn law_ir_v1_ignores_draft_entries_before_kind_body_validation() {
+    let source = r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: sha256:ee681e8c2c99acb5db74f09b2eb06cca2e9379fc7d69627d3287cba6177ac4b6
+  source: ../contract-bundle-shape.graphql
+laws:
+  - id: a.continuum.invariant.translated-evidence
+    status: active
+    kind: invariantLaw
+    subject: type:TranslatedSubstrateEvidence
+    predicate:
+      op: fieldEquals
+      field: nativeContinuumWitness
+      value: false
+  - id: z.draft.future-law
+    status: draft
+    kind: futureLaw
+    subject: law:future
+    expr: "forall x in Future: x.ready == true"
+    futureOnlyField: preserved-for-review
+"#;
+
+    let law_ir =
+        load_weslaw_yaml(source).expect("draft scaffolding should not fail active lowering");
+    assert_eq!(law_ir.entries.len(), 1);
+    assert_eq!(
+        law_ir.entries[0].id,
+        "a.continuum.invariant.translated-evidence"
+    );
+}
+
+#[test]
 fn law_ir_v1_json_schema_accepts_ir_and_rejects_kind_body_mismatch() {
     let schema: serde_json::Value =
         serde_json::from_str(&read_fixture("schemas/wesley-law-ir-v1.schema.json"))
@@ -297,6 +352,19 @@ fn law_ir_v1_json_schema_accepts_ir_and_rejects_kind_body_mismatch() {
     assert!(
         !draft_errors.is_empty(),
         "Law IR schema must reject draft entries"
+    );
+
+    let mut invalid_ordering_ir = draft_ir;
+    invalid_ordering_ir["entries"][0]["status"] = serde_json::Value::String("active".to_string());
+    invalid_ordering_ir["entries"][0]["body"]["ordering"] =
+        serde_json::Value::String("lamprot".to_string());
+    let ordering_errors = validator
+        .iter_errors(&invalid_ordering_ir)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        !ordering_errors.is_empty(),
+        "Law IR schema must reject unknown scalar ordering values"
     );
 }
 
@@ -351,6 +419,11 @@ fn rejected_weslaw_fixtures_emit_stable_diagnostic_codes() {
         (
             "test/fixtures/weslaw/rejected/scalar-forbid-non-integer.weslaw.yaml",
             "test/fixtures/weslaw/rejected/scalar-forbid-non-integer.expected.txt",
+            WeslawDiagnosticCode::InvalidDocument,
+        ),
+        (
+            "test/fixtures/weslaw/rejected/scalar-unknown-ordering.weslaw.yaml",
+            "test/fixtures/weslaw/rejected/scalar-unknown-ordering.expected.txt",
             WeslawDiagnosticCode::InvalidDocument,
         ),
     ];

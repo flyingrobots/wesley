@@ -47,11 +47,11 @@ weslaw/v1
 
 These identifiers are separate on purpose:
 
-| Identifier | Owns |
-| --- | --- |
-| `weslaw/v1` | Authored YAML shape and migration affordances. |
-| `wesley.law-ir/v1` | Typed semantic model after frontend lowering. |
-| `wesley.law-ir.canonical-json.v1` | Canonical bytes used for `lawHash`. |
+| Identifier                        | Owns                                           |
+| --------------------------------- | ---------------------------------------------- |
+| `weslaw/v1`                       | Authored YAML shape and migration affordances. |
+| `wesley.law-ir/v1`                | Typed semantic model after frontend lowering.  |
+| `wesley.law-ir.canonical-json.v1` | Canonical bytes used for `lawHash`.            |
 
 ## Published Schema Artifacts
 
@@ -59,10 +59,10 @@ Law IR v1 must ship with machine-readable schemas. This is not optional.
 
 The first schema artifacts are:
 
-| Artifact | Purpose |
-| --- | --- |
-| `schemas/wesley-law-ir-v1.schema.json` | JSON Schema for the typed Law IR v1 JSON representation. |
-| `schemas/weslaw-v1.schema.json` | JSON Schema for the parsed `weslaw/v1` authoring document shape. |
+| Artifact                               | Purpose                                                          |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| `schemas/wesley-law-ir-v1.schema.json` | JSON Schema for the typed Law IR v1 JSON representation.         |
+| `schemas/weslaw-v1.schema.json`        | JSON Schema for the parsed `weslaw/v1` authoring document shape. |
 
 The JSON Schema files validate structure. They are not the canonical hash input,
 and they are not necessarily the permanent source-authoring format for the
@@ -127,15 +127,15 @@ LawEntryV1
 
 Hash posture:
 
-| Field | Included in `lawHash` | Notes |
-| --- | --- | --- |
-| `id` | yes | Stable identity of the law. |
-| `kind` | yes | Closed Law IR variant. |
-| `subject` | yes | Bound coordinate. |
-| semantic body | yes | Variant-specific semantic fields. |
-| `tags` | yes | Tags are semantic classification in v1. |
-| `provenance` | no | Included in `lawDocumentHash` if requested. |
-| `rationale` | no | Human explanation, not semantic truth. |
+| Field         | Included in `lawHash` | Notes                                       |
+| ------------- | --------------------- | ------------------------------------------- |
+| `id`          | yes                   | Stable identity of the law.                 |
+| `kind`        | yes                   | Closed Law IR variant.                      |
+| `subject`     | yes                   | Bound coordinate.                           |
+| semantic body | yes                   | Variant-specific semantic fields.           |
+| `tags`        | yes                   | Tags are semantic classification in v1.     |
+| `provenance`  | no                    | Included in `lawDocumentHash` if requested. |
+| `rationale`   | no                    | Human explanation, not semantic truth.      |
 
 ## Closed Law Kinds
 
@@ -181,7 +181,7 @@ ScalarSemanticsLawV1
   representation: integer | string | opaqueIdentifier
   minInclusive: integer?
   maxInclusive: integer?
-  ordering: none | lamport | total | partial?
+  ordering: none | lamport | total | partial
   scope: string?
   forbids: [ScalarForbiddenInterpretation]
 ```
@@ -197,6 +197,7 @@ Binding rules:
 - subject must bind to a GraphQL scalar;
 - integer ranges require `representation: integer`;
 - `minInclusive` must not exceed `maxInclusive`;
+- `ordering`, when present, must use the closed v1 ordering vocabulary;
 - `silentGraphQLIntNarrowing` is meaningful only for integer-like scalars.
 
 Deferred scalar extensions:
@@ -377,7 +378,7 @@ PredicateV1 =
 Rejected v1 shapes:
 
 ```yaml
-expr: "forall x in X: ..."
+expr: 'forall x in X: ...'
 ```
 
 Raw string expressions are not executable v1 law. They may be preserved as
@@ -405,6 +406,7 @@ Rules:
 - draft entries do not enter `lawHash`;
 - draft entries do not affect generated artifacts;
 - draft entries may fail binding without failing bundle compilation;
+- draft entries are filtered before active kind/body validation;
 - promotion from draft to active must be explicit.
 
 ## Law IR v1 Non-Goals

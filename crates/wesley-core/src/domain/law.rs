@@ -237,7 +237,7 @@ pub struct ScalarSemanticsLawV1 {
     pub max_inclusive: Option<u64>,
     /// Ordering semantics, when present.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub ordering: Option<String>,
+    pub ordering: Option<ScalarOrderingV1>,
     /// Scope semantics, when present.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
@@ -255,6 +255,21 @@ pub enum ScalarRepresentationV1 {
     OpaqueIdentifier,
     /// String representation.
     String,
+}
+
+/// Closed scalar ordering vocabulary accepted by Law IR v1.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ScalarOrderingV1 {
+    /// No ordering semantics are implied.
+    #[serde(rename = "none")]
+    None,
+    /// Lamport-style logical ordering.
+    Lamport,
+    /// Total ordering semantics.
+    Total,
+    /// Partial ordering semantics.
+    Partial,
 }
 
 /// Closed forbidden scalar interpretation enum.
@@ -480,8 +495,7 @@ pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
     let mut entries = Vec::with_capacity(laws.len());
     for (index, law_value) in laws.iter().enumerate() {
         let path = format!("$.laws[{index}]");
-        let entry = parse_law_entry(law_value, &path)?;
-        if entry.status == LawStatusV1::Active {
+        if let Some(entry) = parse_law_entry(law_value, &path)? {
             if !active_ids.insert(entry.id.clone()) {
                 return Err(WeslawError::at_path(
                     WeslawDiagnosticCode::DuplicateId,
@@ -598,17 +612,21 @@ fn parse_channel_registry_entry(
     })
 }
 
-fn parse_law_entry(value: &Yaml, path: &str) -> Result<LawEntryV1, WeslawError> {
+fn parse_law_entry(value: &Yaml, path: &str) -> Result<Option<LawEntryV1>, WeslawError> {
     let map = expect_mapping(value, path)?;
-    let kind_text = required_string(map, "kind", &format!("{path}.kind"))?;
-    let kind = parse_kind(&kind_text, &format!("{path}.kind"))?;
-    reject_unknown_fields(map, path, allowed_law_fields(kind))?;
-
     let status = parse_status(
         optional_string(map, "status", &format!("{path}.status"))?
             .unwrap_or_else(|| "active".to_string()),
         &format!("{path}.status"),
     )?;
+    if status == LawStatusV1::Draft {
+        return Ok(None);
+    }
+
+    let kind_text = required_string(map, "kind", &format!("{path}.kind"))?;
+    let kind = parse_kind(&kind_text, &format!("{path}.kind"))?;
+    reject_unknown_fields(map, path, allowed_law_fields(kind))?;
+
     let tags = optional_string_list(map, "tags", &format!("{path}.tags"))?.unwrap_or_default();
     let rationale = optional_string(map, "rationale", &format!("{path}.rationale"))?;
     let body = match kind {
@@ -621,7 +639,7 @@ fn parse_law_entry(value: &Yaml, path: &str) -> Result<LawEntryV1, WeslawError> 
         LawKindV1::InvariantLaw => LawEntryBodyV1::InvariantLaw(parse_invariant_law(map, path)?),
     };
 
-    Ok(LawEntryV1 {
+    Ok(Some(LawEntryV1 {
         id: required_string(map, "id", &format!("{path}.id"))?,
         status,
         kind,
@@ -629,7 +647,7 @@ fn parse_law_entry(value: &Yaml, path: &str) -> Result<LawEntryV1, WeslawError> 
         tags,
         rationale,
         body,
-    })
+    }))
 }
 
 fn parse_scalar_semantics(map: &Mapping, path: &str) -> Result<ScalarSemanticsLawV1, WeslawError> {
@@ -669,12 +687,15 @@ fn parse_scalar_semantics(map: &Mapping, path: &str) -> Result<ScalarSemanticsLa
         .into_iter()
         .map(|item| parse_scalar_forbidden(item, &format!("{path}.semantics.forbids")))
         .collect::<Result<Vec<_>, _>>()?;
+    let ordering = optional_string(semantics, "ordering", &format!("{path}.semantics.ordering"))?
+        .map(|value| parse_scalar_ordering(value, &format!("{path}.semantics.ordering")))
+        .transpose()?;
     validate_scalar_semantics(representation, min_inclusive, max_inclusive, &forbids, path)?;
     Ok(ScalarSemanticsLawV1 {
         representation,
         min_inclusive,
         max_inclusive,
-        ordering: optional_string(semantics, "ordering", &format!("{path}.semantics.ordering"))?,
+        ordering,
         scope: optional_string(semantics, "scope", &format!("{path}.semantics.scope"))?,
         forbids,
     })
@@ -998,6 +1019,20 @@ fn parse_scalar_forbidden(
             WeslawDiagnosticCode::InvalidDocument,
             path,
             format!("unknown scalar forbidden interpretation {value}"),
+        )),
+    }
+}
+
+fn parse_scalar_ordering(value: String, path: &str) -> Result<ScalarOrderingV1, WeslawError> {
+    match value.as_str() {
+        "none" => Ok(ScalarOrderingV1::None),
+        "lamport" => Ok(ScalarOrderingV1::Lamport),
+        "total" => Ok(ScalarOrderingV1::Total),
+        "partial" => Ok(ScalarOrderingV1::Partial),
+        _ => Err(WeslawError::at_path(
+            WeslawDiagnosticCode::InvalidDocument,
+            path,
+            format!("unknown scalar ordering {value}"),
         )),
     }
 }

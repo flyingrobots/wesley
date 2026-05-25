@@ -13,8 +13,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   predicate operation, the published Law IR JSON Schema now discriminates each
   entry `kind` against its normalized `body`, normalized Law IR now excludes
   draft entries and sorts active entries by id, scalar semantic relationship
-  rules are enforced during loading, and the scalar semantics docs now match the
-  shipped v1 surface.
+  rules are enforced during loading, draft scaffolding is filtered before active
+  kind/body validation, scalar ordering is a closed v1 vocabulary, and the
+  scalar semantics docs now match the shipped v1 surface.
 
 ### Added
 

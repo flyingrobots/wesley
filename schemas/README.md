@@ -19,5 +19,7 @@ lexicographically sorted and the files contain no formatting whitespace. That
 byte form is for deterministic publication and review only; semantic law hashes
 must still be computed from normalized Law IR, not schema-file bytes.
 
-The Law IR schema is self-contained, rejects draft entries, and discriminates
-each entry `kind` against the matching normalized `body` shape.
+The `weslaw/v1` authoring schema accepts explicitly marked draft scaffolding
+for review queues, including future draft law shapes. The normalized Law IR
+schema is self-contained, rejects draft entries, and discriminates each active
+entry `kind` against the matching normalized `body` shape.
