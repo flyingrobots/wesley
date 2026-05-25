@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use yaml_rust2::{Yaml, YamlLoader};
+
 use wesley_core::{
     load_weslaw_yaml, to_canonical_law_ir_json, LawEntryBodyV1, LawKindV1, PredicateV1,
     ScalarForbiddenInterpretationV1, ScalarRepresentationV1, WeslawDiagnosticCode,
@@ -15,6 +17,48 @@ fn repo_path(path: &str) -> PathBuf {
 
 fn read_fixture(path: &str) -> String {
     fs::read_to_string(repo_path(path)).expect("fixture should be readable")
+}
+
+fn yaml_fixture_to_json(source: &str) -> serde_json::Value {
+    let documents = YamlLoader::load_from_str(source).expect("fixture should parse as YAML");
+    assert_eq!(
+        documents.len(),
+        1,
+        "fixture should contain one YAML document"
+    );
+    yaml_to_json_value(&documents[0])
+}
+
+fn yaml_to_json_value(value: &Yaml) -> serde_json::Value {
+    match value {
+        Yaml::Real(text) => {
+            serde_json::Number::from_f64(text.parse::<f64>().expect("fixture real should parse"))
+                .map(serde_json::Value::Number)
+                .expect("fixture real should be finite")
+        }
+        Yaml::Integer(integer) => serde_json::Value::Number((*integer).into()),
+        Yaml::String(text) => serde_json::Value::String(text.clone()),
+        Yaml::Boolean(value) => serde_json::Value::Bool(*value),
+        Yaml::Array(items) => {
+            serde_json::Value::Array(items.iter().map(yaml_to_json_value).collect())
+        }
+        Yaml::Hash(map) => {
+            let object = map
+                .iter()
+                .map(|(key, value)| {
+                    (
+                        key.as_str()
+                            .expect("fixture object keys should be strings")
+                            .to_string(),
+                        yaml_to_json_value(value),
+                    )
+                })
+                .collect();
+            serde_json::Value::Object(object)
+        }
+        Yaml::Null => serde_json::Value::Null,
+        Yaml::Alias(_) | Yaml::BadValue => panic!("fixture contains unsupported YAML value"),
+    }
 }
 
 #[test]
@@ -33,9 +77,7 @@ fn accepted_weslaw_fixtures_satisfy_authoring_json_schema() {
     ];
 
     for fixture in fixtures {
-        let yaml: serde_yml::Value =
-            serde_yml::from_str(&read_fixture(fixture)).expect("fixture should parse as YAML");
-        let json = serde_json::to_value(yaml).expect("fixture should convert to JSON");
+        let json = yaml_fixture_to_json(&read_fixture(fixture));
         let errors = validator
             .iter_errors(&json)
             .map(|error| error.to_string())

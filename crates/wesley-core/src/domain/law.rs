@@ -6,8 +6,9 @@
 use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
-use serde_yml::{Mapping, Value};
 use thiserror::Error;
+use yaml_rust2::yaml::Hash as Mapping;
+use yaml_rust2::{Yaml, YamlLoader};
 
 use super::ir::to_canonical_json;
 
@@ -442,9 +443,16 @@ pub enum PredicateV1 {
 
 /// Loads an authored `weslaw/v1` YAML document into normalized Law IR v1.
 pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
-    let document = serde_yml::from_str::<Value>(source)
+    let documents = YamlLoader::load_from_str(source)
         .map_err(|err| WeslawError::new(WeslawDiagnosticCode::ParseError, err.to_string()))?;
-    let root = expect_mapping(&document, "$")?;
+    if documents.len() != 1 {
+        return Err(WeslawError::new(
+            WeslawDiagnosticCode::InvalidDocument,
+            "weslaw/v1 documents must contain exactly one YAML document",
+        ));
+    }
+    let document = &documents[0];
+    let root = expect_mapping(document, "$")?;
     reject_unknown_fields(root, "$", &["apiVersion", "schema", "registries", "laws"])?;
 
     let api_version = required_string(root, "apiVersion", "$.apiVersion")?;
@@ -534,7 +542,7 @@ fn parse_registries(map: &Mapping) -> Result<LawRegistrySetV1, WeslawError> {
 }
 
 fn parse_resource_registry_entry(
-    value: &Value,
+    value: &Yaml,
     path: &str,
 ) -> Result<ResourceRegistryEntryV1, WeslawError> {
     let map = expect_mapping(value, path)?;
@@ -548,7 +556,7 @@ fn parse_resource_registry_entry(
 }
 
 fn parse_verifier_registry_entry(
-    value: &Value,
+    value: &Yaml,
     path: &str,
 ) -> Result<VerifierRegistryEntryV1, WeslawError> {
     let map = expect_mapping(value, path)?;
@@ -566,7 +574,7 @@ fn parse_verifier_registry_entry(
 }
 
 fn parse_channel_registry_entry(
-    value: &Value,
+    value: &Yaml,
     path: &str,
 ) -> Result<ChannelRegistryEntryV1, WeslawError> {
     let map = expect_mapping(value, path)?;
@@ -578,7 +586,7 @@ fn parse_channel_registry_entry(
     })
 }
 
-fn parse_law_entry(value: &Value, path: &str) -> Result<LawEntryV1, WeslawError> {
+fn parse_law_entry(value: &Yaml, path: &str) -> Result<LawEntryV1, WeslawError> {
     let map = expect_mapping(value, path)?;
     let kind_text = required_string(map, "kind", &format!("{path}.kind"))?;
     let kind = parse_kind(&kind_text, &format!("{path}.kind"))?;
@@ -680,7 +688,7 @@ fn parse_variant_law(map: &Mapping, path: &str) -> Result<VariantLawV1, WeslawEr
     })
 }
 
-fn parse_variant_case(value: &Value, path: &str) -> Result<VariantCaseV1, WeslawError> {
+fn parse_variant_case(value: &Yaml, path: &str) -> Result<VariantCaseV1, WeslawError> {
     let map = expect_mapping(value, path)?;
     reject_unknown_fields(map, path, &["value", "requires", "forbids"])?;
     Ok(VariantCaseV1 {
@@ -731,7 +739,7 @@ fn parse_footprint_law(map: &Mapping, path: &str) -> Result<FootprintLawV1, Wesl
     })
 }
 
-fn parse_footprint_slot(value: &Value, path: &str) -> Result<FootprintSlotV1, WeslawError> {
+fn parse_footprint_slot(value: &Yaml, path: &str) -> Result<FootprintSlotV1, WeslawError> {
     let map = expect_mapping(value, path)?;
     reject_unknown_fields(map, path, &["name", "kind", "bindFromArg", "access"])?;
     Ok(FootprintSlotV1 {
@@ -742,7 +750,7 @@ fn parse_footprint_slot(value: &Value, path: &str) -> Result<FootprintSlotV1, We
     })
 }
 
-fn parse_footprint_closure(value: &Value, path: &str) -> Result<FootprintClosureV1, WeslawError> {
+fn parse_footprint_closure(value: &Yaml, path: &str) -> Result<FootprintClosureV1, WeslawError> {
     let map = expect_mapping(value, path)?;
     reject_unknown_fields(
         map,
@@ -767,7 +775,7 @@ fn parse_footprint_closure(value: &Value, path: &str) -> Result<FootprintClosure
     })
 }
 
-fn parse_create_slot(value: &Value, path: &str) -> Result<CreateSlotV1, WeslawError> {
+fn parse_create_slot(value: &Yaml, path: &str) -> Result<CreateSlotV1, WeslawError> {
     let map = expect_mapping(value, path)?;
     reject_unknown_fields(map, path, &["name", "kind", "cardinality"])?;
     Ok(CreateSlotV1 {
@@ -777,7 +785,7 @@ fn parse_create_slot(value: &Value, path: &str) -> Result<CreateSlotV1, WeslawEr
     })
 }
 
-fn parse_footprint_update(value: &Value, path: &str) -> Result<FootprintUpdateV1, WeslawError> {
+fn parse_footprint_update(value: &Yaml, path: &str) -> Result<FootprintUpdateV1, WeslawError> {
     let map = expect_mapping(value, path)?;
     reject_unknown_fields(map, path, &["slot", "fields"])?;
     Ok(FootprintUpdateV1 {
@@ -809,7 +817,7 @@ fn parse_channel_law(map: &Mapping, path: &str) -> Result<ChannelLawV1, WeslawEr
 }
 
 fn parse_channel_compatibility(
-    value: &Value,
+    value: &Yaml,
     path: &str,
 ) -> Result<ChannelCompatibilityV1, WeslawError> {
     let map = expect_mapping(value, path)?;
@@ -820,7 +828,7 @@ fn parse_channel_compatibility(
     })
 }
 
-fn parse_channel_message(value: &Value, path: &str) -> Result<ChannelMessageV1, WeslawError> {
+fn parse_channel_message(value: &Yaml, path: &str) -> Result<ChannelMessageV1, WeslawError> {
     let map = expect_mapping(value, path)?;
     reject_unknown_fields(map, path, &["field", "type"])?;
     Ok(ChannelMessageV1 {
@@ -847,11 +855,10 @@ fn parse_invariant_law(map: &Mapping, path: &str) -> Result<InvariantLawV1, Wesl
         "fieldEquals" => Ok(InvariantLawV1 {
             predicate: PredicateV1::FieldEquals {
                 field: required_string(predicate, "field", &format!("{path}.predicate.field"))?,
-                value: yaml_to_json_value(required_value(
-                    predicate,
-                    "value",
+                value: yaml_to_json_value(
+                    required_value(predicate, "value", &format!("{path}.predicate.value"))?,
                     &format!("{path}.predicate.value"),
-                )?)?,
+                )?,
             },
         }),
         "external" => Ok(InvariantLawV1 {
@@ -998,8 +1005,8 @@ fn allowed_law_fields(kind: LawKindV1) -> &'static [&'static str] {
     }
 }
 
-fn expect_mapping<'a>(value: &'a Value, path: &str) -> Result<&'a Mapping, WeslawError> {
-    value.as_mapping().ok_or_else(|| {
+fn expect_mapping<'a>(value: &'a Yaml, path: &str) -> Result<&'a Mapping, WeslawError> {
+    value.as_hash().ok_or_else(|| {
         WeslawError::at_path(
             WeslawDiagnosticCode::InvalidDocument,
             path,
@@ -1021,9 +1028,9 @@ fn required_sequence<'a>(
     map: &'a Mapping,
     key: &str,
     path: &str,
-) -> Result<&'a [Value], WeslawError> {
+) -> Result<&'a [Yaml], WeslawError> {
     let value = required_value(map, key, path)?;
-    value.as_sequence().map(Vec::as_slice).ok_or_else(|| {
+    value.as_vec().map(Vec::as_slice).ok_or_else(|| {
         WeslawError::at_path(
             WeslawDiagnosticCode::InvalidDocument,
             path,
@@ -1032,13 +1039,13 @@ fn required_sequence<'a>(
     })
 }
 
-fn optional_sequence<'a>(map: &'a Mapping, key: &str) -> Option<&'a [Value]> {
+fn optional_sequence<'a>(map: &'a Mapping, key: &str) -> Option<&'a [Yaml]> {
     mapping_get(map, key)
-        .and_then(Value::as_sequence)
+        .and_then(Yaml::as_vec)
         .map(Vec::as_slice)
 }
 
-fn required_value<'a>(map: &'a Mapping, key: &str, path: &str) -> Result<&'a Value, WeslawError> {
+fn required_value<'a>(map: &'a Mapping, key: &str, path: &str) -> Result<&'a Yaml, WeslawError> {
     mapping_get(map, key).ok_or_else(|| {
         WeslawError::at_path(
             WeslawDiagnosticCode::InvalidDocument,
@@ -1075,26 +1082,31 @@ fn optional_string(map: &Mapping, key: &str, path: &str) -> Result<Option<String
 }
 
 fn required_u64(map: &Mapping, key: &str, path: &str) -> Result<u64, WeslawError> {
-    required_value(map, key, path)?.as_u64().ok_or_else(|| {
+    yaml_u64(required_value(map, key, path)?, path)
+}
+
+fn optional_u64(map: &Mapping, key: &str, path: &str) -> Result<Option<u64>, WeslawError> {
+    match mapping_get(map, key) {
+        Some(value) => yaml_u64(value, path).map(Some),
+        None => Ok(None),
+    }
+}
+
+fn yaml_u64(value: &Yaml, path: &str) -> Result<u64, WeslawError> {
+    let Some(integer) = value.as_i64() else {
+        return Err(WeslawError::at_path(
+            WeslawDiagnosticCode::InvalidDocument,
+            path,
+            "expected unsigned integer",
+        ));
+    };
+    u64::try_from(integer).map_err(|_| {
         WeslawError::at_path(
             WeslawDiagnosticCode::InvalidDocument,
             path,
             "expected unsigned integer",
         )
     })
-}
-
-fn optional_u64(map: &Mapping, key: &str, path: &str) -> Result<Option<u64>, WeslawError> {
-    match mapping_get(map, key) {
-        Some(value) => value.as_u64().map(Some).ok_or_else(|| {
-            WeslawError::at_path(
-                WeslawDiagnosticCode::InvalidDocument,
-                path,
-                "expected unsigned integer",
-            )
-        }),
-        None => Ok(None),
-    }
 }
 
 fn required_bool(map: &Mapping, key: &str, path: &str) -> Result<bool, WeslawError> {
@@ -1114,7 +1126,7 @@ fn optional_string_list(
 ) -> Result<Option<Vec<String>>, WeslawError> {
     match mapping_get(map, key) {
         Some(value) => {
-            let sequence = value.as_sequence().ok_or_else(|| {
+            let sequence = value.as_vec().ok_or_else(|| {
                 WeslawError::at_path(
                     WeslawDiagnosticCode::InvalidDocument,
                     path,
@@ -1160,15 +1172,51 @@ fn reject_unknown_fields(map: &Mapping, path: &str, allowed: &[&str]) -> Result<
     Ok(())
 }
 
-fn mapping_get<'a>(map: &'a Mapping, key: &str) -> Option<&'a Value> {
-    map.get(Value::String(key.to_string()))
+fn mapping_get<'a>(map: &'a Mapping, key: &str) -> Option<&'a Yaml> {
+    map.get(&Yaml::String(key.to_string()))
 }
 
-fn yaml_to_json_value(value: &Value) -> Result<serde_json::Value, WeslawError> {
-    serde_json::to_value(value).map_err(|err| {
-        WeslawError::new(
-            WeslawDiagnosticCode::InvalidDocument,
-            format!("could not convert YAML value to JSON: {err}"),
-        )
-    })
+fn yaml_to_json_value(value: &Yaml, path: &str) -> Result<serde_json::Value, WeslawError> {
+    match value {
+        Yaml::Real(text) => {
+            let number = text
+                .parse::<f64>()
+                .ok()
+                .and_then(serde_json::Number::from_f64);
+            number
+                .map(serde_json::Value::Number)
+                .ok_or_else(|| invalid_json_value(path, "unsupported YAML real value"))
+        }
+        Yaml::Integer(integer) => Ok(serde_json::Value::Number((*integer).into())),
+        Yaml::String(text) => Ok(serde_json::Value::String(text.clone())),
+        Yaml::Boolean(value) => Ok(serde_json::Value::Bool(*value)),
+        Yaml::Array(items) => items
+            .iter()
+            .enumerate()
+            .map(|(index, item)| yaml_to_json_value(item, &format!("{path}[{index}]")))
+            .collect::<Result<Vec<_>, _>>()
+            .map(serde_json::Value::Array),
+        Yaml::Hash(map) => {
+            let mut object = serde_json::Map::new();
+            for (key, value) in map {
+                let Some(key_text) = key.as_str() else {
+                    return Err(invalid_json_value(path, "YAML object keys must be strings"));
+                };
+                object.insert(
+                    key_text.to_string(),
+                    yaml_to_json_value(value, &format!("{path}.{key_text}"))?,
+                );
+            }
+            Ok(serde_json::Value::Object(object))
+        }
+        Yaml::Null => Ok(serde_json::Value::Null),
+        Yaml::Alias(_) | Yaml::BadValue => Err(invalid_json_value(
+            path,
+            "unsupported YAML value for JSON conversion",
+        )),
+    }
+}
+
+fn invalid_json_value(path: &str, message: &str) -> WeslawError {
+    WeslawError::at_path(WeslawDiagnosticCode::InvalidDocument, path, message)
 }
