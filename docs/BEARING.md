@@ -411,22 +411,25 @@ The active packet is
 
 Working budget: **50 slices**.
 
-Status: **35 / 50 slices closed**. The plan allocates `HLAW-001` through
+Status: **45 / 50 slices closed**. The plan allocates `HLAW-001` through
 `HLAW-050` across evidence intake, typed domain contracts, report models, CLI
 flows, GitHub publishing, MCP surfaces, policy, QA fixtures, determinism,
 performance budgets, migration, release gates, operator docs, and campaign
 closeout. Each slice must produce a PRD/test-plan artifact with explicit
 objectives, scope, user stories, BDD acceptance criteria, and test scenarios.
 
-Closed slices now cover `HLAW-001` through `HLAW-035`: evidence intake, typed
+Closed slices now cover `HLAW-001` through `HLAW-045`: evidence intake, typed
 domain contracts, report sections, CLI operator flows, local artifact writing,
 exit-code policy, GitHub publishing surfaces, MCP tools/resources, agent-safe
-summaries, and the first policy/audit contracts.
+summaries, policy/audit contracts, QA fixture corpora, deterministic clock and
+port seams, concurrency/idempotence requirements, performance budgets, legacy
+Holmes migration mapping, workflow integration, Rust crate scaffold boundaries,
+transitional CLI aliases, and operator documentation.
 
 ## Next Target
 
 The immediate focus is **Holmes `weslaw` assurance planning**: continue the
-50-slice PRD/test-plan campaign, with 35 slices closed and 15 remaining before
+50-slice PRD/test-plan campaign, with 45 slices closed and 5 remaining before
 the Rust Holmes assurance integration begins.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
@@ -443,10 +446,9 @@ runtime ownership into the base compiler.
 
 The next pull is:
 
-1. `HLAW-036` through `HLAW-040`: write PRD/test-plan artifacts for the golden
-   fixture corpus, negative fixture corpus, fake clock and ports, concurrency
-   and idempotence, and performance budget slices that complete the policy/QA
-   harness chunk.
+1. `HLAW-046` through `HLAW-050`: write PRD/test-plan artifacts for schema
+   versioning, artifact retention, end-to-end workflow, release gate rollout,
+   and campaign closeout so the planning packet can reach 50/50.
 
 ## Post-Retirement Freestyle Slice Log
 

@@ -10,7 +10,7 @@ release: v0.0.8
 
 ## Status
 
-Active planning packet. Slices `HLAW-001` through `HLAW-035` are complete.
+Active planning packet. Slices `HLAW-001` through `HLAW-045` are complete.
 
 ## Question
 
@@ -86,8 +86,8 @@ failure behavior, and test fixtures where known.
 | 1 | HLAW-001..HLAW-010 | Complete | Evidence intake and typed domain contracts. |
 | 2 | HLAW-011..HLAW-020 | Complete | Report model, CLI operator flows, and local artifacts. |
 | 3 | HLAW-021..HLAW-030 | Complete | GitHub and MCP interfaces over the same assurance use cases. |
-| 4 | HLAW-031..HLAW-040 | In progress | Policy, QA harnesses, determinism, concurrency, and budgets. |
-| 5 | HLAW-041..HLAW-050 | One PR | Migration, release gates, documentation, and campaign closeout. |
+| 4 | HLAW-031..HLAW-040 | Complete | Policy, QA harnesses, determinism, concurrency, and budgets. |
+| 5 | HLAW-041..HLAW-050 | In progress | Migration, release gates, documentation, and campaign closeout. |
 
 Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
 
@@ -285,28 +285,28 @@ Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
     outputs, hashes, and the exact gates evaluated by Holmes.
   - Required output: PRD for witness schema, hash coverage, replay fields,
     clock injection, and reproducibility tests.
-- [ ] HLAW-036 `LawAssuranceGoldenFixtureCorpus` PRD and test plan.
+- [x] HLAW-036 `LawAssuranceGoldenFixtureCorpus` PRD and test plan.
   - Feature/product: A fixture corpus covering clean, warning, failing,
     malformed, stale, and missing law evidence bundles.
   - Required output: PRD for fixture naming, expected outputs, snapshot
     regeneration policy, and cross-platform stability.
-- [ ] HLAW-037 `LawAssuranceNegativeFixtureCorpus` PRD and test plan.
+- [x] HLAW-037 `LawAssuranceNegativeFixtureCorpus` PRD and test plan.
   - Feature/product: A negative fixture set for invalid JSON, unsupported
     versions, hash mismatches, missing artifacts, unknown profiles, and malformed
     policies.
   - Required output: PRD for diagnostic codes, exit behavior, fixture
     isolation, and panic-free guarantees.
-- [ ] HLAW-038 `LawAssuranceFakeClockAndPorts` PRD and test plan.
+- [x] HLAW-038 `LawAssuranceFakeClockAndPorts` PRD and test plan.
   - Feature/product: Dependency-injected clock and in-memory ports for
     deterministic tests across CLI, API, MCP, and GitHub adapters.
   - Required output: PRD for fake-clock API, no-wall-clock assertions, adapter
     contracts, and concurrency-safe tests.
-- [ ] HLAW-039 `LawAssuranceConcurrencyAndIdempotence` PRD and test plan.
+- [x] HLAW-039 `LawAssuranceConcurrencyAndIdempotence` PRD and test plan.
   - Feature/product: Test requirements for repeated, concurrent, and retried
     assessment/publish operations.
   - Required output: PRD for idempotent comment updates, artifact overwrite
     policy, race simulation, and lock-free domain behavior.
-- [ ] HLAW-040 `LawAssurancePerformanceBudget` PRD and test plan.
+- [x] HLAW-040 `LawAssurancePerformanceBudget` PRD and test plan.
   - Feature/product: Performance and size budgets for law evidence validation,
     assessment, rendering, and publishing.
   - Required output: PRD for benchmark fixtures, large report limits, timeout
@@ -314,28 +314,28 @@ Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
 
 ### Migration, Release Gates, Docs, And Closeout
 
-- [ ] HLAW-041 `LegacyHolmesLawEvidenceMapping` PRD and test plan.
+- [x] HLAW-041 `LegacyHolmesLawEvidenceMapping` PRD and test plan.
   - Feature/product: A mapping from current JavaScript Holmes workflow artifacts
     to the future Rust Holmes law assurance bundle.
   - Required output: PRD for retained fields, rejected fields, migration gaps,
     and compatibility fixtures.
-- [ ] HLAW-042 `HolmesWorkflowWeslawIntegration` PRD and test plan.
+- [x] HLAW-042 `HolmesWorkflowWeslawIntegration` PRD and test plan.
   - Feature/product: CI workflow integration that runs Wesley law commands,
     assembles law evidence, and invokes Holmes assessment.
   - Required output: PRD for job dependencies, artifact paths, failure
     propagation, retry behavior, and branch/fork permissions.
-- [ ] HLAW-043 `RustHolmesCrateScaffold` PRD and test plan.
+- [x] HLAW-043 `RustHolmesCrateScaffold` PRD and test plan.
   - Feature/product: The initial Rust crate/module structure needed to host
     law assurance domain, application, reporting, and adapters.
   - Required output: PRD for crate boundaries, public API, dependency rules,
     compile-time guard tests, and no-GitHub-in-domain enforcement.
-- [ ] HLAW-044 `TransitionalHolmesCliAliases` PRD and test plan.
+- [x] HLAW-044 `TransitionalHolmesCliAliases` PRD and test plan.
   - Feature/product: Transitional CLI aliases or wrapper behavior that lets
     existing workflows call the new law assurance path without reviving legacy
     Node authority.
   - Required output: PRD for supported aliases, deprecation messages, exit
     parity, and removal gates.
-- [ ] HLAW-045 `LawAssuranceOperatorDocs` PRD and test plan.
+- [x] HLAW-045 `LawAssuranceOperatorDocs` PRD and test plan.
   - Feature/product: Operator documentation for generating law evidence,
     running Holmes law assessment, reading findings, and resolving failures.
   - Required output: PRD for docs locations, command examples, troubleshooting
@@ -426,6 +426,39 @@ thresholds, suppression boundaries, and audit witness requirements. The
 remaining policy/QA harness work should now pin fixture corpora, fake-clock and
 port requirements, concurrency/idempotence, and performance budgets before the
 campaign moves into migration and closeout.
+
+## Drift Check: HLAW-040
+
+Date: 2026-05-26.
+
+Status: **40 / 50 slices closed**.
+
+Decision: continue. The policy and QA harness chunk stayed inside the planning
+campaign boundary. The golden and negative fixture corpus slices define
+repeatable evidence inputs; the fake-clock and port slice prevents wall-clock
+or network nondeterminism from entering the future Rust Holmes assurance core;
+the concurrency/idempotence slice keeps repeated assessment and publishing
+operations boring; and the performance budget slice defines measurable limits
+without making Holmes a law compiler or benchmark framework.
+
+No scope correction is needed. The next work should finish migration, workflow,
+crate boundary, alias, and operator-documentation planning before the campaign
+closes on schema versioning, retention, end-to-end workflow, release gate
+rollout, and final closeout.
+
+## Progress Check: HLAW-045
+
+Date: 2026-05-26.
+
+Status: **45 / 50 slices closed**.
+
+Decision: continue with `HLAW-046` through `HLAW-050` next. The migration and
+operator-readiness slices now specify how existing JavaScript Holmes artifacts
+map into the future Rust law assurance bundle, how CI assembles and invokes the
+evidence path, where the Rust crate boundaries must sit, which transitional CLI
+aliases are allowed, and what operator documentation must prove. The final five
+slices should close schema compatibility, artifact retention, end-to-end
+workflow, release-gate rollout, and campaign closeout.
 
 ## Non-Goals For The 50-Slice Planning Campaign
 
