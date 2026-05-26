@@ -10,7 +10,7 @@ release: v0.0.8
 
 ## Status
 
-Active planning packet.
+Active planning packet. First PR chunk complete.
 
 ## Question
 
@@ -83,7 +83,7 @@ failure behavior, and test fixtures where known.
 
 | Chunk | Slices | Planned PR Shape | Purpose |
 | --- | --- | --- | --- |
-| 1 | HLAW-001..HLAW-010 | One PR | Evidence intake and typed domain contracts. |
+| 1 | HLAW-001..HLAW-010 | Complete | Evidence intake and typed domain contracts. |
 | 2 | HLAW-011..HLAW-020 | One PR | Report model, CLI operator flows, and local artifacts. |
 | 3 | HLAW-021..HLAW-030 | One PR | GitHub and MCP interfaces over the same assurance use cases. |
 | 4 | HLAW-031..HLAW-040 | One PR | Policy, QA harnesses, determinism, concurrency, and budgets. |
@@ -95,56 +95,56 @@ Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
 
 ### Evidence Intake And Typed Domain Contracts
 
-- [ ] HLAW-001 `HolmesLawEvidenceBundle` PRD and test plan.
+- [x] HLAW-001 `HolmesLawEvidenceBundle` PRD and test plan.
   - Feature/product: A typed bundle contract that groups `wesley law diff`,
     `law coverage`, `law capabilities`, and contract bundle manifest outputs
     into one Holmes-readable evidence input.
   - Required output: PRD for schema fields, versioning, required/optional
     artifact references, unsupported-version diagnostics, and fixture layout.
-- [ ] HLAW-002 `LawDiffIngestPort` PRD and test plan.
+- [x] HLAW-002 `LawDiffIngestPort` PRD and test plan.
   - Feature/product: A Holmes input port that reads `wesley.law-diff/v1` JSON
     and normalizes it into assurance findings without reclassifying semantic
     law changes.
   - Required output: PRD for event-kind mapping, malformed JSON handling,
     duplicate law ids, unknown event kinds, and stable finding ids.
-- [ ] HLAW-003 `LawCoverageIngestPort` PRD and test plan.
+- [x] HLAW-003 `LawCoverageIngestPort` PRD and test plan.
   - Feature/product: A Holmes input port that reads profile/category-aware law
     coverage reports and turns missing release-required subjects into gates.
   - Required output: PRD for release/local profile behavior, threshold
     handling, missing-subject rendering, and coverage fixture matrices.
-- [ ] HLAW-004 `LawCapabilityIngestPort` PRD and test plan.
+- [x] HLAW-004 `LawCapabilityIngestPort` PRD and test plan.
   - Feature/product: A Holmes input port that reads report-only footprint
     capability summaries and reports boundary posture without claiming runtime
     enforcement.
   - Required output: PRD for `reportOnly`, `runtimeEnforcement`, reads/writes/
     creates/forbids, empty-footprint behavior, and wording constraints.
-- [ ] HLAW-005 `ContractBundleManifestIngestPort` PRD and test plan.
+- [x] HLAW-005 `ContractBundleManifestIngestPort` PRD and test plan.
   - Feature/product: A Holmes input port that reads contract bundle manifests
     and verifies schema, law, profile, bundle, compiler, and codec hashes are
     present and consistently referenced by other artifacts.
   - Required output: PRD for hash validation, absent optional hashes, mismatch
     errors, and bundle traceability reporting.
-- [ ] HLAW-006 `WeslawArtifactLocator` PRD and test plan.
+- [x] HLAW-006 `WeslawArtifactLocator` PRD and test plan.
   - Feature/product: A local adapter that resolves law evidence artifact paths
     from CLI flags, workflow artifacts, and explicit bundle metadata.
   - Required output: PRD for path resolution precedence, missing files,
     symlink/path traversal policy, and deterministic diagnostics.
-- [ ] HLAW-007 `LawEvidenceValidationResult` PRD and test plan.
+- [x] HLAW-007 `LawEvidenceValidationResult` PRD and test plan.
   - Feature/product: A typed validation result that separates input contract
     errors from assurance findings so bad evidence fails before judgment.
   - Required output: PRD for error taxonomy, JSON shape, CLI exit mapping, and
     test fixtures for invalid artifacts.
-- [ ] HLAW-008 `SemanticChangeFinding` PRD and test plan.
+- [x] HLAW-008 `SemanticChangeFinding` PRD and test plan.
   - Feature/product: A domain finding model for law diff events with severity,
     posture, law id, subject, change fields, and source artifact references.
   - Required output: PRD for stable finding IDs, severity defaults, markdown
     snippets, JSON rendering, and sort order.
-- [ ] HLAW-009 `LawCoverageGateDecision` PRD and test plan.
+- [x] HLAW-009 `LawCoverageGateDecision` PRD and test plan.
   - Feature/product: A gate model that evaluates law coverage against policy
     profiles and reports pass/warn/fail/unavailable outcomes.
   - Required output: PRD for gate states, profile-specific required categories,
     missing-subject evidence, and fallback behavior when coverage is absent.
-- [ ] HLAW-010 `BundleTraceabilityGateDecision` PRD and test plan.
+- [x] HLAW-010 `BundleTraceabilityGateDecision` PRD and test plan.
   - Feature/product: A gate model that checks every ingested law artifact links
     back to the same expected contract bundle hash family.
   - Required output: PRD for cross-artifact consistency, hash mismatch
@@ -369,7 +369,7 @@ Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
 
 ## Initial Recommendation
 
-Spend the first PR on `HLAW-001` through `HLAW-010`.
+The first PR spends `HLAW-001` through `HLAW-010`.
 
 Reasoning:
 
@@ -382,6 +382,22 @@ Reasoning:
   and stale manifests.
 - They preserve Wesley's ownership boundary because Holmes ingests published
   law artifacts instead of recalculating semantic truth.
+
+## Drift Check: HLAW-010
+
+Date: 2026-05-26.
+
+Status: **10 / 50 slices closed**.
+
+Decision: continue with `HLAW-011` through `HLAW-020` next. The evidence intake
+chunk confirmed the intended boundary: Holmes consumes Wesley-published law
+artifacts, validates their shape and provenance, converts them into findings
+and gate decisions, and does not recompute semantic law truth.
+
+No scope correction is needed. Implementation remains out of scope for this
+campaign. The next chunk can safely define report sections, CLI operator flows,
+artifact writing, and exit-code behavior on top of the evidence contracts
+specified here.
 
 ## Non-Goals For The 50-Slice Planning Campaign
 
