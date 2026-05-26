@@ -402,35 +402,38 @@ deferral, and v1 playback/retrospective closeout evidence.
 
 ### 12. Holmes `weslaw` Assurance Planning
 
-The next chunk is a 50-slice PRD and test-plan campaign that turns the merged
-`weslaw` v1 outputs into Holmes-facing assurance requirements before
-implementation begins.
+This completed 50-slice PRD and test-plan campaign turns the merged `weslaw`
+v1 outputs into Holmes-facing assurance requirements before implementation
+begins.
 
-The active packet is
+The completed packet is
 [0020-holmes-weslaw-assurance-prd-test-plan](./design/0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md).
 
 Working budget: **50 slices**.
 
-Status: **45 / 50 slices closed**. The plan allocates `HLAW-001` through
+Status: **50 / 50 slices closed**. The plan allocates `HLAW-001` through
 `HLAW-050` across evidence intake, typed domain contracts, report models, CLI
 flows, GitHub publishing, MCP surfaces, policy, QA fixtures, determinism,
 performance budgets, migration, release gates, operator docs, and campaign
 closeout. Each slice must produce a PRD/test-plan artifact with explicit
 objectives, scope, user stories, BDD acceptance criteria, and test scenarios.
 
-Closed slices now cover `HLAW-001` through `HLAW-045`: evidence intake, typed
+Closed slices now cover `HLAW-001` through `HLAW-050`: evidence intake, typed
 domain contracts, report sections, CLI operator flows, local artifact writing,
 exit-code policy, GitHub publishing surfaces, MCP tools/resources, agent-safe
 summaries, policy/audit contracts, QA fixture corpora, deterministic clock and
 port seams, concurrency/idempotence requirements, performance budgets, legacy
 Holmes migration mapping, workflow integration, Rust crate scaffold boundaries,
-transitional CLI aliases, and operator documentation.
+transitional CLI aliases, operator documentation, schema-version compatibility,
+artifact retention, end-to-end workflow, release-gate rollout, and campaign
+closeout.
 
 ## Next Target
 
-The immediate focus is **Holmes `weslaw` assurance planning**: continue the
-50-slice PRD/test-plan campaign, with 45 slices closed and 5 remaining before
-the Rust Holmes assurance integration begins.
+The immediate focus is **Holmes `weslaw` assurance planning PR review**: the
+50-slice PRD/test-plan campaign is complete, and the next branch should begin
+Rust Holmes assurance implementation from the evidence and validation core
+before publishers or branch-protection gates.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
@@ -444,11 +447,15 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The next pull is:
+The next implementation pull after this planning PR should start with:
 
-1. `HLAW-046` through `HLAW-050`: write PRD/test-plan artifacts for schema
-   versioning, artifact retention, end-to-end workflow, release gate rollout,
-   and campaign closeout so the planning packet can reach 50/50.
+1. `HLAW-001`, `HLAW-006`, `HLAW-007`, and `HLAW-046`: evidence bundle,
+   artifact locator, validation result, and schema-version validation.
+2. `HLAW-002` through `HLAW-005`: law diff, coverage, capability, and contract
+   manifest ingest ports.
+3. `HLAW-008` through `HLAW-010` plus `HLAW-035`: semantic findings, gate
+   decisions, provenance, and audit witness.
+4. `HLAW-036` and `HLAW-037`: golden and negative fixture corpora.
 
 ## Post-Retirement Freestyle Slice Log
 

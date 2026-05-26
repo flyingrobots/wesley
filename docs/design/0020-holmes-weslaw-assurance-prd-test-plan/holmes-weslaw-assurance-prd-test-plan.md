@@ -2,7 +2,7 @@
 title: Holmes weslaw Assurance PRD And Test Plan Campaign
 legend: SPEC
 packet: 0020-holmes-weslaw-assurance-prd-test-plan
-status: active
+status: complete
 release: v0.0.8
 ---
 
@@ -10,7 +10,7 @@ release: v0.0.8
 
 ## Status
 
-Active planning packet. Slices `HLAW-001` through `HLAW-045` are complete.
+Planning packet complete. Slices `HLAW-001` through `HLAW-050` are complete.
 
 ## Question
 
@@ -87,7 +87,7 @@ failure behavior, and test fixtures where known.
 | 2 | HLAW-011..HLAW-020 | Complete | Report model, CLI operator flows, and local artifacts. |
 | 3 | HLAW-021..HLAW-030 | Complete | GitHub and MCP interfaces over the same assurance use cases. |
 | 4 | HLAW-031..HLAW-040 | Complete | Policy, QA harnesses, determinism, concurrency, and budgets. |
-| 5 | HLAW-041..HLAW-050 | In progress | Migration, release gates, documentation, and campaign closeout. |
+| 5 | HLAW-041..HLAW-050 | Complete | Migration, release gates, documentation, and campaign closeout. |
 
 Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
 
@@ -340,27 +340,27 @@ Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
     running Holmes law assessment, reading findings, and resolving failures.
   - Required output: PRD for docs locations, command examples, troubleshooting
     matrix, docs command checks, and accessibility of examples.
-- [ ] HLAW-046 `LawAssuranceSchemaVersioning` PRD and test plan.
+- [x] HLAW-046 `LawAssuranceSchemaVersioning` PRD and test plan.
   - Feature/product: Versioning and compatibility rules for Holmes law evidence
     bundle schemas, policy schemas, report schemas, and witness schemas.
   - Required output: PRD for semver-like compatibility, unsupported-version
     diagnostics, migration notices, and schema validation tests.
-- [ ] HLAW-047 `LawAssuranceArtifactRetention` PRD and test plan.
+- [x] HLAW-047 `LawAssuranceArtifactRetention` PRD and test plan.
   - Feature/product: Artifact retention rules for local runs, CI runs, PR
     comments, and future dashboard links.
   - Required output: PRD for retention names, overwrite policy, cleanup
     behavior, stale link warnings, and fork-safe behavior.
-- [ ] HLAW-048 `LawAssuranceEndToEndWorkflow` PRD and test plan.
+- [x] HLAW-048 `LawAssuranceEndToEndWorkflow` PRD and test plan.
   - Feature/product: End-to-end workflow from GraphQL SDL and `weslaw` authoring
     through Wesley law artifacts to Holmes findings and PR review output.
   - Required output: PRD for full golden path, failure-path sequence, fixture
     repository layout, and release-gate assertions.
-- [ ] HLAW-049 `LawAssuranceReleaseGateRollout` PRD and test plan.
+- [x] HLAW-049 `LawAssuranceReleaseGateRollout` PRD and test plan.
   - Feature/product: A staged rollout plan for advisory, required, and
     non-overridable law assurance gates in CI.
   - Required output: PRD for rollout phases, branch protection interaction,
     opt-in/opt-out policy, false-positive handling, and rollback tests.
-- [ ] HLAW-050 `HolmesWeslawAssuranceCloseout` PRD and test plan.
+- [x] HLAW-050 `HolmesWeslawAssuranceCloseout` PRD and test plan.
   - Feature/product: Campaign closeout artifact summarizing completed PRDs,
     open decisions, implementation-ready slices, deferred scope, and next
     engineering branch.
@@ -459,6 +459,37 @@ evidence path, where the Rust crate boundaries must sit, which transitional CLI
 aliases are allowed, and what operator documentation must prove. The final five
 slices should close schema compatibility, artifact retention, end-to-end
 workflow, release-gate rollout, and campaign closeout.
+
+## Drift Check: HLAW-050
+
+Date: 2026-05-26.
+
+Status: **50 / 50 slices closed**.
+
+Decision: close the planning campaign. The final schema-versioning, artifact
+retention, end-to-end workflow, release-gate rollout, and closeout slices keep
+Holmes on the intended side of the boundary: Holmes validates and judges
+Wesley-published law evidence, but it does not compile law, mutate shape,
+invent semantic diffs, or reach into external repos for product truth.
+
+No scope correction is needed before PR review. The recommended next
+engineering branch should start with the evidence and validation core before
+publishers or branch-protection gates:
+
+1. Implement `HolmesLawEvidenceBundle`, artifact locators, and version
+   validation from `HLAW-001`, `HLAW-006`, `HLAW-007`, and `HLAW-046`.
+2. Implement law diff, coverage, capability, and manifest ingest ports from
+   `HLAW-002` through `HLAW-005`.
+3. Implement validation result, semantic finding, coverage gate, provenance
+   gate, and audit witness models from `HLAW-007` through `HLAW-010` and
+   `HLAW-035`.
+4. Add golden and negative fixture corpora from `HLAW-036` and `HLAW-037`.
+5. Only then add CLI/report/publisher surfaces from later HLAW slices.
+
+Deferred scope remains explicit: Law Matrix, LSP support, hosted dashboards,
+external repo adoption, live branch-protection rollout, and Rust Holmes
+implementation are outside this planning packet and need their own execution
+branches.
 
 ## Non-Goals For The 50-Slice Planning Campaign
 
