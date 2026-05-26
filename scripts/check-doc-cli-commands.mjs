@@ -46,7 +46,16 @@ function loadWesleyCommands() {
   return commands;
 }
 
-function extractDocumentedCommands(content) {
+function documentedCommandFromParts(parts, commands) {
+  if (parts.length > 1 && !parts[1].startsWith('-')) {
+    const nested = `${parts[0]} ${parts[1]}`;
+    if (commands.has(nested)) return nested;
+  }
+
+  return parts[0];
+}
+
+function extractDocumentedCommands(content, commands) {
   const documented = [];
   for (const snippet of extractCommandSnippets(content)) {
     if (snippet.includes('pnpm wesley') || snippet.includes('...')) continue;
@@ -55,15 +64,7 @@ function extractDocumentedCommands(content) {
     const tail = String(match[1] || '').trim();
     const parts = tail.split(/\s+/).map(normalizeCommandToken).filter(Boolean);
     if (parts.length === 0 || parts[0].startsWith('-')) continue;
-    if (
-      ['schema', 'emit', 'operation'].includes(parts[0]) &&
-      parts[1] &&
-      !parts[1].startsWith('-')
-    ) {
-      documented.push(`${parts[0]} ${parts[1]}`);
-      continue;
-    }
-    documented.push(parts[0]);
+    documented.push(documentedCommandFromParts(parts, commands));
   }
   return documented;
 }
@@ -102,7 +103,7 @@ function extractCommandSnippets(content) {
 const commands = loadWesleyCommands();
 for (const doc of docs) {
   const content = readFileSync(resolve(root, doc), 'utf8');
-  for (const command of extractDocumentedCommands(content)) {
+  for (const command of extractDocumentedCommands(content, commands)) {
     if (!commands.has(command)) {
       fail(
         `${doc} documents "wesley ${command}", but the native Wesley CLI does not expose that command`
