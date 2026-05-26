@@ -1314,6 +1314,77 @@ fn law_ir_v1_binding_rejects_unresolved_subjects() {
 }
 
 #[test]
+fn law_ir_v1_binding_reports_authored_law_indices_after_normalization() {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let source = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+  source: ../contract-bundle-shape.graphql
+laws:
+  - id: z.scalar.positiveInt.u32-positive
+    status: active
+    kind: scalarSemantics
+    subject: scalar:PositiveInt
+    semantics:
+      representation: integer
+      minInclusive: 1
+      maxInclusive: 4294967295
+      forbids: [silentGraphQLIntNarrowing]
+  - id: a.scalar.missing
+    status: active
+    kind: scalarSemantics
+    subject: scalar:MissingScalar
+    semantics:
+      representation: string
+      forbids: []
+"#
+    );
+    let law_ir = load_weslaw_yaml(&source).expect("law should lower");
+
+    let error = validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)
+        .expect_err("missing scalar should fail");
+    assert_eq!(error.code, WeslawDiagnosticCode::UnresolvedSubject);
+    assert_eq!(error.path.as_deref(), Some("$.laws[1].subject"));
+}
+
+#[test]
+fn law_ir_v1_binding_rejects_non_object_schema_footprint_resources() {
+    let (ir, operations, schema_hash) = contract_bundle_shape();
+    let source = format!(
+        r#"apiVersion: weslaw/v1
+schema:
+  family: weslaw-fixture-contract-bundle
+  hash: {schema_hash}
+  source: ../contract-bundle-shape.graphql
+laws:
+  - id: jedit.op.replaceRangeAsTick.bad-resource
+    status: active
+    kind: footprintLaw
+    subject: operation:Mutation.replaceRangeAsTick
+    reads: [PositiveInt]
+    writes: []
+    creates: []
+    forbids: []
+    slots: []
+    closures: []
+    createSlots: []
+    updates: []
+"#
+    );
+    let law_ir = load_weslaw_yaml(&source).expect("law should lower");
+
+    let error = validate_law_ir_v1_bindings(&law_ir, &ir, &operations, &schema_hash)
+        .expect_err("scalar footprint resource should fail");
+    assert_eq!(error.code, WeslawDiagnosticCode::WrongSubjectKind);
+    assert_eq!(error.path.as_deref(), Some("$.laws[0].resources"));
+    assert!(error
+        .message
+        .contains("schema-backed resources must be object types"));
+}
+
+#[test]
 fn formal_wes_channel_directives_lower_into_canonical_law_ir() {
     let (ir, operations, schema_hash) = contract_bundle_shape();
     let lowered = lower_wes_channel_directives_to_law_ir_v1(

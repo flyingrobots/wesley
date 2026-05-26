@@ -13,7 +13,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   additions, emit registry/tag/schema-hash events so changed `lawHash` values
   have a machine-readable cause, ignore programmatic draft entries in semantic
   hash input, and include `schemaHashQualified` in emit metadata while retaining
-  the legacy bare `schemaHash` field.
+  the legacy bare `schemaHash` field. Follow-up PR review fixes now keep
+  `--law` metadata schema hashes sourced from the validated manifest, reject
+  non-object schema types as footprint resources unless they are explicit
+  registry resources, preserve authored `laws[n]` indices in binding
+  diagnostics after Law IR normalization, reject unknown `law coverage`
+  profiles, and rebind only the authored `schema.hash` anchor instead of
+  unrelated hash mentions.
 - **`weslaw` Law IR loader review fixes**: The loader now rejects wrong-typed
   optional sequence fields and invariant predicates with fields from another
   predicate operation, the published Law IR JSON Schema now discriminates each

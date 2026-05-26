@@ -335,7 +335,7 @@ fn run_law_coverage_command(args: &[String]) -> Result<u8, CliError> {
     let operations = list_schema_operations_sdl(&schema_sdl)?;
     let law_ir = load_weslaw_yaml(&law_source)?;
     build_contract_bundle_manifest_v1(&law_ir, &ir, &operations)?;
-    let profile = options.profile.unwrap_or_else(|| "release".to_string());
+    let profile = coverage_profile_or_default(options.profile.as_deref())?.to_string();
     let report = law_coverage_report(&ir, &operations, &law_ir, &profile);
 
     if options.json {
@@ -1059,7 +1059,10 @@ fn write_emit_metadata_if_requested(
         return Ok(());
     };
 
-    let schema_hash = compute_registry_hash(ir)?;
+    let schema_hash = manifest
+        .map(|manifest| unqualified_sha256(&manifest.schema_hash))
+        .transpose()?
+        .unwrap_or(compute_registry_hash(ir)?);
     let schema_hash_qualified = manifest
         .map(|manifest| manifest.schema_hash.clone())
         .unwrap_or_else(|| format!("sha256:{schema_hash}"));
@@ -1778,6 +1781,25 @@ fn print_nonempty_list(label: &str, values: &[String]) {
     }
 }
 
+fn coverage_profile_or_default(profile: Option<&str>) -> Result<&str, CliError> {
+    let profile = profile.unwrap_or("release");
+    match profile {
+        "release" | "ci-release" | "local" => Ok(profile),
+        value => Err(CliError::usage(format!(
+            "unknown law coverage profile `{value}`; expected release, ci-release, or local"
+        ))),
+    }
+}
+
+fn unqualified_sha256(value: &str) -> Result<String, CliError> {
+    let Some(hash) = value.strip_prefix("sha256:") else {
+        return Err(CliError::usage(format!(
+            "expected sha256-qualified hash, got `{value}`"
+        )));
+    };
+    Ok(hash.to_string())
+}
+
 fn serde_list<T: serde::Serialize>(values: &T) -> String {
     match serde_json::to_value(values) {
         Ok(serde_json::Value::Array(items)) => items
@@ -1795,14 +1817,55 @@ fn replace_schema_hash_anchor(
     new_schema_hash: &str,
     path: &Path,
 ) -> Result<String, CliError> {
-    let count = source.matches(old_schema_hash).count();
-    if count != 1 {
+    let mut replacements = 0usize;
+    let mut in_schema = false;
+    let mut schema_indent = 0usize;
+    let trailing_newline = source.ends_with('\n');
+    let mut lines = Vec::new();
+
+    for line in source.lines() {
+        let trimmed = line.trim_start();
+        let indent = line.len() - trimmed.len();
+        if !trimmed.is_empty() && !trimmed.starts_with('#') {
+            if trimmed == "schema:" {
+                in_schema = true;
+                schema_indent = indent;
+            } else if in_schema && indent <= schema_indent {
+                in_schema = false;
+            }
+        }
+
+        if in_schema {
+            if let Some(hash_value) = trimmed.strip_prefix("hash:") {
+                let hash_without_comment = hash_value
+                    .split_once('#')
+                    .map(|(value, _)| value)
+                    .unwrap_or(hash_value)
+                    .trim();
+                let unquoted_hash = hash_without_comment.trim_matches('"').trim_matches('\'');
+                if unquoted_hash == old_schema_hash {
+                    replacements += 1;
+                    lines.push(line.replacen(old_schema_hash, new_schema_hash, 1));
+                    continue;
+                }
+            }
+        }
+
+        lines.push(line.to_string());
+    }
+
+    if replacements != 1 {
         return Err(CliError::usage(format!(
-            "expected exactly one schema hash anchor `{old_schema_hash}` in `{}`; found {count}",
+            "expected exactly one schema.hash anchor `{old_schema_hash}` in `{}`; found {replacements}",
             path.display()
         )));
     }
-    Ok(source.replace(old_schema_hash, new_schema_hash))
+
+    let mut output = lines.join("\n");
+    if trailing_newline {
+        output.push('\n');
+    }
+    Ok(output)
 }
 
 fn flattened_schema_changes(delta: &SchemaDelta, breaking_only: bool) -> Vec<FlatChange> {
@@ -2009,7 +2072,7 @@ Usage:
   wesley law explain --law <path> <subject> [--json]
   wesley law rebind --schema <path> --law <path> [--accept --out <path>] [--json]
   wesley law capabilities --law <path> [--json]
-  wesley law coverage --schema <path> --law <path> [--profile release|local] [--json]
+  wesley law coverage --schema <path> --law <path> [--profile release|ci-release|local] [--json]
 
 Options:
   -s, --schema <path>  GraphQL SDL file used to validate the new law document

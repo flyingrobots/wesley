@@ -366,8 +366,19 @@ fn law_explain_reports_operation_footprint() {
 fn law_rebind_reports_and_accepts_schema_hash_updates() {
     let dir = temp_dir("law-rebind");
     let out = dir.join("rebound.weslaw.yaml");
+    let law_with_extra_hash = dir.join("law-with-extra-hash.weslaw.yaml");
     let schema = fixture("test/fixtures/weslaw/contract-bundle-shape.graphql");
     let law = fixture("test/fixtures/weslaw/rejected/schema-hash-mismatch.weslaw.yaml");
+    let old_hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+    let law_source = std::fs::read_to_string(&law).expect("law fixture should read");
+    std::fs::write(
+        &law_with_extra_hash,
+        law_source.replace(
+            "    semantics:\n",
+            &format!("    rationale: \"Historical mention {old_hash} must not be rewritten.\"\n    semantics:\n"),
+        ),
+    )
+    .expect("law fixture copy should write");
 
     let report_output = wesley()
         .args(["law", "rebind", "--schema"])
@@ -394,7 +405,7 @@ fn law_rebind_reports_and_accepts_schema_hash_updates() {
         .args(["law", "rebind", "--schema"])
         .arg(&schema)
         .arg("--law")
-        .arg(&law)
+        .arg(&law_with_extra_hash)
         .args(["--accept", "--out"])
         .arg(&out)
         .arg("--json")
@@ -416,6 +427,9 @@ fn law_rebind_reports_and_accepts_schema_hash_updates() {
         .output()
         .expect("wesley should run");
     assert_success(&validate_output);
+    let rebound = std::fs::read_to_string(&out).expect("rebound law should read");
+    assert!(rebound.contains(&format!("Historical mention {old_hash}")));
+    assert_eq!(rebound.matches(old_hash).count(), 1);
 
     let _ = std::fs::remove_dir_all(dir);
 }
@@ -507,6 +521,26 @@ fn law_coverage_reports_profile_categories() {
         .expect("variant coverage should exist");
     assert_eq!(variant["covered"], 1);
     assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_coverage_rejects_unknown_profiles() {
+    let output = wesley()
+        .args(["law", "coverage", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml",
+        ))
+        .args(["--profile", "prod", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    assert!(stderr.contains("unknown law coverage profile `prod`"));
 }
 
 #[test]
@@ -1194,6 +1228,19 @@ fn emit_rust_with_law_embeds_schema_and_law_hash_constants() {
     assert_eq!(
         metadata_json["lawHash"],
         generated_hash_literal(&generated, "WESLAW_HASH")
+    );
+    assert_eq!(
+        metadata_json["schemaHashQualified"],
+        generated_hash_literal(&generated, "WESLEY_SCHEMA_HASH")
+    );
+    assert_eq!(
+        metadata_json["schemaHashQualified"],
+        format!(
+            "sha256:{}",
+            metadata_json["schemaHash"]
+                .as_str()
+                .expect("schema hash should be a string")
+        )
     );
     assert!(metadata_json["bundleHash"]
         .as_str()

@@ -213,6 +213,9 @@ pub struct LawEntryV1 {
     pub rationale: Option<String>,
     /// Kind-specific law body.
     pub body: LawEntryBodyV1,
+    /// Authored zero-based `laws` sequence index, retained only for diagnostics.
+    #[serde(skip)]
+    pub source_index: Option<usize>,
 }
 
 /// Law entry lifecycle state.
@@ -719,7 +722,8 @@ pub fn load_weslaw_yaml(source: &str) -> Result<LawIrV1, WeslawError> {
     let mut entries = Vec::with_capacity(laws.len());
     for (index, law_value) in laws.iter().enumerate() {
         let path = format!("$.laws[{index}]");
-        if let Some(entry) = parse_law_entry(law_value, &path)? {
+        if let Some(mut entry) = parse_law_entry(law_value, &path)? {
+            entry.source_index = Some(index);
             if !active_ids.insert(entry.id.clone()) {
                 return Err(WeslawError::at_path(
                     WeslawDiagnosticCode::DuplicateId,
@@ -792,6 +796,7 @@ pub fn lower_wes_channel_directives_to_law_ir_v1(
             subject,
             tags: Vec::new(),
             rationale: None,
+            source_index: None,
             body: LawEntryBodyV1::ChannelLaw(ChannelLawV1 {
                 ordered,
                 version,
@@ -1079,7 +1084,8 @@ pub fn validate_law_ir_v1_bindings(
 
     let mut unique_subject_entries = HashSet::new();
     for (index, entry) in law_ir.entries.iter().enumerate() {
-        let law_path = format!("$.laws[{index}]");
+        let authored_index = entry.source_index.unwrap_or(index);
+        let law_path = format!("$.laws[{authored_index}]");
         let subject_path = format!("{law_path}.subject");
         let coordinate = parse_subject_coordinate(&entry.subject, &subject_path)?;
         if law_kind_has_unique_subject(entry.kind)
@@ -2771,14 +2777,26 @@ impl BindingContext<'_> {
         entry: &LawEntryV1,
         path: impl Into<String>,
     ) -> Result<(), WeslawError> {
-        if self.find_type(resource).is_some()
-            || self
-                .law_ir
-                .registries
-                .resources
-                .iter()
-                .any(|candidate| candidate.id == resource)
-        {
+        let registry_resource_exists = self
+            .law_ir
+            .registries
+            .resources
+            .iter()
+            .any(|candidate| candidate.id == resource);
+        if let Some(definition) = self.find_type(resource) {
+            if definition.kind == TypeKind::Object || registry_resource_exists {
+                return Ok(());
+            }
+            return Err(WeslawError::at_path(
+                WeslawDiagnosticCode::WrongSubjectKind,
+                path.into(),
+                format!(
+                    "law {} has footprint resource {resource}, but schema-backed resources must be object types or explicit registry entries; got {:?}",
+                    entry.id, definition.kind
+                ),
+            ));
+        }
+        if registry_resource_exists {
             Ok(())
         } else {
             Err(unresolved_reference(
@@ -3329,6 +3347,7 @@ fn parse_law_entry(value: &Yaml, path: &str) -> Result<Option<LawEntryV1>, Wesla
         tags,
         rationale,
         body,
+        source_index: None,
     }))
 }
 
