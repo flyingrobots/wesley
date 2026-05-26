@@ -335,10 +335,11 @@ The non-negotiables are narrow:
   are stable.
 
 Working budget: **75 slices**. The first scope checkpoint was `WLAW-050`; it
-kept the runway intact. The second checkpoint at `WLAW-069` confirms the
-adoption tooling is now usable enough to start the first consumer payoff pull.
+kept the runway intact. The second checkpoint at `WLAW-069` confirmed adoption
+tooling was usable enough to start the first consumer payoff pull. The v1
+runway is now closed.
 
-Status: **69 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+Status: **75 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
 substrate docs, coordinate and registry grammar, canonicalization and
 diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
 examples. `WLAW-011` through `WLAW-020` add the Rust Law IR v1 types, the
@@ -365,7 +366,10 @@ fixtures, and the matching docs/changelog update. `WLAW-060` through
 equivalence tests, `wesley law lint`, `wesley init-law`, description-derived
 draft suggestions, `wesley law explain` for scalar and operation subjects,
 explicit `wesley law rebind` reporting and acceptance, and updated adoption
-docs.
+docs. `WLAW-070` through `WLAW-075` add Rust law-backed scalar and variant
+validator helpers, report-only footprint capability summaries,
+profile/category-aware law coverage reports, an explicit Law Matrix v1.1
+deferral, and v1 playback/retrospective closeout evidence.
 
 ## Tensions
 
@@ -397,8 +401,8 @@ docs.
 
 ## Next Target
 
-The immediate focus is **finishing the `weslaw` v1 consumer payoff and packet
-closeout**.
+The immediate focus is **PR review and merge for `weslaw` v1**, then Holmes
+assurance integration over the new law diff, coverage, and bundle evidence.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
@@ -414,8 +418,9 @@ runtime ownership into the base compiler.
 
 The next pull after this PR is:
 
-1. `WLAW-070` through `WLAW-075`: deliver the first consumer payoff, make the
-   coverage/Law Matrix call, and close the v1 packet with playback evidence.
+1. After merge, start the Holmes-facing assurance pass over `weslaw` outputs:
+   consume law diffs, coverage reports, capability summaries, and bundle hashes
+   without giving Holmes ownership of semantic truth.
 
 ## Post-Retirement Freestyle Slice Log
 

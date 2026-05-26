@@ -105,6 +105,7 @@ fn accepted_weslaw_fixtures_satisfy_authoring_json_schema() {
         "test/fixtures/weslaw/accepted/channel-ttd-protocol.weslaw.yaml",
         "test/fixtures/weslaw/accepted/channel-ttd-protocol-from-directive.weslaw.yaml",
         "test/fixtures/weslaw/accepted/invariant-translated-evidence.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml",
     ];
 
     for fixture in fixtures {
@@ -1419,11 +1420,17 @@ fn accepted_weslaw_fixtures_bind_to_contract_bundle_shape() {
         "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
         "test/fixtures/weslaw/accepted/channel-ttd-protocol.weslaw.yaml",
         "test/fixtures/weslaw/accepted/invariant-translated-evidence.weslaw.yaml",
+        "test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml",
     ];
 
     for fixture in fixtures {
         let report = bind_law_source(&read_fixture(fixture)).expect(fixture);
-        assert_eq!(report.bound_entry_count, 1, "{fixture}");
+        let expected_count = if fixture.ends_with("rust-validator-payoff.weslaw.yaml") {
+            2
+        } else {
+            1
+        };
+        assert_eq!(report.bound_entry_count, expected_count, "{fixture}");
     }
 }
 

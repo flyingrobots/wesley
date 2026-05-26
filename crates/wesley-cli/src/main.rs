@@ -1,5 +1,6 @@
 //! Native Wesley CLI entry point.
 
+use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -11,10 +12,10 @@ use wesley_core::{
     lower_wes_channel_directives_to_law_ir_v1, normalize_schema_sdl, record_law_binding_error_v1,
     resolve_operation_selections, resolve_operation_selections_with_schema,
     ContractBundleManifestV1, FootprintLawV1, LawDiffReportV1, LawEntryBodyV1, LawIrV1,
-    ScalarSemanticsLawV1, SchemaDelta, TypeKind, WeslawError, WesleyError, WesleyIR,
+    OperationType, ScalarSemanticsLawV1, SchemaDelta, TypeKind, WeslawError, WesleyError, WesleyIR,
 };
 use wesley_emit_rust::{
-    emit_rust_with_operations, emit_rust_with_operations_and_hashes,
+    emit_rust_with_operations, emit_rust_with_operations_and_law,
     GENERATOR_NAME as RUST_GENERATOR_NAME, GENERATOR_VERSION as RUST_GENERATOR_VERSION,
 };
 use wesley_emit_typescript::{
@@ -135,6 +136,16 @@ fn run_law_command(args: &[String]) -> Result<u8, CliError> {
             Ok(EXIT_OK)
         }
         Some("rebind") => run_law_rebind_command(&args[1..]),
+        Some("capabilities") if wants_help(&args[1..]) => {
+            print_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("capabilities") => run_law_capabilities_command(&args[1..]),
+        Some("coverage") if wants_help(&args[1..]) => {
+            print_law_help();
+            Ok(EXIT_OK)
+        }
+        Some("coverage") => run_law_coverage_command(&args[1..]),
         Some(command) => Err(CliError::usage(format!("unknown law command '{command}'"))),
     }
 }
@@ -286,6 +297,68 @@ fn run_law_rebind_command(args: &[String]) -> Result<u8, CliError> {
     Ok(EXIT_OK)
 }
 
+fn run_law_capabilities_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "law capabilities")?;
+    let law_path = options.required_law("law capabilities")?;
+    let law_source = read_file(&law_path, "law")?;
+    let law_ir = load_weslaw_yaml(&law_source)?;
+    let report = capability_report_from_law(&law_ir);
+
+    if options.json {
+        print_json(&report)?;
+    } else {
+        println!(
+            "Capability report: {} footprint(s), reportOnly={}, runtimeEnforcement={}",
+            report.footprints.len(),
+            report.report_only,
+            report.runtime_enforcement
+        );
+        for footprint in &report.footprints {
+            println!("{} {}", footprint.subject, footprint.law_id);
+            print_nonempty_list("  reads", &footprint.reads);
+            print_nonempty_list("  writes", &footprint.writes);
+            print_nonempty_list("  creates", &footprint.creates);
+            print_nonempty_list("  forbids", &footprint.forbids);
+        }
+    }
+
+    Ok(EXIT_OK)
+}
+
+fn run_law_coverage_command(args: &[String]) -> Result<u8, CliError> {
+    let options = parse_options(args, "law coverage")?;
+    let schema_path = options.required_schema("law coverage")?;
+    let law_path = options.required_law("law coverage")?;
+    let schema_sdl = read_file(&schema_path, "schema")?;
+    let law_source = read_file(&law_path, "law")?;
+    let ir = lower_schema_sdl(&schema_sdl)?;
+    let operations = list_schema_operations_sdl(&schema_sdl)?;
+    let law_ir = load_weslaw_yaml(&law_source)?;
+    build_contract_bundle_manifest_v1(&law_ir, &ir, &operations)?;
+    let profile = options.profile.unwrap_or_else(|| "release".to_string());
+    let report = law_coverage_report(&ir, &operations, &law_ir, &profile);
+
+    if options.json {
+        print_json(&report)?;
+    } else {
+        println!(
+            "Law coverage profile {}: {}/{} required subjects covered ({:.1}%)",
+            report.profile, report.required_covered, report.required_total, report.required_percent
+        );
+        for category in &report.categories {
+            println!(
+                "{}: {}/{} covered{}",
+                category.id,
+                category.covered,
+                category.total,
+                if category.required { " required" } else { "" }
+            );
+        }
+    }
+
+    Ok(EXIT_OK)
+}
+
 fn run_normalize_sdl_command(args: &[String]) -> Result<u8, CliError> {
     let options = parse_options(args, "normalize-sdl")?;
     let schema_path = options.required_schema("normalize-sdl")?;
@@ -408,17 +481,16 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let sdl = read_file(&schema_path, "schema")?;
             let ir = lower_schema_sdl(&sdl)?;
             let operations = list_schema_operations_sdl(&sdl)?;
-            let manifest = load_contract_bundle_manifest_if_requested(
-                options.law.as_deref(),
-                &ir,
-                &operations,
-            )?;
-            let rust = if let Some(manifest) = &manifest {
-                emit_rust_with_operations_and_hashes(
+            let bundle =
+                load_contract_bundle_if_requested(options.law.as_deref(), &ir, &operations)?;
+            let manifest = bundle.as_ref().map(|bundle| &bundle.manifest);
+            let rust = if let Some(bundle) = &bundle {
+                emit_rust_with_operations_and_law(
                     &ir,
                     &operations,
-                    &manifest.schema_hash,
-                    &manifest.law_hash,
+                    &bundle.manifest.schema_hash,
+                    &bundle.manifest.law_hash,
+                    &bundle.law_ir,
                 )
             } else {
                 emit_rust_with_operations(&ir, &operations)
@@ -428,7 +500,7 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             write_emit_metadata_if_requested(
                 options.metadata_out.as_deref(),
                 &ir,
-                manifest.as_ref(),
+                manifest,
                 RUST_GENERATOR_NAME,
                 RUST_GENERATOR_VERSION,
             )?;
@@ -445,18 +517,16 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             let sdl = read_file(&schema_path, "schema")?;
             let ir = lower_schema_sdl(&sdl)?;
             let operations = list_schema_operations_sdl(&sdl)?;
-            let manifest = load_contract_bundle_manifest_if_requested(
-                options.law.as_deref(),
-                &ir,
-                &operations,
-            )?;
+            let bundle =
+                load_contract_bundle_if_requested(options.law.as_deref(), &ir, &operations)?;
+            let manifest = bundle.as_ref().map(|bundle| &bundle.manifest);
             let typescript = emit_typescript_with_operations(&ir, &operations);
 
             write_file(&out_path, &typescript, "TypeScript output")?;
             write_emit_metadata_if_requested(
                 options.metadata_out.as_deref(),
                 &ir,
-                manifest.as_ref(),
+                manifest,
                 TYPESCRIPT_GENERATOR_NAME,
                 TYPESCRIPT_GENERATOR_VERSION,
             )?;
@@ -701,6 +771,7 @@ struct ParsedOptions {
     metadata_out: Option<PathBuf>,
     directive: Option<String>,
     family: Option<String>,
+    profile: Option<String>,
     subject: Option<String>,
     format: Option<String>,
     breaking_only: bool,
@@ -798,7 +869,12 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--law"
                 if matches!(
                     command,
-                    "law validate" | "law lint" | "law explain" | "law rebind"
+                    "law validate"
+                        | "law lint"
+                        | "law explain"
+                        | "law rebind"
+                        | "law capabilities"
+                        | "law coverage"
                 ) || command.starts_with("emit ") =>
             {
                 index += 1;
@@ -839,6 +915,15 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--family" => {
                 return Err(CliError::usage(format!(
                     "unknown option '--family' for `{command}`"
+                )));
+            }
+            "--profile" if command == "law coverage" => {
+                index += 1;
+                options.profile = Some(required_value(args, index, "--profile")?);
+            }
+            "--profile" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--profile' for `{command}`"
                 )));
             }
             "--accept" if command == "law rebind" => {
@@ -997,11 +1082,16 @@ fn write_emit_metadata_if_requested(
     write_file(path, &json, "emit metadata")
 }
 
-fn load_contract_bundle_manifest_if_requested(
+struct LoadedContractBundle {
+    law_ir: LawIrV1,
+    manifest: ContractBundleManifestV1,
+}
+
+fn load_contract_bundle_if_requested(
     law_path: Option<&Path>,
     ir: &WesleyIR,
     operations: &[wesley_core::SchemaOperation],
-) -> Result<Option<ContractBundleManifestV1>, CliError> {
+) -> Result<Option<LoadedContractBundle>, CliError> {
     let Some(law_path) = law_path else {
         return Ok(None);
     };
@@ -1012,10 +1102,9 @@ fn load_contract_bundle_manifest_if_requested(
         source: source.to_string(),
     })?;
     let law_ir = load_weslaw_yaml(&law_source)?;
+    let manifest = build_contract_bundle_manifest_v1(&law_ir, ir, operations)?;
 
-    Ok(Some(build_contract_bundle_manifest_v1(
-        &law_ir, ir, operations,
-    )?))
+    Ok(Some(LoadedContractBundle { law_ir, manifest }))
 }
 
 fn read_schema_diff_inputs(options: &ParsedOptions) -> Result<(String, String), CliError> {
@@ -1199,6 +1288,49 @@ struct LawRebindReport {
     output: Option<String>,
 }
 
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CapabilityReport {
+    api_version: &'static str,
+    report_only: bool,
+    runtime_enforcement: bool,
+    note: &'static str,
+    footprints: Vec<CapabilityFootprintReport>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CapabilityFootprintReport {
+    law_id: String,
+    subject: String,
+    reads: Vec<String>,
+    writes: Vec<String>,
+    creates: Vec<String>,
+    forbids: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LawCoverageReport {
+    api_version: &'static str,
+    profile: String,
+    required_total: usize,
+    required_covered: usize,
+    required_percent: f64,
+    categories: Vec<LawCoverageCategory>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LawCoverageCategory {
+    id: &'static str,
+    label: &'static str,
+    required: bool,
+    total: usize,
+    covered: usize,
+    missing_subjects: Vec<String>,
+}
+
 struct DraftSuggestion {
     id: String,
     subject: String,
@@ -1318,6 +1450,190 @@ fn format_law_diff_summary(report: &LawDiffReportV1) -> String {
         report.old_law_hash,
         report.new_law_hash
     )
+}
+
+fn capability_report_from_law(law_ir: &LawIrV1) -> CapabilityReport {
+    let footprints = law_ir
+        .entries
+        .iter()
+        .filter_map(|entry| {
+            let LawEntryBodyV1::FootprintLaw(body) = &entry.body else {
+                return None;
+            };
+            Some(CapabilityFootprintReport {
+                law_id: entry.id.clone(),
+                subject: entry.subject.clone(),
+                reads: body.reads.clone(),
+                writes: body.writes.clone(),
+                creates: body.creates.clone(),
+                forbids: body.forbids.clone(),
+            })
+        })
+        .collect();
+
+    CapabilityReport {
+        api_version: "wesley.capability-report/v1",
+        report_only: true,
+        runtime_enforcement: false,
+        note: "Footprint capabilities are report-only in weslaw v1; no runtime enforcement is claimed.",
+        footprints,
+    }
+}
+
+fn law_coverage_report(
+    ir: &WesleyIR,
+    operations: &[wesley_core::SchemaOperation],
+    law_ir: &LawIrV1,
+    profile: &str,
+) -> LawCoverageReport {
+    let release_required = matches!(profile, "release" | "ci-release");
+    let categories = vec![
+        law_coverage_category(
+            "customScalarSemantics",
+            "Custom scalar semantic law",
+            release_required,
+            custom_scalar_subjects(ir),
+            law_ir,
+            |body| matches!(body, LawEntryBodyV1::ScalarSemantics(_)),
+        ),
+        law_coverage_category(
+            "variantInputLaw",
+            "Input variant law",
+            release_required,
+            variant_input_subjects(ir),
+            law_ir,
+            |body| matches!(body, LawEntryBodyV1::VariantLaw(_)),
+        ),
+        law_coverage_category(
+            "mutationFootprintLaw",
+            "Mutation footprint law",
+            release_required,
+            mutation_operation_subjects(operations),
+            law_ir,
+            |body| matches!(body, LawEntryBodyV1::FootprintLaw(_)),
+        ),
+        law_coverage_category(
+            "channelLaw",
+            "Channel law",
+            release_required,
+            schema_channel_subjects(ir),
+            law_ir,
+            |body| matches!(body, LawEntryBodyV1::ChannelLaw(_)),
+        ),
+    ];
+    let required_total = categories
+        .iter()
+        .filter(|category| category.required)
+        .map(|category| category.total)
+        .sum();
+    let required_covered = categories
+        .iter()
+        .filter(|category| category.required)
+        .map(|category| category.covered)
+        .sum();
+    let required_percent = percentage(required_covered, required_total);
+
+    LawCoverageReport {
+        api_version: "wesley.law-coverage/v1",
+        profile: profile.to_string(),
+        required_total,
+        required_covered,
+        required_percent,
+        categories,
+    }
+}
+
+fn law_coverage_category(
+    id: &'static str,
+    label: &'static str,
+    required: bool,
+    subjects: Vec<String>,
+    law_ir: &LawIrV1,
+    predicate: impl Fn(&LawEntryBodyV1) -> bool,
+) -> LawCoverageCategory {
+    let subjects = subjects.into_iter().collect::<BTreeSet<_>>();
+    let missing_subjects = subjects
+        .iter()
+        .filter(|subject| !has_law_for_subject(law_ir, subject, &predicate))
+        .cloned()
+        .collect::<Vec<_>>();
+    let total = subjects.len();
+    let covered = total - missing_subjects.len();
+
+    LawCoverageCategory {
+        id,
+        label,
+        required,
+        total,
+        covered,
+        missing_subjects,
+    }
+}
+
+fn has_law_for_subject(
+    law_ir: &LawIrV1,
+    subject: &str,
+    predicate: impl Fn(&LawEntryBodyV1) -> bool,
+) -> bool {
+    law_ir
+        .entries
+        .iter()
+        .any(|entry| entry.subject == subject && predicate(&entry.body))
+}
+
+fn custom_scalar_subjects(ir: &WesleyIR) -> Vec<String> {
+    ir.types
+        .iter()
+        .filter(|definition| {
+            definition.kind == TypeKind::Scalar && !is_builtin_graphql_scalar(&definition.name)
+        })
+        .map(|definition| format!("scalar:{}", definition.name))
+        .collect()
+}
+
+fn variant_input_subjects(ir: &WesleyIR) -> Vec<String> {
+    ir.types
+        .iter()
+        .filter(|definition| {
+            definition.kind == TypeKind::InputObject
+                && definition.fields.iter().any(|field| field.name == "kind")
+        })
+        .map(|definition| format!("input:{}", definition.name))
+        .collect()
+}
+
+fn mutation_operation_subjects(operations: &[wesley_core::SchemaOperation]) -> Vec<String> {
+    operations
+        .iter()
+        .filter(|operation| matches!(operation.operation_type, OperationType::Mutation))
+        .map(|operation| format!("operation:Mutation.{}", operation.field_name))
+        .collect()
+}
+
+fn schema_channel_subjects(ir: &WesleyIR) -> Vec<String> {
+    ir.types
+        .iter()
+        .filter_map(|definition| {
+            let directive = definition.directives.get("wes_channel")?;
+            let name = directive.get("name").and_then(serde_json::Value::as_str)?;
+            let version = directive
+                .get("version")
+                .and_then(serde_json::Value::as_u64)?;
+            Some(format!("channel:{name}@{version}"))
+        })
+        .collect()
+}
+
+fn is_builtin_graphql_scalar(name: &str) -> bool {
+    matches!(name, "ID" | "String" | "Int" | "Float" | "Boolean")
+}
+
+fn percentage(covered: usize, total: usize) -> f64 {
+    if total == 0 {
+        100.0
+    } else {
+        ((covered as f64 / total as f64) * 1000.0).round() / 10.0
+    }
 }
 
 fn draft_suggestions_from_descriptions(ir: &WesleyIR) -> Vec<DraftSuggestion> {
@@ -1456,6 +1772,12 @@ fn push_named_list(lines: &mut Vec<String>, label: &str, values: &[String]) {
     }
 }
 
+fn print_nonempty_list(label: &str, values: &[String]) {
+    if !values.is_empty() {
+        println!("{label}: {}", values.join(", "));
+    }
+}
+
 fn serde_list<T: serde::Serialize>(values: &T) -> String {
     match serde_json::to_value(values) {
         Ok(serde_json::Value::Array(items)) => items
@@ -1589,6 +1911,8 @@ Commands:
   law diff                  Compare weslaw semantic Law IR states
   law explain               Explain active laws bound to one subject
   law rebind                Re-anchor weslaw to an active schema hash
+  law capabilities          Emit report-only footprint capability summaries
+  law coverage              Report profile/category-aware law coverage
   emit rust                 Emit Rust models and operation bindings from GraphQL SDL
   emit typescript           Emit TypeScript declarations and operation bindings from GraphQL SDL
   operation selections      Resolve selected operation fields
@@ -1684,6 +2008,8 @@ Usage:
   wesley law diff --old <path> --new <path> [--schema <path>] [--format markdown|json|summary]
   wesley law explain --law <path> <subject> [--json]
   wesley law rebind --schema <path> --law <path> [--accept --out <path>] [--json]
+  wesley law capabilities --law <path> [--json]
+  wesley law coverage --schema <path> --law <path> [--profile release|local] [--json]
 
 Options:
   -s, --schema <path>  GraphQL SDL file used to validate the new law document
@@ -1692,6 +2018,7 @@ Options:
   --new <path>         New/target weslaw/v1 authoring file for diff
   --accept             Write an explicitly accepted rebind output
   --out <path>         Rebind output path
+  --profile <name>     Coverage profile, default: release
   --json               Emit JSON output
   --format <format>    Output format: markdown, json, or summary"
     );

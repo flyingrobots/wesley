@@ -6,8 +6,8 @@
 use std::collections::BTreeSet;
 use std::fmt::Write;
 use wesley_core::{
-    Field, OperationArgument, OperationType, SchemaOperation, TypeDefinition, TypeKind,
-    TypeReference, WesleyIR,
+    Field, LawEntryBodyV1, LawIrV1, OperationArgument, OperationType, ScalarRepresentationV1,
+    SchemaOperation, TypeDefinition, TypeKind, TypeReference, WesleyIR,
 };
 
 /// Stable generator identifier recorded in native emit metadata.
@@ -46,10 +46,29 @@ pub fn emit_rust_with_operations_and_hashes(
     print_file(&file)
 }
 
+/// Emits Rust declarations with provenance constants and law-backed helper validators.
+pub fn emit_rust_with_operations_and_law(
+    ir: &WesleyIR,
+    operations: &[SchemaOperation],
+    schema_hash: &str,
+    law_hash: &str,
+    law_ir: &LawIrV1,
+) -> String {
+    let mut file = RustFile::from_ir_and_operations(ir, operations);
+    file.provenance = Some(RustProvenanceConstants {
+        schema_hash: schema_hash.to_string(),
+        law_hash: law_hash.to_string(),
+    });
+    file.law_items = rust_law_items_from_ir(ir, law_ir);
+
+    print_file(&file)
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RustFile {
     provenance: Option<RustProvenanceConstants>,
     items: Vec<RustItem>,
+    law_items: Vec<RustLawItem>,
 }
 
 impl RustFile {
@@ -92,6 +111,7 @@ impl RustFile {
         Self {
             provenance: None,
             items,
+            law_items: Vec::new(),
         }
     }
 }
@@ -108,6 +128,12 @@ enum RustItem {
     Struct(RustStruct),
     Enum(RustEnum),
     Operation(RustOperationBinding),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum RustLawItem {
+    ScalarValidator(RustScalarValidator),
+    VariantValidator(RustVariantValidator),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -153,6 +179,31 @@ struct RustVariant {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+struct RustScalarValidator {
+    function_name: String,
+    scalar_name: String,
+    min_inclusive: Option<u64>,
+    max_inclusive: Option<u64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RustVariantValidator {
+    function_name: String,
+    input_type: String,
+    discriminator_field: String,
+    enum_type: String,
+    cases: Vec<RustVariantValidatorCase>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RustVariantValidatorCase {
+    enum_variant: String,
+    case_value: String,
+    requires: Vec<String>,
+    forbids: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum RustType {
     String,
     I32,
@@ -161,6 +212,91 @@ enum RustType {
     Named(String),
     Vec(Box<RustType>),
     Option(Box<RustType>),
+}
+
+fn rust_law_items_from_ir(ir: &WesleyIR, law_ir: &LawIrV1) -> Vec<RustLawItem> {
+    law_ir
+        .entries
+        .iter()
+        .filter_map(|entry| match &entry.body {
+            LawEntryBodyV1::ScalarSemantics(body) => {
+                scalar_validator_from_law(&entry.subject, body)
+            }
+            LawEntryBodyV1::VariantLaw(body) => {
+                variant_validator_from_law(ir, &entry.subject, body)
+            }
+            LawEntryBodyV1::FootprintLaw(_)
+            | LawEntryBodyV1::ChannelLaw(_)
+            | LawEntryBodyV1::InvariantLaw(_) => None,
+        })
+        .collect()
+}
+
+fn scalar_validator_from_law(
+    subject: &str,
+    body: &wesley_core::ScalarSemanticsLawV1,
+) -> Option<RustLawItem> {
+    if body.representation != ScalarRepresentationV1::Integer {
+        return None;
+    }
+    let scalar_name = subject.strip_prefix("scalar:")?;
+
+    Some(RustLawItem::ScalarValidator(RustScalarValidator {
+        function_name: format!("validate_{}", rust_field_name(scalar_name)),
+        scalar_name: rust_type_name(scalar_name),
+        min_inclusive: body.min_inclusive,
+        max_inclusive: body.max_inclusive,
+    }))
+}
+
+fn variant_validator_from_law(
+    ir: &WesleyIR,
+    subject: &str,
+    body: &wesley_core::VariantLawV1,
+) -> Option<RustLawItem> {
+    let input_name = subject.strip_prefix("input:")?;
+    let input = ir.types.iter().find(|definition| {
+        definition.kind == TypeKind::InputObject && definition.name == input_name
+    })?;
+    let discriminator = input
+        .fields
+        .iter()
+        .find(|field| field.name == body.discriminator.field)?;
+    let cases = body
+        .cases
+        .iter()
+        .map(|case| RustVariantValidatorCase {
+            enum_variant: rust_variant_name(&case.value),
+            case_value: case.value.clone(),
+            requires: dynamic_variant_fields(input, &case.requires),
+            forbids: dynamic_variant_fields(input, &case.forbids),
+        })
+        .collect();
+
+    Some(RustLawItem::VariantValidator(RustVariantValidator {
+        function_name: format!("validate_{}_variant", rust_field_name(input_name)),
+        input_type: rust_type_name(input_name),
+        discriminator_field: rust_field_name(&discriminator.name),
+        enum_type: rust_type_name(&body.discriminator.r#enum),
+        cases,
+    }))
+}
+
+fn dynamic_variant_fields(input: &TypeDefinition, fields: &[String]) -> Vec<String> {
+    fields
+        .iter()
+        .filter_map(|field_name| {
+            let field = input
+                .fields
+                .iter()
+                .find(|field| field.name == *field_name)?;
+            if matches!(rust_type_from_reference(&field.r#type), RustType::Option(_)) {
+                Some(rust_field_name(field_name))
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 fn struct_from_type(type_def: &TypeDefinition) -> RustStruct {
@@ -310,6 +446,11 @@ fn print_file(file: &RustFile) -> String {
         print_item(&mut out, item);
     }
 
+    for item in &file.law_items {
+        out.push('\n');
+        print_law_item(&mut out, item);
+    }
+
     out
 }
 
@@ -320,6 +461,83 @@ fn print_item(out: &mut String, item: &RustItem) {
         RustItem::Enum(enum_item) => print_enum(out, enum_item),
         RustItem::Operation(operation) => print_operation_binding(out, operation),
     }
+}
+
+fn print_law_item(out: &mut String, item: &RustLawItem) {
+    match item {
+        RustLawItem::ScalarValidator(validator) => print_scalar_validator(out, validator),
+        RustLawItem::VariantValidator(validator) => print_variant_validator(out, validator),
+    }
+}
+
+fn print_scalar_validator(out: &mut String, validator: &RustScalarValidator) {
+    writeln!(
+        out,
+        "pub fn {}(value: u64) -> Result<u64, &'static str> {{",
+        validator.function_name
+    )
+    .expect("writing to string should not fail");
+    if let Some(min) = validator.min_inclusive {
+        writeln!(
+            out,
+            "    if value < {min} {{ return Err(\"{} below minInclusive {min}\"); }}",
+            validator.scalar_name
+        )
+        .expect("writing to string should not fail");
+    }
+    if let Some(max) = validator.max_inclusive {
+        writeln!(
+            out,
+            "    if value > {max} {{ return Err(\"{} above maxInclusive {max}\"); }}",
+            validator.scalar_name
+        )
+        .expect("writing to string should not fail");
+    }
+    out.push_str("    Ok(value)\n");
+    out.push_str("}\n");
+}
+
+fn print_variant_validator(out: &mut String, validator: &RustVariantValidator) {
+    writeln!(
+        out,
+        "pub fn {}(value: &{}) -> Result<(), &'static str> {{",
+        validator.function_name, validator.input_type
+    )
+    .expect("writing to string should not fail");
+    writeln!(
+        out,
+        "    match value.{}.clone() {{",
+        validator.discriminator_field
+    )
+    .expect("writing to string should not fail");
+    for case in &validator.cases {
+        writeln!(
+            out,
+            "        {}::{} => {{",
+            validator.enum_type, case.enum_variant
+        )
+        .expect("writing to string should not fail");
+        for field in &case.requires {
+            writeln!(
+                out,
+                "            if value.{field}.is_none() {{ return Err(\"{} requires {field}\"); }}",
+                case.case_value
+            )
+            .expect("writing to string should not fail");
+        }
+        for field in &case.forbids {
+            writeln!(
+                out,
+                "            if value.{field}.is_some() {{ return Err(\"{} forbids {field}\"); }}",
+                case.case_value
+            )
+            .expect("writing to string should not fail");
+        }
+        out.push_str("        }\n");
+    }
+    out.push_str("    }\n");
+    out.push_str("    Ok(())\n");
+    out.push_str("}\n");
 }
 
 fn print_type_alias(out: &mut String, alias: &RustTypeAlias) {
@@ -654,7 +872,7 @@ fn print_rust_string_literal(out: &mut String, value: &str) {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
-    use wesley_core::{list_schema_operations_sdl, lower_schema_sdl};
+    use wesley_core::{list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl};
 
     #[test]
     fn emits_rust_models_from_l1_ir() {
@@ -777,6 +995,37 @@ pub struct UserFilter {
         assert!(actual.contains("pub const FIELD_NAME: &'static str = \"createBufferWorldline\";"));
         assert!(actual.contains("pub const DIRECTIVES_JSON: &'static str = "));
         assert!(actual.contains("\\\"wes_footprint\\\""));
+    }
+
+    #[test]
+    fn emits_law_backed_scalar_and_variant_validators() {
+        let sdl = include_str!("../../../test/fixtures/weslaw/contract-bundle-shape.graphql");
+        let law_ir = load_weslaw_yaml(include_str!(
+            "../../../test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml"
+        ))
+        .expect("law fixture should lower");
+        let ir = lower_schema_sdl(sdl).expect("schema should lower");
+        let operations = list_schema_operations_sdl(sdl).expect("operations should resolve");
+
+        let actual = emit_rust_with_operations_and_law(
+            &ir,
+            &operations,
+            "sha256:schema",
+            "sha256:law",
+            &law_ir,
+        );
+
+        syn::parse_file(&actual).expect("generated Rust should parse");
+        assert!(actual.contains("pub fn validate_positive_int(value: u64)"));
+        assert!(actual.contains("if value < 1"));
+        assert!(actual.contains("if value > 4294967295"));
+        assert!(actual
+            .contains("pub fn validate_playback_mode_input_variant(value: &PlaybackModeInput)"));
+        assert!(actual.contains("PlaybackModeKind::Seek => {"));
+        assert!(actual.contains("if value.target.is_none()"));
+        assert!(actual.contains("if value.then.is_none()"));
+        assert!(actual.contains("PlaybackModeKind::Paused => {"));
+        assert!(actual.contains("if value.target.is_some()"));
     }
 
     #[test]

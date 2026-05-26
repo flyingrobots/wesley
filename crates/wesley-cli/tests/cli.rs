@@ -18,6 +18,8 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("law diff"));
     assert!(stdout.contains("law explain"));
     assert!(stdout.contains("law rebind"));
+    assert!(stdout.contains("law capabilities"));
+    assert!(stdout.contains("law coverage"));
     assert!(stdout.contains("doctor"));
     assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
@@ -416,6 +418,95 @@ fn law_rebind_reports_and_accepts_schema_hash_updates() {
     assert_success(&validate_output);
 
     let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn law_capabilities_reports_footprints_without_runtime_enforcement() {
+    let output = wesley()
+        .args(["law", "capabilities", "--law"])
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["apiVersion"], "wesley.capability-report/v1");
+    assert_eq!(report["reportOnly"], true);
+    assert_eq!(report["runtimeEnforcement"], false);
+    assert_eq!(
+        report["footprints"][0]["lawId"],
+        "jedit.op.replaceRangeAsTick.footprint"
+    );
+    assert_eq!(
+        report["footprints"][0]["subject"],
+        "operation:Mutation.replaceRangeAsTick"
+    );
+    assert!(report["footprints"][0]["reads"]
+        .as_array()
+        .expect("reads should be an array")
+        .iter()
+        .any(|value| value == "BufferWorldline"));
+    assert!(report["footprints"][0]["forbids"]
+        .as_array()
+        .expect("forbids should be an array")
+        .iter()
+        .any(|value| value == "Diagnostics"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_coverage_reports_profile_categories() {
+    let output = wesley()
+        .args(["law", "coverage", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml",
+        ))
+        .args(["--profile", "release", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["apiVersion"], "wesley.law-coverage/v1");
+    assert_eq!(report["profile"], "release");
+    assert_eq!(report["requiredTotal"], 6);
+    assert_eq!(report["requiredCovered"], 2);
+    assert_eq!(report["requiredPercent"], 33.3);
+
+    let categories = report["categories"]
+        .as_array()
+        .expect("categories should be an array");
+    let scalar = categories
+        .iter()
+        .find(|category| category["id"] == "customScalarSemantics")
+        .expect("scalar coverage should exist");
+    assert_eq!(scalar["total"], 3);
+    assert_eq!(scalar["covered"], 1);
+    assert!(scalar["missingSubjects"]
+        .as_array()
+        .expect("missing subjects should be an array")
+        .iter()
+        .any(|value| value == "scalar:WorldlineTick"));
+
+    let variant = categories
+        .iter()
+        .find(|category| category["id"] == "variantInputLaw")
+        .expect("variant coverage should exist");
+    assert_eq!(variant["covered"], 1);
+    assert!(stderr.is_empty());
 }
 
 #[test]
@@ -1112,6 +1203,41 @@ fn emit_rust_with_law_embeds_schema_and_law_hash_constants() {
         .as_str()
         .expect("profile hash should be a string")
         .starts_with("sha256:"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn emit_rust_with_law_generates_scalar_and_variant_validators() {
+    let dir = temp_dir("emit-rust-law-validators");
+    let out = dir.join("generated").join("model.rs");
+
+    let output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml",
+        ))
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let generated = std::fs::read_to_string(&out).expect("Rust output should read");
+    assert!(generated.contains("pub fn validate_positive_int(value: u64)"));
+    assert!(generated.contains("if value < 1"));
+    assert!(generated.contains("if value > 4294967295"));
+    assert!(generated
+        .contains("pub fn validate_playback_mode_input_variant(value: &PlaybackModeInput)"));
+    assert!(generated.contains("PlaybackModeKind::Seek => {"));
+    assert!(generated.contains("if value.target.is_none()"));
+    assert!(generated.contains("if value.then.is_none()"));
+    assert!(generated.contains("PlaybackModeKind::Paused => {"));
+    assert!(generated.contains("if value.target.is_some()"));
 
     let _ = std::fs::remove_dir_all(dir);
 }

@@ -10,7 +10,8 @@ canonical law hash fixtures for `WLAW-036` through `WLAW-045`. The `diff/`
 fixtures pin the public semantic diff command output for `WLAW-053` through
 `WLAW-059`. The directive-equivalence fixture supports `WLAW-060` and
 `WLAW-061` by proving known formal SDL directives and authored YAML lower into
-the same canonical Law IR.
+the same canonical Law IR. The Rust-validator payoff fixture supports
+`WLAW-070` and `WLAW-071`.
 
 ## Files
 
@@ -19,6 +20,7 @@ the same canonical Law IR.
 | `contract-bundle-shape.graphql` | Minimal GraphQL shape used by accepted and rejected law fixtures. |
 | `accepted/*.weslaw.yaml` | Law documents that `wesley law validate` must accept. |
 | `accepted/channel-ttd-protocol-from-directive.weslaw.yaml` | YAML equivalent for the schema's `@wes_channel` directive-lowered law. |
+| `accepted/rust-validator-payoff.weslaw.yaml` | Combined scalar and variant law fixture for Rust helper generation. |
 | `rejected/*.weslaw.yaml` | Law documents that validation must reject. |
 | `rejected/*.expected.txt` | Stable diagnostic code expected for each rejected fixture. |
 | `diff/*.weslaw.yaml` | Old/new law documents used by semantic diff fixtures. |

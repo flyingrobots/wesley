@@ -27,6 +27,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **`weslaw` v1 consumer payoff**: `wesley emit rust --law <path>` now emits
+  law-backed helper validators for integer scalar semantics and discriminated
+  input variant rules, `wesley law capabilities` emits report-only
+  footprint-to-capability summaries without claiming runtime enforcement, and
+  `wesley law coverage` reports profile/category-aware coverage for custom
+  scalar semantics, variant inputs, mutation footprints, and channel law. The
+  `0019` packet now closes the 75-slice `weslaw` v1 runway with playback,
+  retrospective, release-readiness evidence, and an explicit Law Matrix v1.1
+  deferral.
 - **`weslaw` adoption tooling**: Added `@wes_channel` directive lowering into
   canonical Law IR, a fixture proving directive-authored channel law and
   YAML-authored channel law produce the same semantic `lawHash`, structure-only

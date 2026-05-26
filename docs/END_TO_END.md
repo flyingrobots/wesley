@@ -413,6 +413,8 @@ wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> --format markdow
 wesley law explain --law <law.weslaw.yaml> scalar:PositiveInt
 wesley law explain --law <law.weslaw.yaml> operation:Mutation.replaceRangeAsTick
 wesley law rebind --schema <schema.graphql> --law <law.weslaw.yaml> --accept --out <rebound.weslaw.yaml>
+wesley law capabilities --law <law.weslaw.yaml> --json
+wesley law coverage --schema <schema.graphql> --law <law.weslaw.yaml> --profile release --json
 wesley operation selections --operation <path> --schema <path> --json
 wesley operation directive-args --operation <path> --directive <name> --json
 ```
@@ -433,6 +435,8 @@ These commands are boring on purpose. They answer compiler questions:
   change, predicate change, schema-hash rebound, or binding break?
 - Which laws govern a particular scalar, operation, or other subject?
 - Does a law file need an explicit schema-hash rebind before it can validate?
+- Which footprint laws can be rendered as report-only capability summaries?
+- Which profile/category coverage gaps remain before release?
 - Which response paths or schema-coordinate selections does an operation use?
 - Which directive arguments are present on an operation?
 
@@ -449,6 +453,8 @@ flowchart TD
     LawDoc --> LawLint[Structure-only law lint]
     LawDoc --> LawExplain[Law explain]
     LawDoc --> LawRebind[Explicit schema-hash rebind]
+    LawDoc --> CapabilityReport[Report-only capability summary]
+    LawDoc --> CoverageReport[Profile/category coverage]
     LawBind --> LawManifest[Contract bundle manifest]
     LawDoc --> LawDiff[Semantic law diff]
     LawDiff --> LawDiffJson[JSON diff report]
@@ -466,6 +472,9 @@ flowchart TD
     LawManifest --> CI
     LawExplain --> Operator[Operator inspection]
     LawRebind --> Operator
+    CapabilityReport --> Operator
+    CoverageReport --> CI
+    CoverageReport --> Operator
     LawDiffJson --> CI
     LawDiffJson --> Assurance[Holmes/BLADE]
     LawDiffMarkdown --> Review
@@ -540,6 +549,13 @@ sidecars also include `schemaHashQualified`, `lawHash`, `lawDocumentHash`,
 `schemaHash` remains in metadata for compatibility. TypeScript currently
 records the law facts in metadata only; executable or declaration-level
 TypeScript hash constants can be added when that artifact path needs them.
+
+Rust is also the first retained emitter to consume active scalar and variant
+law for helper generation. Integer scalar semantics produce standalone
+`validate_<scalar>` helpers, and discriminated input variant law produces
+`validate_<input>_variant` helpers. These helpers are generated evidence and
+developer affordances; they do not mutate GraphQL shape, replace strict law
+binding, or claim runtime enforcement for footprints.
 
 ```mermaid
 classDiagram

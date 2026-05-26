@@ -1123,6 +1123,32 @@ Explicitly revalidates law against a new schema hash and produces a report.
 
 No normal compile path silently updates schema anchors.
 
+### `wesley law capabilities`
+
+Emits report-only capability summaries from active footprint law:
+
+```text
+wesley law capabilities --law schemas/hot-text.weslaw.yaml --json
+```
+
+The v1 report names reads, writes, creates, and forbids for each footprint law
+entry and explicitly sets `runtimeEnforcement: false`. This keeps the first
+capability surface useful to operators and assurance tools without implying
+that Wesley has generated an enforced runtime sandbox.
+
+### `wesley law coverage`
+
+Reports profile/category-aware law coverage:
+
+```text
+wesley law coverage --schema schema.graphql --law law.weslaw.yaml --profile release --json
+```
+
+The v1 categories are custom scalar semantics, discriminated input variant law,
+mutation footprint law, and channel law. The `release` and `ci-release`
+profiles mark those categories as required; exploratory profiles may inspect
+the same categories without making uncovered subjects release blockers.
+
 ## Generated Artifacts
 
 Generated artifacts should carry active contract identity.
@@ -1147,6 +1173,13 @@ export const WESLEY_BUNDLE_HASH = 'sha256:...';
 
 That gives generated artifacts cryptographic traceability to the exact shape,
 law, and profile that produced them.
+
+Rust is the first retained emitter to consume active scalar and variant law.
+When `wesley emit rust --law <path>` receives validated integer scalar law, it
+emits standalone `validate_<scalar>` helpers. When it receives discriminated
+input variant law, it emits `validate_<input>_variant` helpers. These helpers
+are generated affordances and evidence, not a claim that Wesley owns the
+runtime behavior of Echo, jedit, Continuum, or warp-ttd.
 
 ## Known Failure Paths
 
@@ -1217,6 +1250,8 @@ layer because it creates false confidence.
 - Add `wesley law validate`.
 - Add `wesley law explain`.
 - Add `wesley law rebind`.
+- Add `wesley law capabilities`.
+- Add `wesley law coverage`.
 
 ### Phase 5: Downstream Consumers
 
@@ -1350,16 +1385,16 @@ work into first consumer payoff and v1 packet closeout.
 
 ### Phase 6: First Consumer Payoff
 
-- [ ] WLAW-070 Generate scalar validators for one retained emitter or module
+- [x] WLAW-070 Generate scalar validators for one retained emitter or module
       target.
-- [ ] WLAW-071 Generate variant validators for one retained emitter or module
+- [x] WLAW-071 Generate variant validators for one retained emitter or module
       target.
-- [ ] WLAW-072 Emit first footprint-to-capability report without claiming
+- [x] WLAW-072 Emit first footprint-to-capability report without claiming
       runtime enforcement.
-- [ ] WLAW-073 Add profile/category-aware law coverage reporting.
-- [ ] WLAW-074 Add a minimal Law Matrix static report prototype or defer it
+- [x] WLAW-073 Add profile/category-aware law coverage reporting.
+- [x] WLAW-074 Add a minimal Law Matrix static report prototype or defer it
       explicitly to v1.1 with evidence.
-- [ ] WLAW-075 Close the v1 packet with playback, retrospective, docs,
+- [x] WLAW-075 Close the v1 packet with playback, retrospective, docs,
       changelog, and release-readiness evidence.
 
 ## WLAW-050 Drift Checkpoint
@@ -1418,10 +1453,73 @@ What held:
 - Normal validation still fails on schema-hash mismatch; rebind is an explicit
   operator action.
 
-Next pull:
+Follow-up completed:
 
-- Finish `WLAW-070` through `WLAW-075`: first consumer payoff, law coverage or
-  Law Matrix decision, and packet closeout evidence.
+- `WLAW-070` through `WLAW-075` delivered the first consumer payoff, coverage
+  reporting, Law Matrix v1.1 deferral, and packet closeout evidence.
+
+## WLAW-075 Closeout
+
+The v1 implementation runway closed at **75 / 75 slices**.
+
+### Playback
+
+The final pull added the first concrete consumer payoff without expanding
+Wesley's ownership boundary:
+
+- Rust emission consumes validated scalar semantics law and emits integer
+  scalar validator helpers.
+- Rust emission consumes validated discriminated input variant law and emits
+  variant-envelope validator helpers.
+- `wesley law capabilities` emits report-only footprint capability summaries
+  with `runtimeEnforcement: false`.
+- `wesley law coverage` emits profile/category-aware coverage for release and
+  CI review.
+- The `rust-validator-payoff` fixture proves scalar and variant law can drive
+  generated Rust helpers while staying bound to the same fixture schema hash.
+
+### Law Matrix Decision
+
+The Law Matrix static site is explicitly deferred to **v1.1**.
+
+Evidence for deferral:
+
+- `wesley law explain` now provides the subject-level explanation engine that a
+  Law Matrix should reuse.
+- `wesley law diff --json`, `wesley law capabilities --json`, and
+  `wesley law coverage --json` now provide machine-readable review data.
+- A static site before the explanation, capability, and coverage formats have
+  survived PR review would make a second presentation layer the stabilization
+  target. That is the wrong v1 risk.
+
+The v1.1 Law Matrix should render those existing outputs instead of inventing a
+parallel interpretation of law.
+
+### Retrospective
+
+What worked:
+
+- Centering the implementation on typed Law IR kept YAML, directives, and
+  future SDL+ as frontends rather than competing truth sources.
+- Strict binding and schema-hash anchors made law drift explicit instead of
+  silently permissive.
+- The CLI now covers the operator lifecycle: scaffold, lint, validate, diff,
+  explain, rebind, report capabilities, and measure coverage.
+
+What remains deliberately out of scope:
+
+- No Wesley SDL+ syntax.
+- No executable YAML, CEL, Rego, or bespoke invariant language.
+- No footprint runtime enforcement claim.
+- No external repo schema rewrites from this packet.
+
+Release-readiness evidence:
+
+- Rust tests cover loader, binding, canonicalization, semantic diffs, directive
+  lowering, Rust law-backed helper generation, capability reports, and coverage
+  reports.
+- Bats fixtures guard the v1 schema artifacts and CLI spelling.
+- `pnpm run preflight` remains the full repo gate for this packet.
 
 ## Non-Goals
 
@@ -1447,7 +1545,8 @@ Next pull:
    footprint, channel, and typed invariant law prove the model?
 3. Resolved in `WLAW-060`: `@wes_channel` is the first known formal directive
    family lowered into Law IR.
-4. Which target should receive the first generated scalar/variant validators?
+4. Resolved in `WLAW-070` and `WLAW-071`: Rust emission is the first retained
+   target to receive generated scalar and variant helper validators.
 
 Resolved in `WLAW-036` through `WLAW-045`: bundle manifests record compiler
 identity, compiler version, Law IR codec, and bundle-hash codec separately;
