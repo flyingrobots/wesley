@@ -425,9 +425,9 @@ summaries, and the first policy/audit contracts.
 
 ## Next Target
 
-The immediate focus is **Holmes `weslaw` assurance planning**: spend the next
-50 slices writing implementation-grade PRDs and test plans before the Rust
-Holmes assurance integration begins.
+The immediate focus is **Holmes `weslaw` assurance planning**: continue the
+50-slice PRD/test-plan campaign, with 35 slices closed and 15 remaining before
+the Rust Holmes assurance integration begins.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type

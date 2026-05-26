@@ -81,7 +81,7 @@ failure behavior, and test fixtures where known.
 
 ## Chunking
 
-| Chunk | Slices | Planned PR Shape | Purpose |
+| Chunk | Slices | Status | Purpose |
 | --- | --- | --- | --- |
 | 1 | HLAW-001..HLAW-010 | Complete | Evidence intake and typed domain contracts. |
 | 2 | HLAW-011..HLAW-020 | Complete | Report model, CLI operator flows, and local artifacts. |
