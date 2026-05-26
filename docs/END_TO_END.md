@@ -405,6 +405,16 @@ wesley schema lower --schema <path> --json
 wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> --format summary --exit-code
+wesley init-law --schema <schema.graphql> --family <family> --out <law.weslaw.yaml>
+wesley law lint --law <law.weslaw.yaml> --json
+wesley law validate --schema <schema.graphql> --law <law.weslaw.yaml> --json
+wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> --json
+wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> --format markdown
+wesley law explain --law <law.weslaw.yaml> scalar:PositiveInt
+wesley law explain --law <law.weslaw.yaml> operation:Mutation.replaceRangeAsTick
+wesley law rebind --schema <schema.graphql> --law <law.weslaw.yaml> --accept --out <rebound.weslaw.yaml>
+wesley law capabilities --law <law.weslaw.yaml> --json
+wesley law coverage --schema <schema.graphql> --law <law.weslaw.yaml> --profile release --json
 wesley operation selections --operation <path> --schema <path> --json
 wesley operation directive-args --operation <path> --directive <name> --json
 ```
@@ -415,6 +425,18 @@ These commands are boring on purpose. They answer compiler questions:
 - What is its stable identity?
 - Which root operations exist?
 - What changed between two schema versions?
+- Which semantic law entries bind to this schema, and which `lawHash`,
+  `lawDocumentHash`, `profileHash`, and `bundleHash` identify the bound
+  contract bundle?
+- Which known formal directives can be scaffolded into active `weslaw/v1`, and
+  which comments are only draft suggestions that require human promotion?
+- Which semantic law changed between two law versions, and is the change a
+  strengthening, weakening, footprint expansion/contraction, channel version
+  change, predicate change, schema-hash rebound, or binding break?
+- Which laws govern a particular scalar, operation, or other subject?
+- Does a law file need an explicit schema-hash rebind before it can validate?
+- Which footprint laws can be rendered as report-only capability summaries?
+- Which profile/category coverage gaps remain before release?
 - Which response paths or schema-coordinate selections does an operation use?
 - Which directive arguments are present on an operation?
 
@@ -424,6 +446,19 @@ flowchart TD
     Canonical --> Hash[Schema hash]
     IR --> Delta[Schema diff]
     IR --> RootOps[Root operation catalog]
+    IR --> InitLaw[init-law directive lowering]
+    IR --> LawBind[Strict law binding]
+    InitLaw --> LawDrafts[Active law plus draft suggestions]
+    LawDoc[weslaw/v1 document] --> LawBind
+    LawDoc --> LawLint[Structure-only law lint]
+    LawDoc --> LawExplain[Law explain]
+    LawDoc --> LawRebind[Explicit schema-hash rebind]
+    LawDoc --> CapabilityReport[Report-only capability summary]
+    LawDoc --> CoverageReport[Profile/category coverage]
+    LawBind --> LawManifest[Contract bundle manifest]
+    LawDoc --> LawDiff[Semantic law diff]
+    LawDiff --> LawDiffJson[JSON diff report]
+    LawDiff --> LawDiffMarkdown[Markdown review summary]
 
     Operation[GraphQL operation document] --> OpParse[Operation parser]
     OpParse --> ResponsePaths[Response-path selections]
@@ -433,6 +468,16 @@ flowchart TD
     OpParse --> DirectiveArgs[Directive argument extraction]
 
     Hash --> CI[CI and fixture evidence]
+    LawLint --> CI
+    LawManifest --> CI
+    LawExplain --> Operator[Operator inspection]
+    LawRebind --> Operator
+    CapabilityReport --> Operator
+    CoverageReport --> CI
+    CoverageReport --> Operator
+    LawDiffJson --> CI
+    LawDiffJson --> Assurance[Holmes/BLADE]
+    LawDiffMarkdown --> Review
     Delta --> Review[Human review]
     RootOps --> Emitters[Operation binding emitters]
     ResponsePaths --> Witness[Witness inputs]
@@ -462,34 +507,55 @@ sequenceDiagram
     actor User
     participant CLI as wesley CLI
     participant Core as wesley-core
+    participant Law as weslaw Law IR
     participant Ops as schema operations
     participant RustEmitter as wesley-emit-rust
     participant TSEmitter as wesley-emit-typescript
     participant Out as filesystem
     participant Metadata as metadata sidecar
 
-    User->>CLI: wesley emit rust --schema schema.graphql --out model.rs --metadata-out model.metadata.json
+    User->>CLI: wesley emit rust --schema schema.graphql --law law.weslaw.yaml --out model.rs --metadata-out model.metadata.json
     CLI->>Core: lower_schema_sdl(sdl)
     CLI->>Core: list_schema_operations_sdl(sdl)
     Core-->>CLI: WesleyIR and SchemaOperation facts
+    CLI->>Law: load, strictly bind, and hash law
+    Law-->>CLI: contract bundle manifest
     CLI->>RustEmitter: build Rust file AST
     RustEmitter-->>CLI: deterministic Rust source
-    CLI->>Out: write model.rs
-    CLI->>Metadata: write schema hash, generator version, execution mode
+    CLI->>Out: write model.rs with schema/law hash constants
+    CLI->>Metadata: write schema, law, profile, bundle, generator, and mode metadata
 
-    User->>CLI: wesley emit typescript --schema schema.graphql --out types.ts --metadata-out types.metadata.json
+    User->>CLI: wesley emit typescript --schema schema.graphql --law law.weslaw.yaml --out types.ts --metadata-out types.metadata.json
     CLI->>Core: lower_schema_sdl(sdl)
     CLI->>Ops: root operation facts
+    CLI->>Law: load, strictly bind, and hash law
     CLI->>TSEmitter: build TypeScript declaration AST
     TSEmitter-->>CLI: deterministic TypeScript source
     CLI->>Out: write types.ts
-    CLI->>Metadata: write schema hash, generator version, execution mode
+    CLI->>Metadata: write schema, law, profile, bundle, generator, and mode metadata
 ```
 
 The important design choice is that pure generation does not need to inspect or
 mutate existing source files. Wesley owns an emitter AST, then prints. Tools
 such as tree-sitter, SWC, or oxc become relevant only when Wesley needs to
 understand existing code and edit it safely.
+
+When `--law <path>` is supplied, emitters first build the same validated
+contract bundle manifest that `wesley law validate --json` reports. Rust output
+embeds `WESLEY_SCHEMA_HASH` and `WESLAW_HASH` constants so a generated artifact
+can identify the exact shape and semantic law that produced it. Metadata
+sidecars also include `schemaHashQualified`, `lawHash`, `lawDocumentHash`,
+`profileHash`, `bundleHash`, and the Law IR codec. The legacy bare
+`schemaHash` remains in metadata for compatibility. TypeScript currently
+records the law facts in metadata only; executable or declaration-level
+TypeScript hash constants can be added when that artifact path needs them.
+
+Rust is also the first retained emitter to consume active scalar and variant
+law for helper generation. Integer scalar semantics produce standalone
+`validate_<scalar>` helpers, and discriminated input variant law produces
+`validate_<input>_variant` helpers. These helpers are generated evidence and
+developer affordances; they do not mutate GraphQL shape, replace strict law
+binding, or claim runtime enforcement for footprints.
 
 ```mermaid
 classDiagram
@@ -990,6 +1056,13 @@ mindmap
             schema diff
             emit rust
             emit typescript
+            law validate
+        Contract bundle law
+            Strict binding
+            lawHash
+            lawDocumentHash
+            profileHash
+            bundleHash
         Non-compiler JavaScript
             Holmes tooling
             Host experiments

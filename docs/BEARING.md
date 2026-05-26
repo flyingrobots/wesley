@@ -334,17 +334,42 @@ The non-negotiables are narrow:
 - Wesley SDL+ is deferred until Law IR, binding, canonicalization, and diffs
   are stable.
 
-Working budget: **75 slices**. The first scope checkpoint is `WLAW-050`; do
-not treat slices `WLAW-051` through `WLAW-075` as locked until the checkpoint
-re-estimates the v1/v1.1 boundary.
+Working budget: **75 slices**. The first scope checkpoint was `WLAW-050`; it
+kept the runway intact. The second checkpoint at `WLAW-069` confirmed adoption
+tooling was usable enough to start the first consumer payoff pull. The v1
+runway is now closed.
 
-Status: **20 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
+Status: **75 / 75 slices closed**. `WLAW-001` through `WLAW-010` lock the v1
 substrate docs, coordinate and registry grammar, canonicalization and
 diagnostic rules, fixture corpus, and first accepted/rejected `weslaw/v1`
 examples. `WLAW-011` through `WLAW-020` add the Rust Law IR v1 types, the
 `weslaw/v1` YAML structure loader, stable structure diagnostics, fixture
 lowering tests, and versioned canonical JSON Schema artifacts for the authored
-and normalized law surfaces.
+and normalized law surfaces. `WLAW-021` through `WLAW-035` add strict
+schema-hash anchoring, schema and operation subject binding, kind-specific
+variant/footprint/channel/invariant reference binding, conflict diagnostics,
+closest-match subject hints, and the explicit `wesley law validate` command.
+`WLAW-036` through `WLAW-045` add canonical semantic Law IR serialization,
+`lawHash`, provenance-bearing `lawDocumentHash`, empty-profile `profileHash`,
+contract `bundleHash`, a versioned contract bundle manifest schema, manifest
+output from `wesley law validate --json`, `--law`-backed emit metadata, and Rust
+generated hash constants. `WLAW-046` through `WLAW-050` add
+`wesley.law-diff/v1`, Rust-core semantic diff reports, added/removed law
+events, scalar semantic change events, variant case change events, footprint
+expansion/contraction/mixed-change events, and the first checkpoint on the
+remaining runway. `WLAW-051` through `WLAW-059` add channel law and typed
+invariant diff events, strengthened/weakened law classifications,
+binding-break and schema-hash rebound reporting, `wesley law diff --json`,
+Markdown summaries, CI-ready semantic diff fixtures, Holmes/BLADE-facing
+fixtures, and the matching docs/changelog update. `WLAW-060` through
+`WLAW-069` add `@wes_channel` directive lowering, directive/YAML canonical
+equivalence tests, `wesley law lint`, `wesley init-law`, description-derived
+draft suggestions, `wesley law explain` for scalar and operation subjects,
+explicit `wesley law rebind` reporting and acceptance, and updated adoption
+docs. `WLAW-070` through `WLAW-075` add Rust law-backed scalar and variant
+validator helpers, report-only footprint capability summaries,
+profile/category-aware law coverage reports, an explicit Law Matrix v1.1
+deferral, and v1 playback/retrospective closeout evidence.
 
 ## Tensions
 
@@ -376,8 +401,8 @@ and normalized law surfaces.
 
 ## Next Target
 
-The immediate focus is **weslaw Law IR design, then Holmes assurance
-integration**.
+The immediate focus is **PR review and merge for `weslaw` v1**, then Holmes
+assurance integration over the new law diff, coverage, and bundle evidence.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
@@ -391,13 +416,11 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The next pulls after this PR are:
+The next pull after this PR is:
 
-1. `WLAW-021` through `WLAW-035`: add strict schema-bound law validation.
-2. `WLAW-036` through `WLAW-045`: add canonical law serialization, hashes, and
-   bundle manifest fields.
-3. `WLAW-046` through `WLAW-050`: add the first law diff events, then pause
-   for the required drift checkpoint.
+1. After merge, start the Holmes-facing assurance pass over `weslaw` outputs:
+   consume law diffs, coverage reports, capability summaries, and bundle hashes
+   without giving Holmes ownership of semantic truth.
 
 ## Post-Retirement Freestyle Slice Log
 

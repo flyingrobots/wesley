@@ -774,6 +774,27 @@ The codec owns:
 - null omission rules;
 - array semantics.
 
+### Contract Bundle Manifest
+
+After strict binding succeeds, Wesley emits a versioned
+`wesley.contract-bundle-manifest/v1` manifest. The manifest records:
+
+- `schemaHash`: the active canonical Shape IR hash, prefixed with `sha256:`;
+- `lawHash`: the semantic active Law IR hash;
+- `lawDocumentHash`: a provenance-bearing hash that includes retained
+  rationale and document-level provenance;
+- `profileHash`: the active policy/profile hash, currently the known empty
+  profile hash until Policy IR exists;
+- `bundleHash`: a canonical hash over schema, law, profile, codec, compiler,
+  and compiler-version identity;
+- `lawIrCodec` and `bundleHashCodec`: explicit canonicalization codec ids;
+- `compiler` and `compilerVersion`: the Wesley compiler identity that built
+  the manifest;
+- `lawEntryCount`: the number of active law entries bound into the bundle.
+
+The public manifest shape is published at
+`schemas/wesley-contract-bundle-manifest-v1.schema.json`.
+
 ### Published Schemas
 
 `weslaw` is a compiler contract, not an undocumented Rust struct. Every
@@ -781,11 +802,12 @@ externally consumed representation needs a schema artifact.
 
 Initial schema artifacts:
 
-| Artifact                                 | Status                        | Purpose                                                    |
-| ---------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
-| `schemas/wesley-law-ir-v1.schema.json`   | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON.                      |
-| `schemas/weslaw-v1.schema.json`          | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
-| `schemas/wesley-law-diff-v1.schema.json` | diff phase requirement        | JSON Schema for machine-readable law diff events.          |
+| Artifact                                                  | Status                        | Purpose                                                    |
+| --------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
+| `schemas/wesley-law-ir-v1.schema.json`                    | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON.                      |
+| `schemas/weslaw-v1.schema.json`                           | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
+| `schemas/wesley-contract-bundle-manifest-v1.schema.json`  | v1 implementation requirement | JSON Schema for emitted contract bundle manifests.         |
+| `schemas/wesley-law-diff-v1.schema.json`                  | v1 implementation requirement | JSON Schema for machine-readable law diff events.          |
 
 These schemas validate public structure. They are not semantic hash inputs.
 Changing comments, descriptions, `$id`, or schema annotations must not change
@@ -826,20 +848,44 @@ sequenceDiagram
     Diff->>Holmes: JSON diff events
 ```
 
-v1 diff event classes:
+Initial `WLAW-046` through `WLAW-050` event classes:
+
+| Event                      | Meaning                                                                  |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `LAW_BUNDLE_CHANGED`       | Bundle-level semantic fields changed.                                    |
+| `REGISTRY_CHANGED`         | Semantic registry facts changed.                                         |
+| `LAW_ADDED`                | New active law entry.                                                    |
+| `LAW_REMOVED`              | Active law entry removed.                                                |
+| `LAW_TAGS_CHANGED`         | Existing law classifier tags changed.                                    |
+| `LAW_CHANGED`              | Existing law changed outside a narrower v1 event class.                  |
+| `SCALAR_SEMANTICS_CHANGED` | Scalar representation, range, ordering, scope, or forbidden interpretation changed. |
+| `VARIANT_LAW_CHANGED`      | Variant discriminator or case requires/forbids changed.                  |
+| `FOOTPRINT_EXPANDED`       | Reads, writes, creates, or closure reach expanded.                       |
+| `FOOTPRINT_CONTRACTED`     | Footprint reach contracted.                                              |
+| `FOOTPRINT_CHANGED`        | Footprint changed in mixed or structural ways.                           |
+| `SCHEMA_HASH_REBOUND`      | Law was explicitly rebound to a new schema hash.                         |
+
+Self-review repair added these classes before the next planned slice:
+
+| Event                     | Meaning                                           |
+| ------------------------- | ------------------------------------------------- |
+| `CHANNEL_VERSION_CHANGED` | Channel version changed.                         |
+| `CHANNEL_LAW_CHANGED`     | Channel law changed without a version change.    |
+| `PREDICATE_CHANGED`       | Invariant predicate changed.                     |
+
+Semantic-diff completion classes:
 
 | Event                     | Meaning                                              |
 | ------------------------- | ---------------------------------------------------- |
-| `LAW_ADDED`               | New active law entry.                                |
-| `LAW_REMOVED`             | Active law entry removed.                            |
 | `LAW_STRENGTHENED`        | Constraint narrowed or forbidden behavior increased. |
 | `LAW_WEAKENED`            | Constraint widened or forbidden behavior decreased.  |
-| `FOOTPRINT_EXPANDED`      | Reads, writes, creates, or closure reach expanded.   |
-| `FOOTPRINT_CONTRACTED`    | Footprint reach contracted.                          |
-| `CHANNEL_VERSION_CHANGED` | Channel version or compatibility posture changed.    |
 | `BINDING_BROKEN`          | Previously bound law no longer binds.                |
-| `SCHEMA_HASH_REBOUND`     | Law was explicitly rebound to a new schema hash.     |
-| `PREDICATE_CHANGED`       | Invariant predicate changed.                         |
+
+The report records `oldSchemaHash`, `newSchemaHash`, `oldLawHash`,
+`newLawHash`, and an ordered `changes` array. v1 events carry
+`reviewPosture: "requires-review"` until policy/profile mapping exists.
+Law-specific events include `lawId`, `subject`, and `lawKind`; bundle-level
+events omit those fields.
 
 Example JSON:
 
@@ -1030,14 +1076,14 @@ Output formats:
 
 - JSON for Holmes/BLADE/Moriarty/CI consumers;
 - Markdown for PR comments;
-- terminal text for operators.
+- summary text for operators.
 
 ### `wesley law explain`
 
 Human-readable explanation for one subject:
 
 ```text
-wesley law explain operation:Mutation.replaceRangeAsTick
+wesley law explain --law schemas/hot-text.weslaw.yaml operation:Mutation.replaceRangeAsTick
 ```
 
 Expected output:
@@ -1077,6 +1123,32 @@ Explicitly revalidates law against a new schema hash and produces a report.
 
 No normal compile path silently updates schema anchors.
 
+### `wesley law capabilities`
+
+Emits report-only capability summaries from active footprint law:
+
+```text
+wesley law capabilities --law schemas/hot-text.weslaw.yaml --json
+```
+
+The v1 report names reads, writes, creates, and forbids for each footprint law
+entry and explicitly sets `runtimeEnforcement: false`. This keeps the first
+capability surface useful to operators and assurance tools without implying
+that Wesley has generated an enforced runtime sandbox.
+
+### `wesley law coverage`
+
+Reports profile/category-aware law coverage:
+
+```text
+wesley law coverage --schema schema.graphql --law law.weslaw.yaml --profile release --json
+```
+
+The v1 categories are custom scalar semantics, discriminated input variant law,
+mutation footprint law, and channel law. The `release` and `ci-release`
+profiles mark those categories as required; exploratory profiles may inspect
+the same categories without making uncovered subjects release blockers.
+
 ## Generated Artifacts
 
 Generated artifacts should carry active contract identity.
@@ -1101,6 +1173,13 @@ export const WESLEY_BUNDLE_HASH = 'sha256:...';
 
 That gives generated artifacts cryptographic traceability to the exact shape,
 law, and profile that produced them.
+
+Rust is the first retained emitter to consume active scalar and variant law.
+When `wesley emit rust --law <path>` receives validated integer scalar law, it
+emits standalone `validate_<scalar>` helpers. When it receives discriminated
+input variant law, it emits `validate_<input>_variant` helpers. These helpers
+are generated affordances and evidence, not a claim that Wesley owns the
+runtime behavior of Echo, jedit, Continuum, or warp-ttd.
 
 ## Known Failure Paths
 
@@ -1171,6 +1250,8 @@ layer because it creates false confidence.
 - Add `wesley law validate`.
 - Add `wesley law explain`.
 - Add `wesley law rebind`.
+- Add `wesley law capabilities`.
+- Add `wesley law coverage`.
 
 ### Phase 5: Downstream Consumers
 
@@ -1186,8 +1267,9 @@ Working budget: **75 slices**.
 
 The budget is intentionally larger than the minimal compiler substrate because
 `weslaw` must become an operator-usable contract-bundle feature, not just an
-internal parser. Re-estimate after `WLAW-050` before committing to the final
-v1/v1.1 boundary.
+internal parser. The `WLAW-050` checkpoint preserved the runway through
+semantic diff completion, and the `WLAW-069` checkpoint moves the remaining
+work into first consumer payoff and v1 packet closeout.
 
 ### Phase 0: Design Lock
 
@@ -1226,94 +1308,218 @@ v1/v1.1 boundary.
 
 ### Phase 2: Strict Binding
 
-- [ ] WLAW-021 Parse and validate schema-hash anchors.
-- [ ] WLAW-022 Fail loudly on schema-hash mismatch.
-- [ ] WLAW-023 Bind scalar subjects to Shape IR.
-- [ ] WLAW-024 Bind type, input, enum, and field subjects to Shape IR.
-- [ ] WLAW-025 Bind operation subjects to root operation fields.
-- [ ] WLAW-026 Bind variant discriminator fields and enum values.
-- [ ] WLAW-027 Bind footprint argument paths to operation input paths.
-- [ ] WLAW-028 Bind footprint resource kinds through schema coordinates or
+- [x] WLAW-021 Parse and validate schema-hash anchors.
+- [x] WLAW-022 Fail loudly on schema-hash mismatch.
+- [x] WLAW-023 Bind scalar subjects to Shape IR.
+- [x] WLAW-024 Bind type, input, enum, and field subjects to Shape IR.
+- [x] WLAW-025 Bind operation subjects to root operation fields.
+- [x] WLAW-026 Bind variant discriminator fields and enum values.
+- [x] WLAW-027 Bind footprint argument paths to operation input paths.
+- [x] WLAW-028 Bind footprint resource kinds through schema coordinates or
       explicit law registries.
-- [ ] WLAW-029 Bind channel subjects through known directives or law
+- [x] WLAW-029 Bind channel subjects through known directives or law
       registries.
-- [ ] WLAW-030 Bind typed invariant field references.
-- [ ] WLAW-031 Reject duplicate law ids across the active bundle.
-- [ ] WLAW-032 Reject wrong subject kind for each Law IR variant.
-- [ ] WLAW-033 Reject contradictory law entries in the same bundle.
-- [ ] WLAW-034 Add closest-match diagnostics for unresolved schema
+- [x] WLAW-030 Bind typed invariant field references.
+- [x] WLAW-031 Reject duplicate law ids across the active bundle.
+- [x] WLAW-032 Reject wrong subject kind for each Law IR variant.
+- [x] WLAW-033 Reject contradictory law entries in the same bundle.
+- [x] WLAW-034 Add closest-match diagnostics for unresolved schema
       coordinates.
-- [ ] WLAW-035 Add `wesley law validate` for full schema-bound validation.
+- [x] WLAW-035 Add `wesley law validate` for full schema-bound validation.
 
 ### Phase 3: Canonicalization And Hashes
 
-- [ ] WLAW-036 Implement canonical Law IR serialization.
-- [ ] WLAW-037 Compute `lawHash` from active semantic Law IR only.
-- [ ] WLAW-038 Exclude comments, source spans, and rationale prose from
+- [x] WLAW-036 Implement canonical Law IR serialization.
+- [x] WLAW-037 Compute `lawHash` from active semantic Law IR only.
+- [x] WLAW-038 Exclude comments, source spans, and rationale prose from
       `lawHash`.
-- [ ] WLAW-039 Compute optional `lawDocumentHash` for provenance-bearing
+- [x] WLAW-039 Compute optional `lawDocumentHash` for provenance-bearing
       documents.
-- [ ] WLAW-040 Add canonicalization fixtures for key order and file-order
+- [x] WLAW-040 Add canonicalization fixtures for key order and file-order
       independence.
-- [ ] WLAW-041 Add canonicalization fixtures for omitted defaults versus
+- [x] WLAW-041 Add canonicalization fixtures for omitted defaults versus
       explicit defaults.
-- [ ] WLAW-042 Add canonicalization fixtures for set-like and order-sensitive
+- [x] WLAW-042 Add canonicalization fixtures for set-like and order-sensitive
       arrays.
-- [ ] WLAW-043 Add bundle manifest fields for `schemaHash`, `lawHash`,
+- [x] WLAW-043 Add bundle manifest fields for `schemaHash`, `lawHash`,
       `profileHash`, and `bundleHash`.
-- [ ] WLAW-044 Embed schema and law hash constants in one generated artifact
+- [x] WLAW-044 Embed schema and law hash constants in one generated artifact
       path.
-- [ ] WLAW-045 Update docs and changelog for canonical law hash behavior.
+- [x] WLAW-045 Update docs and changelog for canonical law hash behavior.
 
 ### Phase 4: Semantic Diffs
 
-- [ ] WLAW-046 Define `wesley.law-diff/v1` JSON output.
-- [ ] WLAW-047 Emit scalar semantic diff events.
-- [ ] WLAW-048 Emit variant law diff events.
-- [ ] WLAW-049 Emit footprint law diff events.
-- [ ] WLAW-050 Drift checkpoint: reassess scope, split v1/v1.1 if needed, and
+- [x] WLAW-046 Define `wesley.law-diff/v1` JSON output.
+- [x] WLAW-047 Emit scalar semantic diff events.
+- [x] WLAW-048 Emit variant law diff events.
+- [x] WLAW-049 Emit footprint law diff events.
+- [x] WLAW-050 Drift checkpoint: reassess scope, split v1/v1.1 if needed, and
       update this checklist before continuing.
-- [ ] WLAW-051 Emit channel law diff events.
-- [ ] WLAW-052 Emit typed invariant diff events.
-- [ ] WLAW-053 Add `LAW_STRENGTHENED` and `LAW_WEAKENED` classifications.
-- [ ] WLAW-054 Add `BINDING_BROKEN` and `SCHEMA_HASH_REBOUND`
+- [x] WLAW-051 Emit channel law diff events.
+- [x] WLAW-052 Emit typed invariant diff events.
+- [x] WLAW-053 Add `LAW_STRENGTHENED` and `LAW_WEAKENED` classifications.
+- [x] WLAW-054 Add `BINDING_BROKEN` and `SCHEMA_HASH_REBOUND`
       classifications.
-- [ ] WLAW-055 Add `wesley law diff --json`.
-- [ ] WLAW-056 Generate Markdown summaries from structured diff events.
-- [ ] WLAW-057 Add CI-ready semantic diff fixture output.
-- [ ] WLAW-058 Add Holmes/BLADE-facing semantic diff fixtures.
-- [ ] WLAW-059 Update docs and changelog for law diff output.
+- [x] WLAW-055 Add `wesley law diff --json`.
+- [x] WLAW-056 Generate Markdown summaries from structured diff events.
+- [x] WLAW-057 Add CI-ready semantic diff fixture output.
+- [x] WLAW-058 Add Holmes/BLADE-facing semantic diff fixtures.
+- [x] WLAW-059 Update docs and changelog for law diff output.
 
 ### Phase 5: Directive Lowering And Adoption Tools
 
-- [ ] WLAW-060 Lower one known formal directive family into Law IR.
-- [ ] WLAW-061 Prove directive-authored and YAML-authored law canonicalize to
+- [x] WLAW-060 Lower one known formal directive family into Law IR.
+- [x] WLAW-061 Prove directive-authored and YAML-authored law canonicalize to
       the same Law IR.
-- [ ] WLAW-062 Add `wesley law lint` for structure-only validation.
-- [ ] WLAW-063 Add `wesley init-law` scaffolding from known formal directives.
-- [ ] WLAW-064 Add comment-derived draft suggestions with mandatory human
+- [x] WLAW-062 Add `wesley law lint` for structure-only validation.
+- [x] WLAW-063 Add `wesley init-law` scaffolding from known formal directives.
+- [x] WLAW-064 Add comment-derived draft suggestions with mandatory human
       promotion.
-- [ ] WLAW-065 Add `wesley law explain scalar:<Name>`.
-- [ ] WLAW-066 Add `wesley law explain operation:<Root>.<Field>`.
-- [ ] WLAW-067 Add `wesley law rebind` report generation.
-- [ ] WLAW-068 Add explicit rebind acceptance flow for schema-hash anchor
+- [x] WLAW-065 Add `wesley law explain scalar:<Name>`.
+- [x] WLAW-066 Add `wesley law explain operation:<Root>.<Field>`.
+- [x] WLAW-067 Add `wesley law rebind` report generation.
+- [x] WLAW-068 Add explicit rebind acceptance flow for schema-hash anchor
       updates.
-- [ ] WLAW-069 Update docs and changelog for law authoring and adoption
+- [x] WLAW-069 Update docs and changelog for law authoring and adoption
       workflows.
 
 ### Phase 6: First Consumer Payoff
 
-- [ ] WLAW-070 Generate scalar validators for one retained emitter or module
+- [x] WLAW-070 Generate scalar validators for one retained emitter or module
       target.
-- [ ] WLAW-071 Generate variant validators for one retained emitter or module
+- [x] WLAW-071 Generate variant validators for one retained emitter or module
       target.
-- [ ] WLAW-072 Emit first footprint-to-capability report without claiming
+- [x] WLAW-072 Emit first footprint-to-capability report without claiming
       runtime enforcement.
-- [ ] WLAW-073 Add profile/category-aware law coverage reporting.
-- [ ] WLAW-074 Add a minimal Law Matrix static report prototype or defer it
+- [x] WLAW-073 Add profile/category-aware law coverage reporting.
+- [x] WLAW-074 Add a minimal Law Matrix static report prototype or defer it
       explicitly to v1.1 with evidence.
-- [ ] WLAW-075 Close the v1 packet with playback, retrospective, docs,
+- [x] WLAW-075 Close the v1 packet with playback, retrospective, docs,
       changelog, and release-readiness evidence.
+
+## WLAW-050 Drift Checkpoint
+
+The checkpoint result is **continue with the 75-slice runway**.
+
+What held:
+
+- Law IR, binding, canonicalization, manifest hashes, and initial semantic diff
+  reports are still a coherent substrate.
+- The diff model is rightly data-first: reports are structured JSON events, not
+  Markdown prose with metadata inferred later.
+- `wesley law diff --json` now follows channel/invariant, strengthened/weakened,
+  schema-hash rebound, and binding-break classifications, so the first CLI
+  surface ships with a coherent machine-readable diff width.
+
+What changed:
+
+- `schemas/wesley-law-diff-v1.schema.json` is now a v1 schema artifact, not a
+  future-only placeholder.
+- The first implemented diff classes are added/removed entries, bundle and
+  registry changes, law tag changes, scalar semantics, variant cases, footprint
+  expansion/contraction/mixed-change events, channel changes, invariant
+  predicate changes, and schema-hash rebound events.
+- `LAW_STRENGTHENED` and `LAW_WEAKENED` remain follow-on classifications
+  because they need the binding cases and final CLI surface to avoid ad hoc
+  semantics.
+
+Follow-up completed:
+
+- `WLAW-060` through `WLAW-069` completed directive lowering, law lint/init-law,
+  explain, and rebind adoption tooling.
+
+## WLAW-069 Drift Checkpoint
+
+The adoption tooling pull closed `WLAW-060` through `WLAW-069`.
+
+What shipped:
+
+- `@wes_channel` is the first formally known directive family that lowers into
+  active Law IR.
+- Directive-authored `@wes_channel` law and equivalent YAML-authored channel
+  law canonicalize to the same semantic Law IR and `lawHash`.
+- `wesley law lint` validates `weslaw/v1` structure without schema binding.
+- `wesley init-law` scaffolds active law from known formal directives and emits
+  description-derived draft suggestions that require human promotion.
+- `wesley law explain` now reports scalar semantics and operation footprint
+  law for explicit subjects.
+- `wesley law rebind` reports schema-hash anchor drift and requires
+  `--accept --out <path>` before writing a rebound law document.
+
+What held:
+
+- Comments still do not become active law automatically.
+- SDL directives are only a frontend into canonical Law IR.
+- Normal validation still fails on schema-hash mismatch; rebind is an explicit
+  operator action.
+
+Follow-up completed:
+
+- `WLAW-070` through `WLAW-075` delivered the first consumer payoff, coverage
+  reporting, Law Matrix v1.1 deferral, and packet closeout evidence.
+
+## WLAW-075 Closeout
+
+The v1 implementation runway closed at **75 / 75 slices**.
+
+### Playback
+
+The final pull added the first concrete consumer payoff without expanding
+Wesley's ownership boundary:
+
+- Rust emission consumes validated scalar semantics law and emits integer
+  scalar validator helpers.
+- Rust emission consumes validated discriminated input variant law and emits
+  variant-envelope validator helpers.
+- `wesley law capabilities` emits report-only footprint capability summaries
+  with `runtimeEnforcement: false`.
+- `wesley law coverage` emits profile/category-aware coverage for release and
+  CI review.
+- The `rust-validator-payoff` fixture proves scalar and variant law can drive
+  generated Rust helpers while staying bound to the same fixture schema hash.
+
+### Law Matrix Decision
+
+The Law Matrix static site is explicitly deferred to **v1.1**.
+
+Evidence for deferral:
+
+- `wesley law explain` now provides the subject-level explanation engine that a
+  Law Matrix should reuse.
+- `wesley law diff --json`, `wesley law capabilities --json`, and
+  `wesley law coverage --json` now provide machine-readable review data.
+- A static site before the explanation, capability, and coverage formats have
+  survived PR review would make a second presentation layer the stabilization
+  target. That is the wrong v1 risk.
+
+The v1.1 Law Matrix should render those existing outputs instead of inventing a
+parallel interpretation of law.
+
+### Retrospective
+
+What worked:
+
+- Centering the implementation on typed Law IR kept YAML, directives, and
+  future SDL+ as frontends rather than competing truth sources.
+- Strict binding and schema-hash anchors made law drift explicit instead of
+  silently permissive.
+- The CLI now covers the operator lifecycle: scaffold, lint, validate, diff,
+  explain, rebind, report capabilities, and measure coverage.
+
+What remains deliberately out of scope:
+
+- No Wesley SDL+ syntax.
+- No executable YAML, CEL, Rego, or bespoke invariant language.
+- No footprint runtime enforcement claim.
+- No external repo schema rewrites from this packet.
+
+Release-readiness evidence:
+
+- Rust tests cover loader, binding, canonicalization, semantic diffs, directive
+  lowering, Rust law-backed helper generation, capability reports, and coverage
+  reports.
+- Bats fixtures guard the v1 schema artifacts and CLI spelling.
+- `pnpm run preflight` remains the full repo gate for this packet.
 
 ## Non-Goals
 
@@ -1337,12 +1543,14 @@ v1/v1.1 boundary.
    types, or Rust types generated from checked-in schemas?
 2. Should evidence posture enter v1, or wait for v1.1 after scalar, variant,
    footprint, channel, and typed invariant law prove the model?
-3. Which known directive family should be lowered first?
-4. Which target should receive the first generated scalar/variant validators?
-5. Should bundle manifests record both `compilerVersion` and canonicalization
-   codec version separately?
-6. Should `lawDocumentHash` be emitted by default or only when provenance
-   output is requested?
+3. Resolved in `WLAW-060`: `@wes_channel` is the first known formal directive
+   family lowered into Law IR.
+4. Resolved in `WLAW-070` and `WLAW-071`: Rust emission is the first retained
+   target to receive generated scalar and variant helper validators.
+
+Resolved in `WLAW-036` through `WLAW-045`: bundle manifests record compiler
+identity, compiler version, Law IR codec, and bundle-hash codec separately;
+`lawDocumentHash` is emitted by default when a validated manifest is built.
 
 ## Sensei Rule
 

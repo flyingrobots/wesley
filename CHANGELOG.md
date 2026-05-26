@@ -8,6 +8,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **`weslaw` semantic diff review fixes**: Law diffs now classify existing
+  channel and invariant law modifications as modification events instead of
+  additions, emit registry/tag/schema-hash events so changed `lawHash` values
+  have a machine-readable cause, ignore programmatic draft entries in semantic
+  hash input, and include `schemaHashQualified` in emit metadata while retaining
+  the legacy bare `schemaHash` field. Follow-up PR review fixes now keep
+  `--law` metadata schema hashes sourced from the validated manifest, reject
+  non-object schema types as footprint resources unless they are explicit
+  registry resources, preserve authored `laws[n]` indices in binding
+  diagnostics after Law IR normalization, reject unknown `law coverage`
+  profiles, and rebind only the authored `schema.hash` anchor instead of
+  unrelated hash mentions.
 - **`weslaw` Law IR loader review fixes**: The loader now rejects wrong-typed
   optional sequence fields and invariant predicates with fields from another
   predicate operation, the published Law IR JSON Schema now discriminates each
@@ -21,6 +33,51 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **`weslaw` v1 consumer payoff**: `wesley emit rust --law <path>` now emits
+  law-backed helper validators for integer scalar semantics and discriminated
+  input variant rules, `wesley law capabilities` emits report-only
+  footprint-to-capability summaries without claiming runtime enforcement, and
+  `wesley law coverage` reports profile/category-aware coverage for custom
+  scalar semantics, variant inputs, mutation footprints, and channel law. The
+  `0019` packet now closes the 75-slice `weslaw` v1 runway with playback,
+  retrospective, release-readiness evidence, and an explicit Law Matrix v1.1
+  deferral.
+- **`weslaw` adoption tooling**: Added `@wes_channel` directive lowering into
+  canonical Law IR, a fixture proving directive-authored channel law and
+  YAML-authored channel law produce the same semantic `lawHash`, structure-only
+  `wesley law lint`, `wesley init-law` scaffolding for known formal directives,
+  description-derived draft suggestions that remain inactive until promoted,
+  `wesley law explain` for scalar and operation subjects, and explicit
+  `wesley law rebind` reporting plus `--accept --out <path>` output for
+  schema-hash anchor updates.
+- **`weslaw` strict schema binding**: Added Rust-core validation that requires
+  active `weslaw/v1` documents to match the active `sha256:<64 lowercase hex>`
+  schema hash, binds scalar/type/input/enum/field/operation/channel/family
+  subject coordinates against Shape IR or explicit law registries, validates
+  variant discriminator fields and enum values, validates footprint resource
+  kinds and argument paths, validates typed invariant field and verifier
+  references, rejects wrong subject kinds and contradictory active law, emits
+  stable binding diagnostics, and exposes the strict pass through
+  `wesley law validate --schema <path> --law <path>`.
+- **`weslaw` canonical law hashes**: Added canonical semantic Law IR
+  serialization, `lawHash`, provenance-bearing `lawDocumentHash`, empty-profile
+  `profileHash`, contract `bundleHash`, and a versioned
+  `wesley.contract-bundle-manifest/v1` JSON Schema. `wesley law validate` with
+  `--json` now emits the bundle manifest, `wesley emit rust --law <path>`
+  embeds `WESLEY_SCHEMA_HASH` and `WESLAW_HASH` constants in generated Rust,
+  and emit metadata sidecars record law, profile, bundle, and Law IR codec
+  hashes when a law file is supplied.
+- **`weslaw` semantic diff substrate**: Added the versioned
+  `wesley.law-diff/v1` JSON Schema and Rust-core law diff reports for
+  added/removed law entries, scalar semantic field changes, variant case
+  changes, footprint expansion/contraction/mixed-change events, channel version
+  and channel body changes, invariant predicate changes, registry changes, law
+  tag changes, schema-hash rebound events, strengthened/weakened law
+  classifications, and binding-break events. The native
+  `wesley law diff --old <path> --new <path> --json` command emits
+  machine-readable semantic diff reports; `--format markdown` generates PR-ready
+  summaries; CI and Holmes/BLADE-facing fixture outputs now exercise the public
+  diff schema.
 - **`weslaw` semantic Law IR design**: Added design packet `0019` defining
   `weslaw` as Wesley's semantic law layer for contract bundles, with typed Law
   IR, strict binding, schema-hash anchoring, canonical law hashes, structured

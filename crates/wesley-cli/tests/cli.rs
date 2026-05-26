@@ -9,9 +9,17 @@ fn help_exits_zero_without_footprint_command() {
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
     assert!(stdout.contains("Wesley native CLI"));
     assert!(stdout.contains("normalize-sdl"));
+    assert!(stdout.contains("init-law"));
     assert!(stdout.contains("schema lower"));
     assert!(stdout.contains("schema operations"));
     assert!(stdout.contains("schema diff"));
+    assert!(stdout.contains("law validate"));
+    assert!(stdout.contains("law lint"));
+    assert!(stdout.contains("law diff"));
+    assert!(stdout.contains("law explain"));
+    assert!(stdout.contains("law rebind"));
+    assert!(stdout.contains("law capabilities"));
+    assert!(stdout.contains("law coverage"));
     assert!(stdout.contains("doctor"));
     assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
@@ -31,6 +39,531 @@ fn removed_footprint_checker_is_not_a_wesley_command() {
     let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
     assert!(stdout.is_empty());
     assert!(stderr.contains("unknown command 'check-footprint'"));
+}
+
+#[test]
+fn law_diff_json_emits_structured_semantic_events() {
+    let output = wesley()
+        .args(["law", "diff", "--old"])
+        .arg(fixture("test/fixtures/weslaw/diff/old.weslaw.yaml"))
+        .arg("--new")
+        .arg(fixture("test/fixtures/weslaw/diff/new.weslaw.yaml"))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["apiVersion"], "wesley.law-diff/v1");
+    assert!(report["oldLawHash"]
+        .as_str()
+        .expect("old law hash should be a string")
+        .starts_with("sha256:"));
+    assert_eq!(
+        report["changes"]
+            .as_array()
+            .expect("changes should be an array")
+            .iter()
+            .map(|change| change["kind"].as_str().expect("kind should be a string"))
+            .collect::<Vec<_>>(),
+        vec!["LAW_WEAKENED", "LAW_WEAKENED", "FOOTPRINT_EXPANDED"]
+    );
+    assert_eq!(
+        stdout,
+        std::fs::read_to_string(fixture("test/fixtures/weslaw/diff/ci-semantic-diff.json",))
+            .expect("CI semantic diff fixture should read")
+    );
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_diff_markdown_summarizes_structured_events() {
+    let output = wesley()
+        .args(["law", "diff", "--old"])
+        .arg(fixture("test/fixtures/weslaw/diff/old.weslaw.yaml"))
+        .arg("--new")
+        .arg(fixture("test/fixtures/weslaw/diff/new.weslaw.yaml"))
+        .arg("--format")
+        .arg("markdown")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("# Wesley Law Diff"));
+    assert!(stdout.contains("| `LAW_WEAKENED` | `echo.scalar.positiveInt.u32-positive` |"));
+    assert!(stdout.contains("| `FOOTPRINT_EXPANDED` | `jedit.op.replaceRangeAsTick.footprint` |"));
+    assert_eq!(
+        stdout,
+        std::fs::read_to_string(fixture("test/fixtures/weslaw/diff/ci-semantic-diff.md",))
+            .expect("CI semantic diff Markdown fixture should read")
+    );
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_diff_reports_binding_breaks_against_active_schema() {
+    let output = wesley()
+        .args(["law", "diff", "--old"])
+        .arg(fixture("test/fixtures/weslaw/diff/old.weslaw.yaml"))
+        .arg("--new")
+        .arg(fixture(
+            "test/fixtures/weslaw/diff/binding-broken.weslaw.yaml",
+        ))
+        .arg("--schema")
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+    let changes = report["changes"]
+        .as_array()
+        .expect("changes should be an array");
+
+    assert!(changes
+        .iter()
+        .any(|change| change["kind"] == "BINDING_BROKEN"));
+    assert!(stdout.contains("WESLAW_UNRESOLVED_SUBJECT"));
+    assert_eq!(
+        stdout,
+        std::fs::read_to_string(fixture(
+            "test/fixtures/weslaw/diff/holmes-blade-binding-broken.json",
+        ))
+        .expect("Holmes/BLADE binding fixture should read")
+    );
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_validate_accepts_schema_bound_weslaw() {
+    let output = wesley()
+        .args(["law", "validate", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("Law validation passed: 1 active entries bound to sha256:"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_validate_json_emits_bundle_manifest_hashes() {
+    let output = wesley()
+        .args(["law", "validate", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["boundEntryCount"], 1);
+    assert!(report["schemaHash"]
+        .as_str()
+        .expect("schema hash should be a string")
+        .starts_with("sha256:"));
+    assert!(report["lawHash"]
+        .as_str()
+        .expect("law hash should be a string")
+        .starts_with("sha256:"));
+    assert!(report["lawDocumentHash"]
+        .as_str()
+        .expect("law document hash should be a string")
+        .starts_with("sha256:"));
+    assert!(report["profileHash"]
+        .as_str()
+        .expect("profile hash should be a string")
+        .starts_with("sha256:"));
+    assert_eq!(report["bundleHash"], report["manifest"]["bundleHash"]);
+    assert_eq!(
+        report["manifest"]["apiVersion"],
+        "wesley.contract-bundle-manifest/v1"
+    );
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_lint_accepts_structure_without_schema_binding() {
+    let output = wesley()
+        .args(["law", "lint", "--law"])
+        .arg(fixture(
+            "test/fixtures/weslaw/rejected/schema-hash-mismatch.weslaw.yaml",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["apiVersion"], "wesley.law-ir/v1");
+    assert_eq!(report["activeEntryCount"], 1);
+    assert_eq!(
+        report["schemaHash"],
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    );
+    assert!(report["lawHash"]
+        .as_str()
+        .expect("law hash should be a string")
+        .starts_with("sha256:"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn init_law_scaffolds_known_directive_law_and_draft_suggestions() {
+    let dir = temp_dir("init-law");
+    let schema = dir.join("schema.graphql");
+    let out = dir.join("scaffold.weslaw.yaml");
+
+    std::fs::write(
+        &schema,
+        r#"
+        directive @wes_channel(name: String!, version: Int!, ordered: Boolean!) on OBJECT
+
+        """
+        Positive integer values must preserve their intended domain.
+        """
+        scalar PositiveInt
+
+        type ReadyMessage {
+          ok: Boolean!
+        }
+
+        type DemoChannel
+          @wes_channel(name: "demo.channel", version: 1, ordered: true)
+        {
+          ready: ReadyMessage!
+        }
+
+        type Query {
+          ready: ReadyMessage!
+        }
+        "#,
+    )
+    .expect("schema should write");
+
+    let output = wesley()
+        .args(["init-law", "--schema"])
+        .arg(&schema)
+        .args(["--family", "adoption-test", "--out"])
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let scaffold = std::fs::read_to_string(&out).expect("scaffold should read");
+
+    assert!(stdout.is_empty());
+    assert!(stderr.is_empty());
+    assert!(scaffold.contains("family: \"adoption-test\""));
+    assert!(scaffold.contains("kind: channelLaw"));
+    assert!(scaffold.contains("subject: \"channel:demo.channel@1\""));
+    assert!(scaffold.contains("field: \"ready\""));
+    assert!(scaffold.contains("type: \"ReadyMessage\""));
+    assert!(scaffold.contains("status: draft"));
+    assert!(scaffold.contains("draft.description.scalar.PositiveInt"));
+
+    let lint = wesley()
+        .args(["law", "lint", "--law"])
+        .arg(&out)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+    assert_success(&lint);
+    let lint_stdout = String::from_utf8(lint.stdout).expect("stdout should be utf8");
+    let lint_report: serde_json::Value =
+        serde_json::from_str(&lint_stdout).expect("stdout should be json");
+    assert_eq!(lint_report["activeEntryCount"], 1);
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn law_explain_reports_scalar_semantics() {
+    let output = wesley()
+        .args(["law", "explain", "--law"])
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
+        ))
+        .arg("scalar:PositiveInt")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("Subject: scalar:PositiveInt"));
+    assert!(stdout.contains("Bound laws: 1"));
+    assert!(stdout.contains("Law: echo.scalar.positiveInt.u32-positive"));
+    assert!(stdout.contains("Kind: scalar semantics"));
+    assert!(stdout.contains("Minimum: 1"));
+    assert!(stdout.contains("Maximum: 4294967295"));
+    assert!(stdout.contains("Forbids: silentGraphQLIntNarrowing"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_explain_reports_operation_footprint() {
+    let output = wesley()
+        .args(["law", "explain", "--law"])
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .arg("operation:Mutation.replaceRangeAsTick")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.contains("Subject: operation:Mutation.replaceRangeAsTick"));
+    assert!(stdout.contains("Law: jedit.op.replaceRangeAsTick.footprint"));
+    assert!(stdout.contains("Kind: operation footprint"));
+    assert!(stdout.contains("Reads: Anchor, BufferWorldline"));
+    assert!(stdout.contains("Writes: BufferWorldline"));
+    assert!(stdout.contains("Creates: RopeBranch, RopeHead"));
+    assert!(stdout.contains("Forbids: AstState, Diagnostics, GitWitness, UiState"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_rebind_reports_and_accepts_schema_hash_updates() {
+    let dir = temp_dir("law-rebind");
+    let out = dir.join("rebound.weslaw.yaml");
+    let law_with_extra_hash = dir.join("law-with-extra-hash.weslaw.yaml");
+    let schema = fixture("test/fixtures/weslaw/contract-bundle-shape.graphql");
+    let law = fixture("test/fixtures/weslaw/rejected/schema-hash-mismatch.weslaw.yaml");
+    let old_hash = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+    let law_source = std::fs::read_to_string(&law).expect("law fixture should read");
+    std::fs::write(
+        &law_with_extra_hash,
+        law_source.replace(
+            "    semantics:\n",
+            &format!("    rationale: \"Historical mention {old_hash} must not be rewritten.\"\n    semantics:\n"),
+        ),
+    )
+    .expect("law fixture copy should write");
+
+    let report_output = wesley()
+        .args(["law", "rebind", "--schema"])
+        .arg(&schema)
+        .arg("--law")
+        .arg(&law)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&report_output);
+    let report_stdout = String::from_utf8(report_output.stdout).expect("stdout should be utf8");
+    let report: serde_json::Value =
+        serde_json::from_str(&report_stdout).expect("stdout should be json");
+    assert_eq!(report["apiVersion"], "wesley.law-rebind/v1");
+    assert_eq!(report["changed"], true);
+    assert_eq!(report["accepted"], false);
+    assert!(report["newSchemaHash"]
+        .as_str()
+        .expect("new schema hash should be a string")
+        .starts_with("sha256:"));
+
+    let accept_output = wesley()
+        .args(["law", "rebind", "--schema"])
+        .arg(&schema)
+        .arg("--law")
+        .arg(&law_with_extra_hash)
+        .args(["--accept", "--out"])
+        .arg(&out)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&accept_output);
+    let accept_stdout = String::from_utf8(accept_output.stdout).expect("stdout should be utf8");
+    let accept_report: serde_json::Value =
+        serde_json::from_str(&accept_stdout).expect("stdout should be json");
+    assert_eq!(accept_report["accepted"], true);
+    assert_eq!(accept_report["output"], out.display().to_string());
+
+    let validate_output = wesley()
+        .args(["law", "validate", "--schema"])
+        .arg(&schema)
+        .arg("--law")
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+    assert_success(&validate_output);
+    let rebound = std::fs::read_to_string(&out).expect("rebound law should read");
+    assert!(rebound.contains(&format!("Historical mention {old_hash}")));
+    assert_eq!(rebound.matches(old_hash).count(), 1);
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn law_capabilities_reports_footprints_without_runtime_enforcement() {
+    let output = wesley()
+        .args(["law", "capabilities", "--law"])
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["apiVersion"], "wesley.capability-report/v1");
+    assert_eq!(report["reportOnly"], true);
+    assert_eq!(report["runtimeEnforcement"], false);
+    assert_eq!(
+        report["footprints"][0]["lawId"],
+        "jedit.op.replaceRangeAsTick.footprint"
+    );
+    assert_eq!(
+        report["footprints"][0]["subject"],
+        "operation:Mutation.replaceRangeAsTick"
+    );
+    assert!(report["footprints"][0]["reads"]
+        .as_array()
+        .expect("reads should be an array")
+        .iter()
+        .any(|value| value == "BufferWorldline"));
+    assert!(report["footprints"][0]["forbids"]
+        .as_array()
+        .expect("forbids should be an array")
+        .iter()
+        .any(|value| value == "Diagnostics"));
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_coverage_reports_profile_categories() {
+    let output = wesley()
+        .args(["law", "coverage", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml",
+        ))
+        .args(["--profile", "release", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+
+    assert_eq!(report["apiVersion"], "wesley.law-coverage/v1");
+    assert_eq!(report["profile"], "release");
+    assert_eq!(report["requiredTotal"], 6);
+    assert_eq!(report["requiredCovered"], 2);
+    assert_eq!(report["requiredPercent"], 33.3);
+
+    let categories = report["categories"]
+        .as_array()
+        .expect("categories should be an array");
+    let scalar = categories
+        .iter()
+        .find(|category| category["id"] == "customScalarSemantics")
+        .expect("scalar coverage should exist");
+    assert_eq!(scalar["total"], 3);
+    assert_eq!(scalar["covered"], 1);
+    assert!(scalar["missingSubjects"]
+        .as_array()
+        .expect("missing subjects should be an array")
+        .iter()
+        .any(|value| value == "scalar:WorldlineTick"));
+
+    let variant = categories
+        .iter()
+        .find(|category| category["id"] == "variantInputLaw")
+        .expect("variant coverage should exist");
+    assert_eq!(variant["covered"], 1);
+    assert!(stderr.is_empty());
+}
+
+#[test]
+fn law_coverage_rejects_unknown_profiles() {
+    let output = wesley()
+        .args(["law", "coverage", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml",
+        ))
+        .args(["--profile", "prod", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    assert!(stderr.contains("unknown law coverage profile `prod`"));
+}
+
+#[test]
+fn law_validate_reports_schema_hash_mismatch() {
+    let output = wesley()
+        .args(["law", "validate", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/rejected/schema-hash-mismatch.weslaw.yaml",
+        ))
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+
+    assert!(stdout.is_empty());
+    assert!(stderr.contains("WESLAW_SCHEMA_HASH_MISMATCH"));
+    assert!(stderr.contains("$.schema.hash"));
 }
 
 #[test]
@@ -633,6 +1166,19 @@ fn emit_commands_write_deterministic_metadata_sidecars() {
             .len(),
         64
     );
+    assert_eq!(
+        rust_json["schemaHashQualified"],
+        format!(
+            "sha256:{}",
+            rust_json["schemaHash"]
+                .as_str()
+                .expect("schema hash should be a string")
+        )
+    );
+    assert_eq!(
+        typescript_json["schemaHashQualified"],
+        rust_json["schemaHashQualified"]
+    );
     assert_eq!(rust_json["generator"], "wesley-emit-rust");
     assert_eq!(typescript_json["generator"], "wesley-emit-typescript");
     assert_eq!(
@@ -645,6 +1191,100 @@ fn emit_commands_write_deterministic_metadata_sidecars() {
     );
     assert_eq!(rust_json["executionMode"], "rust-native");
     assert_eq!(typescript_json["executionMode"], "rust-native");
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn emit_rust_with_law_embeds_schema_and_law_hash_constants() {
+    let dir = temp_dir("emit-rust-law-hashes");
+    let out = dir.join("generated").join("model.rs");
+    let metadata = dir.join("generated").join("model.metadata.json");
+
+    let output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml",
+        ))
+        .arg("--out")
+        .arg(&out)
+        .arg("--metadata-out")
+        .arg(&metadata)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let generated = std::fs::read_to_string(&out).expect("Rust output should read");
+    let metadata_json: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&metadata).expect("metadata should read"))
+            .expect("metadata should be JSON");
+
+    assert!(generated.contains("pub const WESLEY_SCHEMA_HASH: &'static str = \"sha256:"));
+    assert!(generated.contains("pub const WESLAW_HASH: &'static str = \"sha256:"));
+    assert_eq!(
+        metadata_json["lawHash"],
+        generated_hash_literal(&generated, "WESLAW_HASH")
+    );
+    assert_eq!(
+        metadata_json["schemaHashQualified"],
+        generated_hash_literal(&generated, "WESLEY_SCHEMA_HASH")
+    );
+    assert_eq!(
+        metadata_json["schemaHashQualified"],
+        format!(
+            "sha256:{}",
+            metadata_json["schemaHash"]
+                .as_str()
+                .expect("schema hash should be a string")
+        )
+    );
+    assert!(metadata_json["bundleHash"]
+        .as_str()
+        .expect("bundle hash should be a string")
+        .starts_with("sha256:"));
+    assert!(metadata_json["profileHash"]
+        .as_str()
+        .expect("profile hash should be a string")
+        .starts_with("sha256:"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn emit_rust_with_law_generates_scalar_and_variant_validators() {
+    let dir = temp_dir("emit-rust-law-validators");
+    let out = dir.join("generated").join("model.rs");
+
+    let output = wesley()
+        .args(["emit", "rust", "--schema"])
+        .arg(fixture(
+            "test/fixtures/weslaw/contract-bundle-shape.graphql",
+        ))
+        .arg("--law")
+        .arg(fixture(
+            "test/fixtures/weslaw/accepted/rust-validator-payoff.weslaw.yaml",
+        ))
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let generated = std::fs::read_to_string(&out).expect("Rust output should read");
+    assert!(generated.contains("pub fn validate_positive_int(value: u64)"));
+    assert!(generated.contains("if value < 1"));
+    assert!(generated.contains("if value > 4294967295"));
+    assert!(generated
+        .contains("pub fn validate_playback_mode_input_variant(value: &PlaybackModeInput)"));
+    assert!(generated.contains("PlaybackModeKind::Seek => {"));
+    assert!(generated.contains("if value.target.is_none()"));
+    assert!(generated.contains("if value.then.is_none()"));
+    assert!(generated.contains("PlaybackModeKind::Paused => {"));
+    assert!(generated.contains("if value.target.is_some()"));
 
     let _ = std::fs::remove_dir_all(dir);
 }
@@ -912,6 +1552,14 @@ fn temp_dir(name: &str) -> std::path::PathBuf {
     ));
     std::fs::create_dir_all(&path).expect("temp directory should create");
     path
+}
+
+fn generated_hash_literal(generated: &str, constant: &str) -> serde_json::Value {
+    let marker = format!("pub const {constant}: &'static str = \"");
+    let start = generated.find(&marker).expect("hash constant should exist") + marker.len();
+    let rest = &generated[start..];
+    let end = rest.find("\";").expect("hash constant should terminate");
+    serde_json::Value::String(rest[..end].to_string())
 }
 
 fn run_git<const N: usize>(repo: &std::path::Path, args: [&str; N]) {

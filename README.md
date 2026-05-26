@@ -184,7 +184,8 @@ cargo wesley --help
 The native command can run Rust-native health checks, lower schema SDL to L1
 IR, compute schema hashes, diff schema structure, list schema root operations,
 emit Rust models and TypeScript declarations with root operation bindings,
-resolve operation selections, and extract operation directive arguments.
+resolve operation selections, validate `weslaw` semantic law against active
+schema facts, and extract operation directive arguments.
 
 ```bash
 cargo wesley doctor
@@ -193,8 +194,10 @@ cargo wesley schema hash --schema test/fixtures/ir-parity/small-schema.graphql
 cargo wesley schema operations --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --json
 cargo wesley schema diff --old old.graphql --new new.graphql --format summary --exit-code
 cargo wesley schema diff --schema schema.graphql --against HEAD --format summary
-cargo wesley emit rust --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --out generated/model.rs --metadata-out generated/model.metadata.json
-cargo wesley emit typescript --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --out generated/types.ts --metadata-out generated/types.metadata.json
+cargo wesley law validate --schema test/fixtures/weslaw/contract-bundle-shape.graphql --law test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml
+cargo wesley law validate --schema test/fixtures/weslaw/contract-bundle-shape.graphql --law test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml --json
+cargo wesley emit rust --schema test/fixtures/weslaw/contract-bundle-shape.graphql --law test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml --out generated/model.rs --metadata-out generated/model.metadata.json
+cargo wesley emit typescript --schema test/fixtures/weslaw/contract-bundle-shape.graphql --law test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml --out generated/types.ts --metadata-out generated/types.metadata.json
 ```
 
 For the full map, read [ENTRYPOINTS.md](./docs/ENTRYPOINTS.md). For the
