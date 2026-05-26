@@ -10,7 +10,7 @@ release: v0.0.8
 
 ## Status
 
-Active planning packet. First PR chunk complete.
+Active planning packet. Slices `HLAW-001` through `HLAW-035` are complete.
 
 ## Question
 
@@ -84,9 +84,9 @@ failure behavior, and test fixtures where known.
 | Chunk | Slices | Planned PR Shape | Purpose |
 | --- | --- | --- | --- |
 | 1 | HLAW-001..HLAW-010 | Complete | Evidence intake and typed domain contracts. |
-| 2 | HLAW-011..HLAW-020 | One PR | Report model, CLI operator flows, and local artifacts. |
-| 3 | HLAW-021..HLAW-030 | One PR | GitHub and MCP interfaces over the same assurance use cases. |
-| 4 | HLAW-031..HLAW-040 | One PR | Policy, QA harnesses, determinism, concurrency, and budgets. |
+| 2 | HLAW-011..HLAW-020 | Complete | Report model, CLI operator flows, and local artifacts. |
+| 3 | HLAW-021..HLAW-030 | Complete | GitHub and MCP interfaces over the same assurance use cases. |
+| 4 | HLAW-031..HLAW-040 | In progress | Policy, QA harnesses, determinism, concurrency, and budgets. |
 | 5 | HLAW-041..HLAW-050 | One PR | Migration, release gates, documentation, and campaign closeout. |
 
 Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
@@ -152,54 +152,54 @@ Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
 
 ### Report Model, CLI, And Local Artifacts
 
-- [ ] HLAW-011 `LawAssuranceReportDocument` PRD and test plan.
+- [x] HLAW-011 `LawAssuranceReportDocument` PRD and test plan.
   - Feature/product: A structured report section family for semantic changes,
     coverage, capabilities, and bundle traceability inside the Holmes
     `ReportDocument`.
   - Required output: PRD for section ids, tables, summary metrics, attachments,
     stable ordering, and renderer-neutral semantics.
-- [ ] HLAW-012 `LawDiffReportSection` PRD and test plan.
+- [x] HLAW-012 `LawDiffReportSection` PRD and test plan.
   - Feature/product: A report section that presents semantic law diff events in
     review order while preserving machine-readable event kinds.
   - Required output: PRD for field columns, grouped summaries, high-risk event
     highlighting, truncation policy, and no-change behavior.
-- [ ] HLAW-013 `LawCoverageReportSection` PRD and test plan.
+- [x] HLAW-013 `LawCoverageReportSection` PRD and test plan.
   - Feature/product: A report section that presents law coverage by profile,
     category, required status, covered count, and missing subjects.
   - Required output: PRD for thresholds, empty categories, required versus
     advisory categories, and accessibility of table output.
-- [ ] HLAW-014 `LawCapabilityReportSection` PRD and test plan.
+- [x] HLAW-014 `LawCapabilityReportSection` PRD and test plan.
   - Feature/product: A report section that presents footprint capability
     summaries while explicitly labeling them report-only.
   - Required output: PRD for wording, resource grouping, empty lists, large
     footprint truncation, and runtime-enforcement disclaimers.
-- [ ] HLAW-015 `BundleProvenanceReportSection` PRD and test plan.
+- [x] HLAW-015 `BundleProvenanceReportSection` PRD and test plan.
   - Feature/product: A report section that shows schemaHash, lawHash,
     profileHash, bundleHash, law codec, compiler identity, and generator
     provenance.
   - Required output: PRD for required fields, partial manifests, hash display,
     copy/paste safety, and mismatch callouts.
-- [ ] HLAW-016 `holmes weslaw validate` CLI PRD and test plan.
+- [x] HLAW-016 `holmes weslaw validate` CLI PRD and test plan.
   - Feature/product: A Holmes CLI command that validates a `HolmesLawEvidence`
     input bundle without making readiness judgments.
   - Required output: PRD for flags, JSON/text output, exit codes, invalid
     bundle diagnostics, and fixture golden outputs.
-- [ ] HLAW-017 `holmes weslaw assess` CLI PRD and test plan.
+- [x] HLAW-017 `holmes weslaw assess` CLI PRD and test plan.
   - Feature/product: A Holmes CLI command that evaluates validated law evidence
     into gates, findings, verdict, and a structured report document.
   - Required output: PRD for flags, policy selection, `--fail-on` behavior,
     terminal output, JSON output, and missing optional artifact behavior.
-- [ ] HLAW-018 `holmes weslaw report` CLI PRD and test plan.
+- [x] HLAW-018 `holmes weslaw report` CLI PRD and test plan.
   - Feature/product: A Holmes CLI command that renders a `ReportDocument` as
     Markdown, JSON, terminal text, or file output without publishing anywhere.
   - Required output: PRD for renderer selection, output paths, stdout behavior,
     overwrite policy, and snapshot tests.
-- [ ] HLAW-019 `LawAssuranceArtifactWriter` PRD and test plan.
+- [x] HLAW-019 `LawAssuranceArtifactWriter` PRD and test plan.
   - Feature/product: A local output adapter that writes normalized validation,
     assessment, and rendered report artifacts for CI and later review.
   - Required output: PRD for artifact names, deterministic bytes, directory
     creation, collision policy, and reproducible hash checks.
-- [ ] HLAW-020 `LawAssuranceExitCodePolicy` PRD and test plan.
+- [x] HLAW-020 `LawAssuranceExitCodePolicy` PRD and test plan.
   - Feature/product: A CLI exit-code policy for validation errors, assurance
     failures, warnings, publisher failures, and internal errors.
   - Required output: PRD for exit-code table, `--fail-on` gates, CI defaults,
@@ -207,52 +207,52 @@ Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
 
 ### GitHub And MCP Interfaces
 
-- [ ] HLAW-021 `GitHubLawAssuranceComment` PRD and test plan.
+- [x] HLAW-021 `GitHubLawAssuranceComment` PRD and test plan.
   - Feature/product: A GitHub PR comment renderer/publisher for law diff,
     coverage, capability, and bundle provenance summaries.
   - Required output: PRD for sticky comment markers, update behavior, markdown
     constraints, truncation, links, and idempotent publishing.
-- [ ] HLAW-022 `GitHubLawGateCheckSummary` PRD and test plan.
+- [x] HLAW-022 `GitHubLawGateCheckSummary` PRD and test plan.
   - Feature/product: A GitHub-facing gate summary that tells reviewers whether
     law evidence is pass, warn, fail, or unavailable.
   - Required output: PRD for review wording, blocked-merge posture, required
     versus advisory gates, and stale evidence detection.
-- [ ] HLAW-023 `GitHubLawFindingAnnotations` PRD and test plan.
+- [x] HLAW-023 `GitHubLawFindingAnnotations` PRD and test plan.
   - Feature/product: A mapping from law findings to PR annotations or comment
     bullets where file/line context exists.
   - Required output: PRD for annotation eligibility, no-line findings,
     deduplication, rate limits, and fallback rendering.
-- [ ] HLAW-024 `GitHubLawEvidenceLinks` PRD and test plan.
+- [x] HLAW-024 `GitHubLawEvidenceLinks` PRD and test plan.
   - Feature/product: A link model that connects PR comments to law artifacts,
     CI runs, bundle manifests, and rendered reports.
   - Required output: PRD for artifact URLs, missing artifact behavior,
     expiration notes, and markdown link safety.
-- [ ] HLAW-025 `GitHubLawOverrideControls` PRD and test plan.
+- [x] HLAW-025 `GitHubLawOverrideControls` PRD and test plan.
   - Feature/product: A policy-controlled override surface for maintainers to
     acknowledge advisory law warnings without hiding failed validation.
   - Required output: PRD for labels/checkboxes, audit records, non-overridable
     failures, and drift checkpoint criteria.
-- [ ] HLAW-026 `McpAssessWeslawBundleTool` PRD and test plan.
+- [x] HLAW-026 `McpAssessWeslawBundleTool` PRD and test plan.
   - Feature/product: An MCP tool that assesses a law evidence bundle and
     returns structured gates, findings, and rendered report references.
   - Required output: PRD for request/response schema, workspace authorization,
     error mapping, and deterministic examples.
-- [ ] HLAW-027 `McpLawEvidenceResources` PRD and test plan.
+- [x] HLAW-027 `McpLawEvidenceResources` PRD and test plan.
   - Feature/product: MCP resources exposing law diff, coverage, capability,
     bundle manifest, and rendered law report data.
   - Required output: PRD for resource URIs, caching, access control, invalid
     bundle references, and schema examples.
-- [ ] HLAW-028 `McpExplainLawFindingTool` PRD and test plan.
+- [x] HLAW-028 `McpExplainLawFindingTool` PRD and test plan.
   - Feature/product: An MCP tool that explains one Holmes law finding with
     source artifact references and suggested next action.
   - Required output: PRD for finding ids, explanation shape, citation fallback,
     and missing finding behavior.
-- [ ] HLAW-029 `McpLawPolicyTool` PRD and test plan.
+- [x] HLAW-029 `McpLawPolicyTool` PRD and test plan.
   - Feature/product: An MCP tool that returns active law assurance policy,
     thresholds, required gates, and non-overridable checks.
   - Required output: PRD for policy redaction, profile selection, unknown
     profile errors, and stale policy detection.
-- [ ] HLAW-030 `AgentSafeLawSummary` PRD and test plan.
+- [x] HLAW-030 `AgentSafeLawSummary` PRD and test plan.
   - Feature/product: A compact, structured summary format optimized for agents
     that need law evidence without long Markdown comments.
   - Required output: PRD for token budgets, severity grouping, artifact refs,
@@ -260,27 +260,27 @@ Drift checks happen after HLAW-010, HLAW-025, HLAW-040, and HLAW-050.
 
 ### Policy, QA Harnesses, Determinism, And Budgets
 
-- [ ] HLAW-031 `LawAssurancePolicySchema` PRD and test plan.
+- [x] HLAW-031 `LawAssurancePolicySchema` PRD and test plan.
   - Feature/product: A versioned policy schema defining required law evidence,
     thresholds, severity mappings, and override rules.
   - Required output: PRD for schema versioning, defaults, profile inheritance,
     unknown fields, and JSON Schema validation.
-- [ ] HLAW-032 `LawSeverityMappingPolicy` PRD and test plan.
+- [x] HLAW-032 `LawSeverityMappingPolicy` PRD and test plan.
   - Feature/product: A policy layer that maps law diff event kinds and coverage
     gaps to Holmes severities without changing Wesley's semantic classifications.
   - Required output: PRD for mapping table, unmapped event behavior,
     release/local differences, and fixture coverage.
-- [ ] HLAW-033 `LawCoverageThresholdPolicy` PRD and test plan.
+- [x] HLAW-033 `LawCoverageThresholdPolicy` PRD and test plan.
   - Feature/product: A policy layer that sets required coverage floors by
     category and profile.
   - Required output: PRD for pass/warn/fail thresholds, category absences,
     percentage rounding, and boundary-value tests.
-- [ ] HLAW-034 `LawAssuranceSuppressionPolicy` PRD and test plan.
+- [x] HLAW-034 `LawAssuranceSuppressionPolicy` PRD and test plan.
   - Feature/product: A suppression/audit model for known advisory findings that
     must not suppress invalid evidence or failed binding.
   - Required output: PRD for suppression ids, expiration, reason text, audit
     output, and abuse-prevention tests.
-- [ ] HLAW-035 `LawAssuranceAuditWitness` PRD and test plan.
+- [x] HLAW-035 `LawAssuranceAuditWitness` PRD and test plan.
   - Feature/product: A deterministic witness artifact recording inputs, policy,
     outputs, hashes, and the exact gates evaluated by Holmes.
   - Required output: PRD for witness schema, hash coverage, replay fields,
@@ -398,6 +398,34 @@ No scope correction is needed. Implementation remains out of scope for this
 campaign. The next chunk can safely define report sections, CLI operator flows,
 artifact writing, and exit-code behavior on top of the evidence contracts
 specified here.
+
+## Drift Check: HLAW-025
+
+Date: 2026-05-26.
+
+Status: **25 / 50 slices closed**.
+
+Decision: continue. The report, CLI, local artifact, and GitHub slices still
+fit the campaign boundary. Holmes is being specified as an assurance layer that
+validates, assesses, reports, publishes, and audits Wesley-produced evidence.
+The GitHub override slice deliberately keeps invalid evidence and
+non-overridable required gates outside waiver scope.
+
+No scope correction is needed. The next surfaces should be MCP and agent-safe
+interfaces over the same domain model, not new law semantics.
+
+## Progress Check: HLAW-035
+
+Date: 2026-05-26.
+
+Status: **35 / 50 slices closed**.
+
+Decision: continue with `HLAW-036` through `HLAW-040` next. The first five
+policy/audit slices establish the policy schema, severity mapping, coverage
+thresholds, suppression boundaries, and audit witness requirements. The
+remaining policy/QA harness work should now pin fixture corpora, fake-clock and
+port requirements, concurrency/idempotence, and performance budgets before the
+campaign moves into migration and closeout.
 
 ## Non-Goals For The 50-Slice Planning Campaign
 

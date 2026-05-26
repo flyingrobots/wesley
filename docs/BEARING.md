@@ -411,17 +411,17 @@ The active packet is
 
 Working budget: **50 slices**.
 
-Status: **10 / 50 slices closed**. The plan allocates `HLAW-001` through
+Status: **35 / 50 slices closed**. The plan allocates `HLAW-001` through
 `HLAW-050` across evidence intake, typed domain contracts, report models, CLI
 flows, GitHub publishing, MCP surfaces, policy, QA fixtures, determinism,
 performance budgets, migration, release gates, operator docs, and campaign
 closeout. Each slice must produce a PRD/test-plan artifact with explicit
 objectives, scope, user stories, BDD acceptance criteria, and test scenarios.
 
-The first pull closed `HLAW-001` through `HLAW-010`: evidence intake and typed
-domain contracts for law diffs, coverage reports, capability summaries, bundle
-manifests, artifact location, validation results, semantic findings, coverage
-gates, and traceability gates.
+Closed slices now cover `HLAW-001` through `HLAW-035`: evidence intake, typed
+domain contracts, report sections, CLI operator flows, local artifact writing,
+exit-code policy, GitHub publishing surfaces, MCP tools/resources, agent-safe
+summaries, and the first policy/audit contracts.
 
 ## Next Target
 
@@ -443,9 +443,10 @@ runtime ownership into the base compiler.
 
 The next pull is:
 
-1. `HLAW-011` through `HLAW-020`: write PRD/test-plan artifacts for the report
-   model, CLI operator flows, local artifact writer, and exit-code policy that
-   sit on top of the evidence intake contracts.
+1. `HLAW-036` through `HLAW-040`: write PRD/test-plan artifacts for the golden
+   fixture corpus, negative fixture corpus, fake clock and ports, concurrency
+   and idempotence, and performance budget slices that complete the policy/QA
+   harness chunk.
 
 ## Post-Retirement Freestyle Slice Log
 
