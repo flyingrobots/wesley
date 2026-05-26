@@ -447,15 +447,158 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The next implementation pull after this planning PR should start with:
+The implementation budget is **90 slices**. The first implementation PR should
+take `HIMP-001` through `HIMP-015`, because those slices establish the Rust
+Holmes assurance shell, evidence bundle, artifact locator, schema-version
+validation, and first ingest ports before any publisher or branch-protection
+surface exists.
 
-1. `HLAW-001`, `HLAW-006`, `HLAW-007`, and `HLAW-046`: evidence bundle,
-   artifact locator, validation result, and schema-version validation.
-2. `HLAW-002` through `HLAW-005`: law diff, coverage, capability, and contract
-   manifest ingest ports.
-3. `HLAW-008` through `HLAW-010` plus `HLAW-035`: semantic findings, gate
-   decisions, provenance, and audit witness.
-4. `HLAW-036` and `HLAW-037`: golden and negative fixture corpora.
+Every implementation slice below references the completed `0020` PRD/test-plan
+artifact it implements.
+
+| Slice | Work | Design refs |
+| --- | --- | --- |
+| HIMP-001 | Create the Rust Holmes assurance crate or module shell with domain, application, reporting, and adapter namespaces. | [HLAW-043], [HLAW-050] |
+| HIMP-002 | Add dependency-boundary tests proving the domain layer cannot import GitHub, filesystem, network, or process adapters. | [HLAW-043], [HLAW-038] |
+| HIMP-003 | Define shared clock, filesystem, artifact, GitHub, and MCP port traits with fake implementations for tests. | [HLAW-038], [HLAW-043] |
+| HIMP-004 | Add the first deterministic diagnostic-code taxonomy and error envelope shared by validation and ingest. | [HLAW-007], [HLAW-037] |
+| HIMP-005 | Wire the new crate/module into workspace preflight without exposing public CLI commands yet. | [HLAW-043], [HLAW-042] |
+| HIMP-006 | Document the implementation boundary and update local design navigation for the new Rust Holmes assurance work. | [HLAW-045], [HLAW-050] |
+| HIMP-007 | Implement the typed `HolmesLawEvidenceBundle` model and required artifact-family fields. | [HLAW-001], [HLAW-046] |
+| HIMP-008 | Implement `WeslawArtifactLocator` path resolution with relative-path normalization and path traversal rejection. | [HLAW-006], [HLAW-047] |
+| HIMP-009 | Add the schema-version registry and accepted family/version table for bundle, policy, report, witness, MCP, and GitHub payloads. | [HLAW-046] |
+| HIMP-010 | Implement semantic-version parsing and malformed, missing, unsupported-major, and unsupported-minor diagnostics. | [HLAW-046], [HLAW-037] |
+| HIMP-011 | Implement bundle structural validation before artifact parsing, including required versus optional artifact references. | [HLAW-001], [HLAW-007] |
+| HIMP-012 | Implement bundle provenance validation for schema hash, law hash, policy hash, bundle hash, and source identity fields. | [HLAW-005], [HLAW-010], [HLAW-015] |
+| HIMP-013 | Implement missing, unavailable, oversized, and unreadable artifact diagnostics without panics. | [HLAW-006], [HLAW-007], [HLAW-047] |
+| HIMP-014 | Add versioning fixtures for current, deprecated, malformed, unsupported, and mixed-generation artifacts. | [HLAW-046], [HLAW-037] |
+| HIMP-015 | Add bundle validation golden and negative tests for the first local preflight gate. | [HLAW-001], [HLAW-036], [HLAW-037] |
+| HIMP-016 | Implement the `LawDiffIngestPort` parser for `wesley law diff` JSON. | [HLAW-002] |
+| HIMP-017 | Normalize law diff events into stable internal event records without reclassifying Wesley semantics. | [HLAW-002], [HLAW-008] |
+| HIMP-018 | Add law diff negative handling for duplicate law ids, unknown event kinds, malformed JSON, and unsupported versions. | [HLAW-002], [HLAW-037] |
+| HIMP-019 | Implement the `LawCoverageIngestPort` parser for category/profile-aware coverage artifacts. | [HLAW-003], [HLAW-033] |
+| HIMP-020 | Normalize law coverage subjects, category totals, threshold inputs, and omitted-category accounting. | [HLAW-003], [HLAW-013], [HLAW-033] |
+| HIMP-021 | Implement the `LawCapabilityIngestPort` parser for report-only capability summaries. | [HLAW-004], [HLAW-014] |
+| HIMP-022 | Implement the `ContractBundleManifestIngestPort` parser and cross-check manifest hashes against bundle metadata. | [HLAW-005], [HLAW-015] |
+| HIMP-023 | Create `SemanticChangeFinding` with stable finding ids, source coordinates, event refs, and remediation fields. | [HLAW-008], [HLAW-012] |
+| HIMP-024 | Map law diff events to findings while preserving Wesley's original event classification. | [HLAW-002], [HLAW-008], [HLAW-032] |
+| HIMP-025 | Implement `LawCoverageGateDecision` with profile/category threshold evaluation and boundary-value rounding. | [HLAW-009], [HLAW-033] |
+| HIMP-026 | Implement `BundleTraceabilityGateDecision` for schema, law, policy, manifest, and artifact hash agreement. | [HLAW-010], [HLAW-015] |
+| HIMP-027 | Add provenance report data structures for bundle source, artifact hashes, generator metadata, and evidence links. | [HLAW-015], [HLAW-047] |
+| HIMP-028 | Add gate aggregation rules that produce one assessment outcome from validation, findings, coverage, and provenance gates. | [HLAW-009], [HLAW-010], [HLAW-020] |
+| HIMP-029 | Add omitted-detail accounting for large finding sets and summaries. | [HLAW-030], [HLAW-040] |
+| HIMP-030 | Add domain-level snapshot tests for findings, gate decisions, validation results, and provenance decisions. | [HLAW-007], [HLAW-008], [HLAW-009], [HLAW-010] |
+| HIMP-031 | Implement `LawAssurancePolicySchema` loading and JSON/schema validation. | [HLAW-031], [HLAW-046] |
+| HIMP-032 | Implement profile selection, profile inheritance, defaults, and unknown-profile diagnostics. | [HLAW-029], [HLAW-031], [HLAW-033] |
+| HIMP-033 | Implement severity mapping from law diff event kind and coverage gap to Holmes severity. | [HLAW-032], [HLAW-008] |
+| HIMP-034 | Implement coverage threshold policy with category absence, pass/warn/fail thresholds, and boundary rounding. | [HLAW-033], [HLAW-009] |
+| HIMP-035 | Implement suppression policy with ids, owner, reason text, expiration, and audit fields. | [HLAW-034], [HLAW-035] |
+| HIMP-036 | Enforce suppression abuse prevention for invalid evidence, failed binding, and non-overridable required gates. | [HLAW-034], [HLAW-049] |
+| HIMP-037 | Implement rollout phase policy for local-preview, advisory, required, and non-overridable modes. | [HLAW-049], [HLAW-020] |
+| HIMP-038 | Add policy fixture matrix and negative tests for malformed policy, expired suppression, and attempted invalid-evidence override. | [HLAW-031], [HLAW-034], [HLAW-037], [HLAW-049] |
+| HIMP-039 | Implement `LawAssuranceAuditWitness` schema and deterministic witness construction. | [HLAW-035], [HLAW-046] |
+| HIMP-040 | Record bundle, policy, report, finding, gate, hash, clock, and adapter evidence in the audit witness. | [HLAW-035], [HLAW-047] |
+| HIMP-041 | Implement `LawAssuranceArtifactWriter` for local validation, assessment, report, summary, and witness artifacts. | [HLAW-019], [HLAW-047] |
+| HIMP-042 | Implement retention metadata, deterministic artifact names, pinned evidence markers, and overwrite policy. | [HLAW-047], [HLAW-035] |
+| HIMP-043 | Implement cleanup behavior for expired unpinned Holmes-owned local artifacts. | [HLAW-047], [HLAW-019] |
+| HIMP-044 | Add writer and witness replay tests proving deterministic output across repeated runs. | [HLAW-019], [HLAW-035], [HLAW-039] |
+| HIMP-045 | Build the golden fixture corpus for clean, warning, failing, malformed, stale, and missing evidence bundles. | [HLAW-036] |
+| HIMP-046 | Build the negative fixture corpus for invalid JSON, unsupported versions, hash mismatches, unknown profiles, and malformed policies. | [HLAW-037] |
+| HIMP-047 | Add fake clock and no-wall-clock assertions across validation, assessment, artifact writing, and publishing tests. | [HLAW-038], [HLAW-035] |
+| HIMP-048 | Add in-memory ports for filesystem, artifact repository, GitHub publisher, MCP adapter, and workflow context. | [HLAW-038], [HLAW-039] |
+| HIMP-049 | Add concurrency and idempotence tests for repeated assessment, repeated artifact writing, and retried publication. | [HLAW-039], [HLAW-021] |
+| HIMP-050 | Add large-fixture performance budget harness for validation, assessment, rendering, artifact writing, and summaries. | [HLAW-040], [HLAW-030] |
+| HIMP-051 | Add snapshot regeneration policy and fixture documentation for maintainers. | [HLAW-036], [HLAW-037], [HLAW-045] |
+| HIMP-052 | Add fixture coverage checks so required scenario classes cannot disappear silently. | [HLAW-036], [HLAW-037], [HLAW-050] |
+| HIMP-053 | Add hidden or internal CLI command routing for `holmes weslaw` without publishing GitHub behavior yet. | [HLAW-016], [HLAW-043] |
+| HIMP-054 | Implement `holmes weslaw validate` using the evidence bundle, locator, version, and structural validation core. | [HLAW-016], [HLAW-001], [HLAW-007] |
+| HIMP-055 | Implement `holmes weslaw assess` using ingest ports, policy, findings, and gate decisions. | [HLAW-017], [HLAW-008], [HLAW-009], [HLAW-031] |
+| HIMP-056 | Implement `holmes weslaw report` for JSON and Markdown report outputs. | [HLAW-018], [HLAW-011] |
+| HIMP-057 | Add artifact output flags, output-directory policy, and report/witness writer integration. | [HLAW-019], [HLAW-047] |
+| HIMP-058 | Implement exit-code policy for success, advisory findings, required failure, invalid evidence, unavailable dependency, and internal error. | [HLAW-020], [HLAW-007] |
+| HIMP-059 | Implement transitional CLI aliases and deprecation messages without reviving Node authority. | [HLAW-044], [HLAW-041] |
+| HIMP-060 | Add CLI help, examples, and operator-path tests. | [HLAW-016], [HLAW-017], [HLAW-018], [HLAW-045] |
+| HIMP-061 | Implement `LawAssuranceReportDocument` JSON model with metadata, findings, gates, sections, and artifact refs. | [HLAW-011], [HLAW-046] |
+| HIMP-062 | Implement law diff report section grouped by event kind, severity, subject, and remediation. | [HLAW-012], [HLAW-008] |
+| HIMP-063 | Implement law coverage report section with profile, category, threshold, and omitted-detail accounting. | [HLAW-013], [HLAW-033] |
+| HIMP-064 | Implement law capability and bundle provenance report sections. | [HLAW-014], [HLAW-015] |
+| HIMP-065 | Implement Markdown renderer with truncation, omitted counts, and no color-only status semantics. | [HLAW-011], [HLAW-030], [HLAW-045] |
+| HIMP-066 | Implement agent-safe summary output with token budgets and artifact refs. | [HLAW-030], [HLAW-027] |
+| HIMP-067 | Add report rendering snapshots for clean, warning, failing, invalid, and large fixtures. | [HLAW-011], [HLAW-036], [HLAW-040] |
+| HIMP-068 | Implement GitHub law assurance PR comment renderer from the report model. | [HLAW-021], [HLAW-011] |
+| HIMP-069 | Implement GitHub check summary/status payloads for advisory, required, invalid, and unavailable states. | [HLAW-022], [HLAW-049] |
+| HIMP-070 | Implement GitHub finding annotations with file, line, subject, severity, and stable finding ids. | [HLAW-023], [HLAW-008] |
+| HIMP-071 | Implement evidence link rendering with stale, unavailable, fork-safe, and retention-aware states. | [HLAW-024], [HLAW-047] |
+| HIMP-072 | Implement override controls and suppression handoff without allowing invalid evidence or non-overridable gates to pass. | [HLAW-025], [HLAW-034], [HLAW-049] |
+| HIMP-073 | Implement idempotent comment update and retry behavior against the fake GitHub publisher. | [HLAW-021], [HLAW-039] |
+| HIMP-074 | Add GitHub adapter tests for permissions, fork contexts, publisher timeouts, and stale check conclusions. | [HLAW-021], [HLAW-022], [HLAW-047], [HLAW-049] |
+| HIMP-075 | Implement MCP `assessWeslawBundle` tool using the same application service as CLI assessment. | [HLAW-026], [HLAW-017] |
+| HIMP-076 | Implement MCP law evidence resources with redaction and artifact availability handling. | [HLAW-027], [HLAW-047] |
+| HIMP-077 | Implement MCP `explainLawFinding` tool for finding ids, source event refs, gates, and remediation. | [HLAW-028], [HLAW-008] |
+| HIMP-078 | Implement MCP law policy tool for active profile, thresholds, suppression posture, and rollout phase. | [HLAW-029], [HLAW-031], [HLAW-049] |
+| HIMP-079 | Add MCP/CLI/GitHub parity tests for shared finding ids, gate decisions, and summaries. | [HLAW-026], [HLAW-030], [HLAW-048] |
+| HIMP-080 | Build the end-to-end golden workflow from SDL and `weslaw` authoring through Wesley artifacts to Holmes report output. | [HLAW-048], [HLAW-001] |
+| HIMP-081 | Add end-to-end required-failure, invalid-evidence, stale-hash, and publisher-unavailable workflows. | [HLAW-048], [HLAW-037] |
+| HIMP-082 | Add CI workflow integration that assembles Wesley law artifacts and invokes Holmes law assurance. | [HLAW-042], [HLAW-048] |
+| HIMP-083 | Add workflow artifact upload, retention, and fork-permission tests. | [HLAW-042], [HLAW-047] |
+| HIMP-084 | Add end-to-end release-gate assertions for advisory, required, and non-overridable rollout phases. | [HLAW-048], [HLAW-049] |
+| HIMP-085 | Write operator docs for local generation, validation, assessment, reporting, troubleshooting, and fixture maintenance. | [HLAW-045], [HLAW-050] |
+| HIMP-086 | Update changelog and design docs for shipped Rust Holmes assurance behavior. | [HLAW-045], [HLAW-050] |
+| HIMP-087 | Add command-snippet and docs parity checks for the new CLI and workflow surfaces. | [HLAW-045], [HLAW-016], [HLAW-042] |
+| HIMP-088 | Run Code Lawyer self-review and resolve discovered implementation/documentation issues. | [HLAW-050], [HLAW-040] |
+| HIMP-089 | Harden performance, timeout, and memory budgets after full adapter integration. | [HLAW-040], [HLAW-039] |
+| HIMP-090 | Close the implementation campaign with final retrospective, backlog suggestions, and next-BEARING update. | [HLAW-050], [HLAW-049] |
+
+[HLAW-001]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-001-holmes-law-evidence-bundle.md
+[HLAW-002]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-002-law-diff-ingest-port.md
+[HLAW-003]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-003-law-coverage-ingest-port.md
+[HLAW-004]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-004-law-capability-ingest-port.md
+[HLAW-005]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-005-contract-bundle-manifest-ingest-port.md
+[HLAW-006]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-006-weslaw-artifact-locator.md
+[HLAW-007]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-007-law-evidence-validation-result.md
+[HLAW-008]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-008-semantic-change-finding.md
+[HLAW-009]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-009-law-coverage-gate-decision.md
+[HLAW-010]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-010-bundle-traceability-gate-decision.md
+[HLAW-011]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-011-law-assurance-report-document.md
+[HLAW-012]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-012-law-diff-report-section.md
+[HLAW-013]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-013-law-coverage-report-section.md
+[HLAW-014]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-014-law-capability-report-section.md
+[HLAW-015]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-015-bundle-provenance-report-section.md
+[HLAW-016]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-016-holmes-weslaw-validate-cli.md
+[HLAW-017]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-017-holmes-weslaw-assess-cli.md
+[HLAW-018]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-018-holmes-weslaw-report-cli.md
+[HLAW-019]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-019-law-assurance-artifact-writer.md
+[HLAW-020]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-020-law-assurance-exit-code-policy.md
+[HLAW-021]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-021-github-law-assurance-comment.md
+[HLAW-022]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-022-github-law-gate-check-summary.md
+[HLAW-023]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-023-github-law-finding-annotations.md
+[HLAW-024]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-024-github-law-evidence-links.md
+[HLAW-025]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-025-github-law-override-controls.md
+[HLAW-026]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-026-mcp-assess-weslaw-bundle-tool.md
+[HLAW-027]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-027-mcp-law-evidence-resources.md
+[HLAW-028]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-028-mcp-explain-law-finding-tool.md
+[HLAW-029]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-029-mcp-law-policy-tool.md
+[HLAW-030]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-030-agent-safe-law-summary.md
+[HLAW-031]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-031-law-assurance-policy-schema.md
+[HLAW-032]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-032-law-severity-mapping-policy.md
+[HLAW-033]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-033-law-coverage-threshold-policy.md
+[HLAW-034]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-034-law-assurance-suppression-policy.md
+[HLAW-035]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-035-law-assurance-audit-witness.md
+[HLAW-036]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-036-law-assurance-golden-fixture-corpus.md
+[HLAW-037]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-037-law-assurance-negative-fixture-corpus.md
+[HLAW-038]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-038-law-assurance-fake-clock-and-ports.md
+[HLAW-039]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-039-law-assurance-concurrency-and-idempotence.md
+[HLAW-040]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-040-law-assurance-performance-budget.md
+[HLAW-041]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-041-legacy-holmes-law-evidence-mapping.md
+[HLAW-042]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-042-holmes-workflow-weslaw-integration.md
+[HLAW-043]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-043-rust-holmes-crate-scaffold.md
+[HLAW-044]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-044-transitional-holmes-cli-aliases.md
+[HLAW-045]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-045-law-assurance-operator-docs.md
+[HLAW-046]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-046-law-assurance-schema-versioning.md
+[HLAW-047]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-047-law-assurance-artifact-retention.md
+[HLAW-048]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-048-law-assurance-end-to-end-workflow.md
+[HLAW-049]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-049-law-assurance-release-gate-rollout.md
+[HLAW-050]: ./design/0020-holmes-weslaw-assurance-prd-test-plan/prds/HLAW-050-holmes-weslaw-assurance-closeout.md
 
 ## Post-Retirement Freestyle Slice Log
 
