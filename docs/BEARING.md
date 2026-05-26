@@ -12,6 +12,7 @@ timeline
     Phase 3 : Binding Observatory : Module Runtime : Artifact Evidence
     Phase 4 : Legacy Node Retired : Rust-Native Release : Holmes Assurance
     Phase 5 : weslaw : Semantic Law IR : Contract Bundle Physics
+    Phase 6 : Holmes + weslaw : Assurance PRDs : Evidence Judgment
 ```
 
 ## Active Gravity
@@ -399,10 +400,34 @@ deferral, and v1 playback/retrospective closeout evidence.
   deterministic, and boring. It must not become an expression language, policy
   engine, or YAML programming language.
 
+### 12. Holmes `weslaw` Assurance Planning
+
+The next chunk is a 50-slice PRD and test-plan campaign that turns the merged
+`weslaw` v1 outputs into Holmes-facing assurance requirements before
+implementation begins.
+
+The active packet is
+[0020-holmes-weslaw-assurance-prd-test-plan](./design/0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md).
+
+Working budget: **50 slices**.
+
+Status: **0 / 50 slices closed**. The plan allocates `HLAW-001` through
+`HLAW-050` across evidence intake, typed domain contracts, report models, CLI
+flows, GitHub publishing, MCP surfaces, policy, QA fixtures, determinism,
+performance budgets, migration, release gates, operator docs, and campaign
+closeout. Each slice must produce a PRD/test-plan artifact with explicit
+objectives, scope, user stories, BDD acceptance criteria, and test scenarios.
+
+The first recommended pull is `HLAW-001` through `HLAW-010`: evidence intake
+and typed domain contracts for law diffs, coverage reports, capability
+summaries, bundle manifests, artifact location, validation results, semantic
+findings, coverage gates, and traceability gates.
+
 ## Next Target
 
-The immediate focus is **PR review and merge for `weslaw` v1**, then Holmes
-assurance integration over the new law diff, coverage, and bundle evidence.
+The immediate focus is **Holmes `weslaw` assurance planning**: spend the next
+50 slices writing implementation-grade PRDs and test plans before the Rust
+Holmes assurance integration begins.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
@@ -416,11 +441,11 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The next pull after this PR is:
+The next pull is:
 
-1. After merge, start the Holmes-facing assurance pass over `weslaw` outputs:
-   consume law diffs, coverage reports, capability summaries, and bundle hashes
-   without giving Holmes ownership of semantic truth.
+1. `HLAW-001` through `HLAW-010`: write PRD/test-plan artifacts for the
+   evidence intake and typed domain contracts that let Holmes consume
+   `weslaw` outputs without owning semantic law truth.
 
 ## Post-Retirement Freestyle Slice Log
 
