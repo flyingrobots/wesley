@@ -102,7 +102,9 @@ impl ArtifactLoadPort for InMemoryArtifactStore {
 
 impl ArtifactWritePort for InMemoryArtifactStore {
     fn write_artifact(&mut self, path: &str, bytes: &[u8]) -> HolmesResult<()> {
-        self.writes.insert(path.to_owned(), bytes.to_vec());
+        let data = bytes.to_vec();
+        self.writes.insert(path.to_owned(), data.clone());
+        self.artifacts.insert(path.to_owned(), data);
         Ok(())
     }
 }
@@ -120,7 +122,9 @@ impl FilesystemPort for InMemoryArtifactStore {
     }
 
     fn write_workspace_file(&mut self, path: &str, bytes: &[u8]) -> HolmesResult<()> {
-        self.writes.insert(path.to_owned(), bytes.to_vec());
+        let data = bytes.to_vec();
+        self.writes.insert(path.to_owned(), data.clone());
+        self.artifacts.insert(path.to_owned(), data);
         Ok(())
     }
 }
@@ -220,6 +224,27 @@ impl PolicyLoadPort for StaticPolicyLoader {
 pub trait ReportRenderPort {
     /// Render a report payload.
     fn render_report(&self, body: &str) -> HolmesResult<String>;
+}
+
+/// Deterministic report renderer fake that prefixes report bodies.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct EchoReportRenderer {
+    prefix: String,
+}
+
+impl EchoReportRenderer {
+    /// Create a report renderer with a static prefix.
+    pub fn new(prefix: impl Into<String>) -> Self {
+        Self {
+            prefix: prefix.into(),
+        }
+    }
+}
+
+impl ReportRenderPort for EchoReportRenderer {
+    fn render_report(&self, body: &str) -> HolmesResult<String> {
+        Ok(format!("{}{body}", self.prefix))
+    }
 }
 
 /// Port for command standard output and error streams.

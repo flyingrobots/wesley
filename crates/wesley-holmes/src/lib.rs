@@ -14,15 +14,15 @@ pub mod domain;
 pub mod ports;
 pub mod reporting;
 
-pub use application::{ArtifactLocatorError, ResolvedArtifactPath, WeslawArtifactLocator};
+pub use application::{ResolvedArtifactPath, WeslawArtifactLocator};
 pub use domain::{
     ArtifactFamily, ArtifactRef, BundleProvenance, HolmesDiagnostic, HolmesDiagnosticCode,
     HolmesLawEvidenceBundle, HolmesResult, HolmesSeverity, LawEvidenceArtifacts,
     ParsedSchemaVersion, VersionRegistry, VersionRequirement,
 };
 pub use ports::{
-    ArtifactLoadPort, ArtifactWritePort, ClockPort, CommandIoPort, FilesystemPort, FixedClock,
-    GithubPublishPort, InMemoryArtifactStore, InMemoryMcpResourceRegistry, McpResourcePort,
-    PolicyLoadPort, RecordingCommandIo, RecordingGithubPublisher, ReportRenderPort,
-    StaticPolicyLoader, Timestamp,
+    ArtifactLoadPort, ArtifactWritePort, ClockPort, CommandIoPort, EchoReportRenderer,
+    FilesystemPort, FixedClock, GithubPublishPort, InMemoryArtifactStore,
+    InMemoryMcpResourceRegistry, McpResourcePort, PolicyLoadPort, RecordingCommandIo,
+    RecordingGithubPublisher, ReportRenderPort, StaticPolicyLoader, Timestamp,
 };

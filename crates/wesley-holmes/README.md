@@ -9,8 +9,8 @@ API, and MCP interfaces.
 This crate is intentionally not published yet. It is a workspace implementation
 crate for the Holmes redesign described in the Wesley design packet:
 
-- [Holmes As Law Assurance Consumer](https://github.com/flyingrobots/wesley/blob/main/docs/design/0020-holmes-law-assurance-consumer.md)
-- [Holmes End-to-End](https://github.com/flyingrobots/wesley/blob/main/docs/design/0018-holmes-end-to-end.md)
+- [Holmes `weslaw` Assurance PRD/Test Plan](https://github.com/flyingrobots/wesley/blob/main/docs/design/0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md)
+- [Holmes Assurance Hexagon](https://github.com/flyingrobots/wesley/blob/main/docs/design/0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md)
 
 ## Boundary
 
@@ -29,4 +29,3 @@ The crate follows the planned hexagonal boundary:
 
 The current slice establishes the foundation only. No public Holmes CLI command
 is exposed from Wesley yet.
-

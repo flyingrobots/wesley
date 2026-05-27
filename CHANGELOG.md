@@ -8,6 +8,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Rust Holmes assurance review fixes**: The new Holmes artifact locator now
+  returns stable Holmes diagnostics for invalid and escaping paths, rejects
+  platform-specific backslash and drive-path input before normalization, the
+  schema-version registry now fails closed when a family requirement is absent,
+  semantic-version parsing rejects leading-zero identifiers, in-memory port
+  writes are readable through the same fake store, and the crate metadata/docs
+  no longer point at nonexistent or unpublished documentation.
 - **`weslaw` semantic diff review fixes**: Law diffs now classify existing
   channel and invariant law modifications as modification events instead of
   additions, emit registry/tag/schema-hash events so changed `lawHash` values

@@ -2,4 +2,4 @@
 
 mod artifact_locator;
 
-pub use artifact_locator::{ArtifactLocatorError, ResolvedArtifactPath, WeslawArtifactLocator};
+pub use artifact_locator::{ResolvedArtifactPath, WeslawArtifactLocator};

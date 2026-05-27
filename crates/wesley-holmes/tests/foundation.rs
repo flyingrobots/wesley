@@ -1,8 +1,8 @@
 use wesley_holmes::{
     ArtifactFamily, ArtifactLoadPort, ArtifactRef, ArtifactWritePort, BundleProvenance, ClockPort,
-    CommandIoPort, FilesystemPort, FixedClock, HolmesDiagnosticCode, HolmesLawEvidenceBundle,
-    InMemoryArtifactStore, LawEvidenceArtifacts, McpResourcePort, RecordingCommandIo, Timestamp,
-    VersionRegistry, WeslawArtifactLocator,
+    CommandIoPort, EchoReportRenderer, FilesystemPort, FixedClock, HolmesDiagnosticCode,
+    HolmesLawEvidenceBundle, InMemoryArtifactStore, LawEvidenceArtifacts, McpResourcePort,
+    RecordingCommandIo, ReportRenderPort, Timestamp, VersionRegistry, WeslawArtifactLocator,
 };
 
 #[test]
@@ -26,6 +26,12 @@ fn in_memory_artifact_store_reads_and_writes() {
 
     assert_eq!(bytes, b"diff");
     assert_eq!(store.written("reports/summary.md"), Some(&b"summary"[..]));
+    assert_eq!(
+        store
+            .read_artifact(&ArtifactRef::new("reports/summary.md"))
+            .expect("written artifact should be readable"),
+        b"summary"
+    );
 }
 
 #[test]
@@ -42,6 +48,12 @@ fn filesystem_port_uses_workspace_relative_bytes_without_real_filesystem() {
 
     assert_eq!(bytes, b"policy");
     assert_eq!(store.written("reports/holmes.md"), Some(&b"report"[..]));
+    assert_eq!(
+        store
+            .read_workspace_file("reports/holmes.md")
+            .expect("written workspace file should be readable"),
+        b"report"
+    );
 }
 
 #[test]
@@ -81,8 +93,28 @@ fn artifact_locator_rejects_escape_and_absolute_paths() {
         .resolve("/tmp/outside.json")
         .expect_err("absolute paths should be rejected");
 
-    assert!(escape.message.contains("escape"));
-    assert!(absolute.message.contains("workspace-relative"));
+    assert_eq!(escape.code, HolmesDiagnosticCode::HlawArtifactPathEscape);
+    assert_eq!(absolute.code, HolmesDiagnosticCode::HlawArtifactPathEscape);
+}
+
+#[test]
+fn artifact_locator_rejects_backslash_and_windows_drive_paths() {
+    let locator = WeslawArtifactLocator::new("/workspace");
+
+    for path in [
+        "..\\outside.json",
+        "C:\\tmp\\outside.json",
+        "\\\\server\\share\\outside.json",
+        "C:/tmp/outside.json",
+    ] {
+        let diagnostic = locator
+            .resolve(path)
+            .expect_err("platform-specific path syntax should be rejected");
+        assert_eq!(
+            diagnostic.code,
+            HolmesDiagnosticCode::HlawArtifactPathEscape
+        );
+    }
 }
 
 #[test]
@@ -123,6 +155,9 @@ fn version_registry_rejects_missing_malformed_and_unsupported_versions() {
     let unsupported_minor = registry
         .validate(ArtifactFamily::EvidenceBundle, Some("1.1.0"))
         .expect_err("unsupported minor should fail");
+    let leading_zero = registry
+        .validate(ArtifactFamily::EvidenceBundle, Some("01.0.0"))
+        .expect_err("leading-zero schema version should fail");
 
     assert_eq!(missing.code, HolmesDiagnosticCode::HlawSchemaVersionMissing);
     assert_eq!(
@@ -137,6 +172,41 @@ fn version_registry_rejects_missing_malformed_and_unsupported_versions() {
         unsupported_minor.code,
         HolmesDiagnosticCode::HlawSchemaVersionUnsupportedMinor
     );
+    assert_eq!(
+        leading_zero.code,
+        HolmesDiagnosticCode::HlawSchemaVersionMalformed
+    );
+}
+
+#[test]
+fn version_registry_fails_closed_when_requirement_is_missing() {
+    let registry = VersionRegistry::new([]);
+
+    let diagnostic = registry
+        .validate(ArtifactFamily::EvidenceBundle, Some("999.999.0"))
+        .expect_err("missing registry entry should fail closed");
+
+    assert_eq!(
+        diagnostic.code,
+        HolmesDiagnosticCode::HlawSchemaVersionRequirementMissing
+    );
+    assert_eq!(
+        diagnostic.artifact_family.as_deref(),
+        Some("evidence-bundle")
+    );
+}
+
+#[test]
+fn schema_version_parser_rejects_leading_zero_identifiers() {
+    for version in ["01.0.0", "1.01.0", "1.0.01"] {
+        let diagnostic = VersionRegistry::default()
+            .validate(ArtifactFamily::EvidenceBundle, Some(version))
+            .expect_err("leading-zero semver identifiers should be malformed");
+        assert_eq!(
+            diagnostic.code,
+            HolmesDiagnosticCode::HlawSchemaVersionMalformed
+        );
+    }
 }
 
 #[test]
@@ -152,6 +222,18 @@ fn recording_ports_capture_outputs() {
     assert_eq!(io.stdout_lines(), &["ready".to_owned()]);
     assert_eq!(io.stderr_lines(), &["diagnostic".to_owned()]);
     assert_eq!(mcp.resource("holmes://summary"), Some(&b"payload"[..]));
+}
+
+#[test]
+fn report_renderer_fake_is_deterministic() {
+    let renderer = EchoReportRenderer::new("prefix:");
+
+    assert_eq!(
+        renderer
+            .render_report("body")
+            .expect("report rendering should be deterministic"),
+        "prefix:body"
+    );
 }
 
 fn evidence_bundle_with_law_diff_path(path: &str) -> HolmesLawEvidenceBundle {

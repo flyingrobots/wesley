@@ -17,8 +17,12 @@ pub enum HolmesDiagnosticCode {
     HlawSchemaVersionUnsupportedMajor,
     /// A `schemaVersion` minor version is newer than this Holmes build accepts.
     HlawSchemaVersionUnsupportedMinor,
+    /// No local version requirement was configured for an artifact family.
+    HlawSchemaVersionRequirementMissing,
     /// An artifact path attempted to escape the workspace root.
     HlawArtifactPathEscape,
+    /// An artifact path was malformed before resolution.
+    HlawArtifactPathInvalid,
     /// A law evidence bundle was missing a required artifact reference.
     HlawEvidenceBundleInvalid,
     /// A requested artifact was unavailable through its port.

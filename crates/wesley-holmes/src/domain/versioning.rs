@@ -77,6 +77,9 @@ impl ParsedSchemaVersion {
             if !part.bytes().all(|byte| byte.is_ascii_digit()) {
                 return Err(malformed_version(value));
             }
+            if part.len() > 1 && part.starts_with('0') {
+                return Err(malformed_version(value));
+            }
             part.parse::<u64>().map_err(|_| malformed_version(value))
         };
 
@@ -151,7 +154,7 @@ impl VersionRegistry {
             .map_err(|diagnostic| diagnostic.for_family(family.id()))?;
         let requirement = self
             .requirement(family)
-            .unwrap_or_else(|| VersionRequirement::new(family, parsed.major, parsed.minor));
+            .ok_or_else(|| missing_requirement(family))?;
 
         if parsed.major != requirement.major {
             return Err(HolmesDiagnostic::new(
@@ -213,5 +216,18 @@ fn malformed_version(value: &str) -> HolmesDiagnostic {
         HolmesSeverity::Error,
         format!("schemaVersion must use MAJOR.MINOR.PATCH digits, got {value:?}"),
     )
+    .at_field("schemaVersion")
+}
+
+fn missing_requirement(family: ArtifactFamily) -> HolmesDiagnostic {
+    HolmesDiagnostic::new(
+        HolmesDiagnosticCode::HlawSchemaVersionRequirementMissing,
+        HolmesSeverity::Error,
+        format!(
+            "no schemaVersion requirement is configured for {}",
+            family.id()
+        ),
+    )
+    .for_family(family.id())
     .at_field("schemaVersion")
 }
