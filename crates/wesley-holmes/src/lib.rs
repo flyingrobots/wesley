@@ -14,12 +14,17 @@ pub mod domain;
 pub mod ports;
 pub mod reporting;
 
-pub use application::{LawEvidenceValidator, ResolvedArtifactPath, WeslawArtifactLocator};
+pub use application::{
+    JsonLawDiffIngestPort, LawDiffIngestPort, LawDiffIngestResult, LawDiffIngestStatus,
+    LawEvidenceValidator, ResolvedArtifactPath, WeslawArtifactLocator,
+};
 pub use domain::{
     ArtifactFamily, ArtifactRef, ArtifactRequirement, BundleArtifactRef, BundleProvenance,
     HolmesDiagnostic, HolmesDiagnosticCode, HolmesLawEvidenceBundle, HolmesResult, HolmesSeverity,
-    LawEvidenceArtifacts, LawEvidenceValidationResult, LawEvidenceValidationStatus,
-    LoadedArtifactMetadata, ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,
+    LawDiffEvent, LawDiffEventKind, LawDiffFieldChange, LawDiffLawKind, LawDiffReport,
+    LawDiffReviewPosture, LawEvidenceArtifacts, LawEvidenceValidationResult,
+    LawEvidenceValidationStatus, LoadedArtifactMetadata, ParsedSchemaVersion, VersionCheck,
+    VersionRegistry, VersionRequirement, WESLEY_LAW_DIFF_API_VERSION,
 };
 pub use ports::{
     ArtifactLoadPort, ArtifactWritePort, ClockPort, CommandIoPort, EchoReportRenderer,
