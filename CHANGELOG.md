@@ -40,6 +40,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust Holmes law evidence validation gate**: Extended the unpublished
+  `wesley-holmes` crate with collected law evidence validation results,
+  required-versus-optional bundle artifact validation, canonical provenance
+  hash/source checks, deprecated schema-version warnings, artifact-local
+  version checks for law diff/coverage/capability/manifest evidence, and an
+  application-layer validator that loads artifacts through deterministic ports
+  while reporting unavailable, unreadable, and oversized artifacts without
+  panics.
 - **Rust Holmes assurance foundation**: Added the unpublished
   `crates/wesley-holmes` workspace crate with a hexagonal module shell, domain
   dependency-boundary tests, deterministic port traits and fakes, a structured

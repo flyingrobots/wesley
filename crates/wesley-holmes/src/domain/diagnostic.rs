@@ -13,6 +13,8 @@ pub enum HolmesDiagnosticCode {
     HlawSchemaVersionMissing,
     /// A `schemaVersion` field was not valid semantic version syntax.
     HlawSchemaVersionMalformed,
+    /// A `schemaVersion` is accepted but deprecated.
+    HlawSchemaVersionDeprecated,
     /// A `schemaVersion` major version is not supported by this Holmes build.
     HlawSchemaVersionUnsupportedMajor,
     /// A `schemaVersion` minor version is newer than this Holmes build accepts.
@@ -25,8 +27,18 @@ pub enum HolmesDiagnosticCode {
     HlawArtifactPathInvalid,
     /// A law evidence bundle was missing a required artifact reference.
     HlawEvidenceBundleInvalid,
+    /// A provenance hash was absent or blank.
+    HlawProvenanceHashMissing,
+    /// A provenance hash did not use canonical `sha256:<64 lowercase hex>` syntax.
+    HlawProvenanceHashMalformed,
+    /// A provenance source identity was absent or blank.
+    HlawProvenanceSourceMissing,
     /// A requested artifact was unavailable through its port.
     HlawArtifactUnavailable,
+    /// A requested artifact was present but unreadable through its port.
+    HlawArtifactUnreadable,
+    /// A requested artifact exceeded the configured byte limit.
+    HlawArtifactOversized,
 }
 
 /// Severity attached to a Holmes diagnostic.

@@ -73,12 +73,20 @@ pub trait FilesystemPort {
 pub struct InMemoryArtifactStore {
     artifacts: BTreeMap<String, Vec<u8>>,
     writes: BTreeMap<String, Vec<u8>>,
+    unreadable: BTreeMap<String, String>,
 }
 
 impl InMemoryArtifactStore {
     /// Insert a readable artifact.
     pub fn insert(&mut self, path: impl Into<String>, bytes: impl Into<Vec<u8>>) {
-        self.artifacts.insert(path.into(), bytes.into());
+        let path = path.into();
+        self.unreadable.remove(&path);
+        self.artifacts.insert(path, bytes.into());
+    }
+
+    /// Mark an artifact path as present but unreadable.
+    pub fn mark_unreadable(&mut self, path: impl Into<String>, reason: impl Into<String>) {
+        self.unreadable.insert(path.into(), reason.into());
     }
 
     /// Return bytes written to a path.
@@ -89,6 +97,15 @@ impl InMemoryArtifactStore {
 
 impl ArtifactLoadPort for InMemoryArtifactStore {
     fn read_artifact(&self, artifact: &ArtifactRef) -> HolmesResult<Vec<u8>> {
+        if let Some(reason) = self.unreadable.get(&artifact.path) {
+            return Err(HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawArtifactUnreadable,
+                HolmesSeverity::Error,
+                format!("artifact {:?} is unreadable: {reason}", artifact.path),
+            )
+            .at_field("path"));
+        }
+
         self.artifacts.get(&artifact.path).cloned().ok_or_else(|| {
             HolmesDiagnostic::new(
                 HolmesDiagnosticCode::HlawArtifactUnavailable,
@@ -103,6 +120,7 @@ impl ArtifactLoadPort for InMemoryArtifactStore {
 impl ArtifactWritePort for InMemoryArtifactStore {
     fn write_artifact(&mut self, path: &str, bytes: &[u8]) -> HolmesResult<()> {
         let data = bytes.to_vec();
+        self.unreadable.remove(path);
         self.writes.insert(path.to_owned(), data.clone());
         self.artifacts.insert(path.to_owned(), data);
         Ok(())
@@ -111,6 +129,15 @@ impl ArtifactWritePort for InMemoryArtifactStore {
 
 impl FilesystemPort for InMemoryArtifactStore {
     fn read_workspace_file(&self, path: &str) -> HolmesResult<Vec<u8>> {
+        if let Some(reason) = self.unreadable.get(path) {
+            return Err(HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawArtifactUnreadable,
+                HolmesSeverity::Error,
+                format!("workspace file {path:?} is unreadable: {reason}"),
+            )
+            .at_field("path"));
+        }
+
         self.artifacts.get(path).cloned().ok_or_else(|| {
             HolmesDiagnostic::new(
                 HolmesDiagnosticCode::HlawArtifactUnavailable,
@@ -123,6 +150,7 @@ impl FilesystemPort for InMemoryArtifactStore {
 
     fn write_workspace_file(&mut self, path: &str, bytes: &[u8]) -> HolmesResult<()> {
         let data = bytes.to_vec();
+        self.unreadable.remove(path);
         self.writes.insert(path.to_owned(), data.clone());
         self.artifacts.insert(path.to_owned(), data);
         Ok(())

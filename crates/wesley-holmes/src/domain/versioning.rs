@@ -12,6 +12,14 @@ use super::diagnostic::{HolmesDiagnostic, HolmesDiagnosticCode, HolmesResult, Ho
 pub enum ArtifactFamily {
     /// Law evidence bundle envelope.
     EvidenceBundle,
+    /// Machine-readable law diff artifact.
+    LawDiff,
+    /// Law coverage artifact.
+    LawCoverage,
+    /// Law capability summary artifact.
+    LawCapabilities,
+    /// Contract bundle manifest artifact.
+    ContractBundleManifest,
     /// Assurance policy artifact.
     Policy,
     /// Rendered or structured assurance report artifact.
@@ -31,6 +39,10 @@ impl ArtifactFamily {
     pub fn id(self) -> &'static str {
         match self {
             ArtifactFamily::EvidenceBundle => "evidence-bundle",
+            ArtifactFamily::LawDiff => "law-diff",
+            ArtifactFamily::LawCoverage => "law-coverage",
+            ArtifactFamily::LawCapabilities => "law-capabilities",
+            ArtifactFamily::ContractBundleManifest => "contract-bundle-manifest",
             ArtifactFamily::Policy => "policy",
             ArtifactFamily::Report => "report",
             ArtifactFamily::AuditWitness => "audit-witness",
@@ -40,9 +52,13 @@ impl ArtifactFamily {
         }
     }
 
-    fn all() -> [ArtifactFamily; 7] {
+    fn all() -> [ArtifactFamily; 11] {
         [
             ArtifactFamily::EvidenceBundle,
+            ArtifactFamily::LawDiff,
+            ArtifactFamily::LawCoverage,
+            ArtifactFamily::LawCapabilities,
+            ArtifactFamily::ContractBundleManifest,
             ArtifactFamily::Policy,
             ArtifactFamily::Report,
             ArtifactFamily::AuditWitness,
@@ -101,6 +117,9 @@ pub struct VersionRequirement {
     pub major: u64,
     /// Highest accepted minor version for the accepted major.
     pub max_minor: u64,
+    /// Highest accepted minor version that should be reported as deprecated.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deprecated_minor_through: Option<u64>,
 }
 
 impl VersionRequirement {
@@ -110,8 +129,25 @@ impl VersionRequirement {
             family,
             major,
             max_minor,
+            deprecated_minor_through: None,
         }
     }
+
+    /// Mark accepted versions at or below a minor version as deprecated.
+    pub fn with_deprecated_minor_through(mut self, minor: u64) -> Self {
+        self.deprecated_minor_through = Some(minor);
+        self
+    }
+}
+
+/// Schema-version validation details for an accepted artifact version.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionCheck {
+    /// Parsed schema version.
+    pub parsed: ParsedSchemaVersion,
+    /// Non-fatal diagnostics, such as deprecation warnings.
+    pub diagnostics: Vec<HolmesDiagnostic>,
 }
 
 /// Local registry of accepted artifact-family schema versions.
@@ -131,6 +167,12 @@ impl VersionRegistry {
         }
     }
 
+    /// Return a registry with one requirement inserted or replaced.
+    pub fn with_requirement(mut self, requirement: VersionRequirement) -> Self {
+        self.requirements.insert(requirement.family, requirement);
+        self
+    }
+
     /// Return the requirement for an artifact family.
     pub fn requirement(&self, family: ArtifactFamily) -> Option<VersionRequirement> {
         self.requirements.get(&family).copied()
@@ -142,6 +184,15 @@ impl VersionRegistry {
         family: ArtifactFamily,
         schema_version: Option<&str>,
     ) -> HolmesResult<ParsedSchemaVersion> {
+        Ok(self.classify(family, schema_version)?.parsed)
+    }
+
+    /// Validate and classify a schema version for an artifact family.
+    pub fn classify(
+        &self,
+        family: ArtifactFamily,
+        schema_version: Option<&str>,
+    ) -> HolmesResult<VersionCheck> {
         let Some(raw_version) = schema_version else {
             return Err(missing_version(family));
         };
@@ -186,7 +237,32 @@ impl VersionRegistry {
             .at_field("schemaVersion"));
         }
 
-        Ok(parsed)
+        let mut diagnostics = Vec::new();
+        if requirement
+            .deprecated_minor_through
+            .is_some_and(|minor| parsed.minor <= minor)
+        {
+            diagnostics.push(
+                HolmesDiagnostic::new(
+                    HolmesDiagnosticCode::HlawSchemaVersionDeprecated,
+                    HolmesSeverity::Warning,
+                    format!(
+                        "{} schemaVersion {}.{}.{} is accepted but deprecated",
+                        family.id(),
+                        parsed.major,
+                        parsed.minor,
+                        parsed.patch
+                    ),
+                )
+                .for_family(family.id())
+                .at_field("schemaVersion"),
+            );
+        }
+
+        Ok(VersionCheck {
+            parsed,
+            diagnostics,
+        })
     }
 }
 

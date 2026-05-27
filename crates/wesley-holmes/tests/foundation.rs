@@ -1,8 +1,9 @@
 use wesley_holmes::{
     ArtifactFamily, ArtifactLoadPort, ArtifactRef, ArtifactWritePort, BundleProvenance, ClockPort,
     CommandIoPort, EchoReportRenderer, FilesystemPort, FixedClock, HolmesDiagnosticCode,
-    HolmesLawEvidenceBundle, InMemoryArtifactStore, LawEvidenceArtifacts, McpResourcePort,
-    RecordingCommandIo, ReportRenderPort, Timestamp, VersionRegistry, WeslawArtifactLocator,
+    HolmesLawEvidenceBundle, InMemoryArtifactStore, LawEvidenceArtifacts,
+    LawEvidenceValidationStatus, LawEvidenceValidator, McpResourcePort, RecordingCommandIo,
+    ReportRenderPort, Timestamp, VersionRegistry, VersionRequirement, WeslawArtifactLocator,
 };
 
 #[test]
@@ -72,6 +73,159 @@ fn evidence_bundle_requires_core_artifacts() {
 }
 
 #[test]
+fn evidence_bundle_structure_validation_collects_required_optional_and_duplicate_errors() {
+    let mut bundle = valid_evidence_bundle();
+    bundle.bundle_id = "  ".to_owned();
+    bundle.artifacts.law_diff.path = "evidence/shared.json".to_owned();
+    bundle.artifacts.law_coverage.path = "evidence/shared.json".to_owned();
+    bundle.artifacts.law_capabilities.path = "".to_owned();
+    bundle.artifacts.policy = Some(ArtifactRef::new(" "));
+
+    let result = bundle.validate_structure(&VersionRegistry::default());
+
+    assert_eq!(result.status, LawEvidenceValidationStatus::Invalid);
+    assert_diagnostic_field(&result.diagnostics, "bundleId");
+    assert_diagnostic_field(&result.diagnostics, "artifacts.lawCapabilities");
+    assert_diagnostic_field(&result.diagnostics, "artifacts.policy");
+    assert_diagnostic_field(&result.diagnostics, "artifacts.lawCoverage");
+}
+
+#[test]
+fn evidence_bundle_provenance_validation_requires_canonical_hashes_and_source() {
+    let mut bundle = valid_evidence_bundle();
+    bundle.provenance.schema_hash = "schema".to_owned();
+    bundle.provenance.law_hash = format!("sha256:{}z", "a".repeat(63));
+    bundle.provenance.policy_hash = Some(" ".to_owned());
+    bundle.provenance.bundle_hash = format!("sha1:{}", "b".repeat(64));
+    bundle.provenance.source = "\t".to_owned();
+
+    let result = bundle.validate_structure(&VersionRegistry::default());
+
+    assert_eq!(result.status, LawEvidenceValidationStatus::Invalid);
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawProvenanceHashMalformed,
+    );
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawProvenanceHashMissing,
+    );
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawProvenanceSourceMissing,
+    );
+    assert_diagnostic_field(&result.diagnostics, "provenance.schemaHash");
+    assert_diagnostic_field(&result.diagnostics, "provenance.lawHash");
+    assert_diagnostic_field(&result.diagnostics, "provenance.policyHash");
+    assert_diagnostic_field(&result.diagnostics, "provenance.bundleHash");
+    assert_diagnostic_field(&result.diagnostics, "provenance.source");
+}
+
+#[test]
+fn version_fixture_matrix_covers_current_deprecated_malformed_unsupported_and_mixed_artifacts() {
+    let registry = VersionRegistry::default().with_requirement(
+        VersionRequirement::new(ArtifactFamily::EvidenceBundle, 1, 1)
+            .with_deprecated_minor_through(0),
+    );
+
+    let deprecated = valid_evidence_bundle();
+    let deprecated_result = deprecated.validate_structure(&registry);
+    assert_eq!(
+        deprecated_result.status,
+        LawEvidenceValidationStatus::ValidWithWarnings
+    );
+    assert_diagnostic(
+        &deprecated_result.diagnostics,
+        HolmesDiagnosticCode::HlawSchemaVersionDeprecated,
+    );
+
+    let mut current = valid_evidence_bundle();
+    current.schema_version = "1.1.0".to_owned();
+    assert_eq!(
+        current.validate_structure(&registry).status,
+        LawEvidenceValidationStatus::Valid
+    );
+
+    let mut malformed = valid_evidence_bundle();
+    malformed.schema_version = "v1.0.0".to_owned();
+    assert_diagnostic(
+        &malformed.validate_structure(&registry).diagnostics,
+        HolmesDiagnosticCode::HlawSchemaVersionMalformed,
+    );
+
+    let mut unsupported = valid_evidence_bundle();
+    unsupported.schema_version = "1.2.0".to_owned();
+    assert_diagnostic(
+        &unsupported.validate_structure(&registry).diagnostics,
+        HolmesDiagnosticCode::HlawSchemaVersionUnsupportedMinor,
+    );
+
+    let mut mixed_generation = valid_evidence_bundle();
+    mixed_generation.artifacts.law_diff.schema_version = Some("2.0.0".to_owned());
+    let mixed_result = mixed_generation.validate_structure(&registry);
+    assert_diagnostic(
+        &mixed_result.diagnostics,
+        HolmesDiagnosticCode::HlawSchemaVersionUnsupportedMajor,
+    );
+    assert_diagnostic_field(&mixed_result.diagnostics, "artifacts.lawDiff.schemaVersion");
+}
+
+#[test]
+fn law_evidence_validator_reports_artifact_availability_size_and_read_errors() {
+    let bundle = valid_evidence_bundle();
+    let mut store = InMemoryArtifactStore::default();
+    store.insert("evidence/law-diff.json", b"oversized".to_vec());
+    store.mark_unreadable("evidence/law-capabilities.json", "permission denied");
+    store.insert("evidence/bundle-manifest.json", b"manifest".to_vec());
+
+    let validator =
+        LawEvidenceValidator::new(WeslawArtifactLocator::new("/workspace")).with_max_bytes(8);
+    let result = validator.validate(&bundle, &store, &VersionRegistry::default());
+
+    assert_eq!(result.status, LawEvidenceValidationStatus::Invalid);
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawArtifactOversized,
+    );
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawArtifactUnavailable,
+    );
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawArtifactUnreadable,
+    );
+    assert_eq!(result.loaded_artifacts.len(), 1);
+    assert_eq!(
+        result.loaded_artifacts[0].field_path,
+        "artifacts.contractBundleManifest"
+    );
+}
+
+#[test]
+fn first_law_evidence_validation_gate_accepts_clean_bundle_and_artifacts() {
+    let bundle = valid_evidence_bundle();
+    let mut store = InMemoryArtifactStore::default();
+    for artifact in [
+        &bundle.artifacts.law_diff,
+        &bundle.artifacts.law_coverage,
+        &bundle.artifacts.law_capabilities,
+        &bundle.artifacts.contract_bundle_manifest,
+    ] {
+        store.insert(&artifact.path, b"{}".to_vec());
+    }
+
+    let validator =
+        LawEvidenceValidator::new(WeslawArtifactLocator::new("/workspace")).with_max_bytes(1024);
+    let result = validator.validate(&bundle, &store, &VersionRegistry::default());
+
+    assert_eq!(result.status, LawEvidenceValidationStatus::Valid);
+    assert!(result.diagnostics.is_empty());
+    assert_eq!(result.loaded_artifacts.len(), 4);
+    assert_eq!(result.loaded_artifacts[0].field_path, "artifacts.lawDiff");
+}
+
+#[test]
 fn artifact_locator_normalizes_workspace_relative_paths() {
     let locator = WeslawArtifactLocator::new("/workspace");
 
@@ -123,6 +277,10 @@ fn version_registry_accepts_current_versions() {
 
     for family in [
         ArtifactFamily::EvidenceBundle,
+        ArtifactFamily::LawDiff,
+        ArtifactFamily::LawCoverage,
+        ArtifactFamily::LawCapabilities,
+        ArtifactFamily::ContractBundleManifest,
         ArtifactFamily::Policy,
         ArtifactFamily::Report,
         ArtifactFamily::AuditWitness,
@@ -237,11 +395,17 @@ fn report_renderer_fake_is_deterministic() {
 }
 
 fn evidence_bundle_with_law_diff_path(path: &str) -> HolmesLawEvidenceBundle {
+    let mut bundle = valid_evidence_bundle();
+    bundle.artifacts.law_diff.path = path.to_owned();
+    bundle
+}
+
+fn valid_evidence_bundle() -> HolmesLawEvidenceBundle {
     HolmesLawEvidenceBundle {
         schema_version: "1.0.0".to_owned(),
         bundle_id: "bundle-001".to_owned(),
         artifacts: LawEvidenceArtifacts {
-            law_diff: ArtifactRef::new(path),
+            law_diff: ArtifactRef::new("evidence/law-diff.json"),
             law_coverage: ArtifactRef::new("evidence/law-coverage.json"),
             law_capabilities: ArtifactRef::new("evidence/law-capabilities.json"),
             contract_bundle_manifest: ArtifactRef::new("evidence/bundle-manifest.json"),
@@ -250,11 +414,27 @@ fn evidence_bundle_with_law_diff_path(path: &str) -> HolmesLawEvidenceBundle {
             witness: None,
         },
         provenance: BundleProvenance {
-            schema_hash: "sha256:schema".to_owned(),
-            law_hash: "sha256:law".to_owned(),
+            schema_hash: format!("sha256:{}", "a".repeat(64)),
+            law_hash: format!("sha256:{}", "b".repeat(64)),
             policy_hash: None,
-            bundle_hash: "sha256:bundle".to_owned(),
+            bundle_hash: format!("sha256:{}", "c".repeat(64)),
             source: "test".to_owned(),
         },
     }
+}
+
+fn assert_diagnostic(diagnostics: &[wesley_holmes::HolmesDiagnostic], code: HolmesDiagnosticCode) {
+    assert!(
+        diagnostics.iter().any(|diagnostic| diagnostic.code == code),
+        "expected {code:?} in {diagnostics:#?}"
+    );
+}
+
+fn assert_diagnostic_field(diagnostics: &[wesley_holmes::HolmesDiagnostic], field_path: &str) {
+    assert!(
+        diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.field_path.as_deref() == Some(field_path)),
+        "expected field {field_path:?} in {diagnostics:#?}"
+    );
 }
