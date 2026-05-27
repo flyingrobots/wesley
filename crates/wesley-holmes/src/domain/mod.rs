@@ -9,5 +9,11 @@ mod evidence;
 mod versioning;
 
 pub use diagnostic::{HolmesDiagnostic, HolmesDiagnosticCode, HolmesResult, HolmesSeverity};
-pub use evidence::{ArtifactRef, BundleProvenance, HolmesLawEvidenceBundle, LawEvidenceArtifacts};
-pub use versioning::{ArtifactFamily, ParsedSchemaVersion, VersionRegistry, VersionRequirement};
+pub use evidence::{
+    ArtifactRef, ArtifactRequirement, BundleArtifactRef, BundleProvenance, HolmesLawEvidenceBundle,
+    LawEvidenceArtifacts, LawEvidenceValidationResult, LawEvidenceValidationStatus,
+    LoadedArtifactMetadata,
+};
+pub use versioning::{
+    ArtifactFamily, ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,
+};

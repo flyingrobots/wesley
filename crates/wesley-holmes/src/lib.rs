@@ -14,11 +14,12 @@ pub mod domain;
 pub mod ports;
 pub mod reporting;
 
-pub use application::{ResolvedArtifactPath, WeslawArtifactLocator};
+pub use application::{LawEvidenceValidator, ResolvedArtifactPath, WeslawArtifactLocator};
 pub use domain::{
-    ArtifactFamily, ArtifactRef, BundleProvenance, HolmesDiagnostic, HolmesDiagnosticCode,
-    HolmesLawEvidenceBundle, HolmesResult, HolmesSeverity, LawEvidenceArtifacts,
-    ParsedSchemaVersion, VersionRegistry, VersionRequirement,
+    ArtifactFamily, ArtifactRef, ArtifactRequirement, BundleArtifactRef, BundleProvenance,
+    HolmesDiagnostic, HolmesDiagnosticCode, HolmesLawEvidenceBundle, HolmesResult, HolmesSeverity,
+    LawEvidenceArtifacts, LawEvidenceValidationResult, LawEvidenceValidationStatus,
+    LoadedArtifactMetadata, ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,
 };
 pub use ports::{
     ArtifactLoadPort, ArtifactWritePort, ClockPort, CommandIoPort, EchoReportRenderer,

@@ -2,9 +2,9 @@
 
 `wesley-holmes` is the Rust foundation for Holmes law assurance work inside
 Wesley. It consumes Wesley-published law evidence, policy, witness, MCP, and
-GitHub payload artifacts; validates their envelope shape and version posture;
-and prepares deterministic diagnostics and reporting surfaces for later CLI,
-API, and MCP interfaces.
+GitHub payload artifacts; validates their envelope shape, provenance, artifact
+availability, and version posture; and prepares deterministic diagnostics and
+reporting surfaces for later CLI, API, and MCP interfaces.
 
 This crate is intentionally not published yet. It is a workspace implementation
 crate for the Holmes redesign described in the Wesley design packet:
@@ -27,5 +27,5 @@ The crate follows the planned hexagonal boundary:
   surfaces.
 - `reporting`: future renderer-facing DTOs and report assembly helpers.
 
-The current slice establishes the foundation only. No public Holmes CLI command
-is exposed from Wesley yet.
+The current implementation includes the first local law evidence validation
+gate. No public Holmes CLI command is exposed from Wesley yet.
