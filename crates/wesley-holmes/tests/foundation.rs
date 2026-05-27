@@ -171,6 +171,59 @@ fn version_fixture_matrix_covers_current_deprecated_malformed_unsupported_and_mi
 }
 
 #[test]
+fn artifact_sha256_fields_must_be_canonical_when_present() {
+    let mut bundle = valid_evidence_bundle();
+
+    for (sha256, field_path) in [
+        (" ", "artifacts.lawDiff.sha256"),
+        (
+            "sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "artifacts.lawCoverage.sha256",
+        ),
+        (
+            "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "artifacts.lawCapabilities.sha256",
+        ),
+        ("sha256:aaaaaaaa", "artifacts.contractBundleManifest.sha256"),
+    ] {
+        match field_path {
+            "artifacts.lawDiff.sha256" => {
+                bundle.artifacts.law_diff.sha256 = Some(sha256.to_owned())
+            }
+            "artifacts.lawCoverage.sha256" => {
+                bundle.artifacts.law_coverage.sha256 = Some(sha256.to_owned());
+            }
+            "artifacts.lawCapabilities.sha256" => {
+                bundle.artifacts.law_capabilities.sha256 = Some(sha256.to_owned());
+            }
+            "artifacts.contractBundleManifest.sha256" => {
+                bundle.artifacts.contract_bundle_manifest.sha256 = Some(sha256.to_owned());
+            }
+            _ => unreachable!("test fixture uses known fields"),
+        }
+    }
+
+    let result = bundle.validate_structure(&VersionRegistry::default());
+
+    assert_eq!(result.status, LawEvidenceValidationStatus::Invalid);
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawArtifactHashMissing,
+    );
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawArtifactHashMalformed,
+    );
+    assert_diagnostic_field(&result.diagnostics, "artifacts.lawDiff.sha256");
+    assert_diagnostic_field(&result.diagnostics, "artifacts.lawCoverage.sha256");
+    assert_diagnostic_field(&result.diagnostics, "artifacts.lawCapabilities.sha256");
+    assert_diagnostic_field(
+        &result.diagnostics,
+        "artifacts.contractBundleManifest.sha256",
+    );
+}
+
+#[test]
 fn law_evidence_validator_reports_artifact_availability_size_and_read_errors() {
     let bundle = valid_evidence_bundle();
     let mut store = InMemoryArtifactStore::default();
@@ -199,6 +252,53 @@ fn law_evidence_validator_reports_artifact_availability_size_and_read_errors() {
     assert_eq!(
         result.loaded_artifacts[0].field_path,
         "artifacts.contractBundleManifest"
+    );
+}
+
+#[test]
+fn law_evidence_validator_continues_after_structure_warnings_to_find_artifact_errors() {
+    let bundle = valid_evidence_bundle();
+    let registry = VersionRegistry::default().with_requirement(
+        VersionRequirement::new(ArtifactFamily::EvidenceBundle, 1, 1)
+            .with_deprecated_minor_through(0),
+    );
+    let store = InMemoryArtifactStore::default();
+
+    let result = LawEvidenceValidator::new(WeslawArtifactLocator::new("/workspace"))
+        .validate(&bundle, &store, &registry);
+
+    assert_eq!(result.status, LawEvidenceValidationStatus::Invalid);
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawSchemaVersionDeprecated,
+    );
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawArtifactUnavailable,
+    );
+}
+
+#[test]
+fn law_evidence_validator_rejects_duplicate_normalized_artifact_paths() {
+    let mut bundle = valid_evidence_bundle();
+    bundle.artifacts.law_diff.path = "./evidence/shared.json".to_owned();
+    bundle.artifacts.law_coverage.path = "evidence/shared.json".to_owned();
+    let mut store = InMemoryArtifactStore::default();
+    store.insert("evidence/shared.json", b"shared".to_vec());
+    store.insert("evidence/law-capabilities.json", b"capabilities".to_vec());
+    store.insert("evidence/bundle-manifest.json", b"manifest".to_vec());
+
+    let result = LawEvidenceValidator::new(WeslawArtifactLocator::new("/workspace")).validate(
+        &bundle,
+        &store,
+        &VersionRegistry::default(),
+    );
+
+    assert_eq!(result.status, LawEvidenceValidationStatus::Invalid);
+    assert_diagnostic_field(&result.diagnostics, "artifacts.lawCoverage");
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawEvidenceBundleInvalid,
     );
 }
 

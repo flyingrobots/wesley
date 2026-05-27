@@ -347,6 +347,14 @@ impl HolmesLawEvidenceBundle {
                     Err(diagnostic) => diagnostics.push(diagnostic.at_field(schema_field)),
                 }
             }
+
+            if let Some(sha256) = artifact.sha256.as_deref() {
+                validate_artifact_sha256(
+                    sha256,
+                    format!("{}.sha256", bundle_artifact.field_path),
+                    diagnostics,
+                );
+            }
         }
     }
 
@@ -397,9 +405,10 @@ fn validation_status_for(diagnostics: &[HolmesDiagnostic]) -> LawEvidenceValidat
 
 fn validate_required_sha256(
     value: &str,
-    field_path: &'static str,
+    field_path: impl Into<String>,
     diagnostics: &mut Vec<HolmesDiagnostic>,
 ) {
+    let field_path = field_path.into();
     if value.trim().is_empty() {
         diagnostics.push(
             HolmesDiagnostic::new(
@@ -415,6 +424,33 @@ fn validate_required_sha256(
                 HolmesDiagnosticCode::HlawProvenanceHashMalformed,
                 HolmesSeverity::Error,
                 "law evidence bundle provenance hash must use sha256:<64 lowercase hex>",
+            )
+            .at_field(field_path),
+        );
+    }
+}
+
+fn validate_artifact_sha256(
+    value: &str,
+    field_path: impl Into<String>,
+    diagnostics: &mut Vec<HolmesDiagnostic>,
+) {
+    let field_path = field_path.into();
+    if value.trim().is_empty() {
+        diagnostics.push(
+            HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawArtifactHashMissing,
+                HolmesSeverity::Error,
+                "artifact sha256 digest must not be blank",
+            )
+            .at_field(field_path),
+        );
+    } else if !is_canonical_sha256(value) {
+        diagnostics.push(
+            HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawArtifactHashMalformed,
+                HolmesSeverity::Error,
+                "artifact sha256 digest must use sha256:<64 lowercase hex>",
             )
             .at_field(field_path),
         );

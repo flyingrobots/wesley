@@ -27,6 +27,10 @@ pub enum HolmesDiagnosticCode {
     HlawArtifactPathInvalid,
     /// A law evidence bundle was missing a required artifact reference.
     HlawEvidenceBundleInvalid,
+    /// An artifact digest field was absent or blank.
+    HlawArtifactHashMissing,
+    /// An artifact digest field did not use canonical `sha256:<64 lowercase hex>` syntax.
+    HlawArtifactHashMalformed,
     /// A provenance hash was absent or blank.
     HlawProvenanceHashMissing,
     /// A provenance hash did not use canonical `sha256:<64 lowercase hex>` syntax.

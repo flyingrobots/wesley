@@ -1,5 +1,7 @@
 //! Evidence-bundle validation application service.
 
+use std::collections::BTreeMap;
+
 use crate::application::WeslawArtifactLocator;
 use crate::domain::{
     ArtifactRef, HolmesDiagnostic, HolmesDiagnosticCode, HolmesLawEvidenceBundle, HolmesSeverity,
@@ -37,12 +39,17 @@ impl LawEvidenceValidator {
         version_registry: &VersionRegistry,
     ) -> LawEvidenceValidationResult {
         let structural = bundle.validate_structure(version_registry);
-        if !structural.diagnostics.is_empty() {
+        if structural
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.severity == HolmesSeverity::Error)
+        {
             return structural;
         }
 
-        let mut diagnostics = Vec::new();
+        let mut diagnostics = structural.diagnostics;
         let mut loaded_artifacts = Vec::new();
+        let mut normalized_paths = BTreeMap::new();
 
         for bundle_artifact in bundle.artifact_refs() {
             let artifact = bundle_artifact.artifact;
@@ -53,6 +60,24 @@ impl LawEvidenceValidator {
                     continue;
                 }
             };
+
+            if let Some(first_field_path) = normalized_paths.insert(
+                resolved.workspace_relative.clone(),
+                bundle_artifact.field_path,
+            ) {
+                diagnostics.push(
+                    HolmesDiagnostic::new(
+                        HolmesDiagnosticCode::HlawEvidenceBundleInvalid,
+                        HolmesSeverity::Error,
+                        format!(
+                            "artifact path normalizes to the same path as {first_field_path}; each artifact role must point at distinct evidence"
+                        ),
+                    )
+                    .for_family(bundle_artifact.family.id())
+                    .at_field(bundle_artifact.field_path),
+                );
+                continue;
+            }
 
             let normalized = ArtifactRef {
                 path: resolved.workspace_relative.clone(),
