@@ -15,17 +15,18 @@ pub mod ports;
 pub mod reporting;
 
 pub use application::{
-    JsonLawDiffIngestPort, LawDiffIngestPort, LawDiffIngestResult, LawDiffIngestStatus,
-    LawEvidenceValidator, ResolvedArtifactPath, WeslawArtifactLocator,
+    JsonLawCoverageIngestPort, JsonLawDiffIngestPort, LawCoverageIngestPort,
+    LawCoverageIngestResult, LawCoverageIngestStatus, LawDiffIngestPort, LawDiffIngestResult,
+    LawDiffIngestStatus, LawEvidenceValidator, ResolvedArtifactPath, WeslawArtifactLocator,
 };
 pub use domain::{
     ArtifactFamily, ArtifactRef, ArtifactRequirement, BundleArtifactRef, BundleProvenance,
     HolmesDiagnostic, HolmesDiagnosticCode, HolmesLawEvidenceBundle, HolmesResult, HolmesSeverity,
-    LawDiffEvent, LawDiffEventKind, LawDiffFieldChange, LawDiffLawKind, LawDiffReport,
-    LawDiffReviewPosture, LawEvidenceArtifacts, LawEvidenceValidationResult,
-    LawEvidenceValidationStatus, LoadedArtifactMetadata, NormalizedLawDiffEvent,
-    ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,
-    WESLEY_LAW_DIFF_API_VERSION,
+    LawCoverageCategory, LawCoverageReport, LawDiffEvent, LawDiffEventKind, LawDiffFieldChange,
+    LawDiffLawKind, LawDiffReport, LawDiffReviewPosture, LawEvidenceArtifacts,
+    LawEvidenceValidationResult, LawEvidenceValidationStatus, LoadedArtifactMetadata,
+    NormalizedLawDiffEvent, ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,
+    WESLEY_LAW_COVERAGE_API_VERSION, WESLEY_LAW_DIFF_API_VERSION,
 };
 pub use ports::{
     ArtifactLoadPort, ArtifactWritePort, ClockPort, CommandIoPort, EchoReportRenderer,

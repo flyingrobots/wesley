@@ -446,8 +446,8 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The implementation budget is **90 slices**. Status: **18 / 90 slices closed**.
-Closed implementation slices now cover `HIMP-001` through `HIMP-018`: the
+The implementation budget is **90 slices**. Status: **19 / 90 slices closed**.
+Closed implementation slices now cover `HIMP-001` through `HIMP-019`: the
 workspace-local Rust Holmes assurance crate shell, domain dependency-boundary
 tests, deterministic port traits and fakes, the first diagnostic taxonomy, the
 workspace preflight hook, implementation-boundary docs, the typed
@@ -458,7 +458,8 @@ size diagnostics, versioning fixture coverage, and the first local evidence
 validation gate, plus a `LawDiffIngestPort` parser for `wesley.law-diff/v1`
 JSON artifacts, stable normalized law diff event records, and negative handling
 for malformed law diff JSON, unsupported versions, unknown event kinds, and
-duplicate law-id event identities.
+duplicate law-id event identities, plus a `LawCoverageIngestPort` parser for
+current `wesley.law-coverage/v1` profile/category JSON artifacts.
 
 The current implementation PR is taking `HIMP-016` through `HIMP-025`, because
 those slices ingest Wesley-published law diff, coverage, capability, and
