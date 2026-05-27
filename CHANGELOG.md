@@ -33,6 +33,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust Holmes assurance foundation**: Added the unpublished
+  `crates/wesley-holmes` workspace crate with a hexagonal module shell, domain
+  dependency-boundary tests, deterministic port traits and fakes, a structured
+  diagnostic envelope, typed `HolmesLawEvidenceBundle` model, safe
+  workspace-relative artifact path locator, and artifact-family schema-version
+  registry for the first ten Holmes implementation slices.
 - **`weslaw` v1 consumer payoff**: `wesley emit rust --law <path>` now emits
   law-backed helper validators for integer scalar semantics and discriminated
   input variant rules, `wesley law capabilities` emits report-only

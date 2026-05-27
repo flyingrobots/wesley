@@ -34,7 +34,11 @@ The repo is now split into three practical layers:
    exposes schema lowering, schema hashing, schema operation listing, schema
    diffing, Rust/TypeScript emission, operation selection analysis, and
    directive argument extraction from Rust crates.
-3. **Non-compiler JavaScript surfaces**: `packages/` now contains Holmes
+3. **Rust Holmes assurance foundation**: `crates/wesley-holmes` is the new
+   law-assurance foundation for Holmes evidence, versioning, ports, and future
+   reports. It consumes Wesley-published artifacts and does not expose product
+   CLI commands yet.
+4. **Non-compiler JavaScript surfaces**: `packages/` now contains Holmes
    assurance tooling and browser/Bun/Deno host smoke experiments only. These
    packages are not release authority, compiler authority, or product
    entrypoints.
@@ -56,6 +60,7 @@ flowchart LR
             Core[wesley-core]
             RustEmitter[wesley-emit-rust]
             TsEmitter[wesley-emit-typescript]
+            RustHolmes[wesley-holmes]
             NativeCli[wesley-cli]
             Xtask[xtask]
         end
@@ -87,11 +92,12 @@ flowchart LR
     NativeCli --> TsEmitter
     RustEmitter --> Core
     TsEmitter --> Core
+    RustHolmes --> Fixtures
     Xtask --> NativeCli
     Xtask --> Core
 
     Core --> Fixtures
-    Holmes --> Fixtures
+    Holmes -. transitional assurance UI .-> RustHolmes
     Scripts --> Docs
     Scripts -. package hygiene .-> JS
 
@@ -114,8 +120,9 @@ semantics.
 | `crates/wesley-cli/`                                                     | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts.                                                            |
 | `crates/wesley-emit-rust/`                                               | Rust projection crate. Builds a Rust item/type AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations.                    |
 | `crates/wesley-emit-typescript/`                                         | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
+| `crates/wesley-holmes/`                                                  | Rust Holmes law-assurance foundation. Defines pure domain models, deterministic ports/fakes, evidence bundle validation, artifact path resolution, and version diagnostics without exposing public CLI commands yet. |
 | `xtask/`                                                                 | Rust repository automation: docs checks, tests, native preflight, release check, and package hygiene bridge.                                                             |
-| `packages/wesley-holmes/`                                                | Self-contained assurance, verification, counterfactual, Holmes/Moriarty-era tooling outside compiler authority.                                                          |
+| `packages/wesley-holmes/`                                                | Existing JavaScript Holmes surface outside compiler authority while the Rust assurance foundation grows behind it.                                                        |
 | `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | External host smoke experiments pending deletion or externalization.                                                                                                     |
 | `schemas/`                                                               | JSON schemas and generic directive/schema assets used by tooling and tests.                                                                                              |
 | `test/fixtures/`                                                         | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas.                                                                                              |

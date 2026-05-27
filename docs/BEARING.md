@@ -430,10 +430,9 @@ closeout.
 
 ## Next Target
 
-The immediate focus is **Holmes `weslaw` assurance planning PR review**: the
-50-slice PRD/test-plan campaign is complete, and the next branch should begin
-Rust Holmes assurance implementation from the evidence and validation core
-before publishers or branch-protection gates.
+The immediate focus is **Rust Holmes `weslaw` assurance implementation**: the
+50-slice PRD/test-plan campaign is complete, and this branch is now building
+the evidence and validation core before publishers or branch-protection gates.
 
 Current evidence still includes complete v0.0.5 publication proof, Rust L1
 fixtures for directive-heavy SDL, schema extensions, nested list type
@@ -447,11 +446,18 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The implementation budget is **90 slices**. The first implementation PR should
-take `HIMP-001` through `HIMP-015`, because those slices establish the Rust
-Holmes assurance shell, evidence bundle, artifact locator, schema-version
-validation, and first ingest ports before any publisher or branch-protection
-surface exists.
+The implementation budget is **90 slices**. Status: **10 / 90 slices closed**.
+Closed implementation slices now cover `HIMP-001` through `HIMP-010`: the
+workspace-local Rust Holmes assurance crate shell, domain dependency-boundary
+tests, deterministic port traits and fakes, the first diagnostic taxonomy, the
+workspace preflight hook, implementation-boundary docs, the typed
+`HolmesLawEvidenceBundle`, safe artifact path normalization, accepted
+artifact-family version registry, and schema-version diagnostics.
+
+The first implementation PR should take `HIMP-001` through `HIMP-015`, because
+those slices establish the Rust Holmes assurance shell, evidence bundle,
+artifact locator, schema-version validation, and first ingest ports before any
+publisher or branch-protection surface exists.
 
 Every implementation slice below references the completed `0020` PRD/test-plan
 artifact it implements.

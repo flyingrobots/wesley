@@ -42,7 +42,9 @@ Current packets:
   [generator JS deletion audit](./0017-rust-native-front-door-and-node-retirement/GENERATOR_JS_DELETION_AUDIT.md),
   ending with the
   [final closeout](./0017-rust-native-front-door-and-node-retirement/FINAL_CLOSEOUT.md)
-- [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md): Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters
+- [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md):
+  Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters,
+  now backed by the initial `crates/wesley-holmes` Rust foundation
 - [`0019`](./0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md): `weslaw`
   semantic Law IR for contract bundles, strict binding, canonical law hashes,
   semantic diffs, and deferred SDL+ syntax, including the v1
