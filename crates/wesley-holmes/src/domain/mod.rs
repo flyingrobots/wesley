@@ -17,7 +17,7 @@ pub use evidence::{
 };
 pub use law_diff::{
     LawDiffEvent, LawDiffEventKind, LawDiffFieldChange, LawDiffLawKind, LawDiffReport,
-    LawDiffReviewPosture, WESLEY_LAW_DIFF_API_VERSION,
+    LawDiffReviewPosture, NormalizedLawDiffEvent, WESLEY_LAW_DIFF_API_VERSION,
 };
 pub use versioning::{
     ArtifactFamily, ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,

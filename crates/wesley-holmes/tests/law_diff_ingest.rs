@@ -49,6 +49,81 @@ fn law_diff_ingest_accepts_wesley_law_diff_v1_json() {
 }
 
 #[test]
+fn law_diff_report_normalizes_events_without_reclassifying_wesley_kind() {
+    let result = JsonLawDiffIngestPort::default().ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes());
+    let report = result.report.expect("valid law diff should parse");
+
+    let records = report.normalized_events();
+
+    assert_eq!(records.len(), 3);
+    assert_eq!(records[0].event_ref, "lawDiff.changes[0]");
+    assert_eq!(records[0].event_index, 0);
+    assert_eq!(records[0].kind, LawDiffEventKind::LawWeakened);
+    assert_eq!(
+        records[0].law_id.as_deref(),
+        Some("echo.scalar.positiveInt.u32-positive")
+    );
+    assert_eq!(records[0].subject.as_deref(), Some("scalar:PositiveInt"));
+    assert_eq!(
+        records[0].old_law_hash,
+        "sha256:88fcbb7fb07cc0bb5dfa30252ec61badb3a8dff1be71c0f20ae21031e4e80f51"
+    );
+    assert_eq!(
+        records[0].new_law_hash,
+        "sha256:ba4a878e94a961bbbe68b421aa2829f39e9e464a4d3e4647dc8d4ccb0c55eab7"
+    );
+    assert_eq!(records[2].event_ref, "lawDiff.changes[2]");
+    assert_eq!(records[2].kind, LawDiffEventKind::FootprintExpanded);
+    assert_eq!(records[2].added_reads, ["TextBlob"]);
+}
+
+#[test]
+fn law_diff_normalized_events_preserve_repeated_law_ids_as_distinct_records() {
+    let repeated_law_id = format!(
+        r#"{{
+  "apiVersion": "wesley.law-diff/v1",
+  "oldSchemaHash": "sha256:{hash_a}",
+  "newSchemaHash": "sha256:{hash_a}",
+  "oldLawHash": "sha256:{hash_b}",
+  "newLawHash": "sha256:{hash_c}",
+  "changes": [
+    {{
+      "kind": "LAW_WEAKENED",
+      "lawId": "echo.scalar.positiveInt.u32-positive",
+      "subject": "scalar:PositiveInt",
+      "lawKind": "scalarSemantics",
+      "reviewPosture": "requires-review"
+    }},
+    {{
+      "kind": "LAW_TAGS_CHANGED",
+      "lawId": "echo.scalar.positiveInt.u32-positive",
+      "subject": "scalar:PositiveInt",
+      "lawKind": "scalarSemantics",
+      "reviewPosture": "requires-review"
+    }}
+  ]
+}}"#,
+        hash_a = "a".repeat(64),
+        hash_b = "b".repeat(64),
+        hash_c = "c".repeat(64)
+    );
+
+    let result = JsonLawDiffIngestPort::default().ingest_law_diff(repeated_law_id.as_bytes());
+    let records = result
+        .report
+        .expect("valid repeated law id fixture should parse")
+        .normalized_events();
+
+    assert_eq!(records.len(), 2);
+    assert_eq!(records[0].event_ref, "lawDiff.changes[0]");
+    assert_eq!(records[1].event_ref, "lawDiff.changes[1]");
+    assert_eq!(records[0].law_id, records[1].law_id);
+    assert_ne!(records[0].event_ref, records[1].event_ref);
+    assert_eq!(records[0].kind, LawDiffEventKind::LawWeakened);
+    assert_eq!(records[1].kind, LawDiffEventKind::LawTagsChanged);
+}
+
+#[test]
 fn law_diff_ingest_rejects_unsupported_api_version() {
     let unsupported = CI_SEMANTIC_DIFF.replace("wesley.law-diff/v1", "wesley.law-diff/v2");
 

@@ -23,6 +23,99 @@ pub struct LawDiffReport {
     pub changes: Vec<LawDiffEvent>,
 }
 
+impl LawDiffReport {
+    /// Normalize emitted diff events into stable Holmes event records.
+    pub fn normalized_events(&self) -> Vec<NormalizedLawDiffEvent> {
+        self.changes
+            .iter()
+            .enumerate()
+            .map(|(event_index, event)| NormalizedLawDiffEvent {
+                event_ref: format!("lawDiff.changes[{event_index}]"),
+                event_index,
+                api_version: self.api_version.clone(),
+                old_schema_hash: self.old_schema_hash.clone(),
+                new_schema_hash: self.new_schema_hash.clone(),
+                old_law_hash: self.old_law_hash.clone(),
+                new_law_hash: self.new_law_hash.clone(),
+                kind: event.kind,
+                law_id: event.law_id.clone(),
+                subject: event.subject.clone(),
+                law_kind: event.law_kind,
+                review_posture: event.review_posture,
+                field_changes: event.field_changes.clone(),
+                added_reads: event.added_reads.clone(),
+                removed_reads: event.removed_reads.clone(),
+                added_writes: event.added_writes.clone(),
+                removed_writes: event.removed_writes.clone(),
+                added_creates: event.added_creates.clone(),
+                removed_creates: event.removed_creates.clone(),
+                added_forbids: event.added_forbids.clone(),
+                removed_forbids: event.removed_forbids.clone(),
+            })
+            .collect()
+    }
+}
+
+/// Stable internal Holmes record for one Wesley law diff event.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NormalizedLawDiffEvent {
+    /// Stable event reference inside the parsed law diff report.
+    pub event_ref: String,
+    /// Zero-based event index in Wesley's emitted diff order.
+    pub event_index: usize,
+    /// Report API version.
+    pub api_version: String,
+    /// Old document schema hash anchor.
+    pub old_schema_hash: String,
+    /// New document schema hash anchor.
+    pub new_schema_hash: String,
+    /// Old semantic Law IR hash.
+    pub old_law_hash: String,
+    /// New semantic Law IR hash.
+    pub new_law_hash: String,
+    /// Event classification supplied by Wesley.
+    pub kind: LawDiffEventKind,
+    /// Stable law id affected by the event.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub law_id: Option<String>,
+    /// Subject coordinate affected by the event.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
+    /// Law kind affected by the event.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub law_kind: Option<LawDiffLawKind>,
+    /// Review posture emitted by Wesley.
+    pub review_posture: LawDiffReviewPosture,
+    /// Field-level changes when a law body changed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub field_changes: Vec<LawDiffFieldChange>,
+    /// Footprint resources newly read.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub added_reads: Vec<String>,
+    /// Footprint resources no longer read.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub removed_reads: Vec<String>,
+    /// Footprint resources newly written.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub added_writes: Vec<String>,
+    /// Footprint resources no longer written.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub removed_writes: Vec<String>,
+    /// Footprint resources newly created.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub added_creates: Vec<String>,
+    /// Footprint resources no longer created.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub removed_creates: Vec<String>,
+    /// Footprint resources newly forbidden.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub added_forbids: Vec<String>,
+    /// Footprint resources no longer forbidden.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub removed_forbids: Vec<String>,
+}
+
 /// Single semantic law diff event preserved from Wesley output.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -23,8 +23,9 @@ pub use domain::{
     HolmesDiagnostic, HolmesDiagnosticCode, HolmesLawEvidenceBundle, HolmesResult, HolmesSeverity,
     LawDiffEvent, LawDiffEventKind, LawDiffFieldChange, LawDiffLawKind, LawDiffReport,
     LawDiffReviewPosture, LawEvidenceArtifacts, LawEvidenceValidationResult,
-    LawEvidenceValidationStatus, LoadedArtifactMetadata, ParsedSchemaVersion, VersionCheck,
-    VersionRegistry, VersionRequirement, WESLEY_LAW_DIFF_API_VERSION,
+    LawEvidenceValidationStatus, LoadedArtifactMetadata, NormalizedLawDiffEvent,
+    ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,
+    WESLEY_LAW_DIFF_API_VERSION,
 };
 pub use ports::{
     ArtifactLoadPort, ArtifactWritePort, ClockPort, CommandIoPort, EchoReportRenderer,

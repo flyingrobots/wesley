@@ -49,8 +49,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Rust Holmes law diff ingest**: Added the first `LawDiffIngestPort`
   implementation for `wesley.law-diff/v1` JSON artifacts, preserving Wesley's
   event classifications, law ids, subjects, field changes, hash anchors, and
-  footprint resource deltas inside typed Holmes report data while rejecting
-  malformed JSON and unsupported diff API versions before assessment.
+  footprint resource deltas inside typed Holmes report data. The report now
+  exposes stable normalized event records with `lawDiff.changes[n]` event refs
+  and copied schema/law hash anchors while rejecting malformed JSON and
+  unsupported diff API versions before assessment.
 - **Rust Holmes law evidence validation gate**: Extended the unpublished
   `wesley-holmes` crate with collected law evidence validation results,
   required-versus-optional bundle artifact validation, canonical provenance
