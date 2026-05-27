@@ -13,7 +13,7 @@ use super::versioning::{ArtifactFamily, VersionRegistry};
 pub struct ArtifactRef {
     /// Workspace-relative artifact path.
     pub path: String,
-    /// Optional artifact-local schema version.
+    /// Artifact-local schema version required for present artifact references.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub schema_version: Option<String>,
     /// Optional expected SHA-256 digest.
@@ -29,6 +29,12 @@ impl ArtifactRef {
             schema_version: None,
             sha256: None,
         }
+    }
+
+    /// Attach an artifact-local schema version.
+    pub fn with_schema_version(mut self, schema_version: impl Into<String>) -> Self {
+        self.schema_version = Some(schema_version.into());
+        self
     }
 
     fn is_blank(&self) -> bool {
@@ -335,17 +341,17 @@ impl HolmesLawEvidenceBundle {
                 );
             }
 
-            if let Some(schema_version) = artifact.schema_version.as_deref() {
-                let schema_field = format!("{}.schemaVersion", bundle_artifact.field_path);
-                match version_registry.classify(bundle_artifact.family, Some(schema_version)) {
-                    Ok(version_check) => diagnostics.extend(
-                        version_check
-                            .diagnostics
-                            .into_iter()
-                            .map(|diagnostic| diagnostic.at_field(schema_field.clone())),
-                    ),
-                    Err(diagnostic) => diagnostics.push(diagnostic.at_field(schema_field)),
-                }
+            let schema_field = format!("{}.schemaVersion", bundle_artifact.field_path);
+            match version_registry
+                .classify(bundle_artifact.family, artifact.schema_version.as_deref())
+            {
+                Ok(version_check) => diagnostics.extend(
+                    version_check
+                        .diagnostics
+                        .into_iter()
+                        .map(|diagnostic| diagnostic.at_field(schema_field.clone())),
+                ),
+                Err(diagnostic) => diagnostics.push(diagnostic.at_field(schema_field)),
             }
 
             if let Some(sha256) = artifact.sha256.as_deref() {

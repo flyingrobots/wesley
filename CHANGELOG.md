@@ -11,9 +11,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **Rust Holmes validation gate review fixes**: Law evidence validation now
   continues artifact checks when structure validation emits warning-only
   diagnostics, rejects duplicate artifact roles after workspace-relative path
-  normalization, and validates artifact `sha256` digests with artifact-specific
-  diagnostics instead of allowing malformed digest anchors into later
-  traceability gates.
+  normalization, requires schema versions on every present artifact reference,
+  and validates artifact `sha256` digests with artifact-specific diagnostics
+  instead of allowing malformed digest anchors into later traceability gates.
 - **Rust Holmes assurance review fixes**: The new Holmes artifact locator now
   returns stable Holmes diagnostics for invalid and escaping paths, rejects
   platform-specific backslash and drive-path input before normalization, the

@@ -224,6 +224,35 @@ fn artifact_sha256_fields_must_be_canonical_when_present() {
 }
 
 #[test]
+fn artifact_schema_versions_are_required_for_every_present_artifact_reference() {
+    let mut bundle = valid_evidence_bundle();
+    bundle.artifacts.law_diff.schema_version = None;
+    bundle.artifacts.law_coverage.schema_version = None;
+    bundle.artifacts.law_capabilities.schema_version = None;
+    bundle.artifacts.contract_bundle_manifest.schema_version = None;
+    bundle.artifacts.policy = Some(ArtifactRef::new("evidence/policy.json"));
+
+    let result = bundle.validate_structure(&VersionRegistry::default());
+
+    assert_eq!(result.status, LawEvidenceValidationStatus::Invalid);
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawSchemaVersionMissing,
+    );
+    assert_diagnostic_field(&result.diagnostics, "artifacts.lawDiff.schemaVersion");
+    assert_diagnostic_field(&result.diagnostics, "artifacts.lawCoverage.schemaVersion");
+    assert_diagnostic_field(
+        &result.diagnostics,
+        "artifacts.lawCapabilities.schemaVersion",
+    );
+    assert_diagnostic_field(
+        &result.diagnostics,
+        "artifacts.contractBundleManifest.schemaVersion",
+    );
+    assert_diagnostic_field(&result.diagnostics, "artifacts.policy.schemaVersion");
+}
+
+#[test]
 fn law_evidence_validator_reports_artifact_availability_size_and_read_errors() {
     let bundle = valid_evidence_bundle();
     let mut store = InMemoryArtifactStore::default();
@@ -505,10 +534,10 @@ fn valid_evidence_bundle() -> HolmesLawEvidenceBundle {
         schema_version: "1.0.0".to_owned(),
         bundle_id: "bundle-001".to_owned(),
         artifacts: LawEvidenceArtifacts {
-            law_diff: ArtifactRef::new("evidence/law-diff.json"),
-            law_coverage: ArtifactRef::new("evidence/law-coverage.json"),
-            law_capabilities: ArtifactRef::new("evidence/law-capabilities.json"),
-            contract_bundle_manifest: ArtifactRef::new("evidence/bundle-manifest.json"),
+            law_diff: artifact_ref("evidence/law-diff.json"),
+            law_coverage: artifact_ref("evidence/law-coverage.json"),
+            law_capabilities: artifact_ref("evidence/law-capabilities.json"),
+            contract_bundle_manifest: artifact_ref("evidence/bundle-manifest.json"),
             policy: None,
             report: None,
             witness: None,
@@ -521,6 +550,10 @@ fn valid_evidence_bundle() -> HolmesLawEvidenceBundle {
             source: "test".to_owned(),
         },
     }
+}
+
+fn artifact_ref(path: &str) -> ArtifactRef {
+    ArtifactRef::new(path).with_schema_version("1.0.0")
 }
 
 fn assert_diagnostic(diagnostics: &[wesley_holmes::HolmesDiagnostic], code: HolmesDiagnosticCode) {
