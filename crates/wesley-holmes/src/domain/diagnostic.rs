@@ -49,6 +49,8 @@ pub enum HolmesDiagnosticCode {
     HlawDiffUnsupportedVersion,
     /// A law diff artifact carried an unknown event kind.
     HlawDiffUnknownEventKind,
+    /// A law diff artifact repeated the same law-id event identity.
+    HlawDiffDuplicateEvent,
     /// A law diff artifact carried a non-canonical schema or law hash.
     HlawDiffHashMalformed,
 }

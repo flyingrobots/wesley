@@ -150,6 +150,63 @@ fn law_diff_ingest_rejects_malformed_json_without_findings() {
     );
 }
 
+#[test]
+fn law_diff_ingest_rejects_unknown_event_kind() {
+    let unknown_kind = CI_SEMANTIC_DIFF.replace("LAW_WEAKENED", "QUANTUM_LAW_SHIFT");
+
+    let result = JsonLawDiffIngestPort::default().ingest_law_diff(unknown_kind.as_bytes());
+
+    assert_eq!(result.status, LawDiffIngestStatus::Invalid);
+    assert!(result.report.is_none());
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawDiffUnknownEventKind,
+    );
+    assert_diagnostic_field(&result.diagnostics, "changes[0].kind");
+}
+
+#[test]
+fn law_diff_ingest_rejects_duplicate_law_id_event_identity() {
+    let duplicate = format!(
+        r#"{{
+  "apiVersion": "wesley.law-diff/v1",
+  "oldSchemaHash": "sha256:{hash_a}",
+  "newSchemaHash": "sha256:{hash_a}",
+  "oldLawHash": "sha256:{hash_b}",
+  "newLawHash": "sha256:{hash_c}",
+  "changes": [
+    {{
+      "kind": "LAW_WEAKENED",
+      "lawId": "echo.scalar.positiveInt.u32-positive",
+      "subject": "scalar:PositiveInt",
+      "lawKind": "scalarSemantics",
+      "reviewPosture": "requires-review"
+    }},
+    {{
+      "kind": "LAW_WEAKENED",
+      "lawId": "echo.scalar.positiveInt.u32-positive",
+      "subject": "scalar:PositiveInt",
+      "lawKind": "scalarSemantics",
+      "reviewPosture": "requires-review"
+    }}
+  ]
+}}"#,
+        hash_a = "a".repeat(64),
+        hash_b = "b".repeat(64),
+        hash_c = "c".repeat(64)
+    );
+
+    let result = JsonLawDiffIngestPort::default().ingest_law_diff(duplicate.as_bytes());
+
+    assert_eq!(result.status, LawDiffIngestStatus::Invalid);
+    assert!(result.report.is_none());
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawDiffDuplicateEvent,
+    );
+    assert_diagnostic_field(&result.diagnostics, "changes[1].lawId");
+}
+
 fn assert_diagnostic(diagnostics: &[wesley_holmes::HolmesDiagnostic], code: HolmesDiagnosticCode) {
     assert!(
         diagnostics.iter().any(|diagnostic| diagnostic.code == code),

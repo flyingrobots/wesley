@@ -1,5 +1,7 @@
 //! JSON ingest boundary for Wesley law diff artifacts.
 
+use std::collections::BTreeMap;
+
 use serde::Deserialize;
 
 use crate::domain::{
@@ -106,6 +108,7 @@ impl LawDiffIngestPort for JsonLawDiffIngestPort {
         }
 
         let mut changes = Vec::with_capacity(raw.changes.len());
+        let mut seen_law_events = BTreeMap::new();
         for (index, raw_event) in raw.changes.into_iter().enumerate() {
             let Some(kind) = LawDiffEventKind::parse(&raw_event.kind) else {
                 diagnostics.push(
@@ -119,6 +122,25 @@ impl LawDiffIngestPort for JsonLawDiffIngestPort {
                 );
                 continue;
             };
+
+            if let Some(law_id) = raw_event.law_id.as_deref() {
+                let event_key = (kind, law_id.to_owned());
+                if let Some(first_index) = seen_law_events.insert(event_key, index) {
+                    diagnostics.push(
+                        HolmesDiagnostic::new(
+                            HolmesDiagnosticCode::HlawDiffDuplicateEvent,
+                            HolmesSeverity::Error,
+                            format!(
+                                "law diff repeats law id {law_id:?} for event kind {:?}; first occurrence was changes[{first_index}]",
+                                kind
+                            ),
+                        )
+                        .for_family("law-diff")
+                        .at_field(format!("changes[{index}].lawId")),
+                    );
+                    continue;
+                }
+            }
 
             changes.push(LawDiffEvent {
                 kind,
