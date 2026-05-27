@@ -1,0 +1,13 @@
+[package]
+name = "wesley-holmes"
+version = "0.0.5"
+edition = "2021"
+description = "Rust Holmes law assurance foundation for Wesley semantic evidence"
+license = "MIT"
+repository = "https://github.com/flyingrobots/wesley"
+homepage = "https://github.com/flyingrobots/wesley"
+readme = "README.md"
+publish = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }

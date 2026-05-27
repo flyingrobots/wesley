@@ -42,7 +42,9 @@ Current packets:
   [generator JS deletion audit](./0017-rust-native-front-door-and-node-retirement/GENERATOR_JS_DELETION_AUDIT.md),
   ending with the
   [final closeout](./0017-rust-native-front-door-and-node-retirement/FINAL_CLOSEOUT.md)
-- [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md): Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters
+- [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md):
+  Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters,
+  now backed by the initial `crates/wesley-holmes` Rust foundation
 - [`0019`](./0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md): `weslaw`
   semantic Law IR for contract bundles, strict binding, canonical law hashes,
   semantic diffs, and deferred SDL+ syntax, including the v1
@@ -51,6 +53,8 @@ Current packets:
   and
   [canonicalization and diagnostic](./0019-weslaw-semantic-law-ir/CANONICALIZATION_AND_DIAGNOSTICS.md)
   substrate notes
+- [`0020`](./0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md):
+  completed 50-slice Holmes `weslaw` assurance PRD and test-plan campaign
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

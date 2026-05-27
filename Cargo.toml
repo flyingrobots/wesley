@@ -3,6 +3,7 @@ members = [
     "crates/wesley-core",
     "crates/wesley-emit-typescript",
     "crates/wesley-emit-rust",
+    "crates/wesley-holmes",
     "crates/wesley-cli",
     "xtask",
 ]

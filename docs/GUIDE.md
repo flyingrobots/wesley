@@ -68,7 +68,9 @@ The direct replacements are `wesley schema lower`, `wesley schema hash`,
 `wesley law rebind`, `wesley law capabilities`, `wesley law coverage`,
 `wesley doctor`, and `wesley emit typescript` or `wesley emit rust`.
 Zod and certificate commands are no longer generic compiler-front-door work.
-Holmes-family commands live under `@wesley/holmes`.
+Holmes-family commands still live under `@wesley/holmes`; the Rust foundation
+for future Holmes law-assurance ingestion lives in `crates/wesley-holmes` and
+does not expose public CLI commands yet.
 
 Zod output is no longer treated as core Wesley retirement work. Reintroduce it
 through an external target module or package when a consumer needs JavaScript

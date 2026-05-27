@@ -1562,6 +1562,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "wesley-holmes"
+version = "0.0.5"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "windows-core"
 version = "0.62.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
