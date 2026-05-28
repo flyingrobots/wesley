@@ -10,11 +10,18 @@ use wesley_core::{
     TypeReference, WesleyIR,
 };
 
+mod le_binary;
+
+pub use le_binary::{emit_le_binary_typescript, DEFAULT_CODEC_IMPORT};
+
 /// Stable generator identifier recorded in native emit metadata.
 pub const GENERATOR_NAME: &str = "wesley-emit-typescript";
 
 /// Version of the TypeScript emitter crate recorded in native emit metadata.
 pub const GENERATOR_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Stable generator identifier for the LE binary codec TypeScript emitter.
+pub const LE_BINARY_GENERATOR_NAME: &str = "wesley-emit-typescript:le-binary";
 
 /// Emits TypeScript declarations for a Wesley L1 IR document.
 pub fn emit_typescript(ir: &WesleyIR) -> String {
