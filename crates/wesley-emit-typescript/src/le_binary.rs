@@ -20,8 +20,8 @@
 use std::fmt::Write;
 
 use wesley_core::{
-    OperationArgument, OperationType, SchemaOperation, TypeDefinition, TypeKind, TypeReference,
-    WesleyIR,
+    stable_op_id, OperationArgument, OperationType, SchemaOperation, TypeDefinition, TypeKind,
+    TypeReference, WesleyIR,
 };
 
 /// Default import path the emitted module uses to reach the TypeScript
@@ -176,6 +176,8 @@ fn emit_input_object(out: &mut String, type_def: &TypeDefinition) {
 fn emit_operation_vars(out: &mut String, operation: &SchemaOperation) {
     let pascal = pascal_case(&operation.field_name);
     let vars_name = format!("{pascal}Vars");
+    let op_const = op_const_name(&operation.field_name);
+    let op_id = stable_op_id(operation.operation_type, &operation.field_name);
 
     let scope = match operation.operation_type {
         OperationType::Query => "query",
@@ -183,6 +185,13 @@ fn emit_operation_vars(out: &mut String, operation: &SchemaOperation) {
         OperationType::Subscription => "subscription",
     };
     let _ = writeln!(out, "\n// ─── {scope} {} ───", operation.field_name);
+
+    let _ = writeln!(
+        out,
+        "/** EINT op id for {} `{}`. Stable across Rust and TypeScript emitters. */",
+        scope, operation.field_name
+    );
+    let _ = writeln!(out, "export const {op_const}: number = {op_id};");
 
     let _ = writeln!(out, "export interface {vars_name} {{");
     for argument in &operation.arguments {
@@ -311,6 +320,29 @@ fn ts_type_for_reference(ty: &TypeReference) -> String {
     } else {
         base
     }
+}
+
+/// Convert an operation field name to its `OP_<UPPER_SNAKE>` constant name.
+///
+/// Matches the algorithm used by echo-wesley-gen's Rust emit so that emitted
+/// op id constants share the same identifier on both sides of the boundary
+/// (e.g. `createBufferWorldline` → `OP_CREATE_BUFFER_WORLDLINE`).
+fn op_const_name(name: &str) -> String {
+    let mut out = String::new();
+    for (index, ch) in name.chars().enumerate() {
+        if ch.is_alphanumeric() {
+            if ch.is_uppercase() && index > 0 {
+                out.push('_');
+            }
+            out.push(ch.to_ascii_uppercase());
+        } else {
+            out.push('_');
+        }
+    }
+    if out.is_empty() {
+        return "OP_UNNAMED".to_string();
+    }
+    format!("OP_{out}")
 }
 
 fn pascal_case(name: &str) -> String {
@@ -447,5 +479,29 @@ mod tests {
         assert_eq!(property_key("camelCase_2"), "camelCase_2");
         assert_eq!(property_key("with space"), "'with space'");
         assert_eq!(property_key(""), "''");
+    }
+
+    #[test]
+    fn op_const_name_matches_echo_wesley_gen_convention() {
+        assert_eq!(op_const_name("createBufferWorldline"), "OP_CREATE_BUFFER_WORLDLINE");
+        assert_eq!(op_const_name("replaceRangeAsTick"), "OP_REPLACE_RANGE_AS_TICK");
+        assert_eq!(op_const_name("makeWidget"), "OP_MAKE_WIDGET");
+        assert_eq!(op_const_name(""), "OP_UNNAMED");
+    }
+
+    #[test]
+    fn emits_op_id_constant_for_each_operation() {
+        let ir = lower_schema_sdl(SDL).expect("schema lowers");
+        let ops = list_schema_operations_sdl(SDL).expect("operations enumerable");
+
+        let ts = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
+
+        // Concrete op id pinned by wesley-core's stable_op_id tests.
+        let expected_op_id =
+            wesley_core::stable_op_id(wesley_core::OperationType::Mutation, "makeWidget");
+        assert!(
+            ts.contains(&format!("export const OP_MAKE_WIDGET: number = {expected_op_id};")),
+            "expected OP_MAKE_WIDGET constant for op id {expected_op_id} in:\n{ts}",
+        );
     }
 }
