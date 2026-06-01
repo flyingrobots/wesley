@@ -28,4 +28,9 @@ The crate follows the planned hexagonal boundary:
 - `reporting`: future renderer-facing DTOs and report assembly helpers.
 
 The current implementation includes the first local law evidence validation
-gate. No public Holmes CLI command is exposed from Wesley yet.
+gate and a `wesley.law-diff/v1` JSON ingest port that preserves Wesley's
+semantic diff events as typed Holmes report data with stable normalized event
+records and fail-closed diagnostics for malformed or unsupported law diff
+artifacts. The crate also accepts current `wesley.law-coverage/v1` JSON as
+typed profile/category coverage data. No public Holmes CLI command is exposed
+from Wesley yet.

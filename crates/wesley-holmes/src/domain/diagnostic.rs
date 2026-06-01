@@ -43,6 +43,20 @@ pub enum HolmesDiagnosticCode {
     HlawArtifactUnreadable,
     /// A requested artifact exceeded the configured byte limit.
     HlawArtifactOversized,
+    /// A law diff artifact could not be parsed as the expected JSON envelope.
+    HlawDiffMalformedJson,
+    /// A law diff artifact declared an unsupported API version.
+    HlawDiffUnsupportedVersion,
+    /// A law diff artifact carried an unknown event kind.
+    HlawDiffUnknownEventKind,
+    /// A law diff artifact repeated the same law-id event identity.
+    HlawDiffDuplicateEvent,
+    /// A law diff artifact carried a non-canonical schema or law hash.
+    HlawDiffHashMalformed,
+    /// A law coverage artifact could not be parsed as the expected JSON envelope.
+    HlawCoverageMalformedJson,
+    /// A law coverage artifact declared an unsupported API version.
+    HlawCoverageUnsupportedVersion,
 }
 
 /// Severity attached to a Holmes diagnostic.
