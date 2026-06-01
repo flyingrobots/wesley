@@ -7,7 +7,7 @@ use serde::Deserialize;
 use crate::domain::{
     HolmesDiagnostic, HolmesDiagnosticCode, HolmesSeverity, LawCapabilityClosure,
     LawCapabilityFootprint, LawCapabilityReport, LawCapabilitySlot,
-    WESLEY_CAPABILITY_REPORT_API_VERSION, WESLEY_LAW_CAPABILITIES_API_VERSION,
+    WESLEY_LAW_CAPABILITIES_API_VERSION, WESLEY_LEGACY_CAPABILITY_REPORT_API_VERSION,
 };
 
 /// Validation status for law capability ingest.
@@ -73,8 +73,8 @@ impl LawCapabilityIngestPort for JsonLawCapabilityIngestPort {
         };
 
         let mut diagnostics = Vec::new();
-        if raw.api_version != WESLEY_CAPABILITY_REPORT_API_VERSION
-            && raw.api_version != WESLEY_LAW_CAPABILITIES_API_VERSION
+        if raw.api_version != WESLEY_LAW_CAPABILITIES_API_VERSION
+            && raw.api_version != WESLEY_LEGACY_CAPABILITY_REPORT_API_VERSION
         {
             diagnostics.push(
                 HolmesDiagnostic::new(
@@ -82,7 +82,7 @@ impl LawCapabilityIngestPort for JsonLawCapabilityIngestPort {
                     HolmesSeverity::Error,
                     format!(
                         "unsupported law capability apiVersion {}; expected {}",
-                        raw.api_version, WESLEY_CAPABILITY_REPORT_API_VERSION
+                        raw.api_version, WESLEY_LAW_CAPABILITIES_API_VERSION
                     ),
                 )
                 .for_family("law-capabilities")
@@ -149,7 +149,7 @@ impl LawCapabilityIngestPort for JsonLawCapabilityIngestPort {
 
         if diagnostics.is_empty() {
             LawCapabilityIngestResult::valid(LawCapabilityReport {
-                api_version: raw.api_version,
+                api_version: WESLEY_LAW_CAPABILITIES_API_VERSION.to_owned(),
                 report_only,
                 runtime_enforcement,
                 note: raw.note.unwrap_or_default(),

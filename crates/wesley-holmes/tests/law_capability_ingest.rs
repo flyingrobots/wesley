@@ -4,7 +4,7 @@ use wesley_holmes::{
 };
 
 const CAPABILITY_REPORT: &str = r#"{
-  "apiVersion": "wesley.capability-report/v1",
+  "apiVersion": "wesley.law-capabilities/v1",
   "reportOnly": true,
   "runtimeEnforcement": false,
   "note": "Footprint capabilities are report-only in weslaw v1; no runtime enforcement is claimed.",
@@ -50,7 +50,7 @@ fn law_capability_ingest_accepts_current_wesley_capability_report_json() {
     let report = result
         .report
         .expect("valid law capability JSON should produce a report");
-    assert_eq!(report.api_version, "wesley.capability-report/v1");
+    assert_eq!(report.api_version, "wesley.law-capabilities/v1");
     assert!(report.report_only);
     assert!(!report.runtime_enforcement);
     assert_eq!(report.footprints.len(), 2);
@@ -97,6 +97,23 @@ fn law_capability_ingest_rejects_missing_posture_fields() {
 }
 
 #[test]
+fn law_capability_ingest_accepts_legacy_capability_report_alias() {
+    let legacy =
+        CAPABILITY_REPORT.replace("wesley.law-capabilities/v1", "wesley.capability-report/v1");
+
+    let result = JsonLawCapabilityIngestPort::default().ingest_law_capabilities(legacy.as_bytes());
+
+    assert_eq!(result.status, LawCapabilityIngestStatus::Valid);
+    assert_eq!(
+        result
+            .report
+            .expect("legacy alias should normalize")
+            .api_version,
+        "wesley.law-capabilities/v1"
+    );
+}
+
+#[test]
 fn law_capability_ingest_rejects_contradictory_resource_posture() {
     let contradictory = CAPABILITY_REPORT.replace(
         r#""forbids": [
@@ -123,7 +140,7 @@ fn law_capability_ingest_rejects_contradictory_resource_posture() {
 #[test]
 fn law_capability_ingest_requires_explicit_empty_footprint() {
     let empty = r#"{
-  "apiVersion": "wesley.capability-report/v1",
+  "apiVersion": "wesley.law-capabilities/v1",
   "reportOnly": true,
   "runtimeEnforcement": false,
   "footprints": [
@@ -159,7 +176,7 @@ fn law_capability_ingest_requires_explicit_empty_footprint() {
 #[test]
 fn law_capability_ingest_rejects_unsupported_api_version() {
     let unsupported =
-        CAPABILITY_REPORT.replace("wesley.capability-report/v1", "wesley.capability-report/v2");
+        CAPABILITY_REPORT.replace("wesley.law-capabilities/v1", "wesley.law-capabilities/v2");
 
     let result =
         JsonLawCapabilityIngestPort::default().ingest_law_capabilities(unsupported.as_bytes());

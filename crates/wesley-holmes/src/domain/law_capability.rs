@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 /// API version named by the Holmes PRD for law capability summaries.
 pub const WESLEY_LAW_CAPABILITIES_API_VERSION: &str = "wesley.law-capabilities/v1";
 
-/// API version emitted by current `wesley law capabilities --json`.
-pub const WESLEY_CAPABILITY_REPORT_API_VERSION: &str = "wesley.capability-report/v1";
+/// Legacy API version accepted for pre-canonical capability report artifacts.
+pub const WESLEY_LEGACY_CAPABILITY_REPORT_API_VERSION: &str = "wesley.capability-report/v1";
 
 /// Machine-readable footprint capability summary emitted by Wesley.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

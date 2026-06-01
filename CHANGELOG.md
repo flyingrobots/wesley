@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **`weslaw` capability artifact version drift**: `wesley law capabilities
+  --json` now emits the PRD-canonical `wesley.law-capabilities/v1` API version.
+  Holmes continues to accept the pre-canonical `wesley.capability-report/v1`
+  string as a legacy input alias and normalizes it internally.
 - **Rust Holmes validation gate review fixes**: Law evidence validation now
   continues artifact checks when structure validation emits warning-only
   diagnostics, rejects duplicate artifact roles after workspace-relative path

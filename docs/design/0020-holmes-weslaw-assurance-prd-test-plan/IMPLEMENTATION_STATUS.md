@@ -24,9 +24,9 @@ substrate:
 - `LawCoverageIngestPort` accepts `wesley.law-coverage/v1`, validates aggregate
   and per-category counts, normalizes missing subjects, and records omitted
   display counts.
-- `LawCapabilityIngestPort` accepts current `wesley.capability-report/v1`
-  output and the planned `wesley.law-capabilities/v1` alias, preserving
-  report-only/runtime posture without claiming enforcement.
+- `LawCapabilityIngestPort` accepts canonical `wesley.law-capabilities/v1`
+  output and a pre-canonical `wesley.capability-report/v1` compatibility alias,
+  preserving report-only/runtime posture without claiming enforcement.
 - `ContractBundleManifestIngestPort` accepts
   `wesley.contract-bundle-manifest/v1`, validates required hashes, compiler and
   codec metadata, and cross-checks manifest hashes against evidence-bundle
@@ -46,18 +46,18 @@ No scope correction is needed for the main Holmes boundary. The implementation
 still consumes Wesley-published artifacts and does not recompute semantic law,
 schema shape, coverage, capability expansion, or contract bundle hashes.
 
-The only observed contract drift is the law capability artifact name:
+The only observed contract drift was the law capability artifact name:
 
 - The completed PRD names the artifact `wesley.law-capabilities/v1`.
-- Current `wesley law capabilities --json` emits
+- Earlier `wesley law capabilities --json` output emitted
   `wesley.capability-report/v1`.
-- The Rust Holmes ingest port accepts both names for now and normalizes both
-  into law capability evidence.
+- The producer now emits `wesley.law-capabilities/v1`.
+- The Rust Holmes ingest port keeps accepting `wesley.capability-report/v1` as
+  a legacy compatibility alias and normalizes it into canonical law capability
+  evidence.
 
-Follow-up before public report/CLI surfaces: decide whether the Wesley producer
-should rename its API version to `wesley.law-capabilities/v1`, or whether the
-PRD should bless `wesley.capability-report/v1` as the stable emitted artifact
-name.
+No follow-up is needed before public report/CLI surfaces unless we decide to
+remove the legacy alias before publishing Holmes.
 
 Recommended next implementation chunk after this drift check:
 

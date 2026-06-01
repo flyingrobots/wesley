@@ -1516,7 +1516,7 @@ fn capability_report_from_law(law_ir: &LawIrV1) -> CapabilityReport {
         .collect();
 
     CapabilityReport {
-        api_version: "wesley.capability-report/v1",
+        api_version: "wesley.law-capabilities/v1",
         report_only: true,
         runtime_enforcement: false,
         note: "Footprint capabilities are report-only in weslaw v1; no runtime enforcement is claimed.",

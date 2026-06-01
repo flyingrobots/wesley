@@ -37,10 +37,10 @@ pub use domain::{
     LoadedArtifactMetadata, NormalizedContractBundleProvenance, NormalizedLawCapabilityOperation,
     NormalizedLawCoverageCategory, NormalizedLawCoverageProfile, NormalizedLawDiffEvent,
     ParsedSchemaVersion, SemanticChangeFinding, VersionCheck, VersionRegistry, VersionRequirement,
-    WESLEY_CAPABILITY_REPORT_API_VERSION, WESLEY_CONTRACT_BUNDLE_HASH_INPUT_CODEC,
-    WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION, WESLEY_LAW_CAPABILITIES_API_VERSION,
-    WESLEY_LAW_COVERAGE_API_VERSION, WESLEY_LAW_DIFF_API_VERSION,
-    WESLEY_LAW_IR_CANONICAL_JSON_CODEC,
+    WESLEY_CONTRACT_BUNDLE_HASH_INPUT_CODEC, WESLEY_CONTRACT_BUNDLE_MANIFEST_API_VERSION,
+    WESLEY_LAW_CAPABILITIES_API_VERSION, WESLEY_LAW_COVERAGE_API_VERSION,
+    WESLEY_LAW_DIFF_API_VERSION, WESLEY_LAW_IR_CANONICAL_JSON_CODEC,
+    WESLEY_LEGACY_CAPABILITY_REPORT_API_VERSION,
 };
 pub use ports::{
     ArtifactLoadPort, ArtifactWritePort, ClockPort, CommandIoPort, EchoReportRenderer,

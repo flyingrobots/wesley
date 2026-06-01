@@ -30,14 +30,12 @@ The crate follows the planned hexagonal boundary:
 The current implementation includes the first local law evidence validation
 gate, `wesley.law-diff/v1` ingest with stable normalized event records,
 `wesley.law-coverage/v1` ingest with normalized profile/category counts and
-omitted missing-subject accounting, report-only law capability ingest for the
-current Wesley capability report JSON shape, contract bundle manifest ingest
-with evidence-bundle provenance cross-checks, semantic change findings with
-stable ids, and profile/category law coverage gate decisions. No public Holmes
-CLI command is exposed from Wesley yet.
+omitted missing-subject accounting, report-only `wesley.law-capabilities/v1`
+ingest, contract bundle manifest ingest with evidence-bundle provenance
+cross-checks, semantic change findings with stable ids, and profile/category
+law coverage gate decisions. No public Holmes CLI command is exposed from
+Wesley yet.
 
-One implementation drift is intentionally visible at this boundary: the PRD
-names the capability artifact `wesley.law-capabilities/v1`, while current
-`wesley law capabilities --json` output emits `wesley.capability-report/v1`.
-Holmes accepts the current producer version and the planned PRD name as aliases
-until the producer naming is settled.
+Holmes also accepts the pre-canonical `wesley.capability-report/v1` capability
+artifact name as a legacy input alias, normalizing it to
+`wesley.law-capabilities/v1` internally.
