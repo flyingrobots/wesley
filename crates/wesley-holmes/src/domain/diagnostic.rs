@@ -57,6 +57,36 @@ pub enum HolmesDiagnosticCode {
     HlawCoverageMalformedJson,
     /// A law coverage artifact declared an unsupported API version.
     HlawCoverageUnsupportedVersion,
+    /// A law coverage artifact contained covered counts greater than total counts.
+    HlawCoverageInconsistentCounts,
+    /// A law coverage artifact's missing-subject list did not match uncovered counts.
+    HlawCoverageMissingCountMismatch,
+    /// A law capability artifact could not be parsed as the expected JSON envelope.
+    HlawCapabilityMalformedJson,
+    /// A law capability artifact declared an unsupported API version.
+    HlawCapabilityUnsupportedVersion,
+    /// A law capability artifact omitted explicit report-only/runtime posture.
+    HlawCapabilityMissingPosture,
+    /// A law capability artifact claimed contradictory resource posture.
+    HlawCapabilityContradictoryResourcePosture,
+    /// A law capability artifact carried an implicit empty footprint.
+    HlawCapabilityImplicitEmptyFootprint,
+    /// A contract bundle manifest could not be parsed as the expected JSON envelope.
+    HlawManifestMalformedJson,
+    /// A contract bundle manifest declared an unsupported API version.
+    HlawManifestUnsupportedVersion,
+    /// A contract bundle manifest omitted a required hash field.
+    HlawManifestMissingRequiredHash,
+    /// A contract bundle manifest carried a non-canonical hash field.
+    HlawManifestInvalidHash,
+    /// A contract bundle manifest omitted required provenance metadata.
+    HlawManifestMissingRequiredField,
+    /// A contract bundle manifest declared an unsupported codec identity.
+    HlawManifestUnsupportedCodec,
+    /// A contract bundle manifest disagreed with evidence-bundle provenance.
+    HlawManifestHashMismatch,
+    /// A semantic finding could not be constructed because event identity was missing.
+    HlawFindingMissingEventIdentity,
 }
 
 /// Severity attached to a Holmes diagnostic.

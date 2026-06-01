@@ -46,6 +46,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust Holmes law assessment substrate**: Extended the unpublished
+  `wesley-holmes` crate through `HIMP-025` with normalized law coverage
+  subjects, category percentages, missing-subject display/omission accounting,
+  strict coverage count validation, report-only law capability ingest,
+  contract bundle manifest ingest with evidence-bundle provenance
+  cross-checks, stable semantic change findings derived from Wesley law diff
+  events without reclassifying event kinds, and profile/category law coverage
+  gate decisions with pass/warn/fail/unavailable outcomes.
 - **Rust Holmes law diff ingest**: Added the first `LawDiffIngestPort`
   implementation for `wesley.law-diff/v1` JSON artifacts, preserving Wesley's
   event classifications, law ids, subjects, field changes, hash anchors, and

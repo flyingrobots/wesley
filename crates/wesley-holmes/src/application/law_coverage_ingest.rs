@@ -1,7 +1,7 @@
 //! JSON ingest boundary for Wesley law coverage artifacts.
 
 use crate::domain::{
-    HolmesDiagnostic, HolmesDiagnosticCode, HolmesSeverity, LawCoverageReport,
+    percentage, HolmesDiagnostic, HolmesDiagnosticCode, HolmesSeverity, LawCoverageReport,
     WESLEY_LAW_COVERAGE_API_VERSION,
 };
 
@@ -82,6 +82,109 @@ impl LawCoverageIngestPort for JsonLawCoverageIngestPort {
             .at_field("apiVersion")]);
         }
 
-        LawCoverageIngestResult::valid(report)
+        let diagnostics = coverage_count_diagnostics(&report);
+        if diagnostics.is_empty() {
+            LawCoverageIngestResult::valid(report)
+        } else {
+            LawCoverageIngestResult::invalid(diagnostics)
+        }
     }
+}
+
+fn coverage_count_diagnostics(report: &LawCoverageReport) -> Vec<HolmesDiagnostic> {
+    let mut diagnostics = Vec::new();
+
+    if report.required_covered > report.required_total {
+        diagnostics.push(
+            HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawCoverageInconsistentCounts,
+                HolmesSeverity::Error,
+                "law coverage requiredCovered must not exceed requiredTotal",
+            )
+            .for_family("law-coverage")
+            .at_field("requiredCovered"),
+        );
+    }
+
+    let required_total = report
+        .categories
+        .iter()
+        .filter(|category| category.required)
+        .map(|category| category.total)
+        .sum::<usize>();
+    if report.required_total != required_total {
+        diagnostics.push(
+            HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawCoverageInconsistentCounts,
+                HolmesSeverity::Error,
+                "law coverage requiredTotal must equal the sum of required category totals",
+            )
+            .for_family("law-coverage")
+            .at_field("requiredTotal"),
+        );
+    }
+
+    let required_covered = report
+        .categories
+        .iter()
+        .filter(|category| category.required)
+        .map(|category| category.covered)
+        .sum::<usize>();
+    if report.required_covered != required_covered {
+        diagnostics.push(
+            HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawCoverageInconsistentCounts,
+                HolmesSeverity::Error,
+                "law coverage requiredCovered must equal the sum of required category covered counts",
+            )
+            .for_family("law-coverage")
+            .at_field("requiredCovered"),
+        );
+    }
+
+    let expected_required_percent = percentage(report.required_covered, report.required_total);
+    if (report.required_percent - expected_required_percent).abs() > 0.000_001 {
+        diagnostics.push(
+            HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawCoverageInconsistentCounts,
+                HolmesSeverity::Error,
+                format!(
+                    "law coverage requiredPercent must be {expected_required_percent:.1} for the supplied required counts"
+                ),
+            )
+            .for_family("law-coverage")
+            .at_field("requiredPercent"),
+        );
+    }
+
+    for (index, category) in report.categories.iter().enumerate() {
+        if category.covered > category.total {
+            diagnostics.push(
+                HolmesDiagnostic::new(
+                    HolmesDiagnosticCode::HlawCoverageInconsistentCounts,
+                    HolmesSeverity::Error,
+                    "law coverage category covered count must not exceed total count",
+                )
+                .for_family("law-coverage")
+                .at_field(format!("categories[{index}].covered")),
+            );
+        }
+
+        let expected_missing = category.total.saturating_sub(category.covered);
+        if category.missing_subjects.len() != expected_missing {
+            diagnostics.push(
+                HolmesDiagnostic::new(
+                    HolmesDiagnosticCode::HlawCoverageMissingCountMismatch,
+                    HolmesSeverity::Error,
+                    format!(
+                        "law coverage category missingSubjects length must be {expected_missing} for supplied counts"
+                    ),
+                )
+                .for_family("law-coverage")
+                .at_field(format!("categories[{index}].missingSubjects")),
+            );
+        }
+    }
+
+    diagnostics
 }

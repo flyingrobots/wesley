@@ -446,8 +446,8 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The implementation budget is **90 slices**. Status: **19 / 90 slices closed**.
-Closed implementation slices now cover `HIMP-001` through `HIMP-019`: the
+The implementation budget is **90 slices**. Status: **25 / 90 slices closed**.
+Closed implementation slices now cover `HIMP-001` through `HIMP-025`: the
 workspace-local Rust Holmes assurance crate shell, domain dependency-boundary
 tests, deterministic port traits and fakes, the first diagnostic taxonomy, the
 workspace preflight hook, implementation-boundary docs, the typed
@@ -459,12 +459,19 @@ validation gate, plus a `LawDiffIngestPort` parser for `wesley.law-diff/v1`
 JSON artifacts, stable normalized law diff event records, and negative handling
 for malformed law diff JSON, unsupported versions, unknown event kinds, and
 duplicate law-id event identities, plus a `LawCoverageIngestPort` parser for
-current `wesley.law-coverage/v1` profile/category JSON artifacts.
+current `wesley.law-coverage/v1` profile/category JSON artifacts, normalized
+coverage subjects/counts/omitted-missing-subject accounting, a
+`LawCapabilityIngestPort` parser for current report-only footprint capability
+summaries, a `ContractBundleManifestIngestPort` parser with evidence-bundle
+provenance cross-checks, stable `SemanticChangeFinding` records derived from
+law diff events without reclassifying Wesley's event kinds, and
+`LawCoverageGateDecision` evaluation for profile/category thresholds.
 
-The current implementation PR is taking `HIMP-016` through `HIMP-025`, because
-those slices ingest Wesley-published law diff, coverage, capability, and
-manifest artifacts into typed Holmes findings and gate decisions before any
-publisher or branch-protection surface exists.
+The current implementation branch has taken `HIMP-016` through `HIMP-025`.
+Stop here for a drift check before starting `HIMP-026`: Holmes can now ingest
+Wesley-published law diff, coverage, capability, and manifest artifacts into
+typed findings and coverage gate decisions before any publisher or
+branch-protection surface exists.
 
 Every implementation slice below references the completed `0020` PRD/test-plan
 artifact it implements.

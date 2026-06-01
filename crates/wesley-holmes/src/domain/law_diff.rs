@@ -205,6 +205,30 @@ pub enum LawDiffEventKind {
 }
 
 impl LawDiffEventKind {
+    /// Return Wesley's stable event-kind string.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::LawBundleChanged => "LAW_BUNDLE_CHANGED",
+            Self::RegistryChanged => "REGISTRY_CHANGED",
+            Self::LawAdded => "LAW_ADDED",
+            Self::LawRemoved => "LAW_REMOVED",
+            Self::LawTagsChanged => "LAW_TAGS_CHANGED",
+            Self::LawStrengthened => "LAW_STRENGTHENED",
+            Self::LawWeakened => "LAW_WEAKENED",
+            Self::LawChanged => "LAW_CHANGED",
+            Self::ScalarSemanticsChanged => "SCALAR_SEMANTICS_CHANGED",
+            Self::VariantLawChanged => "VARIANT_LAW_CHANGED",
+            Self::FootprintExpanded => "FOOTPRINT_EXPANDED",
+            Self::FootprintContracted => "FOOTPRINT_CONTRACTED",
+            Self::FootprintChanged => "FOOTPRINT_CHANGED",
+            Self::ChannelVersionChanged => "CHANNEL_VERSION_CHANGED",
+            Self::ChannelLawChanged => "CHANNEL_LAW_CHANGED",
+            Self::PredicateChanged => "PREDICATE_CHANGED",
+            Self::BindingBroken => "BINDING_BROKEN",
+            Self::SchemaHashRebound => "SCHEMA_HASH_REBOUND",
+        }
+    }
+
     /// Parse Wesley's stable event-kind string.
     pub fn parse(value: &str) -> Option<Self> {
         match value {
@@ -253,6 +277,15 @@ pub enum LawDiffLawKind {
 pub enum LawDiffReviewPosture {
     /// The semantic change requires review.
     RequiresReview,
+}
+
+impl LawDiffReviewPosture {
+    /// Return Wesley's stable review-posture string.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::RequiresReview => "requires-review",
+        }
+    }
 }
 
 /// Field-level semantic law diff.

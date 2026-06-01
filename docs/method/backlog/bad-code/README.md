@@ -12,3 +12,7 @@ the hill is "this no longer bothers us."
 ## Emitters
 
 - [Rust emitter consumer model parity](SOURCE_rust-emitter-consumer-model-parity.md)
+
+## Holmes / weslaw
+
+- [Law capability API version drift](SOURCE_law-capability-api-version-drift.md)
