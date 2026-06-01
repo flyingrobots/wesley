@@ -1,4 +1,5 @@
 node_modules/
+.pnpm-store/
 target/
 pnpm-lock.yaml
 .wesley-cache/

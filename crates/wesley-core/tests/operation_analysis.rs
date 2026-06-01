@@ -238,11 +238,11 @@ fn lists_schema_operations_with_arguments_results_and_directives() {
 }
 
 #[test]
-fn lists_jedit_hot_text_runtime_schema_operations() {
+fn lists_jedit_rope_fixture_schema_operations() {
     let operations = list_schema_operations_sdl(include_str!(
-        "../../../test/fixtures/consumer-models/jedit-hot-text-runtime.graphql"
+        "../../../test/fixtures/consumer-models/jedit-rope.graphql"
     ))
-    .expect("jedit hot text runtime operations should resolve");
+    .expect("jedit rope fixture operations should resolve");
 
     assert_eq!(operations.len(), 5);
 

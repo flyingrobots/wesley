@@ -19,8 +19,9 @@ use wesley_emit_rust::{
     GENERATOR_NAME as RUST_GENERATOR_NAME, GENERATOR_VERSION as RUST_GENERATOR_VERSION,
 };
 use wesley_emit_typescript::{
-    emit_typescript_with_operations, GENERATOR_NAME as TYPESCRIPT_GENERATOR_NAME,
-    GENERATOR_VERSION as TYPESCRIPT_GENERATOR_VERSION,
+    emit_le_binary_typescript, emit_typescript_with_operations, DEFAULT_CODEC_IMPORT,
+    GENERATOR_NAME as TYPESCRIPT_GENERATOR_NAME, GENERATOR_VERSION as TYPESCRIPT_GENERATOR_VERSION,
+    LE_BINARY_GENERATOR_NAME as LE_BINARY_TYPESCRIPT_GENERATOR_NAME,
 };
 
 const EXIT_OK: u8 = 0;
@@ -532,6 +533,36 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             )?;
             Ok(EXIT_OK)
         }
+        Some("le-binary-typescript") if wants_help(&args[1..]) => {
+            print_emit_help();
+            Ok(EXIT_OK)
+        }
+        Some("le-binary-typescript") => {
+            let options = parse_options(&args[1..], "emit le-binary-typescript")?;
+            let schema_path = options.required_schema("emit le-binary-typescript")?;
+            let out_path = options.required_out("emit le-binary-typescript")?;
+            let sdl = read_file(&schema_path, "schema")?;
+            let ir = lower_schema_sdl(&sdl)?;
+            let operations = list_schema_operations_sdl(&sdl)?;
+            let bundle =
+                load_contract_bundle_if_requested(options.law.as_deref(), &ir, &operations)?;
+            let manifest = bundle.as_ref().map(|bundle| &bundle.manifest);
+            let codec_import = options
+                .codec_import
+                .as_deref()
+                .unwrap_or(DEFAULT_CODEC_IMPORT);
+            let typescript = emit_le_binary_typescript(&ir, &operations, codec_import);
+
+            write_file(&out_path, &typescript, "LE binary TypeScript output")?;
+            write_emit_metadata_if_requested(
+                options.metadata_out.as_deref(),
+                &ir,
+                manifest,
+                LE_BINARY_TYPESCRIPT_GENERATOR_NAME,
+                TYPESCRIPT_GENERATOR_VERSION,
+            )?;
+            Ok(EXIT_OK)
+        }
         Some(command) => Err(CliError::usage(format!("unknown emit command '{command}'"))),
     }
 }
@@ -769,6 +800,7 @@ struct ParsedOptions {
     operation: Option<PathBuf>,
     out: Option<PathBuf>,
     metadata_out: Option<PathBuf>,
+    codec_import: Option<String>,
     directive: Option<String>,
     family: Option<String>,
     profile: Option<String>,
@@ -945,6 +977,15 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--metadata-out" => {
                 return Err(CliError::usage(format!(
                     "unknown option '--metadata-out' for `{command}`"
+                )));
+            }
+            "--codec-import" if command == "emit le-binary-typescript" => {
+                index += 1;
+                options.codec_import = Some(required_value(args, index, "--codec-import")?);
+            }
+            "--codec-import" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--codec-import' for `{command}`"
                 )));
             }
             "--directive" | "-d" => {
@@ -2098,12 +2139,14 @@ Query, Mutation, or Subscription fields.
 Usage:
   wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
   wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
+  wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
 
 Options:
   -s, --schema <path>    GraphQL SDL file
   --law <path>           Optional weslaw/v1 file for bundle hashes
   --out <path>           Output file
-  --metadata-out <path>  Deterministic metadata JSON sidecar"
+  --metadata-out <path>  Deterministic metadata JSON sidecar
+  --codec-import <path>  Module specifier for Writer/Reader/CodecError (le-binary-typescript only)"
     );
 }
 

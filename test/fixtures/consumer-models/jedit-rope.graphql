@@ -1,9 +1,5 @@
 """
-Authored home for `jedit`'s causal text runtime boundary.
-
-The file keeps the legacy `hot-text-runtime` name for continuity. In current
-doctrine, `hot` here means the first low-latency text contract surface over
-witnessed causal history, not a separate ontology layer.
+Authored home for `jedit`'s rope schema boundary.
 
 This SDL defines the graph-like reading nouns and rewrite surfaces that
 `jedit` expects Wesley to compile for Echo-backed causal text truth. It
@@ -11,7 +7,7 @@ intentionally models only the text contract layer:
 
 - canonical text worldlines
 - rope heads and rope DAG nodes
-- ticks and tick receipts
+- rope rewrites and rope diffs
 - anchors
 - checkpoints
 
@@ -45,14 +41,11 @@ enum AnchorStickiness {
     EXPAND
 }
 
-enum TickKind {
-    BUFFER_CREATE
-    TEXT_REWRITE
-    CHECKPOINT_CREATE
-    ANCHOR_REGISTER
-}
-
-enum TickReceiptRewriteKind {
+"""
+Unified classification for the kind of rewrite operation applied to the rope.
+Used by both RopeRewrite (the causal record) and RopeDiff (the structural witness).
+"""
+enum RewriteKind {
     CREATE_BUFFER_WORLDLINE
     REPLACE_RANGE_AS_TICK
     CREATE_CHECKPOINT
@@ -69,7 +62,7 @@ type BufferWorldline {
     worldlineId: ID!
     bufferKey: String!
     canonicalHeadId: ID!
-    createdAtTickId: ID
+    createdAtRopeRewriteId: ID
     projectionPath: String
 }
 
@@ -119,20 +112,28 @@ type Anchor {
     stickiness: AnchorStickiness
 }
 
-type Tick {
-    tickId: ID!
+"""
+Causal record of a single rewrite applied to a rope worldline.
+"""
+type RopeRewrite {
+    ropeRewriteId: ID!
     worldlineId: ID!
-    kind: TickKind!
+    kind: RewriteKind!
     sequenceNumber: Int!
     author: String
 }
 
-type TickReceipt {
-    receiptId: ID!
-    tickId: ID!
+"""
+Structural witness for the before/after byte ranges produced by a RopeRewrite.
+Records the base and next rope head IDs, the byte window touched, and the
+inverse fragment digest for undo.
+"""
+type RopeDiff {
+    ropeDiffId: ID!
+    ropeRewriteId: ID!
     baseHeadId: ID!
     nextHeadId: ID!
-    rewriteKind: TickReceiptRewriteKind!
+    rewriteKind: RewriteKind!
     startByte: Int
     endByte: Int
     insertedByteLength: Int!
@@ -147,7 +148,7 @@ type Checkpoint {
     headId: ID!
     kind: CheckpointKind!
     label: String
-    createdByTickId: ID
+    createdByRopeRewriteId: ID
 }
 
 type WorldlineSnapshot {
@@ -185,8 +186,8 @@ type CreateBufferWorldlineResult {
 type ReplaceRangeAsTickResult {
     worldline: BufferWorldline!
     nextHead: RopeHead!
-    tick: Tick!
-    receipt: TickReceipt!
+    ropeRewrite: RopeRewrite!
+    ropeDiff: RopeDiff!
 }
 
 type CreateCheckpointResult {
@@ -261,7 +262,7 @@ type Mutation {
 
     """
     v1 reads affected anchors only so anchor transform can be derived from the
-    resulting receipt. This rewrite does not persist anchor updates in-place.
+    resulting diff. This rewrite does not persist anchor updates in-place.
     """
     replaceRangeAsTick(
         input: ReplaceRangeAsTickInput!
@@ -282,8 +283,8 @@ type Mutation {
                 "RopeLeaf"
                 "RopeBranch"
                 "RopeHead"
-                "Tick"
-                "TickReceipt"
+                "RopeRewrite"
+                "RopeDiff"
             ]
             slots: [
                 {
@@ -326,8 +327,8 @@ type Mutation {
                 { slot: "newLeaves", kind: "RopeLeaf", cardinality: MANY }
                 { slot: "newBranches", kind: "RopeBranch", cardinality: MANY }
                 { slot: "nextHead", kind: "RopeHead" }
-                { slot: "tick", kind: "Tick" }
-                { slot: "receipt", kind: "TickReceipt" }
+                { slot: "ropeRewrite", kind: "RopeRewrite" }
+                { slot: "ropeDiff", kind: "RopeDiff" }
             ]
             updates: [{ slot: "worldline", fields: ["canonicalHead"] }]
             forbids: ["AstState", "Diagnostics", "GitWitness", "UiState"]
@@ -365,8 +366,8 @@ type Mutation {
                 "RopeBranch"
                 "RopeLeaf"
                 "TextBlob"
-                "Tick"
-                "TickReceipt"
+                "RopeRewrite"
+                "RopeDiff"
                 "AstState"
                 "Diagnostics"
                 "GitWitness"
