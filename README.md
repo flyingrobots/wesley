@@ -191,7 +191,7 @@ schema facts, and extract operation directive arguments.
 cargo wesley doctor
 cargo wesley schema lower --schema test/fixtures/ir-parity/small-schema.graphql --json
 cargo wesley schema hash --schema test/fixtures/ir-parity/small-schema.graphql
-cargo wesley schema operations --schema test/fixtures/consumer-models/jedit-hot-text-runtime.graphql --json
+cargo wesley schema operations --schema test/fixtures/consumer-models/jedit-rope.graphql --json
 cargo wesley schema diff --old old.graphql --new new.graphql --format summary --exit-code
 cargo wesley schema diff --schema schema.graphql --against HEAD --format summary
 cargo wesley law validate --schema test/fixtures/weslaw/contract-bundle-shape.graphql --law test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml

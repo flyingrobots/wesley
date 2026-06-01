@@ -714,9 +714,7 @@ fn schema_hash_matches_l1_hash_fixture() {
 fn schema_operations_emit_root_operation_catalog_as_json() {
     let output = wesley()
         .args(["schema", "operations", "--schema"])
-        .arg(fixture(
-            "test/fixtures/consumer-models/jedit-hot-text-runtime.graphql",
-        ))
+        .arg(fixture("test/fixtures/consumer-models/jedit-rope.graphql"))
         .arg("--json")
         .output()
         .expect("wesley should run");
@@ -1294,7 +1292,7 @@ fn emit_commands_include_jedit_operation_bindings() {
     let dir = temp_dir("emit-jedit-operation-bindings");
     let rust_out = dir.join("generated").join("model.rs");
     let typescript_out = dir.join("generated").join("types.ts");
-    let schema = fixture("test/fixtures/consumer-models/jedit-hot-text-runtime.graphql");
+    let schema = fixture("test/fixtures/consumer-models/jedit-rope.graphql");
 
     let rust_output = wesley()
         .args(["emit", "rust", "--schema"])

@@ -115,7 +115,7 @@ mod tests {
     }
 
     #[test]
-    fn stable_op_id_matches_echo_wesley_gen_seed() {
+    fn stable_op_id_matches_canonical_seed() {
         // Empty field name with each rank must produce a single FNV-1a step
         // from the seed 0x811c9dc5.
         let seed: u32 = 0x811c_9dc5;
@@ -134,36 +134,36 @@ mod tests {
     }
 
     #[test]
-    fn stable_op_id_is_pinned_for_known_rope_operations() {
+    fn stable_op_id_is_pinned_for_domain_neutral_operations() {
         // These exact u32s are the contract surface between Rust and TypeScript
         // emitters; any change here is a breaking change to every consumer that
         // routes EINT envelopes by op_id. Pin them.
         assert_eq!(
-            stable_op_id(OperationType::Mutation, "createBufferWorldline"),
-            2_519_122_874
+            stable_op_id(OperationType::Mutation, "createRecord"),
+            1_670_356_121
         );
         assert_eq!(
-            stable_op_id(OperationType::Mutation, "replaceRangeAsTick"),
-            3_329_158_538
+            stable_op_id(OperationType::Mutation, "updateRecord"),
+            3_583_386_294
         );
         assert_eq!(
             stable_op_id(OperationType::Mutation, "createCheckpoint"),
             3_744_251_216
         );
         assert_eq!(
-            stable_op_id(OperationType::Query, "worldlineSnapshot"),
-            3_219_688_859
+            stable_op_id(OperationType::Query, "recordSnapshot"),
+            3_126_837_072
         );
         assert_eq!(
-            stable_op_id(OperationType::Query, "textWindow"),
-            2_414_231_278
+            stable_op_id(OperationType::Query, "recordWindow"),
+            3_315_867_368
         );
     }
 
     #[test]
     fn stable_op_id_separates_query_from_mutation_for_same_name() {
-        let q = stable_op_id(OperationType::Query, "createBufferWorldline");
-        let m = stable_op_id(OperationType::Mutation, "createBufferWorldline");
+        let q = stable_op_id(OperationType::Query, "createRecord");
+        let m = stable_op_id(OperationType::Mutation, "createRecord");
         assert_ne!(q, m);
     }
 

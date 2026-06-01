@@ -743,8 +743,7 @@ export interface UserFilter {
 
     #[test]
     fn emits_jedit_operation_bindings() {
-        let sdl =
-            include_str!("../../../test/fixtures/consumer-models/jedit-hot-text-runtime.graphql");
+        let sdl = include_str!("../../../test/fixtures/consumer-models/jedit-rope.graphql");
         let ir = lower_schema_sdl(sdl).expect("jedit runtime fixture should lower");
         let operations =
             list_schema_operations_sdl(sdl).expect("jedit runtime operations should resolve");

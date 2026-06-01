@@ -1,0 +1,37 @@
+{
+  "apiVersion": "wesley.fixture-extension/v1",
+  "name": "stack-witness-0001",
+  "description": "Hermetic external-consumer fixture package for contract-boundary compiler and emitter tests.",
+  "schemas": [
+    "../../consumer-models/stack-witness-0001-file-history.graphql"
+  ],
+  "vectors": [
+    "../../consumer-models/stack-witness-0001-vectors.json"
+  ],
+  "capabilities": {
+    "wesley": {
+      "emitTargets": [
+        "rust",
+        "typescript",
+        "le-binary-typescript"
+      ],
+      "targetCodecs": [
+        "wesley-binary/v0"
+      ]
+    }
+  },
+  "boundary": {
+    "domainOwnership": "external-fixture",
+    "wesleyOwns": [
+      "schema lowering",
+      "operation metadata extraction",
+      "artifact emission"
+    ],
+    "wesleyDoesNotOwn": [
+      "runtime execution",
+      "text editing semantics",
+      "Echo host behavior",
+      "jedit product behavior"
+    ]
+  }
+}

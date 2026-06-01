@@ -31,7 +31,7 @@ The invariant is still Wesley's normal compiler boundary:
 - `test/fixtures/consumer-models/jedit-hot-text-core.graphql` is a
   representative jedit-shaped fixture copied into Wesley so tests do not depend
   on a sibling checkout.
-- `test/fixtures/consumer-models/jedit-hot-text-runtime.graphql` is a full
+- `test/fixtures/consumer-models/jedit-rope.graphql` is a full
   jedit hot text runtime fixture copied into Wesley for hermetic operation
   catalog tests.
 - Both emitters have tests against the jedit-shaped fixture.
@@ -94,7 +94,7 @@ Suggested out-of-repo prompts:
 
 - In the jedit repository: replace handwritten hot text runtime shadow models
   with Rust and TypeScript artifacts generated from Wesley's
-  `test/fixtures/consumer-models/jedit-hot-text-runtime.graphql` equivalent,
+  `test/fixtures/consumer-models/jedit-rope.graphql` equivalent,
   then update imports until jedit uses the generated request/response bindings.
 - In the Echo repository: consume Wesley's schema operation catalog or generated
   Rust operation bindings, and keep Echo-owned `@wes_footprint` honesty checks
