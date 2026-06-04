@@ -2,6 +2,7 @@
 
 use ninelives::{Backoff, Jitter, ResilienceError, RetryPolicy};
 use semver::Version;
+use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -427,7 +428,7 @@ fn run_release_prep_guard(args: &[OsString]) -> Result<(), Error> {
     check_git_identity_guard()?;
     check_publish_manifest_versions(&options.version)?;
     check_release_required_files(&options.version)?;
-    check_release_backlog_clear(&tag, &options.version)?;
+    check_release_tracker_clear(&tag, &options.version)?;
     check_package_file_sets()?;
     println!("xtask: release prep guard passed for {}", options.version);
     Ok(())
@@ -440,7 +441,7 @@ fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     check_release_tag_is_on_main(tag)?;
     check_publish_manifest_versions(&version)?;
     check_release_required_files(&version)?;
-    check_release_backlog_clear(tag, &version)?;
+    check_release_tracker_clear(tag, &version)?;
     println!("xtask: release guard passed for {tag}");
     Ok(())
 }
@@ -843,6 +844,214 @@ fn check_release_backlog_clear(tag: &str, version: &str) -> Result<(), Error> {
     }
 
     finish_check("release backlog", failures)
+}
+
+fn check_release_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
+    check_release_backlog_clear(tag, version)?;
+    check_release_issue_tracker_clear(tag, version)
+}
+
+fn check_release_issue_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
+    let repo = release_github_repository()?;
+    let queries = release_issue_query_specs(tag, version, &repo);
+    let mut matches = BTreeMap::new();
+
+    for query in queries {
+        let output = Command::new("gh")
+            .args(&query.args)
+            .output()
+            .map_err(|source| {
+                Error::Usage(format!(
+                    "failed to spawn `gh {}` for release issue tracker check: {source}",
+                    query.args.join(" ")
+                ))
+            })?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if query.ignore_missing_selector && is_missing_issue_selector_error(&stderr) {
+                continue;
+            }
+            return Err(Error::CheckFailed {
+                check: "release issue tracker".to_string(),
+                failures: vec![format!(
+                    "`gh {}` failed: {}",
+                    query.args.join(" "),
+                    stderr.trim()
+                )],
+            });
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for issue in parse_release_issue_list(&stdout, &query.source)? {
+            matches.entry(issue.key).or_insert(issue.display);
+        }
+    }
+
+    finish_check(
+        "release issue tracker",
+        matches.into_values().collect::<Vec<_>>(),
+    )
+}
+
+struct ReleaseIssueQuery {
+    args: Vec<String>,
+    source: String,
+    ignore_missing_selector: bool,
+}
+
+struct ReleaseIssueMatch {
+    key: String,
+    display: String,
+}
+
+#[cfg(test)]
+fn release_issue_queries(tag: &str, version: &str, repo: &str) -> Vec<Vec<String>> {
+    release_issue_query_specs(tag, version, repo)
+        .into_iter()
+        .map(|query| query.args)
+        .collect()
+}
+
+fn release_issue_query_specs(tag: &str, version: &str, repo: &str) -> Vec<ReleaseIssueQuery> {
+    vec![
+        ReleaseIssueQuery {
+            args: vec![
+                "issue".to_string(),
+                "list".to_string(),
+                "--state".to_string(),
+                "open".to_string(),
+                "--search".to_string(),
+                format!("\"{tag}\" OR \"{version}\" repo:{repo}"),
+                "--json".to_string(),
+                "number,title,url".to_string(),
+            ],
+            source: "text search".to_string(),
+            ignore_missing_selector: false,
+        },
+        ReleaseIssueQuery {
+            args: release_issue_selector_query("--milestone", tag),
+            source: format!("milestone `{tag}`"),
+            ignore_missing_selector: true,
+        },
+        ReleaseIssueQuery {
+            args: release_issue_selector_query("--milestone", version),
+            source: format!("milestone `{version}`"),
+            ignore_missing_selector: true,
+        },
+        ReleaseIssueQuery {
+            args: release_issue_selector_query("--label", tag),
+            source: format!("label `{tag}`"),
+            ignore_missing_selector: true,
+        },
+        ReleaseIssueQuery {
+            args: release_issue_selector_query("--label", version),
+            source: format!("label `{version}`"),
+            ignore_missing_selector: true,
+        },
+    ]
+}
+
+fn release_issue_selector_query(selector: &str, value: &str) -> Vec<String> {
+    vec![
+        "issue".to_string(),
+        "list".to_string(),
+        "--state".to_string(),
+        "open".to_string(),
+        selector.to_string(),
+        value.to_string(),
+        "--json".to_string(),
+        "number,title,url".to_string(),
+    ]
+}
+
+fn parse_release_issue_list(content: &str, source: &str) -> Result<Vec<ReleaseIssueMatch>, Error> {
+    let issues = serde_json::from_str::<serde_json::Value>(content).map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse release issue tracker output as JSON: {source}"
+        ))
+    })?;
+    let Some(issues) = issues.as_array() else {
+        return Err(Error::Usage(
+            "release issue tracker output must be a JSON array".to_string(),
+        ));
+    };
+
+    let mut matches = Vec::new();
+    for issue in issues {
+        let number = issue
+            .get("number")
+            .and_then(serde_json::Value::as_u64)
+            .ok_or_else(|| {
+                Error::Usage("release issue tracker issue is missing numeric `number`".to_string())
+            })?;
+        let title = issue
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::Usage("release issue tracker issue is missing string `title`".to_string())
+            })?;
+        let url = issue
+            .get("url")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::Usage("release issue tracker issue is missing string `url`".to_string())
+            })?;
+        matches.push(ReleaseIssueMatch {
+            key: url.to_string(),
+            display: format!("#{number} {title} {url} ({source})"),
+        });
+    }
+    Ok(matches)
+}
+
+fn is_missing_issue_selector_error(stderr: &str) -> bool {
+    let stderr = stderr.to_ascii_lowercase();
+    stderr.contains("could not resolve")
+        || stderr.contains("not found")
+        || stderr.contains("no milestone")
+        || stderr.contains("no label")
+}
+
+fn release_github_repository() -> Result<String, Error> {
+    if let Ok(repository) = env::var("GITHUB_REPOSITORY") {
+        if parse_github_repository_path(&repository).is_some() {
+            return Ok(repository);
+        }
+    }
+
+    let remote = git_output(&["remote", "get-url", "origin"])?;
+    parse_github_repository_remote(&remote).ok_or_else(|| {
+        Error::Usage(format!(
+            "could not infer GitHub repository from origin remote `{remote}`"
+        ))
+    })
+}
+
+fn parse_github_repository_remote(remote: &str) -> Option<String> {
+    let remote = remote.trim();
+    let remote = remote.strip_suffix(".git").unwrap_or(remote);
+    if let Some(path) = remote.strip_prefix("git@github.com:") {
+        return parse_github_repository_path(path);
+    }
+    if let Some(path) = remote.strip_prefix("ssh://git@github.com/") {
+        return parse_github_repository_path(path);
+    }
+    if let Some(path) = remote.strip_prefix("https://github.com/") {
+        return parse_github_repository_path(path);
+    }
+    if let Some(path) = remote.strip_prefix("http://github.com/") {
+        return parse_github_repository_path(path);
+    }
+    None
+}
+
+fn parse_github_repository_path(path: &str) -> Option<String> {
+    let (owner, repo) = path.split_once('/')?;
+    if owner.is_empty() || repo.is_empty() || repo.contains('/') {
+        return None;
+    }
+    Some(format!("{owner}/{repo}"))
 }
 
 fn read_toml_manifest(path: &Path) -> Result<toml::Value, String> {
@@ -1981,6 +2190,67 @@ mod tests {
         assert_eq!(
             version_from_release_arg("0.0.1-alpha.1").unwrap(),
             "0.0.1-alpha.1"
+        );
+    }
+
+    #[test]
+    fn release_guard_queries_github_issue_tracker() {
+        let queries = release_issue_queries("v1.2.3", "1.2.3", "flyingrobots/wesley");
+
+        assert_eq!(
+            queries,
+            vec![
+                vec![
+                    "issue",
+                    "list",
+                    "--state",
+                    "open",
+                    "--search",
+                    "\"v1.2.3\" OR \"1.2.3\" repo:flyingrobots/wesley",
+                    "--json",
+                    "number,title,url",
+                ],
+                vec![
+                    "issue",
+                    "list",
+                    "--state",
+                    "open",
+                    "--milestone",
+                    "v1.2.3",
+                    "--json",
+                    "number,title,url",
+                ],
+                vec![
+                    "issue",
+                    "list",
+                    "--state",
+                    "open",
+                    "--milestone",
+                    "1.2.3",
+                    "--json",
+                    "number,title,url",
+                ],
+                vec![
+                    "issue",
+                    "list",
+                    "--state",
+                    "open",
+                    "--label",
+                    "v1.2.3",
+                    "--json",
+                    "number,title,url",
+                ],
+                vec![
+                    "issue",
+                    "list",
+                    "--state",
+                    "open",
+                    "--label",
+                    "1.2.3",
+                    "--json",
+                    "number,title,url",
+                ],
+            ]
         );
     }
 

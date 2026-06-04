@@ -1,7 +1,13 @@
 # Inbox
 
-Raw backlog capture lives here. A sentence is enough. Process it at cycle
-boundaries.
+This legacy lane is retained only as a signpost.
 
-Imported GitHub issues can live here too, as long as the import is explicit and
-the queue does not pretend those items have already been prioritized.
+Raw intake is tracked with the GitHub label `lane:inbox`:
+
+```bash
+gh issue list --label lane:inbox
+```
+
+Former cards from this lane were archived under
+`docs/method/graveyard/github-issue-migration/inbox/`.
+Do not add new files here. Add or update GitHub Issues instead.

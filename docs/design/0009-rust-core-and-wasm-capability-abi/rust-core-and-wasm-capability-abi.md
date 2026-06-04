@@ -651,9 +651,9 @@ Follow-on slices to create:
 
 - [Wesley core-rs IR contract and fixtures](../0013-rust-ir-parity-sentinel/SOURCE_wesley-core-rs-ir-contract-and-fixtures.md)
 - [Parser parity spike](../0013-rust-ir-parity-sentinel/SOURCE_parser-parity-spike.md)
-- [WASM host function governance](../../method/backlog/up-next/RUNTIME_wasm-host-function-governance.md)
-- [WASM capability versioning and state](../../method/backlog/up-next/RUNTIME_wasm-capability-versioning-and-state.md)
-- [Capability portability floor](../../method/backlog/up-next/RUNTIME_capability-portability-floor.md)
+- [WASM host function governance](https://github.com/flyingrobots/wesley/issues/596)
+- [WASM capability versioning and state](https://github.com/flyingrobots/wesley/issues/595)
+- [Capability portability floor](https://github.com/flyingrobots/wesley/issues/594)
 - [Node Rust core binding strategy](../0016-rust-core-binding-observatory/RUNTIME_node-rust-core-binding-strategy.md)
 - [Rust core performance baseline](../0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)
 - `RUNTIME_wasm-capability-abi-fixture`

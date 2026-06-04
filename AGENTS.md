@@ -22,13 +22,14 @@ Do not audit the repository by recursively walking the filesystem. Follow the au
 
 - **`docs/ARCHITECTURE.md`**: Authoritative structural reference (Base Platform, Modules, Pipeline).
 - **`docs/VISION.md`**: Core tenets and the "Trustworthy Change" mission.
-- **`docs/METHOD.md`**: Repo work doctrine (Backlog lanes, Cycle loop).
+- **`docs/METHOD.md`**: Repo work doctrine (GitHub Issues, evidence ledger, Cycle loop).
 
 ### 3. The Direction
 
 - **`docs/BEARING.md`**: Current execution gravity and active tensions.
 - **`docs/design/README.md`**: Active design packets and structural doctrine.
-- **`docs/method/backlog/`**: The active source of truth for pending work.
+- **GitHub Issues**: The active source of truth for pending work. Use Method lane labels such as `lane:asap`, `lane:bad-code`, `lane:cool-ideas`, and `lane:inbox`.
+- **`docs/method/graveyard/github-issue-migration/`**: Historical evidence for the former filesystem backlog migration.
 
 ### 4. The Proof
 
@@ -41,7 +42,7 @@ When starting a new session or recovering from context loss:
 
 1. **Read `docs/BEARING.md`** to find the current execution gravity.
 2. **Read `docs/METHOD.md`** to understand the work doctrine.
-3. **Check `docs/method/backlog/asap/`** for imminent work.
+3. **Check GitHub Issues with `lane:asap`** for imminent work.
 4. **Check `git log -n 5` and `git status`** to verify the current branch state.
 
 ## End of Turn Checklist
@@ -49,7 +50,7 @@ When starting a new session or recovering from context loss:
 After altering files:
 
 1. **Verify Truth**: Ensure documentation is updated if behavior or structure changed.
-2. **Log Debt**: Add follow-on backlog items to `bad-code/` or `cool-ideas/`.
+2. **Log Debt**: Add follow-on work as GitHub Issues with the right Method lane labels.
 3. **Commit**: Use focused, conventional commit messages. Propose a draft before executing.
 4. **Validate**: Run `pnpm run preflight`.
 

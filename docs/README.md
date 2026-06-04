@@ -95,7 +95,7 @@ It also now has a more explicit METHOD closeout surface under
 
 - [METHOD Process](./method/process.md)
 - [METHOD Guide](./method/guide.md)
-- [Backlog](./method/backlog/README.md)
+- [Legacy Backlog Signpost](./method/backlog/README.md)
 - [Retro Packets](./method/retro/README.md)
 - [METHOD Release](./method/release.md)
 
@@ -109,9 +109,9 @@ It also now has a more explicit METHOD closeout surface under
 
 - The root `README.md` is intentionally product-facing, not the full METHOD
   doctrine front door.
-- Active execution lives in the filesystem queue, with `docs/BEARING.md` as
-  the current direction surface and `docs/design/README.md` as the design
-  packet index.
+- Active execution lives in GitHub Issues with Method lane labels, with
+  `docs/BEARING.md` as the current direction surface and
+  `docs/design/README.md` as the design packet index.
 - If docs contradict runtime behavior, the docs must change.
 - Retros and witnesses are the closeout surface; chat and PR commentary are
   not enough on their own.

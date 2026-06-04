@@ -22,5 +22,5 @@ runtime code, test helpers, and repo tooling.
 
 ## Evidence
 
-- [git-port-plumbing-boundary](../../../invariants/git-port-plumbing-boundary.md)
-- [2026-04-17 git-port-plumbing-boundary audit](../../../audit/2026-04-17-git-port-plumbing-boundary-audit.md)
+- [git-port-plumbing-boundary](../../../../invariants/git-port-plumbing-boundary.md)
+- [2026-04-17 git-port-plumbing-boundary audit](../../../../audit/2026-04-17-git-port-plumbing-boundary-audit.md)
