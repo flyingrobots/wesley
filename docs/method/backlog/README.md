@@ -1,28 +1,26 @@
 # Backlog
 
-The filesystem is the queue.
+This directory is no longer Wesley's live work queue.
 
-Lanes:
+GitHub Issues are the live Method tracker. Use lane labels:
 
-- `inbox/` for raw captured ideas
-- `asap/` for work that should be pulled soon
-- `up-next/` for the next likely pull
-- `cool-ideas/` for non-commitment exploration
-- `bad-code/` for tech debt that is worth naming
+- `lane:inbox` for raw captured ideas
+- `lane:asap` for imminent work
+- `lane:cool-ideas` for non-commitment exploration
+- `lane:bad-code` for technical debt worth naming
+- `lane:release` for release-scoped work
 
-The old `v0.1.0/` release lane was retired to
-`docs/method/graveyard/v0.1.0/` during the clean-house release. Treat it as
-historical/extraction context, not an active queue.
+Repository files are the evidence ledger. The former filesystem backlog cards
+were migrated on 2026-06-04 and archived under
+`docs/method/graveyard/github-issue-migration/`.
 
-When an item is pulled into `docs/design/<cycle>/`, the backlog file is removed.
-Work should not live in two places at once.
+Use:
 
-Rejected or retired work does not return to the queue by default. Put a note in
-`docs/method/graveyard/` so the decision stays inspectable.
+```bash
+gh issue list --label lane:asap
+gh issue list --label lane:bad-code
+gh issue list --label lane:cool-ideas
+gh issue list --label lane:inbox
+```
 
-Prefer legend prefixes when they help:
-
-- `SOURCE_<name>.md`
-- `TRANSMUTE_<name>.md`
-- `RUNTIME_<name>.md`
-- `EVIDENCE_<name>.md`
+Do not add new live backlog cards here. Create or update GitHub Issues instead.

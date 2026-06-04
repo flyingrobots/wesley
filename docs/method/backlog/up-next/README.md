@@ -1,12 +1,15 @@
 # Up Next
 
-This lane holds the next likely pulls. It is a queue of judgment, not a
-calendar.
+This legacy lane is retained only as a signpost.
 
-Current next pulls:
+METHOD no longer uses a separate `up-next` lane in Wesley. Former `up-next`
+cards were migrated to the canonical GitHub label `lane:asap` and archived
+under `docs/method/graveyard/github-issue-migration/up-next/`.
 
-1. `RUNTIME_wasm-host-function-governance.md`
-2. `RUNTIME_wasm-capability-versioning-and-state.md`
-3. `RUNTIME_capability-portability-floor.md`
-4. `SOURCE_wesley-host-native.md`
-5. `RUNTIME_wesley-mcp-server.md`
+Use:
+
+```bash
+gh issue list --label lane:asap
+```
+
+Do not add new files here. Add or update GitHub Issues instead.

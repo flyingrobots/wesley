@@ -6,12 +6,13 @@ title: Roadmap
 
 # Roadmap
 
-Repo-visible execution now lives in the filesystem:
+Repo-visible execution now lives across GitHub Issues and durable repo
+evidence:
 
 - `docs/BEARING.md` for current direction
 - `docs/VISION.md` for bounded synthesis
 - `docs/design/README.md` for active design packets and boundary notes
-- `docs/method/backlog/` for queued work
+- GitHub Issues with Method lane labels for queued work
 - `docs/design/` for active cycle packets
 - `docs/method/retro/` for closed cycle packets
 

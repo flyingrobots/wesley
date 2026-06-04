@@ -23,6 +23,6 @@ real branch.
 
 ## Evidence
 
-- [git-touching-tests-are-dockerized](../../../invariants/git-touching-tests-are-dockerized.md)
-- [dockerized-git-tests-copy-in-and-strip-remotes](../../../invariants/dockerized-git-tests-copy-in-and-strip-remotes.md)
-- [2026-04-17 git-port-plumbing-boundary audit](../../../audit/2026-04-17-git-port-plumbing-boundary-audit.md)
+- [git-touching-tests-are-dockerized](../../../../invariants/git-touching-tests-are-dockerized.md)
+- [dockerized-git-tests-copy-in-and-strip-remotes](../../../../invariants/dockerized-git-tests-copy-in-and-strip-remotes.md)
+- [2026-04-17 git-port-plumbing-boundary audit](../../../../audit/2026-04-17-git-port-plumbing-boundary-audit.md)

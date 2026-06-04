@@ -1,19 +1,31 @@
 name: Chore
 description: Maintenance, refactor, docs, CI, or cleanup work.
 title: '[chore] <short summary>'
-labels: ['chore']
+labels:
+  - chore
+  - lane:inbox
 assignees: []
 body:
   - type: markdown
     attributes:
       value: |
-        Chores still need a hill. If this work does not clearly support a sponsor actor outcome,
-        it probably belongs in the backlog instead of the active queue.
+        Chores still need a hill. GitHub Issues are Wesley's live Method
+        tracker; labels are canonical lane, legend, and work metadata.
+
+  - type: textarea
+    id: requested_classification
+    attributes:
+      label: Requested classification
+      description: Optional triage request. This does not set canonical labels.
+      placeholder: |
+        Suggested lane:
+        Suggested legend:
+        Suggested work type:
 
   - type: dropdown
     id: work_type
     attributes:
-      label: Work Type
+      label: Work type
       description: Most chores are integrity or enabler work.
       options:
         - integrity
@@ -25,18 +37,20 @@ body:
   - type: textarea
     id: hill_supported
     attributes:
-      label: Hill Supported
+      label: Hill supported
       description: Which active or near-term hill does this work serve?
-      placeholder: 'Supports the hill that a reviewer can trust a certificate because every claim traces to exact evidence.'
+      placeholder: Supports the hill that a reviewer can trust a certificate because every claim traces to exact evidence.
     validations:
       required: true
 
   - type: textarea
-    id: sponsor_actor
+    id: sponsored_perspectives
     attributes:
-      label: Sponsor Actor
-      description: Whose job gets easier because this cleanup exists?
-      placeholder: 'Reviewer, release owner, maintainer, or agent consumer'
+      label: Sponsored perspectives
+      description: Name abstract sponsored human and agent seats, not literal people or model brands.
+      value: |
+        - Sponsored Human: Name the served operator, maintainer, contributor, or user perspective.
+        - Sponsored Agent: Name the automation, implementation, review, or reproducibility perspective.
     validations:
       required: true
 
@@ -51,16 +65,16 @@ body:
   - type: textarea
     id: playback_impact
     attributes:
-      label: Playback Impact
+      label: Playback impact
       description: What playback becomes cleaner, safer, or more honest after this lands?
-      placeholder: 'The BLADE playback no longer shows provisional evidence in the cert output.'
+      placeholder: The BLADE playback no longer shows provisional evidence in the cert output.
     validations:
       required: true
 
   - type: textarea
     id: invariants
     attributes:
-      label: Invariants To Preserve
+      label: Invariants to preserve
       description: What truths or boundaries must this work keep intact?
     validations:
       required: true
@@ -68,19 +82,50 @@ body:
   - type: textarea
     id: non_goals
     attributes:
-      label: Non-Goals
+      label: Non-goals
       description: What cleanup nearby is explicitly not part of this issue?
     validations:
       required: true
 
   - type: textarea
-    id: tasks
+    id: acceptance
     attributes:
-      label: Tasks
-      description: Concrete checklist items only.
+      label: Acceptance / tests
+      description: Concrete checks that prove this is done.
       placeholder: |
-        - [ ] Extract shared use case
-        - [ ] Add deterministic regression coverage
-        - [ ] Update docs to match reality
+        - [ ] Deterministic regression coverage is added.
+        - [ ] Docs or signposts match the new reality.
+        - [ ] Follow-up work is captured as GitHub Issues.
     validations:
       required: true
+
+  - type: textarea
+    id: witness_plan
+    attributes:
+      label: Witness plan
+      description: Expected evidence for tests, playback, docs, and closeout.
+      value: |
+        ### Tests
+        Name the deterministic test command, failing-before-fix reproduction, or reason no code test applies.
+
+        ### Playback
+        Name the human-visible playback, demo, transcript, or reproduction that proves the result.
+
+        ### Docs
+        Name the documentation, issue template, signpost, or changelog surface updated, or explain why none is required.
+
+        ### Retro / closeout
+        Name the closeout note, follow-up issue links, or PR evidence that will preserve the decision.
+    validations:
+      required: true
+
+  - type: textarea
+    id: method_artifacts
+    attributes:
+      label: Method artifacts
+      description: Fill these links as work proceeds.
+      value: |
+        - Design: Link `docs/design/<LEGEND>_<slug>.md`, or state why issue-only triage is sufficient.
+        - Witness: Link committed witness evidence or the issue/PR comment that records verification.
+        - Retro: Link the retro/closeout artifact or the issue close comment.
+        - PR: Link the pull request before closing implementation work.

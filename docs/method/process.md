@@ -7,7 +7,8 @@ surfaces, `docs/BEARING.md`, and active design packets.
 
 ## Rules
 
-- The queue lives in `docs/method/backlog/`.
+- The queue lives in GitHub Issues, organized by Method labels such as
+  `lane:asap`, `lane:bad-code`, `lane:cool-ideas`, and `lane:inbox`.
 - Pulling work into `docs/design/<cycle>/` is commitment.
 - Design packets must name sponsor human, sponsor agent, hill, playback
   questions, accessibility posture, localization posture,
@@ -33,15 +34,17 @@ surfaces, `docs/BEARING.md`, and active design packets.
 
 ## Default Loop
 
-1. Pull an item from `docs/method/backlog/` into `docs/design/<cycle>/`.
+1. Pull a GitHub Issue into `docs/design/<cycle>/` when a design packet is
+   needed.
 2. Write the design with both human and agent sponsors named.
 3. Write failing tests from the playback questions.
 4. Make the tests pass.
 5. Produce a reproducible playback witness.
 6. Close the cycle packet with a retro in `docs/method/retro/<cycle>/` and a
    `witness/` directory that records playback and verification evidence.
-7. Reconcile backlog lanes and move genuinely rejected or retired work into
-   `docs/method/graveyard/` instead of letting it drift silently.
+7. Reconcile GitHub Issue labels and move genuinely rejected or retired
+   repo evidence into `docs/method/graveyard/` instead of letting it drift
+   silently.
 8. After merge, update `docs/BEARING.md`, `CHANGELOG.md`, and release notes
    when the merged state changes them.
 
@@ -64,5 +67,5 @@ Wesley's repo-visible closeout surface is:
 - Wesley intentionally keeps the root `README.md` product-facing. For repo
   workflow doctrine, use `docs/README.md`, `docs/method/process.md`, and
   `docs/method/release.md`.
-- Review visibility still lives on branches and PRs. METHOD does not pretend
-  review state is native repo truth yet.
+- Review visibility lives on GitHub Issues, branches, and PRs. Repository docs
+  record durable evidence rather than duplicating the live tracker.

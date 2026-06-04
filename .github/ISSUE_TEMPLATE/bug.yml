@@ -1,22 +1,52 @@
 name: Bug Report
 description: Report a reproducible defect in shipped behavior.
 title: '[bug] <short summary>'
-labels: ['bug']
+labels:
+  - bug
+  - lane:inbox
 assignees: []
 body:
+  - type: markdown
+    attributes:
+      value: |
+        GitHub Issues are Wesley's live Method tracker. Labels are canonical
+        tracker metadata; request classification here and maintainers or agents
+        will apply the final lane, legend, and work labels.
+
+  - type: textarea
+    id: requested_classification
+    attributes:
+      label: Requested classification
+      description: Optional triage request. This does not set canonical labels.
+      placeholder: |
+        Suggested lane:
+        Suggested legend:
+        Suggested work type:
+
   - type: textarea
     id: sponsor_actor
     attributes:
-      label: Blocked Actor
-      description: Who is blocked or harmed by this bug?
-      placeholder: 'Release owner, maintainer, website user, or CI operator'
+      label: Blocked actor
+      description: Which abstract role is blocked or harmed by this bug?
+      placeholder: Release owner, maintainer, website user, CI operator, or agent reviewer
+    validations:
+      required: true
+
+  - type: textarea
+    id: sponsored_perspectives
+    attributes:
+      label: Sponsored perspectives
+      description: Name abstract sponsored human and agent seats, not literal people or model brands.
+      value: |
+        - Sponsored Human: Name the served operator, maintainer, contributor, or user perspective.
+        - Sponsored Agent: Name the automation, implementation, review, or reproducibility perspective.
     validations:
       required: true
 
   - type: textarea
     id: summary
     attributes:
-      label: Broken Behavior
+      label: Broken behavior
       description: One sentence describing what is failing.
     validations:
       required: true
@@ -24,26 +54,26 @@ body:
   - type: textarea
     id: playback
     attributes:
-      label: Repro / Playback
+      label: Repro / playback
       description: Exact steps, commands, or fixture path that reproduces the issue.
       placeholder: |
-        1. Run `pnpm install`
-        2. Run `pnpm wesley transform --schema ...`
-        3. Observe failure
+        1. Run `cargo xtask preflight`
+        2. Run the affected Wesley command or fixture.
+        3. Observe failure.
     validations:
       required: true
 
   - type: textarea
     id: expected
     attributes:
-      label: Expected Behavior
+      label: Expected behavior
     validations:
       required: true
 
   - type: textarea
     id: actual
     attributes:
-      label: Actual Behavior
+      label: Actual behavior
       description: Include logs, stack traces, screenshots, or CI links.
     validations:
       required: true
@@ -51,10 +81,10 @@ body:
   - type: textarea
     id: invariants
     attributes:
-      label: Invariant Violated
+      label: Invariant violated
       description: Which truth or contract is being broken?
       placeholder: |
-        - ledger truth
+        - schema/source truth
         - evidence truth
         - deterministic tests
         - local-first operation
@@ -65,6 +95,37 @@ body:
     id: env
     attributes:
       label: Environment
-      placeholder: 'OS, Node version, pnpm version, CI link, browser, fixture path'
+      placeholder: OS, Rust version, Node version, pnpm version, CI link, browser, fixture path
     validations:
       required: true
+
+  - type: textarea
+    id: witness_plan
+    attributes:
+      label: Witness plan
+      description: Expected evidence for tests, playback, docs, and closeout.
+      value: |
+        ### Tests
+        Name the deterministic failing-before-fix reproduction and the command that proves the fix.
+
+        ### Playback
+        Name the human-visible reproduction or transcript that proves the defect is gone.
+
+        ### Docs
+        Name the documentation, signpost, or changelog surface updated, or explain why none is required.
+
+        ### Retro / closeout
+        Name the closeout note, follow-up issue links, or PR evidence that will preserve the decision.
+    validations:
+      required: true
+
+  - type: textarea
+    id: method_artifacts
+    attributes:
+      label: Method artifacts
+      description: Fill these links as work proceeds.
+      value: |
+        - Design: Link `docs/design/<LEGEND>_<slug>.md`, or state why issue-only triage is sufficient.
+        - Witness: Link committed witness evidence or the issue/PR comment that records verification.
+        - Retro: Link the retro/closeout artifact or the issue close comment.
+        - PR: Link the pull request before closing implementation work.

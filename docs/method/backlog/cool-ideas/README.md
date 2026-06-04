@@ -1,12 +1,13 @@
 # Cool Ideas
 
-Ideas here are real enough to name, but not committed. Keep them explicit and
-honest.
+This legacy lane is retained only as a signpost.
 
-- [Holmes Comment Loader Policy Module](RUNTIME_holmes-comment-loader-policy-module.md)
-- [Workflow YAML Assertion Helper](RUNTIME_workflow-yaml-assertion-helper.md)
-- [Holmes Artifact Diagnostic Sidecar](EVIDENCE_holmes-artifact-diagnostic-sidecar.md)
-- [PR Merge Gate Status Helper](RUNTIME_pr-merge-gate-status-helper.md)
-- [Review Supersession Explainer](RUNTIME_review-supersession-explainer.md)
-- [PR Feedback Session Witness](EVIDENCE_pr-feedback-session-witness.md)
-- [WARP-TTD Adapter Capability Rename](RUNTIME_warp-ttd-adapter-capability-rename.md)
+Live exploratory ideas are tracked with the GitHub label `lane:cool-ideas`:
+
+```bash
+gh issue list --label lane:cool-ideas
+```
+
+Former cards from this lane were archived under
+`docs/method/graveyard/github-issue-migration/cool-ideas/`.
+Do not add new files here. Add or update GitHub Issues instead.

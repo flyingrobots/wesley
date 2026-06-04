@@ -71,8 +71,7 @@ The `release-gauntlet` job must verify:
 - every publishable crate has the minimum package file set
 - root `README.md` exists
 - root `CHANGELOG.md` contains release notes for the exact version
-- no version-associated backlog item remains under `docs/method/backlog/`
-- no open GitHub issue is associated with the exact tag or version by text,
+- no open GitHub Issue is associated with the exact tag or version by text,
   milestone, or label
 - Rust check, test, clippy, docs, release-check, package sanity, and audit pass
 
