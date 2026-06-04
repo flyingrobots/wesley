@@ -15,6 +15,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Release guard tracker checks**: `cargo xtask release-prep-guard` and
+  `cargo xtask release-guard` now query live GitHub Issues for open
+  tag/version blockers instead of relying only on the retired filesystem
+  backlog tree.
 - **Rust Holmes validation gate review fixes**: Law evidence validation now
   continues artifact checks when structure validation emits warning-only
   diagnostics, rejects duplicate artifact roles after workspace-relative path
