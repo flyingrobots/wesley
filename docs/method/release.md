@@ -30,10 +30,9 @@ in `docs/releases/`.
 
 ## Scope
 
-Releases aggregate shipped work. They do not create
-`docs/method/backlog/<version>/` directories, and they do not move backlog
-items by version. Backlog lanes stay about priority and scope, not release
-membership.
+Releases aggregate shipped work. They do not create version-scoped filesystem
+backlog directories, and they do not move GitHub Issues by version. Method lane
+labels stay about priority and scope, not release membership.
 
 The release design names and justifies the intended version before tagging.
 Commit history, diff inspection, and validation can support or challenge that

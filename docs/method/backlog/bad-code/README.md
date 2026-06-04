@@ -1,14 +1,13 @@
 # Bad Code
 
-This lane is for technical debt that works but still bothers us. Pull it when
-the hill is "this no longer bothers us."
+This legacy lane is retained only as a signpost.
 
-## Runtime Optic And Admission
+Live technical debt is tracked with the GitHub label `lane:bad-code`:
 
-- [Optic Artifact ID And Hash Semantics](SOURCE_optic-artifact-id-hash-semantics.md)
-- [Optic Authority Vocabulary Boundary](SOURCE_optic-authority-vocabulary-boundary.md)
-- [Runtime Optic GraphQL Validation Coverage](SOURCE_runtime-optic-graphql-validation-coverage.md)
+```bash
+gh issue list --label lane:bad-code
+```
 
-## Emitters
-
-- [Rust emitter consumer model parity](SOURCE_rust-emitter-consumer-model-parity.md)
+Former cards from this lane were archived under
+`docs/method/graveyard/github-issue-migration/bad-code/`.
+Do not add new files here. Add or update GitHub Issues instead.

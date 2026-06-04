@@ -1,20 +1,44 @@
 name: RFC / Proposal
 description: For larger design changes requiring discussion before implementation.
 title: '[rfc] <short title>'
-labels: ['rfc', 'discussion']
+labels:
+  - rfc
+  - lane:inbox
 assignees: []
 body:
   - type: markdown
     attributes:
       value: |
-        RFCs are for direction-setting changes. Frame them around the product hill,
-        not just the mechanism.
+        RFCs are for direction-setting changes. Frame them around the product
+        hill, not just the mechanism. GitHub Issues are Wesley's live Method
+        tracker; labels are canonical lane, legend, and work metadata.
+
+  - type: textarea
+    id: requested_classification
+    attributes:
+      label: Requested classification
+      description: Optional triage request. This does not set canonical labels.
+      placeholder: |
+        Suggested lane:
+        Suggested legend:
+        Suggested work type:
 
   - type: textarea
     id: sponsor_actor
     attributes:
-      label: Sponsor Actor
+      label: Sponsor actor
       description: Whose job improves if this design lands?
+    validations:
+      required: true
+
+  - type: textarea
+    id: sponsored_perspectives
+    attributes:
+      label: Sponsored perspectives
+      description: Name abstract sponsored human and agent seats, not literal people or model brands.
+      value: |
+        - Sponsored Human: Name the served operator, maintainer, contributor, or user perspective.
+        - Sponsored Agent: Name the automation, implementation, review, or reproducibility perspective.
     validations:
       required: true
 
@@ -45,7 +69,7 @@ body:
   - type: textarea
     id: proposed_design
     attributes:
-      label: Proposed Design
+      label: Proposed design
       description: Include diagrams, examples, and boundary decisions.
     validations:
       required: true
@@ -53,7 +77,7 @@ body:
   - type: textarea
     id: invariants
     attributes:
-      label: Invariants To Preserve
+      label: Invariants to preserve
       description: What truths and non-negotiables must survive this design?
     validations:
       required: true
@@ -61,7 +85,7 @@ body:
   - type: textarea
     id: non_goals
     attributes:
-      label: Non-Goals
+      label: Non-goals
       description: What is explicitly out of scope?
     validations:
       required: true
@@ -69,7 +93,7 @@ body:
   - type: textarea
     id: tradeoffs
     attributes:
-      label: Tradeoffs / Risks
+      label: Tradeoffs / risks
       description: What could go wrong? What alternatives were rejected?
     validations:
       required: true
@@ -77,7 +101,38 @@ body:
   - type: textarea
     id: rollout
     attributes:
-      label: Rollout / Migration Plan
+      label: Rollout / migration plan
       description: How should this land incrementally?
     validations:
       required: false
+
+  - type: textarea
+    id: witness_plan
+    attributes:
+      label: Witness plan
+      description: Expected evidence for tests, playback, docs, and closeout.
+      value: |
+        ### Tests
+        Name the deterministic test command, failing-before-fix reproduction, or reason no code test applies.
+
+        ### Playback
+        Name the human-visible playback, demo, transcript, or reproduction that proves the result.
+
+        ### Docs
+        Name the documentation, issue template, signpost, or changelog surface updated, or explain why none is required.
+
+        ### Retro / closeout
+        Name the closeout note, follow-up issue links, or PR evidence that will preserve the decision.
+    validations:
+      required: true
+
+  - type: textarea
+    id: method_artifacts
+    attributes:
+      label: Method artifacts
+      description: Fill these links as work proceeds.
+      value: |
+        - Design: Link `docs/design/<LEGEND>_<slug>.md`, or state why issue-only triage is sufficient.
+        - Witness: Link committed witness evidence or the issue/PR comment that records verification.
+        - Retro: Link the retro/closeout artifact or the issue close comment.
+        - PR: Link the pull request before closing implementation work.

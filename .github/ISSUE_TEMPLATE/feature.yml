@@ -1,19 +1,32 @@
 name: Feature Request
 description: Propose a product-facing or capability-creating change.
 title: '[feat] <short summary>'
-labels: ['feature']
+labels:
+  - feature
+  - lane:inbox
 assignees: []
 body:
   - type: markdown
     attributes:
       value: |
         Frame feature work around sponsor actors, hills, and playbacks.
-        Read `CONTRIBUTING.md` and `ROADMAP.md` before filing large requests.
+        GitHub Issues are Wesley's live Method tracker; labels are canonical
+        lane, legend, and work metadata.
+
+  - type: textarea
+    id: requested_classification
+    attributes:
+      label: Requested classification
+      description: Optional triage request. This does not set canonical labels.
+      placeholder: |
+        Suggested lane:
+        Suggested legend:
+        Suggested work type:
 
   - type: dropdown
     id: work_type
     attributes:
-      label: Work Type
+      label: Work type
       description: Choose the slice taxonomy for this issue.
       options:
         - product
@@ -25,9 +38,20 @@ body:
   - type: textarea
     id: sponsor_actor
     attributes:
-      label: Sponsor Actor
+      label: Sponsor actor
       description: Whose job gets easier if this lands?
-      placeholder: 'Release owner recovering a failed run'
+      placeholder: Release owner recovering a failed run
+    validations:
+      required: true
+
+  - type: textarea
+    id: sponsored_perspectives
+    attributes:
+      label: Sponsored perspectives
+      description: Name abstract sponsored human and agent seats, not literal people or model brands.
+      value: |
+        - Sponsored Human: Name the served operator, maintainer, contributor, or user perspective.
+        - Sponsored Agent: Name the automation, implementation, review, or reproducibility perspective.
     validations:
       required: true
 
@@ -36,7 +60,7 @@ body:
     attributes:
       label: Hill
       description: One sentence describing the user-relevant outcome.
-      placeholder: 'A release owner can resume a failed run and produce a trustworthy certificate without manual cleanup.'
+      placeholder: A release owner can resume a failed run and produce a trustworthy certificate without manual cleanup.
     validations:
       required: true
 
@@ -45,7 +69,7 @@ body:
     attributes:
       label: Playback
       description: How will we demonstrate that the hill is real?
-      placeholder: 'Run `wesley generate --emit-bundle` on an injected crash and end with a cert that shows exact evidence and a clear gate decision.'
+      placeholder: Run the affected Wesley command on a representative fixture and end with exact evidence.
     validations:
       required: true
 
@@ -54,14 +78,13 @@ body:
     attributes:
       label: Problem
       description: What is wrong today?
-      placeholder: 'Resume exists, but the operator still has to reconstruct trust manually after a failed run.'
     validations:
       required: true
 
   - type: textarea
     id: proposed_change
     attributes:
-      label: Proposed Change
+      label: Proposed change
       description: What should Wesley do?
     validations:
       required: true
@@ -69,19 +92,19 @@ body:
   - type: textarea
     id: invariants
     attributes:
-      label: Invariants To Preserve
+      label: Invariants to preserve
       description: List the runtime or product truths this must not violate.
       placeholder: |
-        - ledger remains runtime truth
-        - replay performs zero writes by default
+        - schema/source truth remains sovereign
         - certified evidence remains exact-span and digest-backed
+        - runtime ownership stays outside generic Wesley when applicable
     validations:
       required: true
 
   - type: textarea
     id: non_goals
     attributes:
-      label: Non-Goals
+      label: Non-goals
       description: What is explicitly out of scope?
       placeholder: |
         - No new remote execution mode
@@ -92,11 +115,42 @@ body:
   - type: textarea
     id: acceptance
     attributes:
-      label: Acceptance / Tests
+      label: Acceptance / tests
       description: What executable behavior should prove this is done?
       placeholder: |
-        - [ ] Acceptance test covers the playback path
-        - [ ] Regression test covers the failure path
-        - [ ] Docs updated to reflect the shipped behavior
+        - [ ] Acceptance test covers the playback path.
+        - [ ] Regression test covers the failure path.
+        - [ ] Docs updated to reflect the shipped behavior.
     validations:
       required: true
+
+  - type: textarea
+    id: witness_plan
+    attributes:
+      label: Witness plan
+      description: Expected evidence for tests, playback, docs, and closeout.
+      value: |
+        ### Tests
+        Name the deterministic test command, failing-before-fix reproduction, or reason no code test applies.
+
+        ### Playback
+        Name the human-visible playback, demo, transcript, or reproduction that proves the result.
+
+        ### Docs
+        Name the documentation, issue template, signpost, or changelog surface updated, or explain why none is required.
+
+        ### Retro / closeout
+        Name the closeout note, follow-up issue links, or PR evidence that will preserve the decision.
+    validations:
+      required: true
+
+  - type: textarea
+    id: method_artifacts
+    attributes:
+      label: Method artifacts
+      description: Fill these links as work proceeds.
+      value: |
+        - Design: Link `docs/design/<LEGEND>_<slug>.md`, or state why issue-only triage is sufficient.
+        - Witness: Link committed witness evidence or the issue/PR comment that records verification.
+        - Retro: Link the retro/closeout artifact or the issue close comment.
+        - PR: Link the pull request before closing implementation work.

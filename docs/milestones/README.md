@@ -11,7 +11,7 @@ The MVP vertical slice (Transform → Plan → Rehearse → Certify) is complete
 
 ## Roadmap
 
-Active execution now lives in the METHOD filesystem queue under
-`docs/method/backlog/`, with direction summarized in `docs/BEARING.md`.
+Active execution now lives in GitHub Issues with Method lane labels, with
+direction summarized in `docs/BEARING.md`.
 Historical milestone context is preserved in this directory and in merged
 design and retro packets.

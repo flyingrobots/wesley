@@ -5,21 +5,21 @@ It is lighter than doctrine in `README.md` or `docs/method/process.md`.
 
 ## Capture ideas immediately
 
-If a backlog-worthy idea surfaces during the work, capture it now.
+If a work-worthy idea surfaces during the work, capture it now.
 
-Prefer a small standalone backlog note under `docs/method/backlog/` over
+Open a GitHub Issue with the right Method lane and legend labels instead of
 leaving the idea only in chat, in a dirty worktree, or buried inside a retro.
 
-## Retro versus backlog
+## Retro versus Issues
 
 Do not confuse the closeout surface with the queue.
 
 - Retros and witnesses record what was proved.
-- The backlog records what should happen.
+- GitHub Issues record what should happen.
 - The graveyard records what should stay rejected or retired with context.
 
-If a new idea surfaces during work, prefer a small backlog note under
-`docs/method/backlog/` over burying the idea in chat or in a retro note.
+If a new idea surfaces during work, prefer a GitHub Issue over burying the idea
+in chat or in a retro note.
 
 ## Keep retro packets boring
 
@@ -56,13 +56,13 @@ Do not collapse release work into one note.
 - `docs/releases/` is for user-facing release notes and migration guidance.
 - `CHANGELOG.md` remains the historical ledger.
 
-## Prefer legend-prefixed backlog items
+## Prefer legend-labeled issues
 
-Use `SOURCE_*.md` for schema semantics, directive truth, parser/IR meaning, and
-ops-contract work.
-Use `TRANSMUTE_*.md` for generator, transmutation, and output-domain work.
-Use `RUNTIME_*.md` for run-model and operator-flow work.
-Use `EVIDENCE_*.md` for evidence-map, Holmes-family, and certification work.
+Use `legend:SOURCE` for schema semantics, directive truth, parser/IR meaning,
+and ops-contract work.
+Use `legend:TRANSMUTE` for generator, transmutation, and output-domain work.
+Use `legend:RUNTIME` for run-model and operator-flow work.
+Use `legend:EVIDENCE` for evidence-map, Holmes-family, and certification work.
 
 If the work does not fit a legend cleanly, name it plainly instead of forcing a
-bad prefix.
+bad label.
