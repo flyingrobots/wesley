@@ -224,26 +224,43 @@ fn validate_footprint(
         );
     }
 
-    let forbids = footprint.forbids.iter().collect::<BTreeSet<_>>();
+    let forbids = footprint
+        .forbids
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
     for (field, resources) in [
+        ("reads", &footprint.reads),
         ("writes", &footprint.writes),
         ("creates", &footprint.creates),
     ] {
-        for resource in resources {
-            if forbids.contains(resource) {
-                diagnostics.push(
-                    HolmesDiagnostic::new(
-                        HolmesDiagnosticCode::HlawCapabilityContradictoryResourcePosture,
-                        HolmesSeverity::Error,
-                        format!(
-                            "law capability resource {resource:?} appears in both {field} and forbids"
-                        ),
-                    )
-                    .for_family("law-capabilities")
-                    .at_field(format!("footprints[{index}].{field}")),
-                );
-            }
+        reject_forbidden_resource_overlaps(
+            field,
+            resources,
+            &forbids,
+            diagnostics,
+            format!("footprints[{index}].{field}"),
+        );
+    }
+
+    for (slot_index, slot) in footprint.slots.iter().enumerate() {
+        if forbids.contains(slot.kind.as_str()) {
+            diagnostics.push(contradictory_resource_diagnostic(
+                "slot kind",
+                &slot.kind,
+                format!("footprints[{index}].slots[{slot_index}].kind"),
+            ));
         }
+    }
+
+    for (closure_index, closure) in footprint.closures.iter().enumerate() {
+        reject_forbidden_resource_overlaps(
+            "closure reads",
+            &closure.reads,
+            &forbids,
+            diagnostics,
+            format!("footprints[{index}].closures[{closure_index}].reads"),
+        );
     }
 
     let has_resource_posture = !footprint.reads.is_empty()
@@ -263,4 +280,36 @@ fn validate_footprint(
             .at_field(format!("footprints[{index}]")),
         );
     }
+}
+
+fn reject_forbidden_resource_overlaps(
+    field: &str,
+    resources: &[String],
+    forbids: &BTreeSet<&str>,
+    diagnostics: &mut Vec<HolmesDiagnostic>,
+    field_path: String,
+) {
+    for resource in resources {
+        if forbids.contains(resource.as_str()) {
+            diagnostics.push(contradictory_resource_diagnostic(
+                field,
+                resource,
+                field_path.clone(),
+            ));
+        }
+    }
+}
+
+fn contradictory_resource_diagnostic(
+    field: &str,
+    resource: &str,
+    field_path: String,
+) -> HolmesDiagnostic {
+    HolmesDiagnostic::new(
+        HolmesDiagnosticCode::HlawCapabilityContradictoryResourcePosture,
+        HolmesSeverity::Error,
+        format!("law capability resource {resource:?} appears in both {field} and forbids"),
+    )
+    .for_family("law-capabilities")
+    .at_field(field_path)
 }

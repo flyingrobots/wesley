@@ -138,6 +138,68 @@ fn law_capability_ingest_rejects_contradictory_resource_posture() {
 }
 
 #[test]
+fn law_capability_ingest_rejects_forbids_overlapping_all_touched_resources() {
+    let contradictory = r#"{
+  "apiVersion": "wesley.law-capabilities/v1",
+  "reportOnly": true,
+  "runtimeEnforcement": false,
+  "footprints": [
+    {
+      "lawId": "operation.replaceRange.footprint",
+      "subject": "operation:Mutation.replaceRange",
+      "reads": [
+        "TextBlob"
+      ],
+      "writes": [],
+      "creates": [],
+      "forbids": [
+        "Cursor",
+        "DerivedRead",
+        "TextBlob"
+      ],
+      "slots": [
+        {
+          "name": "cursor",
+          "kind": "Cursor",
+          "bindFromArg": "input.cursor",
+          "access": [
+            "read"
+          ]
+        }
+      ],
+      "closures": [
+        {
+          "name": "visibleRange",
+          "fromSlot": "cursor",
+          "operator": "window",
+          "argBindings": [
+            "cursor"
+          ],
+          "reads": [
+            "DerivedRead"
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ]
+}"#;
+
+    let result =
+        JsonLawCapabilityIngestPort::default().ingest_law_capabilities(contradictory.as_bytes());
+
+    assert_eq!(result.status, LawCapabilityIngestStatus::Invalid);
+    assert!(result.report.is_none());
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawCapabilityContradictoryResourcePosture,
+    );
+    assert_diagnostic_field(&result.diagnostics, "footprints[0].reads");
+    assert_diagnostic_field(&result.diagnostics, "footprints[0].slots[0].kind");
+    assert_diagnostic_field(&result.diagnostics, "footprints[0].closures[0].reads");
+}
+
+#[test]
 fn law_capability_ingest_requires_explicit_empty_footprint() {
     let empty = r#"{
   "apiVersion": "wesley.law-capabilities/v1",
