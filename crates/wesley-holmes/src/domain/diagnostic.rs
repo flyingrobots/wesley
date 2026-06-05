@@ -43,6 +43,70 @@ pub enum HolmesDiagnosticCode {
     HlawArtifactUnreadable,
     /// A requested artifact exceeded the configured byte limit.
     HlawArtifactOversized,
+    /// A law diff artifact could not be parsed as the expected JSON envelope.
+    HlawDiffMalformedJson,
+    /// A law diff artifact declared an unsupported API version.
+    HlawDiffUnsupportedVersion,
+    /// A law diff artifact carried an unknown event kind.
+    HlawDiffUnknownEventKind,
+    /// A law diff artifact repeated the same law-id event identity.
+    HlawDiffDuplicateEvent,
+    /// A law diff artifact carried a non-canonical schema or law hash.
+    HlawDiffHashMalformed,
+    /// A law coverage artifact could not be parsed as the expected JSON envelope.
+    HlawCoverageMalformedJson,
+    /// A law coverage artifact declared an unsupported API version.
+    HlawCoverageUnsupportedVersion,
+    /// A law coverage artifact contained covered counts greater than total counts.
+    HlawCoverageInconsistentCounts,
+    /// A law coverage artifact's missing-subject list did not match uncovered counts.
+    HlawCoverageMissingCountMismatch,
+    /// A law capability artifact could not be parsed as the expected JSON envelope.
+    HlawCapabilityMalformedJson,
+    /// A law capability artifact declared an unsupported API version.
+    HlawCapabilityUnsupportedVersion,
+    /// A law capability artifact omitted explicit report-only/runtime posture.
+    HlawCapabilityMissingPosture,
+    /// A law capability artifact claimed contradictory resource posture.
+    HlawCapabilityContradictoryResourcePosture,
+    /// A law capability artifact carried an implicit empty footprint.
+    HlawCapabilityImplicitEmptyFootprint,
+    /// A contract bundle manifest could not be parsed as the expected JSON envelope.
+    HlawManifestMalformedJson,
+    /// A contract bundle manifest declared an unsupported API version.
+    HlawManifestUnsupportedVersion,
+    /// A contract bundle manifest omitted a required hash field.
+    HlawManifestMissingRequiredHash,
+    /// A contract bundle manifest carried a non-canonical hash field.
+    HlawManifestInvalidHash,
+    /// A contract bundle manifest omitted required provenance metadata.
+    HlawManifestMissingRequiredField,
+    /// A contract bundle manifest declared an unsupported codec identity.
+    HlawManifestUnsupportedCodec,
+    /// A contract bundle manifest disagreed with evidence-bundle provenance.
+    HlawManifestHashMismatch,
+    /// A semantic finding could not be constructed because event identity was missing.
+    HlawFindingMissingEventIdentity,
+    /// A law assurance policy artifact could not be parsed as the expected JSON envelope.
+    HlawPolicyMalformedJson,
+    /// A law assurance policy artifact declared an unsupported API version.
+    HlawPolicyUnsupportedVersion,
+    /// A law assurance policy artifact carried an unknown top-level field.
+    HlawPolicyUnknownField,
+    /// A law assurance policy did not provide a selectable profile.
+    HlawPolicyMissingProfile,
+    /// A requested law assurance policy profile was not present.
+    HlawPolicyUnknownProfile,
+    /// A law assurance policy profile inheritance chain was circular.
+    HlawPolicyCircularInheritance,
+    /// A law assurance coverage threshold policy was invalid.
+    HlawPolicyInvalidThreshold,
+    /// A law assurance severity mapping referenced an unknown Wesley event kind.
+    HlawPolicyUnknownEventKind,
+    /// Exhaustive severity policy did not map a Wesley event kind.
+    HlawSeverityUnmappedEventKind,
+    /// A law assurance suppression rule was malformed or too broad.
+    HlawSuppressionInvalid,
 }
 
 /// Severity attached to a Holmes diagnostic.

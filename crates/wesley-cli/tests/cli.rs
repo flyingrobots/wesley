@@ -450,7 +450,7 @@ fn law_capabilities_reports_footprints_without_runtime_enforcement() {
     let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
     let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
 
-    assert_eq!(report["apiVersion"], "wesley.capability-report/v1");
+    assert_eq!(report["apiVersion"], "wesley.law-capabilities/v1");
     assert_eq!(report["reportOnly"], true);
     assert_eq!(report["runtimeEnforcement"], false);
     assert_eq!(

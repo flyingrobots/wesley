@@ -54,7 +54,10 @@ Current packets:
   [canonicalization and diagnostic](./0019-weslaw-semantic-law-ir/CANONICALIZATION_AND_DIAGNOSTICS.md)
   substrate notes
 - [`0020`](./0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md):
-  completed 50-slice Holmes `weslaw` assurance PRD and test-plan campaign
+  completed 50-slice Holmes `weslaw` assurance PRD and test-plan campaign,
+  with
+  [implementation status](./0020-holmes-weslaw-assurance-prd-test-plan/IMPLEMENTATION_STATUS.md)
+  tracking the Rust Holmes execution drift checks
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

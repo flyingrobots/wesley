@@ -15,6 +15,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Rust Holmes capability ingest review fix**: Report-only law capability
+  ingest now rejects forbidden-resource contradictions across the full touched
+  resource footprint, including reads, writes, creates, slot kinds, and closure
+  reads, instead of checking only write/create overlaps.
+- **`weslaw` capability artifact version drift**: `wesley law capabilities
+  --json` now emits the PRD-canonical `wesley.law-capabilities/v1` API version.
+  Holmes continues to accept the pre-canonical `wesley.capability-report/v1`
+  string as a legacy input alias and normalizes it internally.
 - **Release guard tracker checks**: `cargo xtask release-prep-guard` and
   `cargo xtask release-guard` now query live GitHub Issues for open
   tag/version blockers instead of relying only on the retired filesystem
@@ -57,6 +65,36 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust Holmes law assessment and policy substrate**: Extended the unpublished
+  `wesley-holmes` crate through `HIMP-035` with bundle traceability gate
+  decisions, deterministic provenance report data, aggregate assessment outcome
+  rules, bounded finding summaries, domain snapshots, typed
+  `holmes.law-assurance-policy/v1` parsing and normalization, profile
+  inheritance, law diff event and coverage gate severity mappings, materialized
+  coverage threshold policy, and narrow suppression rules with owner, reason,
+  expiration, allowed-severity, and audit metadata.
+- **Rust Holmes law assessment substrate**: Extended the unpublished
+  `wesley-holmes` crate through `HIMP-025` with normalized law coverage
+  subjects, category percentages, missing-subject display/omission accounting,
+  strict coverage count validation, report-only law capability ingest,
+  contract bundle manifest ingest with evidence-bundle provenance
+  cross-checks, stable semantic change findings derived from Wesley law diff
+  events without reclassifying event kinds, and profile/category law coverage
+  gate decisions with pass/warn/fail/unavailable outcomes.
+- **Rust Holmes law diff ingest**: Added the first `LawDiffIngestPort`
+  implementation for `wesley.law-diff/v1` JSON artifacts, preserving Wesley's
+  event classifications, law ids, subjects, field changes, hash anchors, and
+  footprint resource deltas inside typed Holmes report data. The report now
+  exposes stable normalized event records with `lawDiff.changes[n]` event refs
+  and copied schema/law hash anchors while rejecting malformed JSON,
+  unsupported diff API versions, unknown event kinds, malformed diff hashes, and
+  duplicate law-id/event identities before assessment.
+- **Rust Holmes law coverage ingest**: Added the first
+  `LawCoverageIngestPort` implementation for current
+  `wesley.law-coverage/v1` JSON artifacts, preserving profile, required
+  aggregate totals, per-category required posture, covered/total counts, and
+  missing subject coordinates while rejecting malformed JSON and unsupported
+  coverage API versions before assessment.
 - **Rust Holmes law evidence validation gate**: Extended the unpublished
   `wesley-holmes` crate with collected law evidence validation results,
   required-versus-optional bundle artifact validation, canonical provenance

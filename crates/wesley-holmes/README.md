@@ -28,4 +28,18 @@ The crate follows the planned hexagonal boundary:
 - `reporting`: future renderer-facing DTOs and report assembly helpers.
 
 The current implementation includes the first local law evidence validation
-gate. No public Holmes CLI command is exposed from Wesley yet.
+gate, `wesley.law-diff/v1` ingest with stable normalized event records,
+`wesley.law-coverage/v1` ingest with normalized profile/category counts and
+omitted missing-subject accounting, report-only `wesley.law-capabilities/v1`
+ingest, contract bundle manifest ingest with evidence-bundle provenance
+cross-checks, semantic change findings with stable ids, and profile/category
+law coverage gate decisions. It also includes the first domain substrate for
+bundle traceability decisions, provenance reporting, aggregate law assurance
+assessment outcomes, bounded finding summaries, typed
+`holmes.law-assurance-policy/v1` normalization, severity mappings, materialized
+coverage threshold policy, and narrow suppression records. No public Holmes CLI
+command is exposed from Wesley yet.
+
+Holmes also accepts the pre-canonical `wesley.capability-report/v1` capability
+artifact name as a legacy input alias, normalizing it to
+`wesley.law-capabilities/v1` internally.

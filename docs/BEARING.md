@@ -446,8 +446,8 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The implementation budget is **90 slices**. Status: **15 / 90 slices closed**.
-Closed implementation slices now cover `HIMP-001` through `HIMP-015`: the
+The implementation budget is **90 slices**. Status: **35 / 90 slices closed**.
+Closed implementation slices now cover `HIMP-001` through `HIMP-035`: the
 workspace-local Rust Holmes assurance crate shell, domain dependency-boundary
 tests, deterministic port traits and fakes, the first diagnostic taxonomy, the
 workspace preflight hook, implementation-boundary docs, the typed
@@ -455,12 +455,31 @@ workspace preflight hook, implementation-boundary docs, the typed
 artifact-family version registry, schema-version diagnostics, collected bundle
 structure validation, canonical provenance validation, artifact availability and
 size diagnostics, versioning fixture coverage, and the first local evidence
-validation gate.
+validation gate, plus a `LawDiffIngestPort` parser for `wesley.law-diff/v1`
+JSON artifacts, stable normalized law diff event records, and negative handling
+for malformed law diff JSON, unsupported versions, unknown event kinds, and
+duplicate law-id event identities, plus a `LawCoverageIngestPort` parser for
+current `wesley.law-coverage/v1` profile/category JSON artifacts, normalized
+coverage subjects/counts/omitted-missing-subject accounting, a
+`LawCapabilityIngestPort` parser for current report-only footprint capability
+summaries, a `ContractBundleManifestIngestPort` parser with evidence-bundle
+provenance cross-checks, stable `SemanticChangeFinding` records derived from
+law diff events without reclassifying Wesley's event kinds, and
+`LawCoverageGateDecision` evaluation for profile/category thresholds, plus
+bundle traceability decisions, deterministic provenance report substrate,
+aggregate assessment outcome rules, bounded finding summaries, domain snapshots,
+typed law assurance policy parsing/normalization, profile inheritance,
+event-kind and coverage-gate severity mapping, materialized coverage threshold
+policy, and narrow suppression policy records with owner, reason, expiration,
+allowed severity, and audit fields.
 
-The next implementation PR should take `HIMP-016` through `HIMP-025`, because
-those slices ingest Wesley-published law diff, coverage, capability, and
-manifest artifacts into typed Holmes findings and gate decisions before any
-publisher or branch-protection surface exists.
+The current implementation branch has taken `HIMP-016` through `HIMP-035`.
+Stop here for a drift check before starting `HIMP-036`: Holmes can now ingest
+Wesley-published law diff, coverage, capability, and manifest artifacts into
+typed findings and coverage gate decisions, aggregate those into deterministic
+assessment summaries, normalize the first policy profile substrate, and match
+narrow finding suppressions before any publisher, CLI, or branch-protection
+surface exists.
 
 Every implementation slice below references the completed `0020` PRD/test-plan
 artifact it implements.
