@@ -87,6 +87,26 @@ pub enum HolmesDiagnosticCode {
     HlawManifestHashMismatch,
     /// A semantic finding could not be constructed because event identity was missing.
     HlawFindingMissingEventIdentity,
+    /// A law assurance policy artifact could not be parsed as the expected JSON envelope.
+    HlawPolicyMalformedJson,
+    /// A law assurance policy artifact declared an unsupported API version.
+    HlawPolicyUnsupportedVersion,
+    /// A law assurance policy artifact carried an unknown top-level field.
+    HlawPolicyUnknownField,
+    /// A law assurance policy did not provide a selectable profile.
+    HlawPolicyMissingProfile,
+    /// A requested law assurance policy profile was not present.
+    HlawPolicyUnknownProfile,
+    /// A law assurance policy profile inheritance chain was circular.
+    HlawPolicyCircularInheritance,
+    /// A law assurance coverage threshold policy was invalid.
+    HlawPolicyInvalidThreshold,
+    /// A law assurance severity mapping referenced an unknown Wesley event kind.
+    HlawPolicyUnknownEventKind,
+    /// Exhaustive severity policy did not map a Wesley event kind.
+    HlawSeverityUnmappedEventKind,
+    /// A law assurance suppression rule was malformed or too broad.
+    HlawSuppressionInvalid,
 }
 
 /// Severity attached to a Holmes diagnostic.

@@ -15,6 +15,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Rust Holmes capability ingest review fix**: Report-only law capability
+  ingest now rejects forbidden-resource contradictions across the full touched
+  resource footprint, including reads, writes, creates, slot kinds, and closure
+  reads, instead of checking only write/create overlaps.
 - **`weslaw` capability artifact version drift**: `wesley law capabilities
   --json` now emits the PRD-canonical `wesley.law-capabilities/v1` API version.
   Holmes continues to accept the pre-canonical `wesley.capability-report/v1`
@@ -61,6 +65,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- **Rust Holmes law assessment and policy substrate**: Extended the unpublished
+  `wesley-holmes` crate through `HIMP-035` with bundle traceability gate
+  decisions, deterministic provenance report data, aggregate assessment outcome
+  rules, bounded finding summaries, domain snapshots, typed
+  `holmes.law-assurance-policy/v1` parsing and normalization, profile
+  inheritance, law diff event and coverage gate severity mappings, materialized
+  coverage threshold policy, and narrow suppression rules with owner, reason,
+  expiration, allowed-severity, and audit metadata.
 - **Rust Holmes law assessment substrate**: Extended the unpublished
   `wesley-holmes` crate through `HIMP-025` with normalized law coverage
   subjects, category percentages, missing-subject display/omission accounting,

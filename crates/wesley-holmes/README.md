@@ -33,8 +33,12 @@ gate, `wesley.law-diff/v1` ingest with stable normalized event records,
 omitted missing-subject accounting, report-only `wesley.law-capabilities/v1`
 ingest, contract bundle manifest ingest with evidence-bundle provenance
 cross-checks, semantic change findings with stable ids, and profile/category
-law coverage gate decisions. No public Holmes CLI command is exposed from
-Wesley yet.
+law coverage gate decisions. It also includes the first domain substrate for
+bundle traceability decisions, provenance reporting, aggregate law assurance
+assessment outcomes, bounded finding summaries, typed
+`holmes.law-assurance-policy/v1` normalization, severity mappings, materialized
+coverage threshold policy, and narrow suppression records. No public Holmes CLI
+command is exposed from Wesley yet.
 
 Holmes also accepts the pre-canonical `wesley.capability-report/v1` capability
 artifact name as a legacy input alias, normalizing it to
