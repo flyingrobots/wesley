@@ -130,6 +130,11 @@ fn active_suppression_is_applied_to_matching_finding() {
 
     assert_eq!(outcome.applied.len(), suppressed.len());
     assert_eq!(outcome.applied[0].created_on, "2026-06-01");
+    assert_eq!(
+        outcome.applied[0].finding_id,
+        suppressed[0].finding.finding_id,
+        "applied record must reference the suppressed finding"
+    );
     assert!(outcome.rejected.is_empty());
     assert!(outcome.expired.is_empty());
     assert!(outcome.diagnostics.is_empty());
@@ -338,4 +343,132 @@ fn invalid_evaluation_date_returns_diagnostic_and_leaves_findings_unsuppressed()
     assert_eq!(outcome.diagnostics.len(), 1);
     assert_eq!(outcome.diagnostics[0].code, HolmesDiagnosticCode::HlawSuppressionInvalid);
     assert_eq!(outcome.diagnostics[0].severity, HolmesSeverity::Error);
+}
+
+#[test]
+fn suppression_on_exact_expiry_date_is_still_active() {
+    // expires_on == evaluation_date uses strict `<`, so the suppression is still valid on
+    // its expiry date (last valid day inclusive).
+    const POLICY_EXPIRES_TODAY: &str = r#"{
+      "apiVersion": "holmes.law-assurance-policy/v1",
+      "defaultProfile": "release",
+      "defaultSeverity": "advisory",
+      "profiles": {
+        "release": {
+          "suppressions": [
+            {
+              "id": "expires-today",
+              "target": { "kind": "law-id", "selector": "echo.scalar.positiveInt.u32-positive" },
+              "reason": "valid through the expiry date itself",
+              "owner": "release-team",
+              "createdOn": "2026-06-01",
+              "expiresOn": "2026-06-05",
+              "allowedSeverities": ["critical", "error", "warning", "advisory"],
+              "auditTags": []
+            }
+          ]
+        }
+      }
+    }"#;
+    let schema = parse_law_assurance_policy(POLICY_EXPIRES_TODAY.as_bytes()).expect("should parse");
+    let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
+    let findings = semantic_findings();
+
+    let outcome = apply_suppression_policy(&findings, &valid_evidence(), &policy, "2026-06-05");
+
+    assert!(
+        outcome.expired.is_empty(),
+        "suppression expiring today must not be marked expired"
+    );
+    assert!(
+        outcome.annotated_findings.iter().any(|f| f.is_suppressed()),
+        "suppression expiring today must still be applied"
+    );
+}
+
+#[test]
+fn one_suppression_matches_multiple_findings() {
+    // Two findings share the same law-id; one suppression should silence both.
+    // Two events with different kinds but the same lawId — the ingest deduplicates on
+    // (kind, lawId), so this is valid. A law-id suppression must match both findings.
+    const MULTI_EVENT_DIFF: &str = r#"{
+      "apiVersion": "wesley.law-diff/v1",
+      "oldSchemaHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "newSchemaHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "oldLawHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "newLawHash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "changes": [
+        {
+          "kind": "LAW_WEAKENED",
+          "lawId": "shared.scalar.law",
+          "subject": "scalar:SharedType",
+          "lawKind": "scalarSemantics",
+          "reviewPosture": "requires-review",
+          "fieldChanges": [{ "path": "body.minInclusive", "old": 1, "new": 0 }]
+        },
+        {
+          "kind": "LAW_STRENGTHENED",
+          "lawId": "shared.scalar.law",
+          "subject": "scalar:SharedType",
+          "lawKind": "scalarSemantics",
+          "reviewPosture": "requires-review",
+          "fieldChanges": [{ "path": "body.maxInclusive", "old": 100, "new": 50 }]
+        }
+      ]
+    }"#;
+    const POLICY_TARGETS_SHARED_LAW: &str = r#"{
+      "apiVersion": "holmes.law-assurance-policy/v1",
+      "defaultProfile": "release",
+      "defaultSeverity": "advisory",
+      "profiles": {
+        "release": {
+          "suppressions": [
+            {
+              "id": "multi-match",
+              "target": { "kind": "law-id", "selector": "shared.scalar.law" },
+              "reason": "covers all usages of shared law",
+              "owner": "release-team",
+              "createdOn": "2026-06-01",
+              "expiresOn": "2026-12-31",
+              "allowedSeverities": ["critical", "error", "warning", "advisory"],
+              "auditTags": []
+            }
+          ]
+        }
+      }
+    }"#;
+
+    use wesley_holmes::{semantic_change_findings_from_law_diff, JsonLawDiffIngestPort, LawDiffIngestPort};
+    let report = JsonLawDiffIngestPort::default()
+        .ingest_law_diff(MULTI_EVENT_DIFF.as_bytes())
+        .report
+        .expect("multi-event fixture should parse");
+    let findings = semantic_change_findings_from_law_diff(
+        &report,
+        BUNDLE_HASH,
+        "evidence/law-diff.json",
+        Some("release".to_owned()),
+    )
+    .expect("findings should construct");
+    assert_eq!(findings.len(), 2, "fixture must produce exactly two findings");
+
+    let schema =
+        parse_law_assurance_policy(POLICY_TARGETS_SHARED_LAW.as_bytes()).expect("should parse");
+    let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
+
+    let outcome = apply_suppression_policy(&findings, &valid_evidence(), &policy, "2026-06-05");
+
+    assert_eq!(
+        outcome.annotated_findings.iter().filter(|f| f.is_suppressed()).count(),
+        2,
+        "both findings sharing the law-id must be suppressed"
+    );
+    assert_eq!(outcome.applied.len(), 2);
+    assert!(
+        outcome.applied.iter().all(|r| r.suppression_id == "multi-match"),
+        "both applied records must reference the same suppression"
+    );
+    assert!(outcome.rejected.is_empty());
+    assert!(outcome.expired.is_empty());
+    assert!(outcome.diagnostics.is_empty());
 }
