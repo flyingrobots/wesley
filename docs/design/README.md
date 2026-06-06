@@ -3,6 +3,9 @@
 Active cycle packets live here. Once work is pulled from the backlog, it becomes
 a design packet and does not continue to live in the queue.
 
+Use [`TEMPLATE.md`](./TEMPLATE.md) as the starting point for every new design
+packet or PRD slice.
+
 Packet directories may also carry supporting implementation notes, playback
 closeouts, and retrospectives for slices completed under that packet.
 
