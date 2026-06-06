@@ -11,6 +11,17 @@ created: "YYYY-MM-DD"
 updated: "YYYY-MM-DD"
 ---
 
+<!-- legend token reference:
+  SPEC        design/contract doc (this file)
+  SOURCE      implementation files
+  TRANSMUTE   schema, IR, or artifact format change
+  OWN         ownership / governance surface
+  EVIDENCE    test fixtures, golden files, snapshot tests
+  RUNTIME     runtime behavior change
+  RE          retrospective / closeout
+  CI          CI/CD pipeline change
+  Set legend to the pipe-separated subset that applies to this packet.
+-->
 <!-- markdownlint-disable-next-line MD025 -->
 # {ID} - {Short Title}
 
@@ -35,7 +46,7 @@ Example:
 - [ ] Cycle branch checked out from the synced merge target.
 - [ ] GitHub issue created and labeled `work-in-progress`.
 - [ ] Design doc, issue link, and initial cycle scaffold staged and committed.
-- [ ] Branch pushed and non-draft PR opened to `main`.
+- [ ] Branch pushed; PR opened to `main` when the goalpost slice set is complete (one branch per goalpost).
 
 ## Decision Summary
 
