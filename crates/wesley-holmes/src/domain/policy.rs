@@ -459,6 +459,8 @@ pub struct SuppressionApplicationRecord {
     pub owner: String,
     /// Human-authored reason text.
     pub reason: String,
+    /// Creation date in `YYYY-MM-DD` format.
+    pub created_on: String,
     /// Expiration date in `YYYY-MM-DD` format.
     pub expires_on: String,
     /// Audit tags retained from the suppression rule.
@@ -534,6 +536,31 @@ pub fn apply_suppression_policy(
     use super::diagnostic::{HolmesDiagnosticCode, HolmesSeverity};
     use super::evidence::LawEvidenceValidationStatus;
 
+    if !is_iso_date(evaluation_date) {
+        return SuppressionPolicyOutcome {
+            annotated_findings: findings
+                .iter()
+                .map(|f| AnnotatedFinding {
+                    finding: f.clone(),
+                    suppressed_by: None,
+                })
+                .collect(),
+            applied: Vec::new(),
+            rejected: Vec::new(),
+            expired: Vec::new(),
+            diagnostics: vec![HolmesDiagnostic::new(
+                HolmesDiagnosticCode::HlawSuppressionInvalid,
+                HolmesSeverity::Error,
+                format!(
+                    "evaluation_date {evaluation_date:?} is not in YYYY-MM-DD format; \
+                     no suppressions were applied"
+                ),
+            )
+            .for_family("policy")
+            .at_field("evaluation_date")],
+        };
+    }
+
     let evidence_invalid = matches!(
         validation_result.status,
         LawEvidenceValidationStatus::Invalid | LawEvidenceValidationStatus::InfrastructureError,
@@ -560,7 +587,7 @@ pub fn apply_suppression_policy(
                     HolmesDiagnosticCode::HlawSuppressionRejectedInvalidEvidence,
                     HolmesSeverity::Error,
                     format!(
-                        "suppression {:?} was rejected: evidence validation failed \
+                        "suppression {} was rejected: evidence validation failed \
                          and suppressions cannot override invalid evidence",
                         suppression.id
                     ),
@@ -589,7 +616,7 @@ pub fn apply_suppression_policy(
                     HolmesDiagnosticCode::HlawSuppressionRejectedNonOverridable,
                     HolmesSeverity::Error,
                     format!(
-                        "suppression {:?} was rejected: gate {:?} is non-overridable",
+                        "suppression {} was rejected: gate {} is non-overridable",
                         suppression.id, gate_id,
                     ),
                 )
@@ -612,7 +639,7 @@ pub fn apply_suppression_policy(
                     HolmesDiagnosticCode::HlawSuppressionExpired,
                     HolmesSeverity::Warning,
                     format!(
-                        "suppression {:?} expired on {} and was not applied",
+                        "suppression {} expired on {} and was not applied",
                         suppression.id, suppression.expires_on,
                     ),
                 )
@@ -623,7 +650,8 @@ pub fn apply_suppression_policy(
             continue;
         }
 
-        // Apply: annotate the first matching finding (first match wins).
+        // Each suppression silences all findings it matches; each finding is suppressed by at
+        // most one rule (first suppression in policy order wins per finding).
         for annotated in &mut annotated_findings {
             if annotated.suppressed_by.is_none()
                 && suppression_matches_finding(suppression, &annotated.finding, evaluation_date)
@@ -633,6 +661,7 @@ pub fn apply_suppression_policy(
                     finding_id: annotated.finding.finding_id.clone(),
                     owner: suppression.owner.clone(),
                     reason: suppression.reason.clone(),
+                    created_on: suppression.created_on.clone(),
                     expires_on: suppression.expires_on.clone(),
                     audit_tags: suppression.audit_tags.clone(),
                 });

@@ -129,6 +129,7 @@ fn active_suppression_is_applied_to_matching_finding() {
     assert_eq!(record.audit_tags, ["migration"]);
 
     assert_eq!(outcome.applied.len(), suppressed.len());
+    assert_eq!(outcome.applied[0].created_on, "2026-06-01");
     assert!(outcome.rejected.is_empty());
     assert!(outcome.expired.is_empty());
     assert!(outcome.diagnostics.is_empty());
@@ -254,4 +255,87 @@ fn suppression_with_no_matching_finding_produces_no_applied_records() {
     assert!(outcome.expired.is_empty());
     assert!(outcome.diagnostics.is_empty());
     assert!(outcome.annotated_findings.iter().all(|f| !f.is_suppressed()));
+}
+
+#[test]
+fn rejection_diagnostic_messages_use_display_format() {
+    // Rule 1: invalid-evidence rejection must not debug-quote the suppression id.
+    {
+        let schema =
+            parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes()).expect("should parse");
+        let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
+        let msg = &apply_suppression_policy(
+            &semantic_findings(),
+            &invalid_evidence(),
+            &policy,
+            "2026-06-05",
+        )
+        .diagnostics[0]
+        .message;
+        assert!(msg.contains("known-scalar-window"), "message should contain suppression id");
+        assert!(
+            !msg.contains("\"known-scalar-window\""),
+            "id must not be debug-quoted; got: {msg:?}"
+        );
+    }
+    // Rule 2: non-overridable gate rejection must not debug-quote id or gate id.
+    {
+        let schema =
+            parse_law_assurance_policy(POLICY_WITH_NON_OVERRIDABLE_GATE_SUPPRESSION.as_bytes())
+                .expect("should parse");
+        let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
+        let msg = &apply_suppression_policy(
+            &semantic_findings(),
+            &valid_evidence(),
+            &policy,
+            "2026-06-05",
+        )
+        .diagnostics[0]
+        .message;
+        assert!(
+            !msg.contains("\"attempted-traceability-bypass\""),
+            "suppression id must not be debug-quoted; got: {msg:?}"
+        );
+        assert!(
+            !msg.contains("\"bundle-traceability\""),
+            "gate id must not be debug-quoted; got: {msg:?}"
+        );
+    }
+    // Rule 3: expiry message must not debug-quote the suppression id.
+    {
+        let schema =
+            parse_law_assurance_policy(POLICY_WITH_EXPIRED_SUPPRESSION.as_bytes()).expect("should parse");
+        let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
+        let msg = &apply_suppression_policy(
+            &semantic_findings(),
+            &valid_evidence(),
+            &policy,
+            "2026-06-05",
+        )
+        .diagnostics[0]
+        .message;
+        assert!(
+            !msg.contains("\"expired-scalar-window\""),
+            "suppression id must not be debug-quoted; got: {msg:?}"
+        );
+    }
+}
+
+#[test]
+fn invalid_evaluation_date_returns_diagnostic_and_leaves_findings_unsuppressed() {
+    let schema =
+        parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes()).expect("should parse");
+    let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
+    let findings = semantic_findings();
+
+    let outcome = apply_suppression_policy(&findings, &valid_evidence(), &policy, "06/05/2026");
+
+    assert!(
+        outcome.annotated_findings.iter().all(|f| !f.is_suppressed()),
+        "invalid evaluation date must not suppress any findings"
+    );
+    assert!(outcome.applied.is_empty());
+    assert_eq!(outcome.diagnostics.len(), 1);
+    assert_eq!(outcome.diagnostics[0].code, HolmesDiagnosticCode::HlawSuppressionInvalid);
+    assert_eq!(outcome.diagnostics[0].severity, HolmesSeverity::Error);
 }
