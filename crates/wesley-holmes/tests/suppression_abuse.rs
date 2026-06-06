@@ -1,7 +1,7 @@
 use wesley_holmes::{
     apply_suppression_policy, normalize_law_assurance_policy, parse_law_assurance_policy,
-    HolmesDiagnosticCode, HolmesSeverity, JsonLawDiffIngestPort, LawDiffIngestPort,
-    LawEvidenceValidationResult, SuppressionRejectionReason,
+    HolmesDiagnosticCode, HolmesSeverity, JsonLawDiffIngestPort, LawAssuranceSuppressionTargetKind,
+    LawDiffIngestPort, LawEvidenceValidationResult, SuppressionRejectionReason,
 };
 
 const CI_SEMANTIC_DIFF: &str =
@@ -134,6 +134,16 @@ fn active_suppression_is_applied_to_matching_finding() {
         outcome.applied[0].finding_id,
         suppressed[0].finding.finding_id,
         "applied record must reference the suppressed finding"
+    );
+    assert_eq!(
+        outcome.applied[0].target.kind,
+        LawAssuranceSuppressionTargetKind::LawId,
+        "applied record must carry the suppression target kind"
+    );
+    assert_eq!(
+        outcome.applied[0].target.selector,
+        "echo.scalar.positiveInt.u32-positive",
+        "applied record must carry the suppression target selector"
     );
     assert!(outcome.rejected.is_empty());
     assert!(outcome.expired.is_empty());

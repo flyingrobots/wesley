@@ -455,6 +455,8 @@ pub struct SuppressionApplicationRecord {
     pub suppression_id: String,
     /// Finding id that was muted.
     pub finding_id: String,
+    /// Target selector that matched — determines the suppression scope.
+    pub target: LawAssuranceSuppressionTarget,
     /// Owning person or team.
     pub owner: String,
     /// Human-authored reason text.
@@ -659,6 +661,7 @@ pub fn apply_suppression_policy(
                 applied.push(SuppressionApplicationRecord {
                     suppression_id: suppression.id.clone(),
                     finding_id: annotated.finding.finding_id.clone(),
+                    target: suppression.target.clone(),
                     owner: suppression.owner.clone(),
                     reason: suppression.reason.clone(),
                     created_on: suppression.created_on.clone(),
