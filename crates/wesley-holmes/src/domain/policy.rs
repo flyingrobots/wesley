@@ -529,6 +529,25 @@ impl SuppressionPolicyOutcome {
 /// 1. Invalid evidence blocks all suppressions.
 /// 2. Suppressions targeting a non-overridable gate are rejected.
 /// 3. Expired suppressions are reported as diagnostics but not applied.
+///
+/// # Parameters
+///
+/// - `evaluation_date` — current date in **`YYYY-MM-DD`** format. Malformed input
+///   (wrong separators, timestamps with a time component, etc.) returns a single
+///   `HlawSuppressionInvalid` diagnostic and leaves all findings unsuppressed.
+///
+/// # Matching semantics
+///
+/// A suppression silences **every** finding whose `target` (kind + selector) matches,
+/// not just the first. The selector kind defines the blast radius: use `finding-id` to
+/// suppress a single specific finding, `law-id` or `subject` to suppress an entire class.
+/// Each finding is suppressed by **at most one rule**: the first matching suppression in
+/// policy declaration order wins per finding.
+///
+/// # Expiry boundary
+///
+/// Expiry uses strict less-than (`expires_on < evaluation_date`), so a suppression
+/// is still active on its `expiresOn` date (last valid day inclusive).
 pub fn apply_suppression_policy(
     findings: &[SemanticChangeFinding],
     validation_result: &super::evidence::LawEvidenceValidationResult,
