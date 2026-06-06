@@ -31,19 +31,24 @@ For a full first-principles walkthrough, read
 
 ---
 
-## What's New in v0.0.4
+## What's New in v0.0.5
 
-Wesley `0.0.4` makes runtime optic admission requirements importable as a
-canonical compiler-owned artifact. `compile_runtime_optic()` still exposes the
-structured `OpticAdmissionRequirements` for compiler-side inspection, and now
-also emits deterministic requirement bytes, an explicit
-`wesley.requirements.canonical-json.v0` codec, and a digest computed from those
-exact bytes.
+Wesley `0.0.5` hardens the compiler and toolchain surface with a set of
+correctness and boundary fixes:
 
-This release keeps the runtime boundary narrow. Downstream runtimes can import
-Wesley's requirement bytes, digest, and codec directly instead of reserializing
-compiler structs to create admission truth. Echo still owns registration,
-handles, grants, tickets, witnesses, and runtime enforcement.
+- **Object extension folding**: The JS GraphQL lowering now rejects duplicate
+  fields and repeated Wesley directives when `extend type` blocks are folded
+  into base object definitions, preventing silent shadowing.
+- **L1 fixture regeneration**: `pnpm fixtures:ir` now regenerates the tracked
+  Rust L1 `*.l1.json` and `*.l1.hash` corpus through the native Wesley CLI and
+  exits nonzero when any fixture fails.
+- **Release dependency audit**: pnpm overrides for `fast-uri`,
+  `brace-expansion`, and `ws` ensure `pnpm audit --prod=false` reports no known
+  vulnerabilities during release prep.
+
+The Holmes law assurance substrate (`weslaw` assessment policy, suppression
+rules, coverage gates, and traceability decisions) continues to grow in the
+unreleased campaign.
 
 For the complete release history, read [CHANGELOG.md](./CHANGELOG.md).
 

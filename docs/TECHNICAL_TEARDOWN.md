@@ -3,7 +3,7 @@
 # Wesley Technical Teardown
 
 This document is an end-to-end technical explanation of the Wesley repository
-as it exists on the `holmes-weslaw-ingest-gates` branch on June 1, 2026.
+as it exists on the `main` branch on June 5, 2026 (post-PR #600).
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the
@@ -227,10 +227,11 @@ layers are Rust core, native CLI, Rust emitters, Rust Holmes foundation,
 retained non-compiler JavaScript packages, fixtures, schemas, docs, scripts,
 and xtask automation.
 
-The active branch includes additional Holmes and `weslaw` integration work. The
-most recent local commits add Holmes law findings and coverage gates, then fix
-the law capability artifact API version so `wesley law capabilities --json`
-emits `wesley.law-capabilities/v1`.
+PR #600 (merged June 5, 2026) added the Holmes law assurance policy substrate
+and suppression abuse-prevention layer through `HIMP-036`. The campaign stands
+at 36 of 90 implementation slices closed. Concrete adapters, public CLI
+commands, and reporting surfaces are not yet wired (planned in `HIMP-041+` and
+`HIMP-061+`).
 
 ### Notable Achievements
 
@@ -243,16 +244,20 @@ diffs, law coverage, law capabilities, and emit metadata sidecars.
 The assurance side has an unpublished `wesley-holmes` Rust crate with domain
 models, deterministic ports, evidence bundle validation, law diff ingest, law
 coverage ingest, capability ingest, contract manifest ingest, semantic findings,
-and law coverage gate decisions. That work is intentionally not yet exposed as
-a public Holmes CLI from Rust.
+law coverage gate decisions, bundle traceability gate decisions, aggregate
+assessment outcomes, bounded finding summaries, provenance reports, typed
+`holmes.law-assurance-policy/v1` parsing and normalization, profile inheritance,
+severity mappings, materialized coverage thresholds, suppression rules with
+expiration and audit metadata, and suppression abuse prevention enforcing
+invalid-evidence, non-overridable-gate, and expiry rules. That work is
+intentionally not yet exposed as a public Holmes CLI from Rust.
 
 ### Current Tensions
 
-The docs show one visible version nuance. `Cargo.toml` files declare Rust crate
-version `0.0.5`, while the README still highlights "What's New in v0.0.4".
-That does not necessarily mean the repo is inconsistent as source; it means the
-published release narrative and the checkout version need to be read as
-different time horizons.
+The README now describes `v0.0.5`, aligned with the `Cargo.toml` crate version
+declared across the workspace. The changelog's `[Unreleased]` section carries
+the Holmes law assurance substrate work (`HIMP-001–036`) which has not yet been
+cut into a versioned release.
 
 ## Package(s) Overview
 
@@ -338,6 +343,10 @@ classDiagram
     +JsonLawDiffIngestPort
     +JsonLawCoverageIngestPort
     +JsonLawCapabilityIngestPort
+    +parse_law_assurance_policy
+    +normalize_law_assurance_policy
+    +apply_suppression_policy
+    +SuppressionPolicyOutcome
   }
   class Xtask {
     +preflight
@@ -1002,6 +1011,51 @@ thresholds. A gate can pass, warn, fail, or be unavailable. Semantic findings
 preserve Wesley law diff event classifications rather than reclassifying them
 inside Holmes, which keeps producer and consumer semantics aligned.
 
+#### Law Assurance Policy Substrate
+
+`parse_law_assurance_policy` deserializes a `holmes.law-assurance-policy/v1`
+JSON document with strict unknown-field rejection
+(`crates/wesley-holmes/src/domain/policy.rs:263`). `normalize_law_assurance_policy`
+resolves a named profile, applies profile inheritance (profiles may extend other
+profiles), merges parent and child severity mappings and coverage thresholds,
+and produces a flat `NormalizedLawAssurancePolicy` ready for gate evaluation
+(`policy.rs:330`). The normalized policy carries a `non_overridable_gates` set
+naming gates that no suppression rule may override.
+
+Suppression rules are declared in the policy with `id`, `target`
+(`kind` + `selector`), `owner`, `reason`, `created_on`, `expires_on`,
+`allowed_severities`, and `audit_tags` fields. `matching_suppressions_for_finding`
+returns all unexpired rules that match a given finding against an
+`evaluation_date` string in `YYYY-MM-DD` format (`policy.rs:711`).
+
+#### Suppression Abuse Prevention
+
+`apply_suppression_policy` enforces three abuse-prevention rules in order before
+muting any finding (`policy.rs:551`):
+
+1. **Invalid evidence blocks all suppressions.** If the evidence bundle's
+   validation status is `Invalid` or `InfrastructureError`, every suppression is
+   rejected with `HlawSuppressionRejectedInvalidEvidence` and the full finding
+   set remains active.
+2. **Non-overridable gates.** A suppression rule targeting a gate id listed in
+   `non_overridable_gates` is rejected with `HlawSuppressionRejectedNonOverridable`
+   regardless of other conditions.
+3. **Expiry.** A suppression whose `expires_on` date is earlier than or equal to
+   `evaluation_date` emits `HlawSuppressionExpired` at warning severity and is
+   not applied. The boundary is exclusive: a rule expiring on the evaluation
+   date is treated as expired.
+
+Valid suppressions annotate the first matching finding (first-match wins),
+producing an `AnnotatedFinding` that carries the original `SemanticChangeFinding`
+plus an optional `suppressed_by: Option<LawAssuranceSuppressionMatch>`.
+
+The output type `SuppressionPolicyOutcome` collects annotated findings, applied
+`SuppressionApplicationRecord`s (with `target`, `owner`, `reason`, `created_on`,
+and `audit_tags`), rejected `SuppressionRejectionRecord`s (with
+`SuppressionRejectionReason`), expired suppression ids, and Holmes diagnostics.
+`SuppressionPolicyOutcome::active_findings()` returns only findings that were
+not suppressed, ready for downstream severity mapping and reporting.
+
 ## Anatomy of a Payload (Data Schemas)
 
 ### Why Payload Anatomy Gets Its Own Section
@@ -1419,12 +1473,12 @@ from local config or HEAD metadata.
 
 ### Rust Workspace Coverage
 
-The Rust workspace registered 257 tests under `cargo test --workspace -- --list`.
-The full Rust workspace test run passed under the unrestricted environment:
+The Rust workspace registers 279 tests under `cargo test --workspace -- --list`
+as of commit `ca2755ff` (PR #600). The full Rust workspace test run passes:
 
 ```text
 cargo test --workspace
-257 tests passed
+279 tests passed
 0 failed
 0 ignored
 0 doc tests
@@ -1435,7 +1489,9 @@ diffs, operation analysis, resilience policy, runtime optic artifacts, module
 capability registry behavior, Rust emission, TypeScript emission, LE binary
 codec emission, Law IR loading and binding, law diffing, Holmes architecture,
 Holmes evidence validation, law artifact ingest ports, semantic findings, law
-coverage gates, and xtask repository guards.
+coverage gates, xtask repository guards, law assurance policy parsing and
+normalization, suppression rule matching, and suppression abuse prevention
+(invalid-evidence guard, non-overridable gate guard, expiry guard).
 
 ### JavaScript Package Coverage
 
@@ -1717,6 +1773,8 @@ prove it.
 - `crates/wesley-emit-typescript/src/le_binary.rs`
 - `crates/wesley-holmes/src/lib.rs`
 - `crates/wesley-holmes/src/application/evidence_validation.rs`
+- `crates/wesley-holmes/src/domain/policy.rs`
+- `crates/wesley-holmes/tests/suppression_abuse.rs`
 - `xtask/src/main.rs`
 
 ### Validation Commands Used
