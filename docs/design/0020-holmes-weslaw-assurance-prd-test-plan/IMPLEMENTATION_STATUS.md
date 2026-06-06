@@ -126,3 +126,23 @@ application when the targeted gate is non-overridable or when evidence is
 invalid — neither condition is currently checked.
 
 **HIMP-036 is clear to start.**
+
+## Closed Implementation Surface (continued)
+
+`HIMP-036` adds the suppression abuse-prevention enforcement layer.
+
+- Three new diagnostic codes: `HlawSuppressionRejectedInvalidEvidence`,
+  `HlawSuppressionRejectedNonOverridable`, `HlawSuppressionExpired`.
+- `AnnotatedFinding` wraps `SemanticChangeFinding` with an optional
+  `suppressed_by: Option<LawAssuranceSuppressionMatch>`.
+- `SuppressionPolicyOutcome` carries annotated findings, applied records,
+  rejection records, expired ids, and diagnostics.
+- `SuppressionRejectionReason` enumerates `InvalidEvidence` and
+  `NonOverridableGate { gate_id }`.
+- `apply_suppression_policy` enforces three rules in order: invalid evidence
+  blocks all suppressions; `GateId` suppressions targeting a gate in
+  `non_overridable_gates` are rejected; expired suppressions emit a warning
+  diagnostic and are not applied. Valid suppressions annotate the first
+  matching finding (first-match wins).
+
+Status: **36 / 90 implementation slices closed**.

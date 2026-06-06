@@ -56,12 +56,13 @@ pub use law_diff::{
     LawDiffReviewPosture, NormalizedLawDiffEvent, WESLEY_LAW_DIFF_API_VERSION,
 };
 pub use policy::{
-    map_semantic_finding_severities, matching_suppressions_for_finding,
-    normalize_law_assurance_policy, parse_law_assurance_policy,
+    apply_suppression_policy, map_semantic_finding_severities, matching_suppressions_for_finding,
+    normalize_law_assurance_policy, parse_law_assurance_policy, AnnotatedFinding,
     LawAssuranceCoverageThresholdPolicy, LawAssurancePolicyProfile, LawAssurancePolicySchema,
     LawAssuranceSuppressionMatch, LawAssuranceSuppressionRule, LawAssuranceSuppressionTarget,
     LawAssuranceSuppressionTargetKind, NormalizedLawAssurancePolicy,
-    HOLMES_LAW_ASSURANCE_POLICY_API_VERSION,
+    SuppressionApplicationRecord, SuppressionPolicyOutcome, SuppressionRejectionReason,
+    SuppressionRejectionRecord, HOLMES_LAW_ASSURANCE_POLICY_API_VERSION,
 };
 pub use versioning::{
     ArtifactFamily, ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,
