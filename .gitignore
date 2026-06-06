@@ -39,6 +39,7 @@ playwright-report/
 blob-report/
 
 .claude/
+.mcp.json
 EDITORS-REPORT.md
 .ignore
 .audit_reports/

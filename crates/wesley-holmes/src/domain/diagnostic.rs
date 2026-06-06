@@ -107,6 +107,12 @@ pub enum HolmesDiagnosticCode {
     HlawSeverityUnmappedEventKind,
     /// A law assurance suppression rule was malformed or too broad.
     HlawSuppressionInvalid,
+    /// A suppression was rejected because evidence validation failed.
+    HlawSuppressionRejectedInvalidEvidence,
+    /// A suppression was rejected because it targets a non-overridable gate.
+    HlawSuppressionRejectedNonOverridable,
+    /// A suppression rule was present but expired and was not applied.
+    HlawSuppressionExpired,
 }
 
 /// Severity attached to a Holmes diagnostic.

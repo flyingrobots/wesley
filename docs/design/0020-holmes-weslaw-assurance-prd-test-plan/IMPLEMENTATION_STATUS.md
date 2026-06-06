@@ -1,8 +1,8 @@
 # Holmes `weslaw` Implementation Status
 
-Date: 2026-06-01.
+Date: 2026-06-05.
 
-Status: **25 / 90 implementation slices closed**.
+Status: **35 / 90 implementation slices closed**.
 
 This note tracks Rust Holmes implementation progress against the completed
 `0020` PRD/test-plan packet. The packet remains the planning source of truth;
@@ -67,3 +67,82 @@ Recommended next implementation chunk after this drift check:
 4. `HIMP-029` omitted-detail accounting for large finding sets.
 5. `HIMP-030` domain snapshot tests for findings, gate decisions, validation
    results, and provenance decisions.
+
+## Closed Implementation Surface (continued)
+
+`HIMP-026` through `HIMP-035` add the aggregate assessment substrate and the
+first policy layer:
+
+- `BundleTraceabilityGateDecision` cross-checks all four hash fields
+  (schema, law, policy, bundle) between the evidence bundle provenance and the
+  contract bundle manifest, emitting per-field pass/fail checks and a rolled-up
+  gate state.
+- `aggregate_law_assurance_assessment` folds validation diagnostics, semantic
+  findings, coverage gate decisions, and the traceability gate into one
+  `LawAssuranceAssessmentOutcome`. Failures dominate unavailable evidence;
+  unavailable evidence dominates a clean pass.
+- `bounded_finding_summary` tracks omitted finding counts by severity for
+  large finding sets without truncating the audit record.
+- `law_assurance_provenance_report` captures artifact paths, schema versions,
+  sha256 fields, and manifest cross-reference data in a stable, serializable
+  snapshot.
+- `LawAssurancePolicySchema` loads and validates `holmes.law-assurance-policy/v1`
+  JSON with strict unknown-field rejection.
+- `normalize_law_assurance_policy` resolves profile selection, applies profile
+  inheritance, and merges parent and child coverage thresholds and severity
+  mappings. Rejects unknown profiles by name.
+- `map_semantic_finding_severities` remaps finding severities by event-kind
+  keys normalized from Wesley's original event identity without reclassifying
+  the underlying kind or change posture.
+- `LawCoverageGateDecision` now integrates with the policy coverage threshold
+  layer for profile/category-aware pass/warn/fail/unavailable evaluation.
+- Suppression records carry `id`, `target` (kind + selector), `reason`,
+  `owner`, `created_on`, `expires_on`, `allowed_severities`, and `audit_tags`.
+  `matching_suppressions_for_finding` returns active, unexpired suppressions
+  for a given finding and evaluation date.
+- `non_overridable_gates` is a first-class field on the normalized policy,
+  naming gates that suppression cannot override.
+
+## Drift Check: HIMP-035
+
+Date: 2026-06-05.
+
+All 70 tests pass. The domain boundary is clean: the architecture test
+confirms no domain source file imports ambient adapter crates. `adapters/` and
+`reporting/` are intentionally empty stubs awaiting HIMP-041+ and HIMP-061+
+respectively. `ports/` carries all seven fake implementations
+(`FixedClock`, `InMemoryArtifactStore`, `RecordingGithubPublisher`,
+`InMemoryMcpResourceRegistry`, `StaticPolicyLoader`, `EchoReportRenderer`,
+`RecordingCommandIo`).
+
+No scope drift observed. The one previously-recorded compatibility alias
+(`wesley.capability-report/v1` → `wesley.law-capabilities/v1`) remains
+handled and no follow-up is needed before public surfaces.
+
+Pre-condition for HIMP-036 is met: `non_overridable_gates` exists in the
+normalized policy, suppression matching is implemented, and gate state values
+are stable. HIMP-036 adds the enforcement layer that rejects suppression
+application when the targeted gate is non-overridable or when evidence is
+invalid — neither condition is currently checked.
+
+**HIMP-036 is clear to start.**
+
+## Closed Implementation Surface (continued)
+
+`HIMP-036` adds the suppression abuse-prevention enforcement layer.
+
+- Three new diagnostic codes: `HlawSuppressionRejectedInvalidEvidence`,
+  `HlawSuppressionRejectedNonOverridable`, `HlawSuppressionExpired`.
+- `AnnotatedFinding` wraps `SemanticChangeFinding` with an optional
+  `suppressed_by: Option<LawAssuranceSuppressionMatch>`.
+- `SuppressionPolicyOutcome` carries annotated findings, applied records,
+  rejection records, expired ids, and diagnostics.
+- `SuppressionRejectionReason` enumerates `InvalidEvidence` and
+  `NonOverridableGate { gate_id }`.
+- `apply_suppression_policy` enforces three rules in order: invalid evidence
+  blocks all suppressions; `GateId` suppressions targeting a gate in
+  `non_overridable_gates` are rejected; expired suppressions emit a warning
+  diagnostic and are not applied. Valid suppressions annotate the first
+  matching finding (first-match wins).
+
+Status: **36 / 90 implementation slices closed**.
