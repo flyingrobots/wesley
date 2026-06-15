@@ -23,11 +23,11 @@ decide what the Wesley compiler is.
 | NR-032 | `cert-create`, `cert-sign`, `stake`, `cert-verify`, `cert-badge` | Extract as assurance tooling. The native Rust CLI does not grow certificate verbs during Node retirement.                                   |
 | NR-033 | Holmes, Watson, Moriarty evidence commands                       | Re-home under an explicit assurance package or repo boundary. The compiler may emit facts; assurance tooling judges evidence.               |
 | NR-034 | `runs` ledger inspection                                         | Exit with assurance/runtime evidence tooling. It is not needed for the compiler kernel or native emitters.                                  |
-| NR-035 | package-level evidence tooling under `packages/wesley-cli`       | Mark compatibility-only until moved beside assurance tooling. It may use JavaScript process boundaries, but it is not a product front door. |
+| NR-035 | package-level evidence tooling under `packages/wesley-cli`       | Delete with the Node CLI package or move beside an explicit assurance owner; it is not a product front door.                                |
 
-The compatibility Node commands can remain while current CI and historical
-reports still reference them. New Rust compiler features should not depend on
-those commands.
+The compatibility Node command bridge is closed. Retained assurance behavior now
+lives under `@wesley/holmes` or the Rust Holmes foundation, while new Rust
+compiler features must not depend on historical Node commands.
 
 The Holmes/Watson/Moriarty exit path is now design packet
 [`0018-holmes-assurance-hexagon`](../0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md).

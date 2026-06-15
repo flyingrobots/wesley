@@ -12,7 +12,7 @@ For installed alpha builds, the crates.io package is `wesley-cli` and the
 installed command is `wesley`:
 
 ```bash
-cargo install wesley-cli --version 0.0.4
+cargo install wesley-cli --version 0.0.5
 wesley --help
 ```
 
@@ -54,10 +54,13 @@ It can:
 - list schema root operations with arguments, result types, and directives
 - emit Rust data models and operation bindings through a Rust AST/printer path
 - emit TypeScript declarations and operation bindings through a Rust AST/printer path
+- emit TypeScript little-endian operation-variable codec helpers
 - write deterministic emit metadata sidecars with schema hash, generator
-  identity, generator version, and execution mode
+  identity, generator version, execution mode, and optional law bundle hashes
 - run narrow Rust-native health checks without inspecting legacy Node config,
   plugins, or package state
+- scaffold, lint, validate, diff, explain, rebind, and report coverage for
+  `weslaw/v1` documents
 - resolve GraphQL operation selection paths
 - resolve schema-coordinate selections when schema SDL is available
 - extract arbitrary operation directive arguments as data
@@ -74,9 +77,17 @@ wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> [--format text|json|summary] [--exit-code]
 wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--exit-code]
+wesley init-law --schema <path> --family <name> [--out <path>]
+wesley law lint --law <law.weslaw.yaml> [--json]
 wesley law validate --schema <schema.graphql> --law <law.weslaw.yaml> [--json]
+wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> [--schema <path>] [--format markdown|json|summary]
+wesley law explain --law <law.weslaw.yaml> <subject> [--json]
+wesley law rebind --schema <path> --law <law.weslaw.yaml> [--accept --out <path>] [--json]
+wesley law capabilities --law <law.weslaw.yaml> [--json]
+wesley law coverage --schema <path> --law <law.weslaw.yaml> [--profile release|ci-release|local] [--json]
 wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
 wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
+wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```
@@ -154,4 +165,4 @@ Generic schema work should use:
 | `pnpm wesley diff <old> <new>`           | `wesley schema diff --old <old> --new <new>`                                       |
 | `pnpm wesley doctor`                     | `wesley doctor`                                                                    |
 | `pnpm wesley typescript --schema <path>` | `wesley emit typescript --schema <path> --out <path>`                              |
-| `pnpm wesley generate --schema <path>`   | `wesley emit rust ...`, `wesley emit typescript ...`, or an external module target |
+| `pnpm wesley generate --schema <path>`   | `wesley emit rust ...`, `wesley emit typescript ...`, or an external target owner  |

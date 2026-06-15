@@ -15,7 +15,7 @@ artifacts.
 
 - **Inspect native CLI**: `cargo wesley --help`
 - **Doctor native CLI**: `cargo wesley doctor`
-- **Install alpha from crates.io**: `cargo install wesley-cli --version 0.0.4`
+- **Install alpha from crates.io**: `cargo install wesley-cli --version 0.0.5`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
 - **Rust preflight**: `cargo xtask preflight`
 - **Release check**: `cargo xtask release-check`
@@ -32,7 +32,7 @@ Use `wesley doctor` when you need a narrow Rust-native health check for the
 native CLI, Rust lowerer, normalized SDL hashing, and Rust emitter crates. It
 does not inspect legacy Node config, plugins, or package state.
 
-Use `cargo install wesley-cli --version 0.0.4` when you want the published
+Use `cargo install wesley-cli --version 0.0.5` when you want the published
 alpha `wesley` binary on your PATH. Use
 `cargo install --locked --path crates/wesley-cli` when working from this
 checkout. Use `cargo xtask release-check` before cutting native release
@@ -78,23 +78,22 @@ validation output.
 
 ### 2. External Module Lane
 
-Bring the `whatever` side of `GraphQL -> whatever` through explicit modules.
+Bring the `whatever` side of `GraphQL -> whatever` through an owning module,
+package, or sibling repo. The historical Node dynamic module loader and
+`wesley.config.mjs` command-dispatch path are retired; the native Rust CLI does
+not currently load arbitrary JavaScript modules as product commands.
 
-- **Config**: add modules in `wesley.config.mjs`
-- **Environment**: set `WESLEY_MODULES=/path/to/module.mjs`
-- **Commands**: module-owned commands appear through the loaded module
-- **Disable**: set `WESLEY_DISABLE_MODULES=1` for a no-module diagnostic run
-- **Trust**: set `WESLEY_MODULE_ALLOWLIST` to path-delimited config/module
-  paths when CI should reject unapproved module imports
-
-External modules own target semantics, generators, witness scopes, release
-profiles, and runtime conventions. Wesley core does not own those meanings.
+External targets still own target semantics, generators, witness scopes,
+release profiles, and runtime conventions. Today that ownership is expressed
+through explicit Rust emitters, external repos such as `wesley-postgres`, or
+future target protocols. Wesley core does not own those meanings.
 For the active ownership rule, see
 [design/0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
 Historical Continuum, WARPspace, PostgreSQL, and Supabase package residue has
 been removed from the compiler front door. New domain behavior should land in
-the owning external module repo, not in Wesley.
+the owning repo, package, or explicitly designed target boundary, not in Wesley
+core.
 
 ### 3. Governance & Inspection
 
@@ -158,7 +157,7 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 - [ ] **I am changing retained JS packages or pnpm workspace files**: Run `pnpm install` and `cargo xtask legacy-preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
 - [ ] **I am adding a generic projection**: Start in `crates/wesley-emit-rust` or `crates/wesley-emit-typescript`.
-- [ ] **I am adding a domain target**: Put it in an external module repo and load it into Wesley.
+- [ ] **I am adding a domain target**: Put it in an owning external repo or design an explicit target protocol before wiring it into Wesley.
 - [ ] **I am extending Wesley**: Use `docs/guides/extending.md` to pick the Rust core, native CLI, emitter, external module, or `xtask` boundary.
 - [ ] **I am contributing to Wesley**: Read `METHOD.md` and `BEARING.md`.
 - [ ] **I am touching Continuum behavior**: Work in the Continuum-owned module/repo, not here.

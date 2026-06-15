@@ -123,15 +123,15 @@ CLI, Rust lowerer, normalized SDL hash evidence, and Rust emitter crates. It
 does not recreate the legacy Node command's config, plugin, package, or Node
 runtime diagnostics.
 
-The legacy umbrella `generate` command is being replaced by these explicit
+The legacy umbrella `generate` command was replaced by these explicit
 native commands plus external modules for target-owned outputs. Legacy `zod`,
 `models`, and `init` behavior is not being recreated in core Wesley during this
 campaign; each is either external target work or product scaffolding outside the
 compiler kernel.
 
 Certificate, Holmes/Moriarty, run-ledger, and package-evidence commands are
-not native compiler-front-door commands. They exit with assurance tooling or
-remain compatibility-only until that boundary exists.
+not native compiler-front-door commands. They exited with assurance tooling,
+were deleted, or were re-homed under retained assurance boundaries.
 
 Browser, Bun, and Deno host packages are external host experiments, not the
 product spine. The native Rust CLI is the product front door; host package

@@ -13,20 +13,14 @@ generic TypeScript output belongs in `crates/wesley-emit-typescript/` and the
 native `wesley emit typescript` command. Product-specific and target-specific
 generators should live in their owning modules or repos.
 
-## Compatibility Kept
+## Compatibility Bridge Closed
 
-The legacy Node CLI still exposes narrow `typescript` and `zod` commands because
-they are part of the compatibility bridge while `packages/wesley-cli/` remains.
-Those commands no longer depend on `@wesley/generator-js`.
-
-The remaining table-shaped compatibility behavior lives in:
-
-- `packages/wesley-cli/src/utils/table-projections.mjs`
-- `packages/wesley-cli/src/commands/typescript.mjs`
-- `packages/wesley-cli/src/commands/zod.mjs`
-
-The code is intentionally CLI-local. It is not a new generator package and is
-not a product projection authority.
+During the migration, narrow Node CLI `typescript` and `zod` compatibility
+commands remained local to `packages/wesley-cli/` after
+`packages/wesley-generator-js/` was deleted. That bridge is now closed:
+`packages/wesley-cli/` has also been deleted, generic TypeScript output lives in
+`crates/wesley-emit-typescript/`, and Zod output is not retained as generic
+Wesley product surface.
 
 ## Compatibility Removed
 
@@ -57,6 +51,7 @@ target owners.
 
 ## Remaining Risk
 
-The legacy Node CLI still carries compatibility projection code. That is part
-of the larger `packages/wesley-cli/` deletion gate, not a reason to keep a
-standalone JavaScript generator package alive.
+No JavaScript generator package or Node CLI projection bridge remains as
+compiler authority. Future TypeScript projection work belongs in
+`crates/wesley-emit-typescript/`; future Zod output needs an external target
+owner before returning to the repo.

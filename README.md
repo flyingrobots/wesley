@@ -211,7 +211,8 @@ developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 Historical `pnpm wesley` commands are migration bridges only. Prefer
 `wesley schema lower`, `wesley schema hash`, `wesley schema diff`,
 `wesley doctor`, and explicit `wesley emit ...` commands for generic compiler
-work. Legacy package commands now warn when a native replacement exists.
+work. The historical Node wrapper has been retired; compatibility and
+migration docs list replacements for old callers.
 
 ---
 
@@ -249,10 +250,10 @@ contract and module seam they consume.
 | Module family | External owner                  | Responsibility                                        |
 | :------------ | :------------------------------ | ----------------------------------------------------- |
 | Postgres      | `wesley-postgres`               | SQL schemas, migrations, indexes, pgTAP, CRUD helpers |
-| Validation    | loaded module                   | Runtime and static validation rules                   |
-| Codec         | loaded module                   | Binary and runtime codecs                             |
-| TypeScript    | Wesley emitter or loaded module | Type contracts and client bindings                    |
-| Observer      | loaded module                   | Observation plans and projections                     |
+| Validation    | external target/module          | Runtime and static validation rules                   |
+| Codec         | external target/module          | Binary and runtime codecs                             |
+| TypeScript    | Wesley emitter or external target | Type contracts and client bindings                  |
+| Observer      | external target/module          | Observation plans and projections                     |
 | Echo          | Echo-owned integration          | Runtime law, footprints, observation semantics        |
 | Continuum     | Continuum-owned module/repo     | Deferred protocol generation                          |
 
