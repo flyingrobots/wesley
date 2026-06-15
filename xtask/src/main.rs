@@ -2143,8 +2143,9 @@ fn context_window(lines: &[&str], index: usize, radius: usize) -> String {
 }
 
 fn git_revision_exists(revision: &str) -> Result<bool, Error> {
+    let commit_revision = format!("{revision}^{{commit}}");
     let status = Command::new("git")
-        .args(["rev-parse", "--verify", "--quiet", revision])
+        .args(["rev-parse", "--verify", "--quiet", &commit_revision])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
@@ -3466,6 +3467,14 @@ mod tests {
         assert!(looks_like_commit_sha(
             "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2"
         ));
+    }
+
+    #[test]
+    fn git_revision_exists_requires_commit_objects() {
+        let head_tree = git_output(&["rev-parse", "HEAD^{tree}"]).unwrap();
+
+        assert!(git_revision_exists("HEAD").unwrap());
+        assert!(!git_revision_exists(&head_tree).unwrap());
     }
 
     // --- extract_backtick_content ---
