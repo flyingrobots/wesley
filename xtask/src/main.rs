@@ -976,7 +976,7 @@ fn check_readme_version_headline(version: &str) -> Result<(), Error> {
     })?;
 
     let expected = format!("## What's New in v{version}");
-    if readme.contains(&expected) {
+    if readme_has_exact_version_headline(&readme, version) {
         Ok(())
     } else {
         Err(Error::CheckFailed {
@@ -986,6 +986,11 @@ fn check_readme_version_headline(version: &str) -> Result<(), Error> {
             )],
         })
     }
+}
+
+fn readme_has_exact_version_headline(readme: &str, version: &str) -> bool {
+    let expected = format!("## What's New in v{version}");
+    readme.lines().any(|line| line.trim_end() == expected)
 }
 
 fn teardown_contains_version(content: &str, version: &str) -> bool {
@@ -3056,6 +3061,18 @@ mod tests {
             "#2 Older milestone https://github.com/flyingrobots/wesley/issues/2 (prior version milestone `0.0.3`)"
         );
         assert!(version_from_lane_name("v0.0.4+build").is_none());
+    }
+
+    #[test]
+    fn readme_version_headline_requires_exact_heading_line() {
+        assert!(readme_has_exact_version_headline(
+            "# Wesley\n\n## What's New in v0.0.5\n\nNotes",
+            "0.0.5"
+        ));
+        assert!(!readme_has_exact_version_headline(
+            "# Wesley\n\n## What's New in v0.0.50\n\nNotes",
+            "0.0.5"
+        ));
     }
 
     #[test]
