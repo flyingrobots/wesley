@@ -281,6 +281,16 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -ge 2 ]
 }
 
+@test "release crates workflow authenticates release guard GitHub API checks" {
+  run bash -lc "grep -F 'actions: read' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -ge 2 ]
+
+  run bash -lc "grep -n 'name: Release guard' -A5 .github/workflows/release-crates.yml | grep -F 'GH_TOKEN: \${{ github.token }}' | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+}
+
 @test "wesley-holmes workflow propagates detected schema outputs into analysis jobs" {
   run bash -lc "grep -F 'outputs:' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success

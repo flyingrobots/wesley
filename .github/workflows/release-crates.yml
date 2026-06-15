@@ -6,6 +6,7 @@ on:
       - 'v*'
 
 permissions:
+  actions: read
   contents: read
   issues: read
 
@@ -49,6 +50,8 @@ jobs:
         run: cargo install cargo-audit --locked
 
       - name: Release guard
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: cargo xtask release-guard --tag "$GITHUB_REF_NAME"
 
       - name: Check for open version issues
@@ -104,6 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: read
       contents: write
       issues: read
     steps:
@@ -131,6 +135,8 @@ jobs:
         run: cargo install cargo-audit --locked
 
       - name: Release guard
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git fetch origin main --tags --prune
