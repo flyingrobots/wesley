@@ -192,8 +192,8 @@ fn run_publish_crates(
             if let Some(tag) = &options.tag {
                 run_release_guard_for_tag(tag)?;
             }
-            run_docs_check()?;
-            run_command("cargo", &["test", "--workspace"])?;
+            // run_docs_check and cargo test are already called inside run_release_guard_for_tag.
+            // Only run the checks that are specific to the publish path and not part of the guard.
             run_command(
                 "cargo",
                 &[
@@ -439,9 +439,22 @@ fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     check_git_identity_guard()?;
     check_release_tag_points_to_head(tag)?;
     check_release_tag_is_on_main(tag)?;
+    assert_clean_worktree()?;
     check_publish_manifest_versions(&version)?;
     check_release_required_files(&version)?;
     check_release_tracker_clear(tag, &version)?;
+    check_lane_asap_clear()?;
+    check_readme_version_headline(&version)?;
+    check_technical_teardown_version(&version)?;
+    check_no_wip_fixup_commits(tag)?;
+    check_breaking_change_version_bump(tag, &version)?;
+    check_guide_file_paths_resolve()?;
+    check_guide_cited_shas_exist()?;
+    run_docs_check()?;
+    check_ci_green_on_head()?;
+    check_cargo_audit_clean()?;
+    check_cargo_doc_clean()?;
+    run_command("cargo", &["test", "--workspace"])?;
     println!("xtask: release guard passed for {tag}");
     Ok(())
 }
@@ -774,12 +787,23 @@ fn check_release_required_files(version: &str) -> Result<(), Error> {
     }
 
     if let Ok(changelog) = fs::read_to_string(root.join("CHANGELOG.md")) {
-        let version_heading = format!("## [{version}]");
-        let v_version_heading = format!("## [v{version}]");
-        if !changelog.contains(&version_heading) && !changelog.contains(&v_version_heading) {
-            failures.push(format!(
-                "CHANGELOG.md has no release notes section for {version}"
-            ));
+        match changelog_release_heading_status(&changelog, version) {
+            ChangelogReleaseHeadingStatus::Dated => {}
+            ChangelogReleaseHeadingStatus::Undated => {
+                failures.push(format!(
+                    "CHANGELOG.md has a section for {version} but it is missing a date; expected format: `## [{version}] - YYYY-MM-DD`"
+                ));
+            }
+            ChangelogReleaseHeadingStatus::MalformedDate => {
+                failures.push(format!(
+                    "CHANGELOG.md has a section for {version} but its date is malformed; expected format: `## [{version}] - YYYY-MM-DD`"
+                ));
+            }
+            ChangelogReleaseHeadingStatus::Missing => {
+                failures.push(format!(
+                    "CHANGELOG.md has no release notes section for {version}"
+                ));
+            }
         }
     }
 
@@ -821,6 +845,80 @@ fn check_release_required_files(version: &str) -> Result<(), Error> {
     finish_check("release required files", failures)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ChangelogReleaseHeadingStatus {
+    Dated,
+    Undated,
+    MalformedDate,
+    Missing,
+}
+
+fn changelog_release_heading_status(
+    changelog: &str,
+    version: &str,
+) -> ChangelogReleaseHeadingStatus {
+    let plain = format!("## [{version}]");
+    let with_v = format!("## [v{version}]");
+    let plain_prefix = format!("{plain} - ");
+    let with_v_prefix = format!("{with_v} - ");
+
+    for line in changelog.lines().map(str::trim_end) {
+        if line == plain || line == with_v {
+            return ChangelogReleaseHeadingStatus::Undated;
+        }
+        if let Some(rest) = line
+            .strip_prefix(&plain_prefix)
+            .or_else(|| line.strip_prefix(&with_v_prefix))
+        {
+            let date = rest.trim();
+            return if looks_like_yyyy_mm_dd(date) {
+                ChangelogReleaseHeadingStatus::Dated
+            } else {
+                ChangelogReleaseHeadingStatus::MalformedDate
+            };
+        }
+    }
+
+    ChangelogReleaseHeadingStatus::Missing
+}
+
+fn looks_like_yyyy_mm_dd(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if !(bytes.len() == 10
+        && bytes[0..4].iter().all(u8::is_ascii_digit)
+        && bytes[4] == b'-'
+        && bytes[5..7].iter().all(u8::is_ascii_digit)
+        && bytes[7] == b'-'
+        && bytes[8..10].iter().all(u8::is_ascii_digit))
+    {
+        return false;
+    }
+
+    let Ok(year) = value[0..4].parse::<u16>() else {
+        return false;
+    };
+    let Ok(month) = value[5..7].parse::<u8>() else {
+        return false;
+    };
+    let Ok(day) = value[8..10].parse::<u8>() else {
+        return false;
+    };
+
+    let max_day = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(year) => 29,
+        2 => 28,
+        _ => return false,
+    };
+    day >= 1 && day <= max_day
+}
+
+fn is_leap_year(year: u16) -> bool {
+    let year = u32::from(year);
+    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+}
+
 fn check_release_backlog_clear(tag: &str, version: &str) -> Result<(), Error> {
     let root = env::current_dir()
         .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
@@ -849,6 +947,471 @@ fn check_release_backlog_clear(tag: &str, version: &str) -> Result<(), Error> {
 fn check_release_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
     check_release_backlog_clear(tag, version)?;
     check_release_issue_tracker_clear(tag, version)
+}
+
+fn check_lane_asap_clear() -> Result<(), Error> {
+    let repo = release_github_repository()?;
+    let output = Command::new("gh")
+        .args([
+            "issue",
+            "list",
+            "--repo",
+            &repo,
+            "--label",
+            "lane:asap",
+            "--state",
+            "open",
+            "--json",
+            "number,title,url",
+        ])
+        .output()
+        .map_err(|source| {
+            Error::Usage(format!(
+                "failed to spawn `gh issue list --label lane:asap`: {source}"
+            ))
+        })?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(Error::CheckFailed {
+            check: "lane:asap issues".to_string(),
+            failures: vec![format!(
+                "`gh issue list --label lane:asap` failed: {}",
+                stderr.trim()
+            )],
+        });
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let issues = parse_release_issue_list(&stdout, "lane:asap")?;
+    finish_check(
+        "lane:asap issues",
+        issues
+            .into_iter()
+            .map(|issue| issue.display)
+            .collect::<Vec<_>>(),
+    )
+}
+
+fn check_readme_version_headline(version: &str) -> Result<(), Error> {
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let readme_path = root.join("README.md");
+    let readme = fs::read_to_string(&readme_path).map_err(|source| Error::CheckFailed {
+        check: "README version headline".to_string(),
+        failures: vec![format!("README.md is missing or unreadable: {source}")],
+    })?;
+
+    let expected = format!("## What's New in v{version}");
+    if readme_has_exact_version_headline(&readme, version) {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: "README version headline".to_string(),
+            failures: vec![format!(
+                "README.md does not contain `{expected}`; update the What's New section to v{version}"
+            )],
+        })
+    }
+}
+
+fn readme_has_exact_version_headline(readme: &str, version: &str) -> bool {
+    let expected = format!("## What's New in v{version}");
+    readme.lines().any(|line| line.trim_end() == expected)
+}
+
+fn teardown_contains_version(content: &str, version: &str) -> bool {
+    let needle = format!("v{version}");
+    let mut search = content;
+    while let Some(pos) = search.find(&needle) {
+        let before = search[..pos].chars().next_back();
+        let after = &search[pos + needle.len()..];
+        if is_release_version_boundary(before) && is_release_version_boundary(after.chars().next())
+        {
+            return true;
+        }
+        search = &search[pos + 1..];
+    }
+    false
+}
+
+fn is_release_version_boundary(ch: Option<char>) -> bool {
+    match ch {
+        None => true,
+        Some(c) => !c.is_ascii_alphanumeric() && c != '.' && c != '-' && c != '+' && c != '_',
+    }
+}
+
+fn check_technical_teardown_version(version: &str) -> Result<(), Error> {
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let teardown_path = root.join("docs/TECHNICAL_TEARDOWN.md");
+    let content = fs::read_to_string(&teardown_path).map_err(|source| Error::CheckFailed {
+        check: "TECHNICAL_TEARDOWN version".to_string(),
+        failures: vec![format!(
+            "docs/TECHNICAL_TEARDOWN.md is missing or unreadable: {source}"
+        )],
+    })?;
+
+    let v_version = format!("v{version}");
+    if teardown_contains_version(&content, version) {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: "TECHNICAL_TEARDOWN version".to_string(),
+            failures: vec![format!(
+                "docs/TECHNICAL_TEARDOWN.md does not reference {v_version}; update it to describe the {v_version} release state"
+            )],
+        })
+    }
+}
+
+fn previous_tag_from_sorted_list<'a>(tags: &[&'a str], current_tag: &str) -> Option<&'a str> {
+    let pos = tags.iter().position(|t| *t == current_tag)?;
+    tags.get(pos + 1).copied()
+}
+
+fn find_previous_release_tag(current_tag: &str) -> Result<Option<String>, Error> {
+    let output = Command::new("git")
+        .args(["tag", "--sort=-version:refname"])
+        .output()
+        .map_err(|source| {
+            Error::Usage(format!(
+                "failed to spawn `git tag --sort=-version:refname`: {source}"
+            ))
+        })?;
+
+    if !output.status.success() {
+        return Ok(None);
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let tags: Vec<&str> = stdout
+        .lines()
+        .map(str::trim)
+        .filter(|t| !t.is_empty() && version_from_tag(t).is_ok())
+        .collect();
+    Ok(previous_tag_from_sorted_list(&tags, current_tag).map(ToOwned::to_owned))
+}
+
+fn check_no_wip_fixup_commits(tag: &str) -> Result<(), Error> {
+    let prev = find_previous_release_tag(tag)?;
+    let range = match prev.as_deref() {
+        Some(prev_tag) => format!("{prev_tag}..{tag}"),
+        None => tag.to_string(),
+    };
+
+    let label = format!("git log {range} --format=%s");
+    let output = Command::new("git")
+        .args(["log", &range, "--format=%s"])
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+
+    if !output.status.success() {
+        return Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let failures: Vec<String> = stdout
+        .lines()
+        .map(str::trim)
+        .filter(|subject| subject.starts_with("WIP") || subject.starts_with("fixup!"))
+        .map(|subject| format!("release range {range} contains WIP/fixup commit: {subject}"))
+        .collect();
+
+    finish_check("no WIP or fixup commits", failures)
+}
+
+fn check_breaking_change_version_bump(tag: &str, version: &str) -> Result<(), Error> {
+    let Some(prev_tag) = find_previous_release_tag(tag)? else {
+        return Ok(());
+    };
+
+    let range = format!("{prev_tag}..{tag}");
+    let label = format!("git log {range} --format=%B");
+    let output = Command::new("git")
+        .args(["log", &range, "--format=%B"])
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+
+    if !output.status.success() {
+        return Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+
+    let full_log = String::from_utf8_lossy(&output.stdout);
+    if !full_log.contains("BREAKING CHANGE") {
+        return Ok(());
+    }
+
+    let prev_version = match version_from_tag(&prev_tag) {
+        Ok(v) => v,
+        Err(_) => return Ok(()),
+    };
+    let prev_parsed = match Version::parse(&prev_version) {
+        Ok(v) => v,
+        Err(_) => return Ok(()),
+    };
+    let curr_parsed = match Version::parse(version) {
+        Ok(v) => v,
+        Err(_) => return Ok(()),
+    };
+
+    let is_major_bump = curr_parsed.major > prev_parsed.major;
+    let is_minor_bump =
+        curr_parsed.major == prev_parsed.major && curr_parsed.minor > prev_parsed.minor;
+
+    if is_major_bump || is_minor_bump {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: "BREAKING CHANGE version bump".to_string(),
+            failures: vec![format!(
+                "release range {range} contains BREAKING CHANGE commits but version bumped from {prev_version} to {version} without a major or minor increment"
+            )],
+        })
+    }
+}
+
+fn check_guide_file_paths_resolve() -> Result<(), Error> {
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let guides_dir = root.join("docs/guides");
+    let mut guide_files = Vec::new();
+    collect_markdown_files(&guides_dir, &mut guide_files)?;
+
+    let mut failures = Vec::new();
+    for guide in &guide_files {
+        let content = fs::read_to_string(guide).map_err(|source| {
+            Error::Usage(format!("failed to read `{}`: {source}", guide.display()))
+        })?;
+        for path_ref in extract_backtick_file_paths(&content) {
+            let resolved = root.join(&path_ref);
+            if !resolved.exists() {
+                failures.push(format!(
+                    "{}: `{path_ref}` does not exist",
+                    display_path(&root, guide)
+                ));
+            }
+        }
+    }
+
+    finish_check("guide file paths", failures)
+}
+
+fn check_guide_cited_shas_exist() -> Result<(), Error> {
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let guides_dir = root.join("docs/guides");
+    let mut guide_files = Vec::new();
+    collect_markdown_files(&guides_dir, &mut guide_files)?;
+
+    let mut failures = Vec::new();
+    for guide in &guide_files {
+        let content = fs::read_to_string(guide).map_err(|source| {
+            Error::Usage(format!("failed to read `{}`: {source}", guide.display()))
+        })?;
+        for sha in extract_backtick_commit_shas(&content) {
+            if !git_revision_exists(&sha)? {
+                failures.push(format!(
+                    "{}: cited commit `{sha}` does not exist in git history",
+                    display_path(&root, guide)
+                ));
+            }
+        }
+    }
+
+    finish_check("guide cited commits", failures)
+}
+
+fn extract_backtick_file_paths(content: &str) -> Vec<String> {
+    extract_backtick_content(content)
+        .into_iter()
+        .filter(|s| looks_like_file_path(s))
+        .collect()
+}
+
+fn extract_backtick_commit_shas(content: &str) -> Vec<String> {
+    extract_backtick_content(content)
+        .into_iter()
+        .filter(|s| looks_like_commit_sha(s))
+        .collect()
+}
+
+fn extract_backtick_content(content: &str) -> Vec<String> {
+    let mut result = Vec::new();
+    let mut remaining = content;
+    while let Some(open) = remaining.find('`') {
+        remaining = &remaining[open + 1..];
+        if let Some(close) = remaining.find('`') {
+            let inner = &remaining[..close];
+            if !inner.is_empty() && !inner.contains('\n') {
+                result.push(inner.to_string());
+            }
+            remaining = &remaining[close + 1..];
+        } else {
+            break;
+        }
+    }
+    result
+}
+
+fn looks_like_file_path(s: &str) -> bool {
+    if s.starts_with("http://") || s.starts_with("https://") {
+        return false;
+    }
+    if s.chars().any(char::is_whitespace) {
+        return false;
+    }
+    if !s.contains('/') {
+        return false;
+    }
+    let has_extension = s
+        .split('/')
+        .last()
+        .is_some_and(|name| name.contains('.') && !name.starts_with('.'));
+    let has_known_prefix = s.starts_with("src/")
+        || s.starts_with("crates/")
+        || s.starts_with("docs/")
+        || s.starts_with("packages/")
+        || s.starts_with("xtask/")
+        || s.starts_with("scripts/")
+        || s.starts_with("test/")
+        || s.starts_with(".github/");
+    has_extension || has_known_prefix
+}
+
+fn looks_like_commit_sha(s: &str) -> bool {
+    s.len() == 40 && s.chars().all(|c| c.is_ascii_hexdigit())
+}
+
+fn check_ci_green_on_head() -> Result<(), Error> {
+    let head = git_output(&["rev-parse", "HEAD"])?;
+    let args = [
+        "run",
+        "list",
+        "--commit",
+        &head,
+        "--json",
+        "conclusion,status,name,databaseId",
+    ];
+    let label = format!("gh {}", args.join(" "));
+    let output = Command::new("gh")
+        .args(args)
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(Error::CheckFailed {
+            check: "CI green on HEAD".to_string(),
+            failures: vec![format!("`{label}` failed: {}", stderr.trim())],
+        });
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let runs = serde_json::from_str::<serde_json::Value>(&stdout)
+        .map_err(|source| Error::Usage(format!("failed to parse `{label}` output: {source}")))?;
+    let Some(runs) = runs.as_array() else {
+        return Err(Error::Usage(format!("`{label}` returned non-array JSON")));
+    };
+
+    let current_run_id = env::var("GITHUB_RUN_ID")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok());
+    let failures = ci_green_failures_for_runs(runs, current_run_id, &head);
+
+    finish_check("CI green on HEAD", failures)
+}
+
+fn ci_green_failures_for_runs(
+    runs: &[serde_json::Value],
+    current_run_id: Option<u64>,
+    head: &str,
+) -> Vec<String> {
+    if runs.is_empty() {
+        return vec![format!(
+            "no GitHub Actions runs found for HEAD commit {head}; CI must have run before tagging"
+        )];
+    }
+
+    const PASSING_CONCLUSIONS: &[&str] = &["success", "skipped", "neutral"];
+    let mut failures = Vec::new();
+    let mut considered_runs = 0usize;
+
+    for run in runs {
+        if current_run_id.is_some()
+            && run.get("databaseId").and_then(serde_json::Value::as_u64) == current_run_id
+        {
+            continue;
+        }
+
+        considered_runs += 1;
+        let name = run
+            .get("name")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("<unknown>");
+        let status = run
+            .get("status")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
+        let conclusion = run.get("conclusion").and_then(serde_json::Value::as_str);
+
+        if status != "completed" {
+            failures.push(format!(
+                "CI run `{name}` is not yet completed (status: {status})"
+            ));
+            continue;
+        }
+        match conclusion {
+            Some(conclusion) if PASSING_CONCLUSIONS.contains(&conclusion) => {}
+            Some(conclusion) => {
+                failures.push(format!(
+                    "CI run `{name}` did not pass (conclusion: {conclusion})"
+                ));
+            }
+            None => {
+                failures.push(format!(
+                    "CI run `{name}` did not pass (conclusion: <missing>)"
+                ));
+            }
+        }
+    }
+
+    if considered_runs == 0 {
+        failures.push(format!(
+            "no GitHub Actions runs other than the current release workflow were found for HEAD commit {head}; CI must have run before tagging"
+        ));
+    }
+
+    failures
+}
+
+fn check_cargo_audit_clean() -> Result<(), Error> {
+    run_command("cargo", &["audit"])
+}
+
+fn check_cargo_doc_clean() -> Result<(), Error> {
+    println!("xtask: cargo doc --workspace --no-deps");
+    let status = Command::new("cargo")
+        .env("RUSTDOCFLAGS", "-D warnings")
+        .args(["doc", "--workspace", "--no-deps"])
+        .status()
+        .map_err(|source| Error::Usage(format!("failed to spawn `cargo doc`: {source}")))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(Error::CommandFailed {
+            command: "cargo doc --workspace --no-deps".to_string(),
+            code: status.code().unwrap_or(EXIT_FAILURE as i32),
+        })
+    }
 }
 
 fn check_release_issue_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
@@ -886,6 +1449,42 @@ fn check_release_issue_tracker_clear(tag: &str, version: &str) -> Result<(), Err
         for issue in parse_release_issue_list(&stdout, &query.source)? {
             matches.entry(issue.key).or_insert(issue.display);
         }
+    }
+
+    let prior_output = Command::new("gh")
+        .args([
+            "issue",
+            "list",
+            "--repo",
+            &repo,
+            "--state",
+            "open",
+            "--limit",
+            "1000",
+            "--json",
+            "number,title,url,labels,milestone",
+        ])
+        .output()
+        .map_err(|source| {
+            Error::Usage(format!(
+                "failed to spawn `gh issue list --repo {repo}` for prior-version issue check: {source}"
+            ))
+        })?;
+
+    if !prior_output.status.success() {
+        let stderr = String::from_utf8_lossy(&prior_output.stderr);
+        return Err(Error::CheckFailed {
+            check: "release issue tracker".to_string(),
+            failures: vec![format!(
+                "`gh issue list --repo {repo}` failed: {}",
+                stderr.trim()
+            )],
+        });
+    }
+
+    let prior_stdout = String::from_utf8_lossy(&prior_output.stdout);
+    for issue in parse_prior_version_issue_lanes(&prior_stdout, version)? {
+        matches.entry(issue.key).or_insert(issue.display);
     }
 
     finish_check(
@@ -1003,6 +1602,103 @@ fn parse_release_issue_list(content: &str, source: &str) -> Result<Vec<ReleaseIs
         });
     }
     Ok(matches)
+}
+
+fn parse_prior_version_issue_lanes(
+    content: &str,
+    current_version: &str,
+) -> Result<Vec<ReleaseIssueMatch>, Error> {
+    let current = Version::parse(current_version).map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse current release version `{current_version}` for prior-version issue check: {source}"
+        ))
+    })?;
+    let issues = serde_json::from_str::<serde_json::Value>(content).map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse prior-version issue tracker output as JSON: {source}"
+        ))
+    })?;
+    let Some(issues) = issues.as_array() else {
+        return Err(Error::Usage(
+            "prior-version issue tracker output must be a JSON array".to_string(),
+        ));
+    };
+
+    let mut matches = Vec::new();
+    for issue in issues {
+        let number = issue
+            .get("number")
+            .and_then(serde_json::Value::as_u64)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "prior-version issue tracker issue is missing numeric `number`".to_string(),
+                )
+            })?;
+        let title = issue
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "prior-version issue tracker issue is missing string `title`".to_string(),
+                )
+            })?;
+        let url = issue
+            .get("url")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "prior-version issue tracker issue is missing string `url`".to_string(),
+                )
+            })?;
+
+        let mut lanes = Vec::new();
+        if let Some(title) = issue
+            .get("milestone")
+            .and_then(|milestone| milestone.get("title"))
+            .and_then(serde_json::Value::as_str)
+        {
+            if version_lane_is_prior(title, &current) {
+                lanes.push(format!("milestone `{title}`"));
+            }
+        }
+
+        if let Some(labels) = issue.get("labels").and_then(serde_json::Value::as_array) {
+            for label in labels {
+                if let Some(name) = label.get("name").and_then(serde_json::Value::as_str) {
+                    if version_lane_is_prior(name, &current) {
+                        lanes.push(format!("label `{name}`"));
+                    }
+                }
+            }
+        }
+
+        if !lanes.is_empty() {
+            matches.push(ReleaseIssueMatch {
+                key: url.to_string(),
+                display: format!(
+                    "#{number} {title} {url} (prior version {})",
+                    lanes.join(", ")
+                ),
+            });
+        }
+    }
+
+    Ok(matches)
+}
+
+fn version_lane_is_prior(lane: &str, current: &Version) -> bool {
+    version_from_lane_name(lane).is_some_and(|version| version < *current)
+}
+
+fn version_from_lane_name(lane: &str) -> Option<Version> {
+    let lane = lane.trim();
+    let version = lane.strip_prefix('v').unwrap_or(lane);
+    let parsed = Version::parse(version).ok()?;
+    if parsed.build.is_empty() {
+        Some(parsed)
+    } else {
+        None
+    }
 }
 
 fn is_missing_issue_selector_error(stderr: &str) -> bool {
@@ -1447,8 +2143,9 @@ fn context_window(lines: &[&str], index: usize, radius: usize) -> String {
 }
 
 fn git_revision_exists(revision: &str) -> Result<bool, Error> {
+    let commit_revision = format!("{revision}^{{commit}}");
     let status = Command::new("git")
-        .args(["rev-parse", "--verify", "--quiet", revision])
+        .args(["rev-parse", "--verify", "--quiet", &commit_revision])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
@@ -2255,6 +2952,170 @@ mod tests {
     }
 
     #[test]
+    fn changelog_release_heading_requires_exact_dated_heading() {
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2026-05-21", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Dated
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [v0.0.5] - 2026-05-21", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Dated
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2024-02-29", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Dated
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2025-02-29", "0.0.5"),
+            ChangelogReleaseHeadingStatus::MalformedDate
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5]", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Undated
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - soon", "0.0.5"),
+            ChangelogReleaseHeadingStatus::MalformedDate
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2026-99-99", "0.0.5"),
+            ChangelogReleaseHeadingStatus::MalformedDate
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2026-05-21 release", "0.0.5"),
+            ChangelogReleaseHeadingStatus::MalformedDate
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.4] - 2026-05-21", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Missing
+        );
+    }
+
+    #[test]
+    fn ci_green_skips_current_release_run_and_requires_prior_ci() {
+        let runs = vec![
+            serde_json::json!({
+                "name": "Release",
+                "status": "in_progress",
+                "conclusion": null,
+                "databaseId": 10
+            }),
+            serde_json::json!({
+                "name": "Preflight",
+                "status": "completed",
+                "conclusion": "success",
+                "databaseId": 11
+            }),
+        ];
+
+        assert!(ci_green_failures_for_runs(&runs, Some(10), "abc123").is_empty());
+
+        let current_only = vec![serde_json::json!({
+            "name": "Release",
+            "status": "in_progress",
+            "conclusion": null,
+            "databaseId": 10
+        })];
+        assert_eq!(
+            ci_green_failures_for_runs(&current_only, Some(10), "abc123"),
+            vec![
+                "no GitHub Actions runs other than the current release workflow were found for HEAD commit abc123; CI must have run before tagging"
+            ]
+        );
+    }
+
+    #[test]
+    fn ci_green_rejects_pending_failed_and_missing_conclusions() {
+        let runs = vec![
+            serde_json::json!({
+                "name": "Pending",
+                "status": "in_progress",
+                "conclusion": null,
+                "databaseId": 1
+            }),
+            serde_json::json!({
+                "name": "Failed",
+                "status": "completed",
+                "conclusion": "failure",
+                "databaseId": 2
+            }),
+            serde_json::json!({
+                "name": "Missing conclusion",
+                "status": "completed",
+                "conclusion": null,
+                "databaseId": 3
+            }),
+        ];
+
+        assert_eq!(
+            ci_green_failures_for_runs(&runs, None, "abc123"),
+            vec![
+                "CI run `Pending` is not yet completed (status: in_progress)",
+                "CI run `Failed` did not pass (conclusion: failure)",
+                "CI run `Missing conclusion` did not pass (conclusion: <missing>)"
+            ]
+        );
+    }
+
+    #[test]
+    fn prior_version_issue_lanes_find_older_semver_labels_and_milestones() {
+        let content = serde_json::json!([
+            {
+                "number": 1,
+                "title": "Older label",
+                "url": "https://github.com/flyingrobots/wesley/issues/1",
+                "labels": [
+                    { "name": "lane:asap" },
+                    { "name": "v0.0.4" },
+                    { "name": "v0.0.5" },
+                    { "name": "v0.0.4+build" }
+                ],
+                "milestone": null
+            },
+            {
+                "number": 2,
+                "title": "Older milestone",
+                "url": "https://github.com/flyingrobots/wesley/issues/2",
+                "labels": [],
+                "milestone": { "title": "0.0.3" }
+            },
+            {
+                "number": 3,
+                "title": "Current release",
+                "url": "https://github.com/flyingrobots/wesley/issues/3",
+                "labels": [{ "name": "v0.0.5" }],
+                "milestone": { "title": "0.0.5" }
+            }
+        ])
+        .to_string();
+
+        let matches = parse_prior_version_issue_lanes(&content, "0.0.5").unwrap();
+
+        assert_eq!(matches.len(), 2);
+        assert_eq!(
+            matches[0].display,
+            "#1 Older label https://github.com/flyingrobots/wesley/issues/1 (prior version label `v0.0.4`)"
+        );
+        assert_eq!(
+            matches[1].display,
+            "#2 Older milestone https://github.com/flyingrobots/wesley/issues/2 (prior version milestone `0.0.3`)"
+        );
+        assert!(version_from_lane_name("v0.0.4+build").is_none());
+    }
+
+    #[test]
+    fn readme_version_headline_requires_exact_heading_line() {
+        assert!(readme_has_exact_version_headline(
+            "# Wesley\n\n## What's New in v0.0.5\n\nNotes",
+            "0.0.5"
+        ));
+        assert!(!readme_has_exact_version_headline(
+            "# Wesley\n\n## What's New in v0.0.50\n\nNotes",
+            "0.0.5"
+        ));
+    }
+
+    #[test]
     fn semver_rejects_leading_zeroes_and_empty_prereleases() {
         assert!(version_from_tag("v01.2.3").is_err());
         assert!(version_from_tag("v1.2.3-").is_err());
@@ -2533,5 +3394,165 @@ mod tests {
             !doc.contains("cargo install wesley-cli --version 0.0.1"),
             "release procedure should not hardcode the first alpha version"
         );
+    }
+
+    // --- looks_like_file_path ---
+
+    #[test]
+    fn file_path_accepts_repo_relative_paths_with_known_prefix() {
+        assert!(looks_like_file_path("crates/wesley-core/src/lib.rs"));
+        assert!(looks_like_file_path("docs/GUIDE.md"));
+        assert!(looks_like_file_path("src/main.rs"));
+        assert!(looks_like_file_path("xtask/src/main.rs"));
+        assert!(looks_like_file_path("scripts/preflight.sh"));
+        assert!(looks_like_file_path("test/fixtures/schema.graphql"));
+        assert!(looks_like_file_path(".github/workflows/ci.yml"));
+    }
+
+    #[test]
+    fn file_path_accepts_paths_with_extension_and_slash() {
+        assert!(looks_like_file_path("some/path/file.toml"));
+        assert!(looks_like_file_path("a/b.rs"));
+    }
+
+    #[test]
+    fn file_path_rejects_strings_without_slash() {
+        assert!(!looks_like_file_path("GUIDE.md"));
+        assert!(!looks_like_file_path("cargo-audit"));
+        assert!(!looks_like_file_path("v0.0.5"));
+        assert!(!looks_like_file_path("hello"));
+    }
+
+    #[test]
+    fn file_path_rejects_shell_commands_with_paths() {
+        assert!(looks_like_file_path("test/ci-workflows.bats"));
+        assert!(!looks_like_file_path(
+            "BATS_LIB_PATH=test bats -t test/ci-workflows.bats"
+        ));
+    }
+
+    #[test]
+    fn file_path_rejects_http_and_https_urls() {
+        // C-1 / H-1: URLs with file-extension last-components must not trigger file-existence checks
+        assert!(!looks_like_file_path(
+            "https://github.com/flyingrobots/wesley/blob/main/docs/GUIDE.md"
+        ));
+        assert!(!looks_like_file_path("http://example.com/path/to/file.rs"));
+        assert!(!looks_like_file_path("https://example.com/README.md"));
+    }
+
+    // --- looks_like_commit_sha ---
+
+    #[test]
+    fn commit_sha_accepts_exactly_40_lowercase_hex_chars() {
+        assert!(looks_like_commit_sha(
+            "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+        ));
+        assert!(looks_like_commit_sha(&"f".repeat(40)));
+        assert!(looks_like_commit_sha(&"0".repeat(40)));
+    }
+
+    #[test]
+    fn commit_sha_rejects_wrong_length() {
+        assert!(!looks_like_commit_sha("abc123")); // too short
+        assert!(!looks_like_commit_sha(&"a".repeat(39))); // 39
+        assert!(!looks_like_commit_sha(&"a".repeat(41))); // 41
+    }
+
+    #[test]
+    fn commit_sha_rejects_non_hex_chars() {
+        assert!(!looks_like_commit_sha(&"g".repeat(40)));
+        assert!(!looks_like_commit_sha(&"z".repeat(40)));
+        // git SHAs are hex — mixed case is acceptable since git is case-insensitive
+        assert!(looks_like_commit_sha(
+            "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2"
+        ));
+    }
+
+    #[test]
+    fn git_revision_exists_requires_commit_objects() {
+        let head_tree = git_output(&["rev-parse", "HEAD^{tree}"]).unwrap();
+
+        assert!(git_revision_exists("HEAD").unwrap());
+        assert!(!git_revision_exists(&head_tree).unwrap());
+    }
+
+    // --- extract_backtick_content ---
+
+    #[test]
+    fn backtick_content_extracts_inline_spans() {
+        assert_eq!(extract_backtick_content("hello `world` foo"), vec!["world"]);
+        assert_eq!(extract_backtick_content("`a` and `b`"), vec!["a", "b"]);
+    }
+
+    #[test]
+    fn backtick_content_skips_empty_and_multiline() {
+        assert!(extract_backtick_content("no backticks").is_empty());
+        assert!(extract_backtick_content("unpaired `tick").is_empty());
+        // multi-line span is discarded
+        assert!(extract_backtick_content("text `first line\nsecond line` more").is_empty());
+    }
+
+    #[test]
+    fn backtick_content_handles_back_to_back_pairs() {
+        assert_eq!(extract_backtick_content("`foo``bar`"), vec!["foo", "bar"]);
+    }
+
+    // --- previous_tag_from_sorted_list ---
+
+    #[test]
+    fn previous_tag_returns_tag_immediately_before_current_in_sorted_list() {
+        let tags = vec!["v0.1.0", "v0.0.5", "v0.0.4", "v0.0.3"];
+        assert_eq!(
+            previous_tag_from_sorted_list(&tags, "v0.1.0"),
+            Some("v0.0.5")
+        );
+        assert_eq!(
+            previous_tag_from_sorted_list(&tags, "v0.0.5"),
+            Some("v0.0.4")
+        );
+    }
+
+    #[test]
+    fn previous_tag_returns_none_for_earliest_tag_and_unknown_tag() {
+        let tags = vec!["v0.1.0", "v0.0.5", "v0.0.3"];
+        assert_eq!(previous_tag_from_sorted_list(&tags, "v0.0.3"), None);
+        assert_eq!(previous_tag_from_sorted_list(&tags, "v99.0.0"), None);
+    }
+
+    // --- teardown_contains_version ---
+
+    #[test]
+    fn teardown_version_check_requires_v_prefix_and_rejects_substrings() {
+        // C-1: bare contains(version) would falsely pass "v0.0.50" for version "0.0.5"
+        assert!(!teardown_contains_version(
+            "The doc covers v0.0.50 changes.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "The doc covers v0.0.5-alpha changes.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "The doc covers v0.0.5+build changes.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "The doc covers av0.0.5 token.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "The doc covers v0.0.5_rc token.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "No version mentioned at all.",
+            "0.0.5"
+        ));
+        // Correct case: doc contains v{version} with v prefix
+        assert!(teardown_contains_version(
+            "Released v0.0.5 on June 5.",
+            "0.0.5"
+        ));
     }
 }

@@ -6,6 +6,7 @@ on:
       - 'v*'
 
 permissions:
+  actions: read
   contents: read
   issues: read
 
@@ -45,7 +46,12 @@ jobs:
           fi
           git merge-base --is-ancestor "$tag_commit" origin/main
 
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
       - name: Release guard
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: cargo xtask release-guard --tag "$GITHUB_REF_NAME"
 
       - name: Check for open version issues
@@ -90,9 +96,6 @@ jobs:
       - name: Release check
         run: cargo xtask release-check
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-
       - name: Cargo audit
         run: cargo audit
 
@@ -104,6 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: read
       contents: write
       issues: read
     steps:
@@ -127,7 +131,12 @@ jobs:
             exit 1
           fi
 
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
       - name: Release guard
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git fetch origin main --tags --prune
