@@ -1044,9 +1044,13 @@ muting any finding (`policy.rs:551`):
    not applied. The boundary is inclusive for the expiry date itself: a rule
    expiring on the evaluation date is still active for that day.
 
-Valid suppressions annotate the first matching finding (first-match wins),
-producing an `AnnotatedFinding` that carries the original `SemanticChangeFinding`
-plus an optional `suppressed_by: Option<LawAssuranceSuppressionMatch>`.
+Valid suppressions annotate every matching finding within their target scope,
+producing `AnnotatedFinding` records that carry the original
+`SemanticChangeFinding` plus an optional
+`suppressed_by: Option<LawAssuranceSuppressionMatch>`. Each finding can still be
+suppressed by at most one rule; when multiple valid suppressions match the same
+finding, the first matching rule in policy declaration order wins for that
+finding.
 
 The output type `SuppressionPolicyOutcome` collects annotated findings, applied
 `SuppressionApplicationRecord`s (with `target`, `owner`, `reason`, `created_on`,
