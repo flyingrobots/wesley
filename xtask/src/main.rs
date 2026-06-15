@@ -884,12 +884,39 @@ fn changelog_release_heading_status(
 
 fn looks_like_yyyy_mm_dd(value: &str) -> bool {
     let bytes = value.as_bytes();
-    bytes.len() == 10
+    if !(bytes.len() == 10
         && bytes[0..4].iter().all(u8::is_ascii_digit)
         && bytes[4] == b'-'
         && bytes[5..7].iter().all(u8::is_ascii_digit)
         && bytes[7] == b'-'
-        && bytes[8..10].iter().all(u8::is_ascii_digit)
+        && bytes[8..10].iter().all(u8::is_ascii_digit))
+    {
+        return false;
+    }
+
+    let Ok(year) = value[0..4].parse::<u16>() else {
+        return false;
+    };
+    let Ok(month) = value[5..7].parse::<u8>() else {
+        return false;
+    };
+    let Ok(day) = value[8..10].parse::<u8>() else {
+        return false;
+    };
+
+    let max_day = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(year) => 29,
+        2 => 28,
+        _ => return false,
+    };
+    day >= 1 && day <= max_day
+}
+
+fn is_leap_year(year: u16) -> bool {
+    let year = u32::from(year);
+    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
 fn check_release_backlog_clear(tag: &str, version: &str) -> Result<(), Error> {
@@ -2934,11 +2961,23 @@ mod tests {
             ChangelogReleaseHeadingStatus::Dated
         );
         assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2024-02-29", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Dated
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2025-02-29", "0.0.5"),
+            ChangelogReleaseHeadingStatus::MalformedDate
+        );
+        assert_eq!(
             changelog_release_heading_status("## [0.0.5]", "0.0.5"),
             ChangelogReleaseHeadingStatus::Undated
         );
         assert_eq!(
             changelog_release_heading_status("## [0.0.5] - soon", "0.0.5"),
+            ChangelogReleaseHeadingStatus::MalformedDate
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2026-99-99", "0.0.5"),
             ChangelogReleaseHeadingStatus::MalformedDate
         );
         assert_eq!(
