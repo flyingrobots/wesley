@@ -21,134 +21,163 @@ lacks the human sign-off is not a valid release, and vice versa.
 
 ## Enforcement Matrix
 
-| Check | Automated | Human |
-|---|---|---|
-| Zero open `lane:asap` GitHub issues | `xtask` + `gh` | |
-| Zero open version-lane issues | `xtask` + `gh` | |
-| Zero failing workspace tests | `cargo test` | |
-| Zero open issues from prior-version lanes | `gh` | |
-| Version lockstep across all `Cargo.toml` manifests | parse | |
-| `CHANGELOG.md` has a dated entry for this version | parse | |
-| `CHANGELOG.md` reflects actual diff vs. prior tag | | reviewer |
-| `README.md` version headline matches tag | grep | |
-| `docs/TECHNICAL_TEARDOWN.md` references tag version | grep | |
-| `docs/ARCHITECTURE.md` is current | | reviewer |
-| Guide file paths resolve to existing repo paths | grep + stat | |
-| Guide cited commit SHAs exist in git history | git cat-file | |
-| Guide claims are accurate | | reviewer |
-| `docs-truth` manifest passes | `xtask` | |
-| `cargo audit` reports zero vulnerabilities | shell | |
-| No WIP or fixup! commits in release range | git log | |
-| Working tree is clean | git status | |
-| Tag commits to `main` | git branch | |
-| CI is green on HEAD at tag time | `gh` API | |
-| `BREAKING CHANGE` commits → major/minor version bump | git log | |
-| `cargo doc --workspace` builds with zero warnings | cargo doc | |
+| # | Check | Automated | Human |
+| --- | --- | --- | --- |
+| 1 | Zero open `lane:asap` GitHub issues | `xtask` + `gh` | |
+| 2 | Zero open version-lane issues | `xtask` + `gh` | |
+| 3 | Zero failing workspace tests | `cargo test` | |
+| 4 | Zero open issues from prior-version lanes | `gh` | |
+| 5 | Version lockstep across all `Cargo.toml` manifests | parse | |
+| 6 | `CHANGELOG.md` has a dated entry for this version | parse | |
+| 7 | `CHANGELOG.md` reflects actual diff vs. prior tag | | reviewer |
+| 8 | `README.md` version headline matches tag | grep | |
+| 9 | `docs/TECHNICAL_TEARDOWN.md` references tag version | grep | |
+| 10 | `docs/ARCHITECTURE.md` is current | | reviewer |
+| 11 | Guide file paths resolve to existing repo paths | grep + stat | |
+| 12 | Guide cited commit SHAs exist in git history | git cat-file | |
+| 13 | Guide claims are accurate | | reviewer |
+| 14 | `docs-truth` manifest passes | `xtask` | |
+| 15 | `cargo audit` reports zero vulnerabilities | shell | |
+| 16 | No WIP or `fixup!` commits in release range | git log | |
+| 17 | Working tree is clean | git status | |
+| 18 | Tag commits to `main` | git branch | |
+| 19 | CI is green on HEAD at tag time | `gh` API | |
+| 20 | `BREAKING CHANGE` commits → major/minor version bump | git log | |
+| 21 | `cargo doc --workspace` builds with zero warnings | cargo doc | |
+| 22 | No known issues silently shipped | | reviewer |
 
 ## Automated Checks — Details
 
-### Issue Tracker (Checks 1, 2, 4)
+### Check 1–4: Issue Tracker
 
 `cargo xtask release-guard` calls the GitHub CLI to list open issues:
 
-- `lane:asap` — any open issue with this label blocks the release regardless of
-  version affinity.
-- Version-lane issues — open issues labeled with the release tag (e.g. `v0.1.0`)
-  or matching the version string in title or body.
-- Prior-version issues — open issues from older version lanes (older
-  milestone/label/text matches) that were never closed.
+- **Check 1** — `lane:asap`: any open issue with this label blocks the release
+  regardless of version affinity.
+- **Check 2** — Version-lane issues: open issues labeled with the release tag
+  (e.g. `v0.1.0`) or matching the version string in title or body.
+- **Check 4** — Prior-version issues: open issues from older version lanes
+  (older milestone/label/text matches) that were never closed.
 
-### Version Lockstep (Check 5)
+### Check 3: Zero Failing Workspace Tests
+
+`cargo test --workspace` must exit 0. All Rust workspace crates are covered.
+This check runs as the final step of `release-guard` so local failures are
+caught before the publish workflow runs.
+
+### Check 5: Version Lockstep
 
 All `Cargo.toml` manifests for published crates must declare the same version
 as the release tag. Workspace members are not permitted to drift independently.
 
-### Changelog (Check 6)
+### Check 6: Changelog
 
 `CHANGELOG.md` must contain a section heading of the form
 `## [{version}] - YYYY-MM-DD` where `{version}` matches the tag (without the
 leading `v`). A section heading without a date is rejected.
 
-### README Headline (Check 8)
+### Check 8: README Headline
 
-`README.md` must contain the string `v{version}` in a `## What's New in`
-heading. If the README still refers to a prior release version in that heading,
-the check fails.
+`README.md` must contain the exact heading `## What's New in v{version}`.
+If the README still refers to a prior release version in that heading, the
+check fails.
 
-### TECHNICAL_TEARDOWN (Check 9)
+### Check 9: TECHNICAL_TEARDOWN
 
-`docs/TECHNICAL_TEARDOWN.md` must contain the string `v{version}` (or
-`{version}` without the `v`). This document is updated each release to describe
-the current state; a stale reference is a sign the document was not updated.
+`docs/TECHNICAL_TEARDOWN.md` must contain `v{version}` as a whole version
+reference (not as a substring of a longer version string). This document is
+updated each release to describe the current state; a stale reference is a
+sign the document was not updated.
 
-### Guide File Paths (Check 11)
+### Check 11: Guide File Paths
 
 Backtick-wrapped strings in `docs/guides/` that look like repository-relative
 file paths (e.g., `` `crates/wesley-core/src/lib.rs` ``) must resolve to
 existing files or directories under the repository root. A guide that cites a
 path that was moved or deleted must be updated before release.
 
-### Guide Cited SHAs (Check 12)
+### Check 12: Guide Cited SHAs
 
 Full 40-character commit SHAs appearing in backticks inside `docs/guides/` must
 exist in git history (`git cat-file -e <sha>`). A guide citing a commit that
 was squashed, force-pushed out, or never existed fails this check.
 
-### docs-truth (Check 14)
+### Check 14: docs-truth
 
 The `docs/truth-manifest.json` must be consistent: every entry must point to a
 file that exists and whose embedded `docs-truth` metadata comment matches the
 manifest fields. All public mkdocs nav pages must appear in the manifest.
 
-### cargo audit (Check 15)
+### Check 15: cargo audit
 
 `cargo audit` must report zero known vulnerabilities. Advisories for
 dev-dependencies are included. The check is not skippable at release time.
+Install `cargo-audit` with `cargo install cargo-audit` if not present.
 
-### WIP / fixup! Commits (Check 16)
+### Check 16: No WIP or fixup! Commits
 
 `git log {prev-tag}..{tag} --format=%s` must not contain any subject lines
 starting with `WIP` or `fixup!`. The presence of such commits indicates a
 history that was not cleaned up before tagging.
 
-### CI Green (Check 19)
+### Check 17: Working Tree is Clean
 
-At the time the release-guard runs, the GitHub Actions workflow runs on HEAD
-must all have `conclusion=success` (or `skipped`/`neutral` for non-blocking
+`git status --porcelain` must return no output. Uncommitted changes at tag
+time indicate the tag does not represent a clean, reproducible state.
+
+### Check 18: Tag on main
+
+The tag's commit must be reachable from `origin/main`
+(`git merge-base --is-ancestor`). Releases from feature branches are not
+permitted.
+
+### Check 19: CI Green
+
+At the time the release-guard runs, all GitHub Actions workflow runs on HEAD
+must have `conclusion=success` (or `skipped`/`neutral` for non-blocking
 checks). A pending or failed run blocks the release.
 
-### BREAKING CHANGE → Version Bump (Check 20)
+### Check 20: BREAKING CHANGE → Version Bump
 
 If any commit in the release range contains `BREAKING CHANGE` in its body, the
 version must be a major or minor bump from the previous tag. A breaking change
 shipped as a patch release is rejected.
 
-### cargo doc (Check 21)
+### Check 21: cargo doc
 
 `cargo doc --workspace --no-deps` must compile with zero warnings under
 `RUSTDOCFLAGS="-D warnings"`. Public API documentation must not silently rot.
 
 ## Human Sign-Off — Details
 
-### CHANGELOG Reflects Actual Diff (Check 7)
+### Check 7: CHANGELOG Reflects Actual Diff
 
 A human reviewer must diff the release against the previous tag
 (`git log {prev-tag}..{tag} --oneline`) and confirm that the CHANGELOG entry
 accounts for all user-visible changes. Machine checks cannot detect a CHANGELOG
 entry that is technically present but misleadingly incomplete.
 
-### ARCHITECTURE.md Current (Check 10)
+### Check 10: ARCHITECTURE.md Current
 
 A human reviewer must read `docs/ARCHITECTURE.md` and confirm it accurately
 describes the current repository structure, crate relationships, and ownership
 boundaries. Stale architecture docs are a silent onboarding hazard.
 
-### Guide Claims Accurate (Check 13)
+### Check 13: Guide Claims Accurate
 
 A human reviewer must spot-check the affected guides from `docs/guides/` to
 confirm that commands, file paths, and behavioral claims are accurate against
 the current codebase. Automated checks confirm files exist and SHAs resolve;
 they cannot confirm that a claimed behavior actually works.
+
+### Check 22: No Known Issues Silently Shipped
+
+A human reviewer must confirm that no open GitHub Issues represent known defects
+or outstanding decisions that affect this release's correctness or safety, and
+are being knowingly shipped without acknowledgment in the CHANGELOG or a
+documented follow-on issue. Automated issue-tracker checks surface issues by
+version label and milestone; they cannot detect an issue that was never labeled
+but is nonetheless blocking.
 
 ## Policy Violations
 

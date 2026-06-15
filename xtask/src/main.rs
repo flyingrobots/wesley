@@ -192,8 +192,8 @@ fn run_publish_crates(
             if let Some(tag) = &options.tag {
                 run_release_guard_for_tag(tag)?;
             }
-            run_docs_check()?;
-            run_command("cargo", &["test", "--workspace"])?;
+            // run_docs_check and cargo test are already called inside run_release_guard_for_tag.
+            // Only run the checks that are specific to the publish path and not part of the guard.
             run_command(
                 "cargo",
                 &[
@@ -874,10 +874,13 @@ fn check_release_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
 }
 
 fn check_lane_asap_clear() -> Result<(), Error> {
+    let repo = release_github_repository()?;
     let output = Command::new("gh")
         .args([
             "issue",
             "list",
+            "--repo",
+            &repo,
             "--label",
             "lane:asap",
             "--state",
@@ -936,6 +939,22 @@ fn check_readme_version_headline(version: &str) -> Result<(), Error> {
     }
 }
 
+fn teardown_contains_version(content: &str, version: &str) -> bool {
+    let needle = format!("v{version}");
+    let mut search = content;
+    while let Some(pos) = search.find(&needle) {
+        let after = &search[pos + needle.len()..];
+        // Require the character after the version to not be a digit or dot,
+        // so "v0.0.5" doesn't falsely match inside "v0.0.50" or "v0.0.5.1".
+        match after.chars().next() {
+            Some(c) if c.is_ascii_digit() || c == '.' => {}
+            _ => return true,
+        }
+        search = &search[pos + 1..];
+    }
+    false
+}
+
 fn check_technical_teardown_version(version: &str) -> Result<(), Error> {
     let root = env::current_dir()
         .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
@@ -948,7 +967,7 @@ fn check_technical_teardown_version(version: &str) -> Result<(), Error> {
     })?;
 
     let v_version = format!("v{version}");
-    if content.contains(&v_version) || content.contains(version) {
+    if teardown_contains_version(&content, version) {
         Ok(())
     } else {
         Err(Error::CheckFailed {
@@ -958,6 +977,11 @@ fn check_technical_teardown_version(version: &str) -> Result<(), Error> {
             )],
         })
     }
+}
+
+fn previous_tag_from_sorted_list<'a>(tags: &[&'a str], current_tag: &str) -> Option<&'a str> {
+    let pos = tags.iter().position(|t| *t == current_tag)?;
+    tags.get(pos + 1).copied()
 }
 
 fn find_previous_release_tag(current_tag: &str) -> Result<Option<String>, Error> {
@@ -973,12 +997,12 @@ fn find_previous_release_tag(current_tag: &str) -> Result<Option<String>, Error>
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let tags: Vec<&str> = stdout.lines().map(str::trim).filter(|t| !t.is_empty()).collect();
-    let pos = tags.iter().position(|t| *t == current_tag);
-    match pos {
-        Some(i) => Ok(tags.get(i + 1).map(|t| t.to_string())),
-        None => Ok(None),
-    }
+    let tags: Vec<&str> = stdout
+        .lines()
+        .map(str::trim)
+        .filter(|t| !t.is_empty() && version_from_tag(t).is_ok())
+        .collect();
+    Ok(previous_tag_from_sorted_list(&tags, current_tag).map(ToOwned::to_owned))
 }
 
 fn check_no_wip_fixup_commits(tag: &str) -> Result<(), Error> {
@@ -1132,35 +1156,31 @@ fn extract_backtick_commit_shas(content: &str) -> Vec<String> {
 
 fn extract_backtick_content(content: &str) -> Vec<String> {
     let mut result = Vec::new();
-    let bytes = content.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'`' {
-            let start = i + 1;
-            let end = match bytes[start..].iter().position(|&b| b == b'`') {
-                Some(rel) => start + rel,
-                None => break,
-            };
-            let inner = &content[start..end];
+    let mut remaining = content;
+    while let Some(open) = remaining.find('`') {
+        remaining = &remaining[open + 1..];
+        if let Some(close) = remaining.find('`') {
+            let inner = &remaining[..close];
             if !inner.is_empty() && !inner.contains('\n') {
                 result.push(inner.to_string());
             }
-            i = end + 1;
+            remaining = &remaining[close + 1..];
         } else {
-            i += 1;
+            break;
         }
     }
     result
 }
 
 fn looks_like_file_path(s: &str) -> bool {
+    if s.starts_with("http://") || s.starts_with("https://") {
+        return false;
+    }
     if !s.contains('/') {
         return false;
     }
     let has_extension = s.split('/').last().is_some_and(|name| {
-        name.contains('.')
-            && !name.starts_with('.')
-            && name.len() > 2
+        name.contains('.') && !name.starts_with('.')
     });
     let has_known_prefix = s.starts_with("src/")
         || s.starts_with("crates/")
@@ -1185,7 +1205,7 @@ fn check_ci_green_on_head() -> Result<(), Error> {
         "--commit",
         &head,
         "--json",
-        "conclusion,status,name,databaseId",
+        "conclusion,status,name",
     ];
     let label = format!("gh {}", args.join(" "));
     let output = Command::new("gh")
@@ -1242,24 +1262,7 @@ fn check_ci_green_on_head() -> Result<(), Error> {
 }
 
 fn check_cargo_audit_clean() -> Result<(), Error> {
-    println!("xtask: cargo audit");
-    let status = Command::new("cargo")
-        .args(["audit"])
-        .status()
-        .map_err(|source| {
-            Error::Usage(format!(
-                "failed to spawn `cargo audit`: {source}; install with `cargo install cargo-audit`"
-            ))
-        })?;
-
-    if status.success() {
-        Ok(())
-    } else {
-        Err(Error::CommandFailed {
-            command: "cargo audit".to_string(),
-            code: status.code().unwrap_or(EXIT_FAILURE as i32),
-        })
-    }
+    run_command("cargo", &["audit"])
 }
 
 fn check_cargo_doc_clean() -> Result<(), Error> {
@@ -2964,5 +2967,139 @@ mod tests {
             !doc.contains("cargo install wesley-cli --version 0.0.1"),
             "release procedure should not hardcode the first alpha version"
         );
+    }
+
+    // --- looks_like_file_path ---
+
+    #[test]
+    fn file_path_accepts_repo_relative_paths_with_known_prefix() {
+        assert!(looks_like_file_path("crates/wesley-core/src/lib.rs"));
+        assert!(looks_like_file_path("docs/GUIDE.md"));
+        assert!(looks_like_file_path("src/main.rs"));
+        assert!(looks_like_file_path("xtask/src/main.rs"));
+        assert!(looks_like_file_path("scripts/preflight.sh"));
+        assert!(looks_like_file_path("test/fixtures/schema.graphql"));
+        assert!(looks_like_file_path(".github/workflows/ci.yml"));
+    }
+
+    #[test]
+    fn file_path_accepts_paths_with_extension_and_slash() {
+        assert!(looks_like_file_path("some/path/file.toml"));
+        assert!(looks_like_file_path("a/b.rs"));
+    }
+
+    #[test]
+    fn file_path_rejects_strings_without_slash() {
+        assert!(!looks_like_file_path("GUIDE.md"));
+        assert!(!looks_like_file_path("cargo-audit"));
+        assert!(!looks_like_file_path("v0.0.5"));
+        assert!(!looks_like_file_path("hello"));
+    }
+
+    #[test]
+    fn file_path_rejects_http_and_https_urls() {
+        // C-1 / H-1: URLs with file-extension last-components must not trigger file-existence checks
+        assert!(!looks_like_file_path(
+            "https://github.com/flyingrobots/wesley/blob/main/docs/GUIDE.md"
+        ));
+        assert!(!looks_like_file_path("http://example.com/path/to/file.rs"));
+        assert!(!looks_like_file_path("https://example.com/README.md"));
+    }
+
+    // --- looks_like_commit_sha ---
+
+    #[test]
+    fn commit_sha_accepts_exactly_40_lowercase_hex_chars() {
+        assert!(looks_like_commit_sha(
+            "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+        ));
+        assert!(looks_like_commit_sha(&"f".repeat(40)));
+        assert!(looks_like_commit_sha(&"0".repeat(40)));
+    }
+
+    #[test]
+    fn commit_sha_rejects_wrong_length() {
+        assert!(!looks_like_commit_sha("abc123")); // too short
+        assert!(!looks_like_commit_sha(&"a".repeat(39))); // 39
+        assert!(!looks_like_commit_sha(&"a".repeat(41))); // 41
+    }
+
+    #[test]
+    fn commit_sha_rejects_non_hex_chars() {
+        assert!(!looks_like_commit_sha(&"g".repeat(40)));
+        assert!(!looks_like_commit_sha(&"z".repeat(40)));
+        // git SHAs are hex — mixed case is acceptable since git is case-insensitive
+        assert!(looks_like_commit_sha(
+            "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2"
+        ));
+    }
+
+    // --- extract_backtick_content ---
+
+    #[test]
+    fn backtick_content_extracts_inline_spans() {
+        assert_eq!(extract_backtick_content("hello `world` foo"), vec!["world"]);
+        assert_eq!(
+            extract_backtick_content("`a` and `b`"),
+            vec!["a", "b"]
+        );
+    }
+
+    #[test]
+    fn backtick_content_skips_empty_and_multiline() {
+        assert!(extract_backtick_content("no backticks").is_empty());
+        assert!(extract_backtick_content("unpaired `tick").is_empty());
+        // multi-line span is discarded
+        assert!(extract_backtick_content("text `first line\nsecond line` more").is_empty());
+    }
+
+    #[test]
+    fn backtick_content_handles_back_to_back_pairs() {
+        assert_eq!(
+            extract_backtick_content("`foo``bar`"),
+            vec!["foo", "bar"]
+        );
+    }
+
+    // --- previous_tag_from_sorted_list ---
+
+    #[test]
+    fn previous_tag_returns_tag_immediately_before_current_in_sorted_list() {
+        let tags = vec!["v0.1.0", "v0.0.5", "v0.0.4", "v0.0.3"];
+        assert_eq!(
+            previous_tag_from_sorted_list(&tags, "v0.1.0"),
+            Some("v0.0.5")
+        );
+        assert_eq!(
+            previous_tag_from_sorted_list(&tags, "v0.0.5"),
+            Some("v0.0.4")
+        );
+    }
+
+    #[test]
+    fn previous_tag_returns_none_for_earliest_tag_and_unknown_tag() {
+        let tags = vec!["v0.1.0", "v0.0.5", "v0.0.3"];
+        assert_eq!(previous_tag_from_sorted_list(&tags, "v0.0.3"), None);
+        assert_eq!(previous_tag_from_sorted_list(&tags, "v99.0.0"), None);
+    }
+
+    // --- teardown_contains_version ---
+
+    #[test]
+    fn teardown_version_check_requires_v_prefix_and_rejects_substrings() {
+        // C-1: bare contains(version) would falsely pass "v0.0.50" for version "0.0.5"
+        assert!(!teardown_contains_version(
+            "The doc covers v0.0.50 changes.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "No version mentioned at all.",
+            "0.0.5"
+        ));
+        // Correct case: doc contains v{version} with v prefix
+        assert!(teardown_contains_version(
+            "Released v0.0.5 on June 5.",
+            "0.0.5"
+        ));
     }
 }

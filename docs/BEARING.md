@@ -446,8 +446,8 @@ without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
 runtime ownership into the base compiler.
 
-The implementation budget is **90 slices**. Status: **35 / 90 slices closed**.
-Closed implementation slices now cover `HIMP-001` through `HIMP-035`: the
+The implementation budget is **90 slices**. Status: **36 / 90 slices closed**.
+Closed implementation slices now cover `HIMP-001` through `HIMP-036`: the
 workspace-local Rust Holmes assurance crate shell, domain dependency-boundary
 tests, deterministic port traits and fakes, the first diagnostic taxonomy, the
 workspace preflight hook, implementation-boundary docs, the typed
@@ -471,15 +471,18 @@ aggregate assessment outcome rules, bounded finding summaries, domain snapshots,
 typed law assurance policy parsing/normalization, profile inheritance,
 event-kind and coverage-gate severity mapping, materialized coverage threshold
 policy, and narrow suppression policy records with owner, reason, expiration,
-allowed severity, and audit fields.
+allowed severity, and audit fields, plus suppression abuse-prevention
+enforcement for invalid evidence, expired suppressions, and non-overridable
+gates.
 
-The current implementation branch has taken `HIMP-016` through `HIMP-035`.
-Stop here for a drift check before starting `HIMP-036`: Holmes can now ingest
+The current implementation branch has taken `HIMP-016` through `HIMP-036`.
+Stop here for a drift check before starting `HIMP-037`: Holmes can now ingest
 Wesley-published law diff, coverage, capability, and manifest artifacts into
 typed findings and coverage gate decisions, aggregate those into deterministic
 assessment summaries, normalize the first policy profile substrate, and match
-narrow finding suppressions before any publisher, CLI, or branch-protection
-surface exists.
+narrow finding suppressions without permitting invalid evidence or
+non-overridable gates to be suppressed before any publisher, CLI, or
+branch-protection surface exists.
 
 Every implementation slice below references the completed `0020` PRD/test-plan
 artifact it implements.

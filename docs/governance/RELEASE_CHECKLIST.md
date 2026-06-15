@@ -7,7 +7,8 @@ into the release PR body and complete it before creating the release tag.
 
 Automated checks are not listed here — those run inside
 `cargo xtask release-guard --tag vX.Y.Z` and block CI automatically.
-This checklist covers the four items that require human judgment.
+This checklist covers checks 7, 10, 13, and 22 from the enforcement matrix,
+which require human judgment.
 
 See [`RELEASE_POLICY.md`](RELEASE_POLICY.md) for the full enforcement matrix
 and rationale.
