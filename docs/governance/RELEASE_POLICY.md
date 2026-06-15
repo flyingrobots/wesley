@@ -57,7 +57,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 - **Check 2** — Version-lane issues: open issues labeled with the release tag
   (e.g. `v0.1.0`) or matching the version string in title or body.
 - **Check 4** — Prior-version issues: open issues from older version lanes
-  (older milestone/label/text matches) that were never closed.
+  (older SemVer milestone or label matches) that were never closed.
 
 ### Check 3: Zero Failing Workspace Tests
 
@@ -135,7 +135,9 @@ permitted.
 
 At the time the release-guard runs, all GitHub Actions workflow runs on HEAD
 must have `conclusion=success` (or `skipped`/`neutral` for non-blocking
-checks). A pending or failed run blocks the release.
+checks). A pending or failed run blocks the release. When the guard runs from
+the tag-triggered release workflow, that current workflow run is excluded from
+the pending-run check so the release workflow does not fail by observing itself.
 
 ### Check 20: BREAKING CHANGE → Version Bump
 

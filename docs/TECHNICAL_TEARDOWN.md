@@ -52,11 +52,10 @@ assurance ingestion lives in `wesley-holmes`.
 
 ### Current Version And Next Work
 
-The Rust crates in this checkout declare version `0.0.5`. The public README
-still has a "What's New in v0.0.4" release note, so the honest version posture
-is: the checked-out crates are at `0.0.5`, while the README still describes the
-previous published alpha headline. The changelog has substantial unreleased
-work around `weslaw` and Rust Holmes law evidence gates.
+The Rust crates in this checkout declare version `0.0.5`, and the public README
+now carries the matching "What's New in v0.0.5" release note. The changelog's
+`[Unreleased]` section still carries substantial ongoing work around `weslaw`
+and Rust Holmes law evidence gates.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion
@@ -1040,10 +1039,10 @@ muting any finding (`policy.rs:551`):
 2. **Non-overridable gates.** A suppression rule targeting a gate id listed in
    `non_overridable_gates` is rejected with `HlawSuppressionRejectedNonOverridable`
    regardless of other conditions.
-3. **Expiry.** A suppression whose `expires_on` date is earlier than or equal to
+3. **Expiry.** A suppression whose `expires_on` date is earlier than
    `evaluation_date` emits `HlawSuppressionExpired` at warning severity and is
-   not applied. The boundary is exclusive: a rule expiring on the evaluation
-   date is treated as expired.
+   not applied. The boundary is inclusive for the expiry date itself: a rule
+   expiring on the evaluation date is still active for that day.
 
 Valid suppressions annotate the first matching finding (first-match wins),
 producing an `AnnotatedFinding` that carries the original `SemanticChangeFinding`

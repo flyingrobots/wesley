@@ -45,6 +45,9 @@ jobs:
           fi
           git merge-base --is-ancestor "$tag_commit" origin/main
 
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
       - name: Release guard
         run: cargo xtask release-guard --tag "$GITHUB_REF_NAME"
 
@@ -90,9 +93,6 @@ jobs:
       - name: Release check
         run: cargo xtask release-check
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-
       - name: Cargo audit
         run: cargo audit
 
@@ -126,6 +126,9 @@ jobs:
             echo "CARGO_REGISTRY_TOKEN is required to publish crates"
             exit 1
           fi
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
 
       - name: Release guard
         run: |

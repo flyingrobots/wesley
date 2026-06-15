@@ -787,21 +787,23 @@ fn check_release_required_files(version: &str) -> Result<(), Error> {
     }
 
     if let Ok(changelog) = fs::read_to_string(root.join("CHANGELOG.md")) {
-        let dated_heading = format!("## [{version}] - ");
-        let v_dated_heading = format!("## [v{version}] - ");
-        let undated_heading = format!("## [{version}]");
-        let v_undated_heading = format!("## [v{version}]");
-
-        if changelog.contains(&dated_heading) || changelog.contains(&v_dated_heading) {
-            // dated entry — passes
-        } else if changelog.contains(&undated_heading) || changelog.contains(&v_undated_heading) {
-            failures.push(format!(
-                "CHANGELOG.md has a section for {version} but it is missing a date; expected format: `## [{version}] - YYYY-MM-DD`"
-            ));
-        } else {
-            failures.push(format!(
-                "CHANGELOG.md has no release notes section for {version}"
-            ));
+        match changelog_release_heading_status(&changelog, version) {
+            ChangelogReleaseHeadingStatus::Dated => {}
+            ChangelogReleaseHeadingStatus::Undated => {
+                failures.push(format!(
+                    "CHANGELOG.md has a section for {version} but it is missing a date; expected format: `## [{version}] - YYYY-MM-DD`"
+                ));
+            }
+            ChangelogReleaseHeadingStatus::MalformedDate => {
+                failures.push(format!(
+                    "CHANGELOG.md has a section for {version} but its date is malformed; expected format: `## [{version}] - YYYY-MM-DD`"
+                ));
+            }
+            ChangelogReleaseHeadingStatus::Missing => {
+                failures.push(format!(
+                    "CHANGELOG.md has no release notes section for {version}"
+                ));
+            }
         }
     }
 
@@ -841,6 +843,53 @@ fn check_release_required_files(version: &str) -> Result<(), Error> {
     }
 
     finish_check("release required files", failures)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ChangelogReleaseHeadingStatus {
+    Dated,
+    Undated,
+    MalformedDate,
+    Missing,
+}
+
+fn changelog_release_heading_status(
+    changelog: &str,
+    version: &str,
+) -> ChangelogReleaseHeadingStatus {
+    let plain = format!("## [{version}]");
+    let with_v = format!("## [v{version}]");
+    let plain_prefix = format!("{plain} - ");
+    let with_v_prefix = format!("{with_v} - ");
+
+    for line in changelog.lines().map(str::trim_end) {
+        if line == plain || line == with_v {
+            return ChangelogReleaseHeadingStatus::Undated;
+        }
+        if let Some(rest) = line
+            .strip_prefix(&plain_prefix)
+            .or_else(|| line.strip_prefix(&with_v_prefix))
+        {
+            let date = rest.trim();
+            return if looks_like_yyyy_mm_dd(date) {
+                ChangelogReleaseHeadingStatus::Dated
+            } else {
+                ChangelogReleaseHeadingStatus::MalformedDate
+            };
+        }
+    }
+
+    ChangelogReleaseHeadingStatus::Missing
+}
+
+fn looks_like_yyyy_mm_dd(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 10
+        && bytes[0..4].iter().all(u8::is_ascii_digit)
+        && bytes[4] == b'-'
+        && bytes[5..7].iter().all(u8::is_ascii_digit)
+        && bytes[7] == b'-'
+        && bytes[8..10].iter().all(u8::is_ascii_digit)
 }
 
 fn check_release_backlog_clear(tag: &str, version: &str) -> Result<(), Error> {
@@ -943,16 +992,22 @@ fn teardown_contains_version(content: &str, version: &str) -> bool {
     let needle = format!("v{version}");
     let mut search = content;
     while let Some(pos) = search.find(&needle) {
+        let before = search[..pos].chars().next_back();
         let after = &search[pos + needle.len()..];
-        // Require the character after the version to not be a digit or dot,
-        // so "v0.0.5" doesn't falsely match inside "v0.0.50" or "v0.0.5.1".
-        match after.chars().next() {
-            Some(c) if c.is_ascii_digit() || c == '.' => {}
-            _ => return true,
+        if is_release_version_boundary(before) && is_release_version_boundary(after.chars().next())
+        {
+            return true;
         }
         search = &search[pos + 1..];
     }
     false
+}
+
+fn is_release_version_boundary(ch: Option<char>) -> bool {
+    match ch {
+        None => true,
+        Some(c) => !c.is_ascii_alphanumeric() && c != '.' && c != '-' && c != '+' && c != '_',
+    }
 }
 
 fn check_technical_teardown_version(version: &str) -> Result<(), Error> {
@@ -989,7 +1044,9 @@ fn find_previous_release_tag(current_tag: &str) -> Result<Option<String>, Error>
         .args(["tag", "--sort=-version:refname"])
         .output()
         .map_err(|source| {
-            Error::Usage(format!("failed to spawn `git tag --sort=-version:refname`: {source}"))
+            Error::Usage(format!(
+                "failed to spawn `git tag --sort=-version:refname`: {source}"
+            ))
         })?;
 
     if !output.status.success() {
@@ -1179,9 +1236,10 @@ fn looks_like_file_path(s: &str) -> bool {
     if !s.contains('/') {
         return false;
     }
-    let has_extension = s.split('/').last().is_some_and(|name| {
-        name.contains('.') && !name.starts_with('.')
-    });
+    let has_extension = s
+        .split('/')
+        .last()
+        .is_some_and(|name| name.contains('.') && !name.starts_with('.'));
     let has_known_prefix = s.starts_with("src/")
         || s.starts_with("crates/")
         || s.starts_with("docs/")
@@ -1205,15 +1263,13 @@ fn check_ci_green_on_head() -> Result<(), Error> {
         "--commit",
         &head,
         "--json",
-        "conclusion,status,name",
+        "conclusion,status,name,databaseId",
     ];
     let label = format!("gh {}", args.join(" "));
     let output = Command::new("gh")
         .args(args)
         .output()
-        .map_err(|source| {
-            Error::Usage(format!("failed to spawn `{label}`: {source}"))
-        })?;
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1224,41 +1280,81 @@ fn check_ci_green_on_head() -> Result<(), Error> {
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let runs = serde_json::from_str::<serde_json::Value>(&stdout).map_err(|source| {
-        Error::Usage(format!("failed to parse `{label}` output: {source}"))
-    })?;
+    let runs = serde_json::from_str::<serde_json::Value>(&stdout)
+        .map_err(|source| Error::Usage(format!("failed to parse `{label}` output: {source}")))?;
     let Some(runs) = runs.as_array() else {
         return Err(Error::Usage(format!("`{label}` returned non-array JSON")));
     };
 
+    let current_run_id = env::var("GITHUB_RUN_ID")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok());
+    let failures = ci_green_failures_for_runs(runs, current_run_id, &head);
+
+    finish_check("CI green on HEAD", failures)
+}
+
+fn ci_green_failures_for_runs(
+    runs: &[serde_json::Value],
+    current_run_id: Option<u64>,
+    head: &str,
+) -> Vec<String> {
     if runs.is_empty() {
-        return Err(Error::CheckFailed {
-            check: "CI green on HEAD".to_string(),
-            failures: vec![format!(
-                "no GitHub Actions runs found for HEAD commit {head}; CI must have run before tagging"
-            )],
-        });
+        return vec![format!(
+            "no GitHub Actions runs found for HEAD commit {head}; CI must have run before tagging"
+        )];
     }
 
     const PASSING_CONCLUSIONS: &[&str] = &["success", "skipped", "neutral"];
     let mut failures = Vec::new();
+    let mut considered_runs = 0usize;
+
     for run in runs {
-        let name = run.get("name").and_then(serde_json::Value::as_str).unwrap_or("<unknown>");
-        let status = run.get("status").and_then(serde_json::Value::as_str).unwrap_or("");
+        if current_run_id.is_some()
+            && run.get("databaseId").and_then(serde_json::Value::as_u64) == current_run_id
+        {
+            continue;
+        }
+
+        considered_runs += 1;
+        let name = run
+            .get("name")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("<unknown>");
+        let status = run
+            .get("status")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
         let conclusion = run.get("conclusion").and_then(serde_json::Value::as_str);
 
         if status != "completed" {
-            failures.push(format!("CI run `{name}` is not yet completed (status: {status})"));
+            failures.push(format!(
+                "CI run `{name}` is not yet completed (status: {status})"
+            ));
             continue;
         }
-        if let Some(conclusion) = conclusion {
-            if !PASSING_CONCLUSIONS.contains(&conclusion) {
-                failures.push(format!("CI run `{name}` did not pass (conclusion: {conclusion})"));
+        match conclusion {
+            Some(conclusion) if PASSING_CONCLUSIONS.contains(&conclusion) => {}
+            Some(conclusion) => {
+                failures.push(format!(
+                    "CI run `{name}` did not pass (conclusion: {conclusion})"
+                ));
+            }
+            None => {
+                failures.push(format!(
+                    "CI run `{name}` did not pass (conclusion: <missing>)"
+                ));
             }
         }
     }
 
-    finish_check("CI green on HEAD", failures)
+    if considered_runs == 0 {
+        failures.push(format!(
+            "no GitHub Actions runs other than the current release workflow were found for HEAD commit {head}; CI must have run before tagging"
+        ));
+    }
+
+    failures
 }
 
 fn check_cargo_audit_clean() -> Result<(), Error> {
@@ -1271,9 +1367,7 @@ fn check_cargo_doc_clean() -> Result<(), Error> {
         .env("RUSTDOCFLAGS", "-D warnings")
         .args(["doc", "--workspace", "--no-deps"])
         .status()
-        .map_err(|source| {
-            Error::Usage(format!("failed to spawn `cargo doc`: {source}"))
-        })?;
+        .map_err(|source| Error::Usage(format!("failed to spawn `cargo doc`: {source}")))?;
 
     if status.success() {
         Ok(())
@@ -1320,6 +1414,42 @@ fn check_release_issue_tracker_clear(tag: &str, version: &str) -> Result<(), Err
         for issue in parse_release_issue_list(&stdout, &query.source)? {
             matches.entry(issue.key).or_insert(issue.display);
         }
+    }
+
+    let prior_output = Command::new("gh")
+        .args([
+            "issue",
+            "list",
+            "--repo",
+            &repo,
+            "--state",
+            "open",
+            "--limit",
+            "1000",
+            "--json",
+            "number,title,url,labels,milestone",
+        ])
+        .output()
+        .map_err(|source| {
+            Error::Usage(format!(
+                "failed to spawn `gh issue list --repo {repo}` for prior-version issue check: {source}"
+            ))
+        })?;
+
+    if !prior_output.status.success() {
+        let stderr = String::from_utf8_lossy(&prior_output.stderr);
+        return Err(Error::CheckFailed {
+            check: "release issue tracker".to_string(),
+            failures: vec![format!(
+                "`gh issue list --repo {repo}` failed: {}",
+                stderr.trim()
+            )],
+        });
+    }
+
+    let prior_stdout = String::from_utf8_lossy(&prior_output.stdout);
+    for issue in parse_prior_version_issue_lanes(&prior_stdout, version)? {
+        matches.entry(issue.key).or_insert(issue.display);
     }
 
     finish_check(
@@ -1437,6 +1567,103 @@ fn parse_release_issue_list(content: &str, source: &str) -> Result<Vec<ReleaseIs
         });
     }
     Ok(matches)
+}
+
+fn parse_prior_version_issue_lanes(
+    content: &str,
+    current_version: &str,
+) -> Result<Vec<ReleaseIssueMatch>, Error> {
+    let current = Version::parse(current_version).map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse current release version `{current_version}` for prior-version issue check: {source}"
+        ))
+    })?;
+    let issues = serde_json::from_str::<serde_json::Value>(content).map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse prior-version issue tracker output as JSON: {source}"
+        ))
+    })?;
+    let Some(issues) = issues.as_array() else {
+        return Err(Error::Usage(
+            "prior-version issue tracker output must be a JSON array".to_string(),
+        ));
+    };
+
+    let mut matches = Vec::new();
+    for issue in issues {
+        let number = issue
+            .get("number")
+            .and_then(serde_json::Value::as_u64)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "prior-version issue tracker issue is missing numeric `number`".to_string(),
+                )
+            })?;
+        let title = issue
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "prior-version issue tracker issue is missing string `title`".to_string(),
+                )
+            })?;
+        let url = issue
+            .get("url")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "prior-version issue tracker issue is missing string `url`".to_string(),
+                )
+            })?;
+
+        let mut lanes = Vec::new();
+        if let Some(title) = issue
+            .get("milestone")
+            .and_then(|milestone| milestone.get("title"))
+            .and_then(serde_json::Value::as_str)
+        {
+            if version_lane_is_prior(title, &current) {
+                lanes.push(format!("milestone `{title}`"));
+            }
+        }
+
+        if let Some(labels) = issue.get("labels").and_then(serde_json::Value::as_array) {
+            for label in labels {
+                if let Some(name) = label.get("name").and_then(serde_json::Value::as_str) {
+                    if version_lane_is_prior(name, &current) {
+                        lanes.push(format!("label `{name}`"));
+                    }
+                }
+            }
+        }
+
+        if !lanes.is_empty() {
+            matches.push(ReleaseIssueMatch {
+                key: url.to_string(),
+                display: format!(
+                    "#{number} {title} {url} (prior version {})",
+                    lanes.join(", ")
+                ),
+            });
+        }
+    }
+
+    Ok(matches)
+}
+
+fn version_lane_is_prior(lane: &str, current: &Version) -> bool {
+    version_from_lane_name(lane).is_some_and(|version| version < *current)
+}
+
+fn version_from_lane_name(lane: &str) -> Option<Version> {
+    let lane = lane.trim();
+    let version = lane.strip_prefix('v').unwrap_or(lane);
+    let parsed = Version::parse(version).ok()?;
+    if parsed.build.is_empty() {
+        Some(parsed)
+    } else {
+        None
+    }
 }
 
 fn is_missing_issue_selector_error(stderr: &str) -> bool {
@@ -2689,6 +2916,146 @@ mod tests {
     }
 
     #[test]
+    fn changelog_release_heading_requires_exact_dated_heading() {
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2026-05-21", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Dated
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [v0.0.5] - 2026-05-21", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Dated
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5]", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Undated
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - soon", "0.0.5"),
+            ChangelogReleaseHeadingStatus::MalformedDate
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.5] - 2026-05-21 release", "0.0.5"),
+            ChangelogReleaseHeadingStatus::MalformedDate
+        );
+        assert_eq!(
+            changelog_release_heading_status("## [0.0.4] - 2026-05-21", "0.0.5"),
+            ChangelogReleaseHeadingStatus::Missing
+        );
+    }
+
+    #[test]
+    fn ci_green_skips_current_release_run_and_requires_prior_ci() {
+        let runs = vec![
+            serde_json::json!({
+                "name": "Release",
+                "status": "in_progress",
+                "conclusion": null,
+                "databaseId": 10
+            }),
+            serde_json::json!({
+                "name": "Preflight",
+                "status": "completed",
+                "conclusion": "success",
+                "databaseId": 11
+            }),
+        ];
+
+        assert!(ci_green_failures_for_runs(&runs, Some(10), "abc123").is_empty());
+
+        let current_only = vec![serde_json::json!({
+            "name": "Release",
+            "status": "in_progress",
+            "conclusion": null,
+            "databaseId": 10
+        })];
+        assert_eq!(
+            ci_green_failures_for_runs(&current_only, Some(10), "abc123"),
+            vec![
+                "no GitHub Actions runs other than the current release workflow were found for HEAD commit abc123; CI must have run before tagging"
+            ]
+        );
+    }
+
+    #[test]
+    fn ci_green_rejects_pending_failed_and_missing_conclusions() {
+        let runs = vec![
+            serde_json::json!({
+                "name": "Pending",
+                "status": "in_progress",
+                "conclusion": null,
+                "databaseId": 1
+            }),
+            serde_json::json!({
+                "name": "Failed",
+                "status": "completed",
+                "conclusion": "failure",
+                "databaseId": 2
+            }),
+            serde_json::json!({
+                "name": "Missing conclusion",
+                "status": "completed",
+                "conclusion": null,
+                "databaseId": 3
+            }),
+        ];
+
+        assert_eq!(
+            ci_green_failures_for_runs(&runs, None, "abc123"),
+            vec![
+                "CI run `Pending` is not yet completed (status: in_progress)",
+                "CI run `Failed` did not pass (conclusion: failure)",
+                "CI run `Missing conclusion` did not pass (conclusion: <missing>)"
+            ]
+        );
+    }
+
+    #[test]
+    fn prior_version_issue_lanes_find_older_semver_labels_and_milestones() {
+        let content = serde_json::json!([
+            {
+                "number": 1,
+                "title": "Older label",
+                "url": "https://github.com/flyingrobots/wesley/issues/1",
+                "labels": [
+                    { "name": "lane:asap" },
+                    { "name": "v0.0.4" },
+                    { "name": "v0.0.5" },
+                    { "name": "v0.0.4+build" }
+                ],
+                "milestone": null
+            },
+            {
+                "number": 2,
+                "title": "Older milestone",
+                "url": "https://github.com/flyingrobots/wesley/issues/2",
+                "labels": [],
+                "milestone": { "title": "0.0.3" }
+            },
+            {
+                "number": 3,
+                "title": "Current release",
+                "url": "https://github.com/flyingrobots/wesley/issues/3",
+                "labels": [{ "name": "v0.0.5" }],
+                "milestone": { "title": "0.0.5" }
+            }
+        ])
+        .to_string();
+
+        let matches = parse_prior_version_issue_lanes(&content, "0.0.5").unwrap();
+
+        assert_eq!(matches.len(), 2);
+        assert_eq!(
+            matches[0].display,
+            "#1 Older label https://github.com/flyingrobots/wesley/issues/1 (prior version label `v0.0.4`)"
+        );
+        assert_eq!(
+            matches[1].display,
+            "#2 Older milestone https://github.com/flyingrobots/wesley/issues/2 (prior version milestone `0.0.3`)"
+        );
+        assert!(version_from_lane_name("v0.0.4+build").is_none());
+    }
+
+    #[test]
     fn semver_rejects_leading_zeroes_and_empty_prereleases() {
         assert!(version_from_tag("v01.2.3").is_err());
         assert!(version_from_tag("v1.2.3-").is_err());
@@ -3039,10 +3406,7 @@ mod tests {
     #[test]
     fn backtick_content_extracts_inline_spans() {
         assert_eq!(extract_backtick_content("hello `world` foo"), vec!["world"]);
-        assert_eq!(
-            extract_backtick_content("`a` and `b`"),
-            vec!["a", "b"]
-        );
+        assert_eq!(extract_backtick_content("`a` and `b`"), vec!["a", "b"]);
     }
 
     #[test]
@@ -3055,10 +3419,7 @@ mod tests {
 
     #[test]
     fn backtick_content_handles_back_to_back_pairs() {
-        assert_eq!(
-            extract_backtick_content("`foo``bar`"),
-            vec!["foo", "bar"]
-        );
+        assert_eq!(extract_backtick_content("`foo``bar`"), vec!["foo", "bar"]);
     }
 
     // --- previous_tag_from_sorted_list ---
@@ -3090,6 +3451,22 @@ mod tests {
         // C-1: bare contains(version) would falsely pass "v0.0.50" for version "0.0.5"
         assert!(!teardown_contains_version(
             "The doc covers v0.0.50 changes.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "The doc covers v0.0.5-alpha changes.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "The doc covers v0.0.5+build changes.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "The doc covers av0.0.5 token.",
+            "0.0.5"
+        ));
+        assert!(!teardown_contains_version(
+            "The doc covers v0.0.5_rc token.",
             "0.0.5"
         ));
         assert!(!teardown_contains_version(

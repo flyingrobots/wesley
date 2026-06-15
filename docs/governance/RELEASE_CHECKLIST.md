@@ -39,9 +39,10 @@ and rationale.
   current codebase. I did not rely solely on the automated path/SHA checks.
 
 - [ ] **No known issues being silently shipped**
-  I reviewed the open GitHub Issues and confirmed there are no open issues
-  marked as affecting this release that are being knowingly deferred without
-  acknowledgment in the CHANGELOG or a follow-on issue.
+  I reviewed the open GitHub Issues for known defects or outstanding decisions
+  that affect this release's correctness or safety, whether or not they are
+  already marked as release issues. Anything knowingly deferred is acknowledged
+  in the CHANGELOG or a documented follow-on issue.
 
 ### Notes
 
