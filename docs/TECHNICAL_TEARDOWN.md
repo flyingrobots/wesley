@@ -3,7 +3,7 @@
 # Wesley Technical Teardown
 
 This document is an end-to-end technical explanation of the Wesley repository
-as it exists on the `main` branch on June 5, 2026 (post-PR #600).
+as it exists on the `main` branch on June 15, 2026 (post-PR #604).
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the
@@ -54,8 +54,10 @@ assurance ingestion lives in `wesley-holmes`.
 
 The Rust crates in this checkout declare version `0.0.5`, and the public README
 now carries the matching "What's New in v0.0.5" release note. The changelog's
-`[Unreleased]` section still carries substantial ongoing work around `weslaw`
-and Rust Holmes law evidence gates.
+`[Unreleased]` section carries substantial ongoing work around `weslaw`, Rust
+Holmes law evidence gates, and release-governance hardening. A future
+`v0.0.6` release must move those notes into a dated release section and bump the
+publishable crate manifests before tagging.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion
@@ -1455,10 +1457,10 @@ coverage posture among `release`, `ci-release`, and `local`.
 
 ### Environment Variables
 
-The docs describe JavaScript-side external module variables such as
-`WESLEY_MODULES`, `WESLEY_DISABLE_MODULES`, and `WESLEY_MODULE_ALLOWLIST`.
-Those belong to module loading and retained package/tooling boundaries, not to
-the ordinary Rust compiler lowering path.
+The ordinary Rust compiler lowering path does not load JavaScript modules from
+`WESLEY_MODULES`, `WESLEY_DISABLE_MODULES`, or `WESLEY_MODULE_ALLOWLIST`.
+Those names belong to the retired Node module-loading era or retained
+package/tooling boundaries, not to the native Rust front door.
 
 Holmes compatibility tooling also has configuration files and environment
 overrides for weights and counterfactual providers. Those surfaces are useful
@@ -1705,11 +1707,12 @@ for Rust and JavaScript, then attach those reports to Holmes or CI artifacts.
 
 ## Open Questions
 
-### Version Narrative
+### Next Release Narrative
 
-Should the README's release headline move from `v0.0.4` to the current
-`0.0.5` crate state, or should it remain a published-release note while
-unreleased `0.0.5` work accumulates in the changelog?
+The next crates.io release should decide whether the accumulated Rust-native
+front-door, `weslaw`, Holmes foundation, and release-governance work ships as
+`v0.0.6` on the current alpha line or as a larger pre-1.0 milestone. Either
+path must keep README, CHANGELOG, tags, and publishable crate manifests aligned.
 
 ### Host Package Fate
 

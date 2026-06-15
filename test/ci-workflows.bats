@@ -66,6 +66,60 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 0 ]
 }
 
+@test "rust native preflight provisions pnpm and watches audit inputs" {
+  run bash -lc "grep -F \"'package.json'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F \"'packages/**/package.json'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F \"'pnpm-lock.yaml'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F \"'pnpm-workspace.yaml'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F \"'wesley-website/package.json'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F 'pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093' .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e' .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'pnpm install --frozen-lockfile' .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "pnpm_setup=\$(grep -n 'pnpm/action-setup' .github/workflows/rust-native.yml | cut -d: -f1); pnpm_install=\$(grep -n 'pnpm install --frozen-lockfile' .github/workflows/rust-native.yml | cut -d: -f1); preflight=\$(grep -n 'cargo xtask preflight' .github/workflows/rust-native.yml | cut -d: -f1); [ \"\$pnpm_setup\" -lt \"\$pnpm_install\" ] && [ \"\$pnpm_install\" -lt \"\$preflight\" ]"
+  assert_success
+}
+
+@test "release crates provisions pnpm before preflight-backed commands" {
+  run bash -lc "grep -F 'pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F 'actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F 'pnpm install --frozen-lockfile' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "first_install=\$(grep -n 'pnpm install --frozen-lockfile' .github/workflows/release-crates.yml | sed -n '1p' | cut -d: -f1); second_install=\$(grep -n 'pnpm install --frozen-lockfile' .github/workflows/release-crates.yml | sed -n '2p' | cut -d: -f1); first_guard=\$(grep -n 'cargo xtask release-guard' .github/workflows/release-crates.yml | sed -n '1p' | cut -d: -f1); release_check=\$(grep -n 'cargo xtask release-check' .github/workflows/release-crates.yml | cut -d: -f1); second_guard=\$(grep -n 'cargo xtask release-guard' .github/workflows/release-crates.yml | sed -n '2p' | cut -d: -f1); [ \"\$first_install\" -lt \"\$first_guard\" ] && [ \"\$first_install\" -lt \"\$release_check\" ] && [ \"\$second_install\" -lt \"\$second_guard\" ]"
+  assert_success
+}
+
 @test "deleted legacy workflow files do not return" {
   run test ! -e .github/workflows/cli-quick.yml
   assert_success

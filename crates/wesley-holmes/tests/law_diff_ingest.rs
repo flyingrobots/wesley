@@ -8,7 +8,7 @@ const CI_SEMANTIC_DIFF: &str =
 
 #[test]
 fn law_diff_ingest_accepts_wesley_law_diff_v1_json() {
-    let result = JsonLawDiffIngestPort::default().ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes());
+    let result = JsonLawDiffIngestPort.ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes());
 
     assert_eq!(result.status, LawDiffIngestStatus::Valid);
     assert!(result.diagnostics.is_empty());
@@ -50,7 +50,7 @@ fn law_diff_ingest_accepts_wesley_law_diff_v1_json() {
 
 #[test]
 fn law_diff_report_normalizes_events_without_reclassifying_wesley_kind() {
-    let result = JsonLawDiffIngestPort::default().ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes());
+    let result = JsonLawDiffIngestPort.ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes());
     let report = result.report.expect("valid law diff should parse");
 
     let records = report.normalized_events();
@@ -108,7 +108,7 @@ fn law_diff_normalized_events_preserve_repeated_law_ids_as_distinct_records() {
         hash_c = "c".repeat(64)
     );
 
-    let result = JsonLawDiffIngestPort::default().ingest_law_diff(repeated_law_id.as_bytes());
+    let result = JsonLawDiffIngestPort.ingest_law_diff(repeated_law_id.as_bytes());
     let records = result
         .report
         .expect("valid repeated law id fixture should parse")
@@ -127,7 +127,7 @@ fn law_diff_normalized_events_preserve_repeated_law_ids_as_distinct_records() {
 fn law_diff_ingest_rejects_unsupported_api_version() {
     let unsupported = CI_SEMANTIC_DIFF.replace("wesley.law-diff/v1", "wesley.law-diff/v2");
 
-    let result = JsonLawDiffIngestPort::default().ingest_law_diff(unsupported.as_bytes());
+    let result = JsonLawDiffIngestPort.ingest_law_diff(unsupported.as_bytes());
 
     assert_eq!(result.status, LawDiffIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -140,7 +140,7 @@ fn law_diff_ingest_rejects_unsupported_api_version() {
 
 #[test]
 fn law_diff_ingest_rejects_malformed_json_without_findings() {
-    let result = JsonLawDiffIngestPort::default().ingest_law_diff(b"{not-json");
+    let result = JsonLawDiffIngestPort.ingest_law_diff(b"{not-json");
 
     assert_eq!(result.status, LawDiffIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -154,7 +154,7 @@ fn law_diff_ingest_rejects_malformed_json_without_findings() {
 fn law_diff_ingest_rejects_unknown_event_kind() {
     let unknown_kind = CI_SEMANTIC_DIFF.replace("LAW_WEAKENED", "QUANTUM_LAW_SHIFT");
 
-    let result = JsonLawDiffIngestPort::default().ingest_law_diff(unknown_kind.as_bytes());
+    let result = JsonLawDiffIngestPort.ingest_law_diff(unknown_kind.as_bytes());
 
     assert_eq!(result.status, LawDiffIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -196,7 +196,7 @@ fn law_diff_ingest_rejects_duplicate_law_id_event_identity() {
         hash_c = "c".repeat(64)
     );
 
-    let result = JsonLawDiffIngestPort::default().ingest_law_diff(duplicate.as_bytes());
+    let result = JsonLawDiffIngestPort.ingest_law_diff(duplicate.as_bytes());
 
     assert_eq!(result.status, LawDiffIngestStatus::Invalid);
     assert!(result.report.is_none());

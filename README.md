@@ -36,7 +36,7 @@ For a full first-principles walkthrough, read
 Wesley `0.0.5` hardens the compiler and toolchain surface with a set of
 correctness and boundary fixes:
 
-- **Object extension folding**: The JS GraphQL lowering now rejects duplicate
+- **Object extension folding**: The Rust GraphQL lowering now rejects duplicate
   fields and repeated Wesley directives when `extend type` blocks are folded
   into base object definitions, preventing silent shadowing.
 - **L1 fixture regeneration**: `pnpm fixtures:ir` now regenerates the tracked
@@ -186,6 +186,18 @@ cargo xtask preflight
 cargo wesley --help
 ```
 
+`cargo xtask preflight` is the strict pre-PR and release quality gate. It runs
+`cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`,
+`pnpm audit --prod=false --json`, documentation checks, workspace tests, and a
+native CLI smoke test. `cargo xtask strict-preflight` is an explicit alias for
+the same gate. `cargo xtask release-check` runs that same gate before building
+and packaging release artifacts, so local developer truth and release truth do
+not split.
+
+The retained pnpm workspace still supports docs, website, package tests, and
+advisory checks. Use Node `>=22.12.0` with pnpm `9.15.9` when working from this
+checkout.
+
 The native command can run Rust-native health checks, lower schema SDL to L1
 IR, compute schema hashes, diff schema structure, list schema root operations,
 emit Rust models and TypeScript declarations with root operation bindings,
@@ -211,7 +223,8 @@ developer-level operator guide, read [GUIDE.md](./docs/GUIDE.md).
 Historical `pnpm wesley` commands are migration bridges only. Prefer
 `wesley schema lower`, `wesley schema hash`, `wesley schema diff`,
 `wesley doctor`, and explicit `wesley emit ...` commands for generic compiler
-work. Legacy package commands now warn when a native replacement exists.
+work. The historical Node wrapper has been retired; compatibility and
+migration docs list replacements for old callers.
 
 ---
 
@@ -246,15 +259,15 @@ Extensions do not need to know about one another.
 These are externally owned module families; Wesley preserves the neutral IR
 contract and module seam they consume.
 
-| Module family | External owner                  | Responsibility                                        |
-| :------------ | :------------------------------ | ----------------------------------------------------- |
-| Postgres      | `wesley-postgres`               | SQL schemas, migrations, indexes, pgTAP, CRUD helpers |
-| Validation    | loaded module                   | Runtime and static validation rules                   |
-| Codec         | loaded module                   | Binary and runtime codecs                             |
-| TypeScript    | Wesley emitter or loaded module | Type contracts and client bindings                    |
-| Observer      | loaded module                   | Observation plans and projections                     |
-| Echo          | Echo-owned integration          | Runtime law, footprints, observation semantics        |
-| Continuum     | Continuum-owned module/repo     | Deferred protocol generation                          |
+| Module family | External owner                    | Responsibility                                        |
+| :------------ | :-------------------------------- | ----------------------------------------------------- |
+| Postgres      | `wesley-postgres`                 | SQL schemas, migrations, indexes, pgTAP, CRUD helpers |
+| Validation    | external target/module            | Runtime and static validation rules                   |
+| Codec         | external target/module            | Binary and runtime codecs                             |
+| TypeScript    | Wesley emitter or external target | Type contracts and client bindings                    |
+| Observer      | external target/module            | Observation plans and projections                     |
+| Echo          | Echo-owned integration            | Runtime law, footprints, observation semantics        |
+| Continuum     | Continuum-owned module/repo       | Deferred protocol generation                          |
 
 ---
 

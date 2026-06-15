@@ -431,8 +431,10 @@ The native CLI exposes Rust-backed compiler facts:
 
 ```mermaid
 flowchart LR
-    User --> CargoWesley[cargo wesley]
+    User --> CargoWesley[cargo wesley checkout alias]
+    User --> InstalledWesley[installed wesley binary]
     CargoWesley --> WesleyBin[crates/wesley-cli]
+    InstalledWesley --> WesleyBin
     WesleyBin --> SchemaLower[schema lower]
     WesleyBin --> SchemaHash[schema hash]
     WesleyBin --> SchemaOperations[schema operations]

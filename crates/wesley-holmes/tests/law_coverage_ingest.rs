@@ -54,8 +54,7 @@ const RELEASE_COVERAGE: &str = r#"{
 
 #[test]
 fn law_coverage_ingest_accepts_wesley_law_coverage_v1_json() {
-    let result =
-        JsonLawCoverageIngestPort::default().ingest_law_coverage(RELEASE_COVERAGE.as_bytes());
+    let result = JsonLawCoverageIngestPort.ingest_law_coverage(RELEASE_COVERAGE.as_bytes());
 
     assert_eq!(result.status, LawCoverageIngestStatus::Valid);
     assert!(result.diagnostics.is_empty());
@@ -77,8 +76,7 @@ fn law_coverage_ingest_accepts_wesley_law_coverage_v1_json() {
 
 #[test]
 fn law_coverage_report_normalizes_percentages_subjects_and_omitted_counts() {
-    let result =
-        JsonLawCoverageIngestPort::default().ingest_law_coverage(RELEASE_COVERAGE.as_bytes());
+    let result = JsonLawCoverageIngestPort.ingest_law_coverage(RELEASE_COVERAGE.as_bytes());
     let report = result
         .report
         .expect("valid law coverage should produce a report");
@@ -115,7 +113,7 @@ fn law_coverage_report_normalizes_percentages_subjects_and_omitted_counts() {
 fn law_coverage_ingest_rejects_covered_counts_above_totals() {
     let inconsistent = RELEASE_COVERAGE.replace("\"covered\": 1", "\"covered\": 2");
 
-    let result = JsonLawCoverageIngestPort::default().ingest_law_coverage(inconsistent.as_bytes());
+    let result = JsonLawCoverageIngestPort.ingest_law_coverage(inconsistent.as_bytes());
 
     assert_eq!(result.status, LawCoverageIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -140,7 +138,7 @@ fn law_coverage_ingest_rejects_missing_subject_count_mismatch() {
       ]"#,
     );
 
-    let result = JsonLawCoverageIngestPort::default().ingest_law_coverage(mismatch.as_bytes());
+    let result = JsonLawCoverageIngestPort.ingest_law_coverage(mismatch.as_bytes());
 
     assert_eq!(result.status, LawCoverageIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -155,7 +153,7 @@ fn law_coverage_ingest_rejects_missing_subject_count_mismatch() {
 fn law_coverage_ingest_rejects_unsupported_api_version() {
     let unsupported = RELEASE_COVERAGE.replace("wesley.law-coverage/v1", "wesley.law-coverage/v2");
 
-    let result = JsonLawCoverageIngestPort::default().ingest_law_coverage(unsupported.as_bytes());
+    let result = JsonLawCoverageIngestPort.ingest_law_coverage(unsupported.as_bytes());
 
     assert_eq!(result.status, LawCoverageIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -168,7 +166,7 @@ fn law_coverage_ingest_rejects_unsupported_api_version() {
 
 #[test]
 fn law_coverage_ingest_rejects_malformed_json() {
-    let result = JsonLawCoverageIngestPort::default().ingest_law_coverage(b"{broken");
+    let result = JsonLawCoverageIngestPort.ingest_law_coverage(b"{broken");
 
     assert_eq!(result.status, LawCoverageIngestStatus::Invalid);
     assert!(result.report.is_none());

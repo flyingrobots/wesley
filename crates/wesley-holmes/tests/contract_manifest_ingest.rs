@@ -29,7 +29,7 @@ fn release_manifest() -> String {
 
 #[test]
 fn contract_manifest_ingest_accepts_release_manifest_and_normalizes_provenance() {
-    let result = JsonContractBundleManifestIngestPort::default()
+    let result = JsonContractBundleManifestIngestPort
         .ingest_contract_bundle_manifest(release_manifest().as_bytes(), None);
 
     assert_eq!(result.status, ContractBundleManifestIngestStatus::Valid);
@@ -62,7 +62,7 @@ fn contract_manifest_ingest_cross_checks_bundle_provenance_hashes() {
         source: "ci".to_owned(),
     };
 
-    let result = JsonContractBundleManifestIngestPort::default()
+    let result = JsonContractBundleManifestIngestPort
         .ingest_contract_bundle_manifest(release_manifest().as_bytes(), Some(&provenance));
 
     assert_eq!(result.status, ContractBundleManifestIngestStatus::Valid);
@@ -74,7 +74,7 @@ fn contract_manifest_ingest_cross_checks_bundle_provenance_hashes() {
         bundle_hash: HASH_D.to_owned(),
         source: "ci".to_owned(),
     };
-    let result = JsonContractBundleManifestIngestPort::default()
+    let result = JsonContractBundleManifestIngestPort
         .ingest_contract_bundle_manifest(release_manifest().as_bytes(), Some(&stale_provenance));
 
     assert_eq!(result.status, ContractBundleManifestIngestStatus::Invalid);
@@ -89,7 +89,7 @@ fn contract_manifest_ingest_cross_checks_bundle_provenance_hashes() {
 fn contract_manifest_ingest_rejects_invalid_hash_syntax() {
     let invalid = release_manifest().replace(HASH_A, "abc");
 
-    let result = JsonContractBundleManifestIngestPort::default()
+    let result = JsonContractBundleManifestIngestPort
         .ingest_contract_bundle_manifest(invalid.as_bytes(), None);
 
     assert_eq!(result.status, ContractBundleManifestIngestStatus::Invalid);
@@ -105,7 +105,7 @@ fn contract_manifest_ingest_rejects_invalid_hash_syntax() {
 fn contract_manifest_ingest_rejects_missing_required_hash() {
     let missing = release_manifest().replace(&format!("  \"bundleHash\": \"{HASH_D}\",\n"), "");
 
-    let result = JsonContractBundleManifestIngestPort::default()
+    let result = JsonContractBundleManifestIngestPort
         .ingest_contract_bundle_manifest(missing.as_bytes(), None);
 
     assert_eq!(result.status, ContractBundleManifestIngestStatus::Invalid);
@@ -126,7 +126,7 @@ fn contract_manifest_ingest_rejects_unsupported_version_and_codec() {
         )
         .replace("wesley.law-ir.canonical-json.v1", "custom-law-ir/v9");
 
-    let result = JsonContractBundleManifestIngestPort::default()
+    let result = JsonContractBundleManifestIngestPort
         .ingest_contract_bundle_manifest(unsupported.as_bytes(), None);
 
     assert_eq!(result.status, ContractBundleManifestIngestStatus::Invalid);
@@ -142,8 +142,8 @@ fn contract_manifest_ingest_rejects_unsupported_version_and_codec() {
 
 #[test]
 fn contract_manifest_ingest_rejects_malformed_json() {
-    let result = JsonContractBundleManifestIngestPort::default()
-        .ingest_contract_bundle_manifest(b"{broken", None);
+    let result =
+        JsonContractBundleManifestIngestPort.ingest_contract_bundle_manifest(b"{broken", None);
 
     assert_eq!(result.status, ContractBundleManifestIngestStatus::Invalid);
     assert!(result.manifest.is_none());

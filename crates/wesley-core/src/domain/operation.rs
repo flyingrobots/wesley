@@ -121,7 +121,7 @@ mod tests {
         let seed: u32 = 0x811c_9dc5;
         let multiplier: u32 = 0x0100_0193;
 
-        let expected_query = seed.wrapping_mul(multiplier) ^ 0_u32;
+        let expected_query = seed.wrapping_mul(multiplier);
         let expected_mutation = seed.wrapping_mul(multiplier) ^ 1_u32;
         let expected_subscription = seed.wrapping_mul(multiplier) ^ 2_u32;
 

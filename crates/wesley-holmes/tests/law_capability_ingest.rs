@@ -41,8 +41,7 @@ const CAPABILITY_REPORT: &str = r#"{
 
 #[test]
 fn law_capability_ingest_accepts_current_wesley_capability_report_json() {
-    let result = JsonLawCapabilityIngestPort::default()
-        .ingest_law_capabilities(CAPABILITY_REPORT.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(CAPABILITY_REPORT.as_bytes());
 
     assert_eq!(result.status, LawCapabilityIngestStatus::Valid);
     assert!(result.diagnostics.is_empty());
@@ -59,8 +58,7 @@ fn law_capability_ingest_accepts_current_wesley_capability_report_json() {
 
 #[test]
 fn law_capability_report_normalizes_operations_and_posture() {
-    let result = JsonLawCapabilityIngestPort::default()
-        .ingest_law_capabilities(CAPABILITY_REPORT.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(CAPABILITY_REPORT.as_bytes());
     let report = result.report.expect("valid report should parse");
 
     let operations = report.normalized_operations();
@@ -84,8 +82,7 @@ fn law_capability_report_normalizes_operations_and_posture() {
 fn law_capability_ingest_rejects_missing_posture_fields() {
     let missing_posture = CAPABILITY_REPORT.replace("  \"reportOnly\": true,\n", "");
 
-    let result =
-        JsonLawCapabilityIngestPort::default().ingest_law_capabilities(missing_posture.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(missing_posture.as_bytes());
 
     assert_eq!(result.status, LawCapabilityIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -101,7 +98,7 @@ fn law_capability_ingest_accepts_legacy_capability_report_alias() {
     let legacy =
         CAPABILITY_REPORT.replace("wesley.law-capabilities/v1", "wesley.capability-report/v1");
 
-    let result = JsonLawCapabilityIngestPort::default().ingest_law_capabilities(legacy.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(legacy.as_bytes());
 
     assert_eq!(result.status, LawCapabilityIngestStatus::Valid);
     assert_eq!(
@@ -125,8 +122,7 @@ fn law_capability_ingest_rejects_contradictory_resource_posture() {
       ]"#,
     );
 
-    let result =
-        JsonLawCapabilityIngestPort::default().ingest_law_capabilities(contradictory.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(contradictory.as_bytes());
 
     assert_eq!(result.status, LawCapabilityIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -185,8 +181,7 @@ fn law_capability_ingest_rejects_forbids_overlapping_all_touched_resources() {
   ]
 }"#;
 
-    let result =
-        JsonLawCapabilityIngestPort::default().ingest_law_capabilities(contradictory.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(contradictory.as_bytes());
 
     assert_eq!(result.status, LawCapabilityIngestStatus::Invalid);
     assert!(result.report.is_none());
@@ -217,7 +212,7 @@ fn law_capability_ingest_requires_explicit_empty_footprint() {
   ]
 }"#;
 
-    let result = JsonLawCapabilityIngestPort::default().ingest_law_capabilities(empty.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(empty.as_bytes());
 
     assert_eq!(result.status, LawCapabilityIngestStatus::Invalid);
     assert_diagnostic(
@@ -229,8 +224,7 @@ fn law_capability_ingest_requires_explicit_empty_footprint() {
         "      \"forbids\": []",
         "      \"forbids\": [],\n      \"intentionallyEmpty\": true",
     );
-    let result =
-        JsonLawCapabilityIngestPort::default().ingest_law_capabilities(explicit_empty.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(explicit_empty.as_bytes());
 
     assert_eq!(result.status, LawCapabilityIngestStatus::Valid);
 }
@@ -240,8 +234,7 @@ fn law_capability_ingest_rejects_unsupported_api_version() {
     let unsupported =
         CAPABILITY_REPORT.replace("wesley.law-capabilities/v1", "wesley.law-capabilities/v2");
 
-    let result =
-        JsonLawCapabilityIngestPort::default().ingest_law_capabilities(unsupported.as_bytes());
+    let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(unsupported.as_bytes());
 
     assert_eq!(result.status, LawCapabilityIngestStatus::Invalid);
     assert!(result.report.is_none());

@@ -138,10 +138,12 @@ Suggested out-of-repo prompts:
   then update imports until jedit uses the generated request/response bindings.
 - In the Echo repository: consume Wesley's schema operation catalog or generated
   Rust operation bindings, and keep Echo-owned `@wes_footprint` honesty checks
-  in Echo rather than moving them into `wesley-core`. Echo's local `stable_op_id`
-  copy (pinned to `wesley-core 0.0.4`) should be retired once the dep bumps to
-  `0.0.5+` — both implementations are asserted against the same pinned outputs
-  (`crates/wesley-core/src/domain/operation.rs`, commit `e953eaa2`).
+  in Echo rather than moving them into `wesley-core`. If Echo still carries a
+  local `stable_op_id` copy from an older Wesley dependency, retire that copy
+  when Echo adopts the current Wesley operation catalog or generated Rust
+  operation bindings. Both implementations were originally asserted against
+  the same pinned outputs (`crates/wesley-core/src/domain/operation.rs`, commit
+  `e953eaa2`).
 - In the warp-ttd and Continuum repositories: treat Wesley-generated TypeScript
   operation bindings and the LE binary codec as the protocol boundary for jedit
   runtime operations.

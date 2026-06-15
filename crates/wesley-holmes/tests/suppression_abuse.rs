@@ -7,8 +7,7 @@ use wesley_holmes::{
 const CI_SEMANTIC_DIFF: &str =
     include_str!("../../../test/fixtures/weslaw/diff/ci-semantic-diff.json");
 
-const BUNDLE_HASH: &str =
-    "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+const BUNDLE_HASH: &str = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
 
 const POLICY_WITH_ACTIVE_SUPPRESSION: &str = r#"{
   "apiVersion": "holmes.law-assurance-policy/v1",
@@ -78,7 +77,7 @@ const POLICY_WITH_NON_OVERRIDABLE_GATE_SUPPRESSION: &str = r#"{
 }"#;
 
 fn semantic_findings() -> Vec<wesley_holmes::SemanticChangeFinding> {
-    let report = JsonLawDiffIngestPort::default()
+    let report = JsonLawDiffIngestPort
         .ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes())
         .report
         .expect("fixture should parse");
@@ -97,21 +96,18 @@ fn valid_evidence() -> LawEvidenceValidationResult {
 }
 
 fn invalid_evidence() -> LawEvidenceValidationResult {
-    LawEvidenceValidationResult::from_diagnostics(vec![
-        wesley_holmes::HolmesDiagnostic::new(
-            HolmesDiagnosticCode::HlawEvidenceBundleInvalid,
-            HolmesSeverity::Error,
-            "required artifact reference is missing",
-        ),
-    ])
+    LawEvidenceValidationResult::from_diagnostics(vec![wesley_holmes::HolmesDiagnostic::new(
+        HolmesDiagnosticCode::HlawEvidenceBundleInvalid,
+        HolmesSeverity::Error,
+        "required artifact reference is missing",
+    )])
 }
 
 #[test]
 fn active_suppression_is_applied_to_matching_finding() {
-    let schema =
-        parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes()).expect("should parse");
-    let policy =
-        normalize_law_assurance_policy(&schema, None).expect("should normalize");
+    let schema = parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes())
+        .expect("should parse");
+    let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
     let findings = semantic_findings();
 
     let outcome = apply_suppression_policy(&findings, &valid_evidence(), &policy, "2026-06-05");
@@ -121,7 +117,10 @@ fn active_suppression_is_applied_to_matching_finding() {
         .iter()
         .filter(|annotated| annotated.is_suppressed())
         .collect::<Vec<_>>();
-    assert!(!suppressed.is_empty(), "at least one finding should be suppressed");
+    assert!(
+        !suppressed.is_empty(),
+        "at least one finding should be suppressed"
+    );
 
     let record = suppressed[0].suppressed_by.as_ref().unwrap();
     assert_eq!(record.suppression_id, "known-scalar-window");
@@ -131,8 +130,7 @@ fn active_suppression_is_applied_to_matching_finding() {
     assert_eq!(outcome.applied.len(), suppressed.len());
     assert_eq!(outcome.applied[0].created_on, "2026-06-01");
     assert_eq!(
-        outcome.applied[0].finding_id,
-        suppressed[0].finding.finding_id,
+        outcome.applied[0].finding_id, suppressed[0].finding.finding_id,
         "applied record must reference the suppressed finding"
     );
     assert_eq!(
@@ -141,8 +139,7 @@ fn active_suppression_is_applied_to_matching_finding() {
         "applied record must carry the suppression target kind"
     );
     assert_eq!(
-        outcome.applied[0].target.selector,
-        "echo.scalar.positiveInt.u32-positive",
+        outcome.applied[0].target.selector, "echo.scalar.positiveInt.u32-positive",
         "applied record must carry the suppression target selector"
     );
     assert!(outcome.rejected.is_empty());
@@ -152,16 +149,18 @@ fn active_suppression_is_applied_to_matching_finding() {
 
 #[test]
 fn invalid_evidence_rejects_all_suppressions_with_diagnostic() {
-    let schema =
-        parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes()).expect("should parse");
-    let policy =
-        normalize_law_assurance_policy(&schema, None).expect("should normalize");
+    let schema = parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes())
+        .expect("should parse");
+    let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
     let findings = semantic_findings();
 
     let outcome = apply_suppression_policy(&findings, &invalid_evidence(), &policy, "2026-06-05");
 
     assert!(
-        outcome.annotated_findings.iter().all(|f| !f.is_suppressed()),
+        outcome
+            .annotated_findings
+            .iter()
+            .all(|f| !f.is_suppressed()),
         "no finding should be suppressed when evidence is invalid"
     );
     assert_eq!(outcome.rejected.len(), 1);
@@ -185,14 +184,16 @@ fn non_overridable_gate_suppression_is_rejected_with_diagnostic() {
     let schema =
         parse_law_assurance_policy(POLICY_WITH_NON_OVERRIDABLE_GATE_SUPPRESSION.as_bytes())
             .expect("should parse");
-    let policy =
-        normalize_law_assurance_policy(&schema, None).expect("should normalize");
+    let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
     let findings = semantic_findings();
 
     let outcome = apply_suppression_policy(&findings, &valid_evidence(), &policy, "2026-06-05");
 
     assert_eq!(outcome.rejected.len(), 1);
-    assert_eq!(outcome.rejected[0].suppression_id, "attempted-traceability-bypass");
+    assert_eq!(
+        outcome.rejected[0].suppression_id,
+        "attempted-traceability-bypass"
+    );
     assert_eq!(
         outcome.rejected[0].rejection_reason,
         SuppressionRejectionReason::NonOverridableGate {
@@ -201,7 +202,10 @@ fn non_overridable_gate_suppression_is_rejected_with_diagnostic() {
     );
     assert!(outcome.applied.is_empty());
     assert!(
-        outcome.annotated_findings.iter().all(|f| !f.is_suppressed()),
+        outcome
+            .annotated_findings
+            .iter()
+            .all(|f| !f.is_suppressed()),
         "no finding should be suppressed"
     );
 
@@ -215,16 +219,18 @@ fn non_overridable_gate_suppression_is_rejected_with_diagnostic() {
 
 #[test]
 fn expired_suppression_emits_warning_diagnostic_and_is_not_applied() {
-    let schema =
-        parse_law_assurance_policy(POLICY_WITH_EXPIRED_SUPPRESSION.as_bytes()).expect("should parse");
-    let policy =
-        normalize_law_assurance_policy(&schema, None).expect("should normalize");
+    let schema = parse_law_assurance_policy(POLICY_WITH_EXPIRED_SUPPRESSION.as_bytes())
+        .expect("should parse");
+    let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
     let findings = semantic_findings();
 
     let outcome = apply_suppression_policy(&findings, &valid_evidence(), &policy, "2026-06-05");
 
     assert!(
-        outcome.annotated_findings.iter().all(|f| !f.is_suppressed()),
+        outcome
+            .annotated_findings
+            .iter()
+            .all(|f| !f.is_suppressed()),
         "expired suppression must not mute any finding"
     );
     assert_eq!(outcome.expired, ["expired-scalar-window"]);
@@ -232,7 +238,10 @@ fn expired_suppression_emits_warning_diagnostic_and_is_not_applied() {
     assert!(outcome.rejected.is_empty());
 
     let diagnostic = &outcome.diagnostics[0];
-    assert_eq!(diagnostic.code, HolmesDiagnosticCode::HlawSuppressionExpired);
+    assert_eq!(
+        diagnostic.code,
+        HolmesDiagnosticCode::HlawSuppressionExpired
+    );
     assert_eq!(diagnostic.severity, HolmesSeverity::Warning);
 }
 
@@ -269,15 +278,18 @@ fn suppression_with_no_matching_finding_produces_no_applied_records() {
     assert!(outcome.rejected.is_empty());
     assert!(outcome.expired.is_empty());
     assert!(outcome.diagnostics.is_empty());
-    assert!(outcome.annotated_findings.iter().all(|f| !f.is_suppressed()));
+    assert!(outcome
+        .annotated_findings
+        .iter()
+        .all(|f| !f.is_suppressed()));
 }
 
 #[test]
 fn rejection_diagnostic_messages_use_display_format() {
     // Rule 1: invalid-evidence rejection must not debug-quote the suppression id.
     {
-        let schema =
-            parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes()).expect("should parse");
+        let schema = parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes())
+            .expect("should parse");
         let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
         let msg = &apply_suppression_policy(
             &semantic_findings(),
@@ -286,8 +298,11 @@ fn rejection_diagnostic_messages_use_display_format() {
             "2026-06-05",
         )
         .diagnostics[0]
-        .message;
-        assert!(msg.contains("known-scalar-window"), "message should contain suppression id");
+            .message;
+        assert!(
+            msg.contains("known-scalar-window"),
+            "message should contain suppression id"
+        );
         assert!(
             !msg.contains("\"known-scalar-window\""),
             "id must not be debug-quoted; got: {msg:?}"
@@ -306,7 +321,7 @@ fn rejection_diagnostic_messages_use_display_format() {
             "2026-06-05",
         )
         .diagnostics[0]
-        .message;
+            .message;
         assert!(
             !msg.contains("\"attempted-traceability-bypass\""),
             "suppression id must not be debug-quoted; got: {msg:?}"
@@ -318,8 +333,8 @@ fn rejection_diagnostic_messages_use_display_format() {
     }
     // Rule 3: expiry message must not debug-quote the suppression id.
     {
-        let schema =
-            parse_law_assurance_policy(POLICY_WITH_EXPIRED_SUPPRESSION.as_bytes()).expect("should parse");
+        let schema = parse_law_assurance_policy(POLICY_WITH_EXPIRED_SUPPRESSION.as_bytes())
+            .expect("should parse");
         let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
         let msg = &apply_suppression_policy(
             &semantic_findings(),
@@ -328,7 +343,7 @@ fn rejection_diagnostic_messages_use_display_format() {
             "2026-06-05",
         )
         .diagnostics[0]
-        .message;
+            .message;
         assert!(
             !msg.contains("\"expired-scalar-window\""),
             "suppression id must not be debug-quoted; got: {msg:?}"
@@ -338,20 +353,26 @@ fn rejection_diagnostic_messages_use_display_format() {
 
 #[test]
 fn invalid_evaluation_date_returns_diagnostic_and_leaves_findings_unsuppressed() {
-    let schema =
-        parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes()).expect("should parse");
+    let schema = parse_law_assurance_policy(POLICY_WITH_ACTIVE_SUPPRESSION.as_bytes())
+        .expect("should parse");
     let policy = normalize_law_assurance_policy(&schema, None).expect("should normalize");
     let findings = semantic_findings();
 
     let outcome = apply_suppression_policy(&findings, &valid_evidence(), &policy, "06/05/2026");
 
     assert!(
-        outcome.annotated_findings.iter().all(|f| !f.is_suppressed()),
+        outcome
+            .annotated_findings
+            .iter()
+            .all(|f| !f.is_suppressed()),
         "invalid evaluation date must not suppress any findings"
     );
     assert!(outcome.applied.is_empty());
     assert_eq!(outcome.diagnostics.len(), 1);
-    assert_eq!(outcome.diagnostics[0].code, HolmesDiagnosticCode::HlawSuppressionInvalid);
+    assert_eq!(
+        outcome.diagnostics[0].code,
+        HolmesDiagnosticCode::HlawSuppressionInvalid
+    );
     assert_eq!(outcome.diagnostics[0].severity, HolmesSeverity::Error);
 }
 
@@ -448,8 +469,10 @@ fn one_suppression_matches_multiple_findings() {
       }
     }"#;
 
-    use wesley_holmes::{semantic_change_findings_from_law_diff, JsonLawDiffIngestPort, LawDiffIngestPort};
-    let report = JsonLawDiffIngestPort::default()
+    use wesley_holmes::{
+        semantic_change_findings_from_law_diff, JsonLawDiffIngestPort, LawDiffIngestPort,
+    };
+    let report = JsonLawDiffIngestPort
         .ingest_law_diff(MULTI_EVENT_DIFF.as_bytes())
         .report
         .expect("multi-event fixture should parse");
@@ -460,7 +483,11 @@ fn one_suppression_matches_multiple_findings() {
         Some("release".to_owned()),
     )
     .expect("findings should construct");
-    assert_eq!(findings.len(), 2, "fixture must produce exactly two findings");
+    assert_eq!(
+        findings.len(),
+        2,
+        "fixture must produce exactly two findings"
+    );
 
     let schema =
         parse_law_assurance_policy(POLICY_TARGETS_SHARED_LAW.as_bytes()).expect("should parse");
@@ -469,13 +496,20 @@ fn one_suppression_matches_multiple_findings() {
     let outcome = apply_suppression_policy(&findings, &valid_evidence(), &policy, "2026-06-05");
 
     assert_eq!(
-        outcome.annotated_findings.iter().filter(|f| f.is_suppressed()).count(),
+        outcome
+            .annotated_findings
+            .iter()
+            .filter(|f| f.is_suppressed())
+            .count(),
         2,
         "both findings sharing the law-id must be suppressed"
     );
     assert_eq!(outcome.applied.len(), 2);
     assert!(
-        outcome.applied.iter().all(|r| r.suppression_id == "multi-match"),
+        outcome
+            .applied
+            .iter()
+            .all(|r| r.suppression_id == "multi-match"),
         "both applied records must reference the same suppression"
     );
     assert!(outcome.rejected.is_empty());

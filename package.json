@@ -51,11 +51,10 @@
   "homepage": "https://github.com/flyingrobots/wesley#readme",
   "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "pnpm": {
     "overrides": {
-      "vite": "npm:rolldown-vite@7.1.14",
       "flatted": "3.4.2",
       "js-yaml@>=4.0.0": ">=4.1.1",
       "markdown-it@>=13.0.0": ">=14.1.1",
@@ -72,7 +71,7 @@
   },
   "dependencies": {
     "@mantine/hooks": "^8.3.5",
-    "vite": "^7.1.12"
+    "vite": "^8.0.16"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

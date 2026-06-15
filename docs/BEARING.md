@@ -31,8 +31,8 @@ website/docs tooling, and browser/Bun/Deno host experiments.
 
 - Wesley's identity is the core `GraphQL -> whatever` compiler and assurance
   toolchain.
-- The `whatever` must come from explicitly loaded external modules, not
-  built-in product or database semantics.
+- The `whatever` must come from an owning external target, module, or sibling
+  repo, not built-in product or database semantics.
 - [0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md)
   is now the active ownership doctrine, not a pending cleanup card.
 - Echo, jedit, Continuum, WARPspace, and `warp-ttd` behavior belongs in the
@@ -77,9 +77,11 @@ behavior, and
 
 ### 6. Module Capability Boundary
 
-- Use the module capability registry as the seam between loaded modules and
-  Wesley base verbs.
-- Keep `wesley compile` dispatching only through module-owned `wesley.targets`.
+- Use the module capability registry as the future seam between explicit target
+  descriptors and Wesley base verbs.
+- Do not resurrect the retired Node `wesley compile` dispatch path. Any future
+  target execution must go through a Rust-native registry, WASM boundary, or
+  external-process protocol with explicit capability reporting.
 - Keep Wesley core CI independent of external product and database repos by
   exercising hermetic fixture modules across supported capability collections.
 - Move product/runtime/database semantics to owning repos or modules before
@@ -211,12 +213,12 @@ The closeout lives in
       tests.
 - [x] NR-045 Move browser/Bun/Deno host experiments out of the core retirement
       path or classify them as external ecosystem packages.
-- [x] NR-046 Delete or externalize `packages/wesley-host-bun` after its
-      compatibility evidence is obsolete.
-- [x] NR-047 Delete or externalize `packages/wesley-host-deno` after its
-      compatibility evidence is obsolete.
-- [x] NR-048 Delete or externalize `packages/wesley-host-browser` after its
-      compatibility evidence is obsolete.
+- [x] NR-046 Classify `packages/wesley-host-bun` as external host experiment
+      evidence pending deletion or externalization.
+- [x] NR-047 Classify `packages/wesley-host-deno` as external host experiment
+      evidence pending deletion or externalization.
+- [x] NR-048 Classify `packages/wesley-host-browser` as external host
+      experiment evidence pending deletion or externalization.
 - [x] NR-049 Replace `packages/wesley-host-node/bin/wesley.mjs` test invocations
       with native CLI invocations wherever tests are not explicitly legacy tests.
 - [x] NR-050 Move remaining Node-host tests into a compatibility-only lane.

@@ -10,7 +10,7 @@ const BUNDLE_HASH: &str = "sha256:dddddddddddddddddddddddddddddddddddddddddddddd
 
 #[test]
 fn semantic_findings_preserve_wesley_event_classification_and_traceability() {
-    let report = JsonLawDiffIngestPort::default()
+    let report = JsonLawDiffIngestPort
         .ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes())
         .report
         .expect("fixture should parse");
@@ -58,7 +58,7 @@ fn semantic_findings_preserve_wesley_event_classification_and_traceability() {
 
 #[test]
 fn semantic_finding_ids_are_stable_and_distinguish_distinct_events() {
-    let report = JsonLawDiffIngestPort::default()
+    let report = JsonLawDiffIngestPort
         .ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes())
         .report
         .expect("fixture should parse");
@@ -85,7 +85,7 @@ fn semantic_finding_ids_are_stable_and_distinguish_distinct_events() {
 
 #[test]
 fn semantic_findings_are_sorted_by_severity_and_subject() {
-    let report = JsonLawDiffIngestPort::default()
+    let report = JsonLawDiffIngestPort
         .ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes())
         .report
         .expect("fixture should parse");

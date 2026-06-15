@@ -23,6 +23,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("doctor"));
     assert!(stdout.contains("emit rust"));
     assert!(stdout.contains("emit typescript"));
+    assert!(stdout.contains("emit le-binary-typescript"));
     assert!(stdout.contains("operation selections"));
     assert!(!stdout.contains("check-footprint"));
 }
