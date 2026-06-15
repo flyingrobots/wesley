@@ -27,6 +27,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `cargo xtask release-guard` now query live GitHub Issues for open
   tag/version blockers instead of relying only on the retired filesystem
   backlog tree.
+- **Release governance hardening**: Release guards now require exact README and
+  changelog release headings, validate real calendar dates, reject shell
+  commands as guide path citations, require guide SHAs to be commit objects,
+  authenticate GitHub Actions workflow-run checks with read permissions, and
+  document suppression blast radius accurately.
 - **Rust Holmes validation gate review fixes**: Law evidence validation now
   continues artifact checks when structure validation emits warning-only
   diagnostics, rejects duplicate artifact roles after workspace-relative path
