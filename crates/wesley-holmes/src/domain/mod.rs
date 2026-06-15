@@ -60,9 +60,9 @@ pub use policy::{
     normalize_law_assurance_policy, parse_law_assurance_policy, AnnotatedFinding,
     LawAssuranceCoverageThresholdPolicy, LawAssurancePolicyProfile, LawAssurancePolicySchema,
     LawAssuranceSuppressionMatch, LawAssuranceSuppressionRule, LawAssuranceSuppressionTarget,
-    LawAssuranceSuppressionTargetKind, NormalizedLawAssurancePolicy,
-    SuppressionApplicationRecord, SuppressionPolicyOutcome, SuppressionRejectionReason,
-    SuppressionRejectionRecord, HOLMES_LAW_ASSURANCE_POLICY_API_VERSION,
+    LawAssuranceSuppressionTargetKind, NormalizedLawAssurancePolicy, SuppressionApplicationRecord,
+    SuppressionPolicyOutcome, SuppressionRejectionReason, SuppressionRejectionRecord,
+    HOLMES_LAW_ASSURANCE_POLICY_API_VERSION,
 };
 pub use versioning::{
     ArtifactFamily, ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,

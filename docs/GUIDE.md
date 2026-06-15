@@ -17,7 +17,8 @@ artifacts.
 - **Doctor native CLI**: `cargo wesley doctor`
 - **Install alpha from crates.io**: `cargo install wesley-cli --version 0.0.5`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
-- **Rust preflight**: `cargo xtask preflight`
+- **Strict preflight**: `cargo xtask preflight`
+- **Explicit alias**: `cargo xtask strict-preflight`
 - **Release check**: `cargo xtask release-check`
 
 The Rust-native CLI is now the normal front door for Wesley core work. The
@@ -35,9 +36,13 @@ does not inspect legacy Node config, plugins, or package state.
 Use `cargo install wesley-cli --version 0.0.5` when you want the published
 alpha `wesley` binary on your PATH. Use
 `cargo install --locked --path crates/wesley-cli` when working from this
-checkout. Use `cargo xtask release-check` before cutting native release
-artifacts; it runs the Rust tests, builds the optimized binary, and packages
-the Rust library crate without publishing anything.
+checkout. Use `cargo xtask preflight` before opening a PR. This is the strict
+quality gate: it runs `cargo fmt --check`,
+`cargo clippy --workspace --all-targets -- -D warnings`,
+`pnpm audit --prod=false --json`, docs checks, workspace tests, and a native
+CLI smoke test. Use `cargo xtask release-check` before cutting native release
+artifacts; it runs the same strict gate, then builds the optimized binary,
+smokes it, and packages the Rust library crate without publishing anything.
 
 The historical package CLI is retired. Use the native commands:
 
@@ -154,7 +159,7 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 - [ ] **I am setting up Rust core work**: Run `cargo xtask preflight`.
 - [ ] **I am changing docs only**: Run `cargo xtask docs-check`.
-- [ ] **I am changing retained JS packages or pnpm workspace files**: Run `pnpm install` and `cargo xtask legacy-preflight`.
+- [ ] **I am changing retained JS packages or pnpm workspace files**: Run `pnpm install`, `cargo xtask preflight`, and `cargo xtask legacy-preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
 - [ ] **I am adding a generic projection**: Start in `crates/wesley-emit-rust` or `crates/wesley-emit-typescript`.
 - [ ] **I am adding a domain target**: Put it in an owning external repo or design an explicit target protocol before wiring it into Wesley.

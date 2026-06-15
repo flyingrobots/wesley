@@ -202,7 +202,7 @@ fn suppression_policy_matches_narrow_unexpired_findings_only() {
 }
 
 fn semantic_findings() -> Vec<SemanticChangeFinding> {
-    let report = JsonLawDiffIngestPort::default()
+    let report = JsonLawDiffIngestPort
         .ingest_law_diff(CI_SEMANTIC_DIFF.as_bytes())
         .report
         .expect("fixture should parse");

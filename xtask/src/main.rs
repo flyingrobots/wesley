@@ -83,12 +83,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
             Ok(())
         }
         "test" => run_command("cargo", &["test", "--workspace"]),
-        "preflight" => {
-            check_git_identity_guard()?;
-            run_docs_check()?;
-            run_command("cargo", &["test", "--workspace"])?;
-            run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
-        }
+        "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
         "package-crates" => run_package_crates(&args[1..]),
         "publish-alpha" => {
@@ -98,26 +93,50 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         "release-prep-guard" => run_release_prep_guard(&args[1..]),
         "release-guard" => run_release_guard(&args[1..]),
         "release-check" => {
-            run_command("cargo", &["test", "--workspace"])?;
-            run_command("cargo", &["build", "--release", "--bin", "wesley"])?;
-            run_command(
-                "cargo",
-                &["run", "--release", "--bin", "wesley", "--", "--help"],
-            )?;
-            run_command(
-                "cargo",
-                &[
-                    "package",
-                    "--manifest-path",
-                    "crates/wesley-core/Cargo.toml",
-                    "--allow-dirty",
-                    "--no-verify",
-                ],
-            )
+            run_preflight()?;
+            run_release_artifact_check()
         }
         "legacy-preflight" => run_command("pnpm", &["run", "legacy-preflight"]),
         other => Err(Error::Usage(format!("unknown xtask command `{other}`"))),
     }
+}
+
+fn run_preflight() -> Result<(), Error> {
+    check_git_identity_guard()?;
+    run_command("cargo", &["fmt", "--check"])?;
+    run_command(
+        "cargo",
+        &[
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings",
+        ],
+    )?;
+    run_command("pnpm", &["audit", "--prod=false", "--json"])?;
+    run_docs_check()?;
+    run_command("cargo", &["test", "--workspace"])?;
+    run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
+}
+
+fn run_release_artifact_check() -> Result<(), Error> {
+    run_command("cargo", &["build", "--release", "--bin", "wesley"])?;
+    run_command(
+        "cargo",
+        &["run", "--release", "--bin", "wesley", "--", "--help"],
+    )?;
+    run_command(
+        "cargo",
+        &[
+            "package",
+            "--manifest-path",
+            "crates/wesley-core/Cargo.toml",
+            "--allow-dirty",
+            "--no-verify",
+        ],
+    )
 }
 
 fn run_package_crates(args: &[OsString]) -> Result<(), Error> {
@@ -192,20 +211,8 @@ fn run_publish_crates(
             if let Some(tag) = &options.tag {
                 run_release_guard_for_tag(tag)?;
             }
-            // run_docs_check and cargo test are already called inside run_release_guard_for_tag.
-            // Only run the checks that are specific to the publish path and not part of the guard.
-            run_command(
-                "cargo",
-                &[
-                    "clippy",
-                    "--workspace",
-                    "--all-targets",
-                    "--",
-                    "-D",
-                    "warnings",
-                ],
-            )?;
-            run_command("cargo", &["xtask", "release-check"])?;
+            // The release guard runs the strict preflight. Only run the artifact checks here.
+            run_release_artifact_check()?;
         }
         for publish_crate in PUBLISH_CRATES {
             if publish_decision(crate_version_is_indexed(
@@ -450,11 +457,10 @@ fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     check_breaking_change_version_bump(tag, &version)?;
     check_guide_file_paths_resolve()?;
     check_guide_cited_shas_exist()?;
-    run_docs_check()?;
+    run_preflight()?;
     check_ci_green_on_head()?;
     check_cargo_audit_clean()?;
     check_cargo_doc_clean()?;
-    run_command("cargo", &["test", "--workspace"])?;
     println!("xtask: release guard passed for {tag}");
     Ok(())
 }
@@ -1273,7 +1279,7 @@ fn looks_like_file_path(s: &str) -> bool {
     }
     let has_extension = s
         .split('/')
-        .last()
+        .next_back()
         .is_some_and(|name| name.contains('.') && !name.starts_with('.'));
     let has_known_prefix = s.starts_with("src/")
         || s.starts_with("crates/")
@@ -2612,13 +2618,14 @@ Usage:
 Commands:
   test              Run Rust workspace tests
   docs-check        Run Rust-native documentation hygiene checks
-  preflight         Run native Rust preflight checks
+  preflight         Run the strict pre-PR/release quality gate
+  strict-preflight  Alias for preflight
   package-crates    Check package file sets for the crates.io release set
   publish-alpha     Publish the crates.io alpha package set; dry-run by default
   publish-crates    Publish crates.io package set for a release tag
   release-prep-guard Verify release prep before a tag exists
   release-guard     Verify that a release tag is eligible to publish
-  release-check     Build and package the native Rust release artifacts
+  release-check     Run strict preflight, then build and package release artifacts
   legacy-preflight  Run the historical pnpm package preflight for legacy changes
   help              Show help
 

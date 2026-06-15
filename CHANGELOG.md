@@ -8,6 +8,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Strict quality gate**: `cargo xtask preflight` is now the canonical
+  pre-PR and release quality gate. It runs `cargo fmt --check`,
+  `cargo clippy --workspace --all-targets -- -D warnings`,
+  `pnpm audit --prod=false --json`, docs checks, workspace tests, and a native
+  CLI smoke test. `cargo xtask strict-preflight` is an alias, and
+  `cargo xtask release-check` starts with the same gate before release artifact
+  validation.
 - **Method tracker migration**: GitHub Issues are now Wesley's live Method work
   tracker. Former filesystem backlog cards were migrated to GitHub Issues with
   Method lane/legend labels, and the local backlog tree now points to the
@@ -15,12 +22,17 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Package advisory cleanup**: Removed the `rolldown-vite` alias that pulled
+  `esbuild` `0.25.x` into the workspace and moved retained Vite tooling to the
+  patched Vite 8 line so `pnpm audit --prod=false --json` reports zero known
+  advisories.
 - **Rust Holmes capability ingest review fix**: Report-only law capability
   ingest now rejects forbidden-resource contradictions across the full touched
   resource footprint, including reads, writes, creates, slot kinds, and closure
   reads, instead of checking only write/create overlaps.
-- **`weslaw` capability artifact version drift**: `wesley law capabilities
-  --json` now emits the PRD-canonical `wesley.law-capabilities/v1` API version.
+- **`weslaw` capability artifact version drift**: The JSON output from
+  `wesley law capabilities --json` now emits the PRD-canonical
+  `wesley.law-capabilities/v1` API version.
   Holmes continues to accept the pre-canonical `wesley.capability-report/v1`
   string as a legacy input alias and normalizes it internally.
 - **Release guard tracker checks**: `cargo xtask release-prep-guard` and

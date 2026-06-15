@@ -119,7 +119,7 @@ fn coverage_gate_follows_absent_category_policy() {
 }
 
 fn normalized_release_coverage() -> wesley_holmes::NormalizedLawCoverageProfile {
-    JsonLawCoverageIngestPort::default()
+    JsonLawCoverageIngestPort
         .ingest_law_coverage(RELEASE_COVERAGE.as_bytes())
         .report
         .expect("coverage fixture should parse")

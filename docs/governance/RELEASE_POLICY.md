@@ -14,37 +14,41 @@ lacks the human sign-off is not a valid release, and vice versa.
 
 - **Automated checks** run inside `cargo xtask release-guard --tag vX.Y.Z`.
   The CI publish workflow calls this command before uploading anything. A
-  nonzero exit code blocks the publish.
+  nonzero exit code blocks the publish. The release guard calls the same strict
+  preflight gate developers run locally: `cargo xtask preflight`.
+- **Release artifact checks** run through `cargo xtask release-check`. This
+  command first runs strict preflight, then builds and smokes the optimized
+  native CLI and packages release artifacts without publishing anything.
 - **Human sign-off** is collected on the release PR using the template in
   [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md). The checklist must be
   completed by a human reviewer before the tag is created.
 
 ## Enforcement Matrix
 
-| # | Check | Automated | Human |
-| --- | --- | --- | --- |
-| 1 | Zero open `lane:asap` GitHub issues | `xtask` + `gh` | |
-| 2 | Zero open version-lane issues | `xtask` + `gh` | |
-| 3 | Zero failing workspace tests | `cargo test` | |
-| 4 | Zero open issues from prior-version lanes | `gh` | |
-| 5 | Version lockstep across all `Cargo.toml` manifests | parse | |
-| 6 | `CHANGELOG.md` has a dated entry for this version | parse | |
-| 7 | `CHANGELOG.md` reflects actual diff vs. prior tag | | reviewer |
-| 8 | `README.md` version headline matches tag | grep | |
-| 9 | `docs/TECHNICAL_TEARDOWN.md` references tag version | grep | |
-| 10 | `docs/ARCHITECTURE.md` is current | | reviewer |
-| 11 | Guide file paths resolve to existing repo paths | grep + stat | |
-| 12 | Guide cited commit SHAs exist in git history | git cat-file | |
-| 13 | Guide claims are accurate | | reviewer |
-| 14 | `docs-truth` manifest passes | `xtask` | |
-| 15 | `cargo audit` reports zero vulnerabilities | shell | |
-| 16 | No WIP or `fixup!` commits in release range | git log | |
-| 17 | Working tree is clean | git status | |
-| 18 | Tag commits to `main` | git branch | |
-| 19 | CI is green on HEAD at tag time | `gh` API | |
-| 20 | `BREAKING CHANGE` commits → major/minor version bump | git log | |
-| 21 | `cargo doc --workspace` builds with zero warnings | cargo doc | |
-| 22 | No known issues silently shipped | | reviewer |
+| #   | Check                                                | Automated      | Human    |
+| --- | ---------------------------------------------------- | -------------- | -------- |
+| 1   | Zero open `lane:asap` GitHub issues                  | `xtask` + `gh` |          |
+| 2   | Zero open version-lane issues                        | `xtask` + `gh` |          |
+| 3   | Strict preflight gate                                | `xtask`        |          |
+| 4   | Zero open issues from prior-version lanes            | `gh`           |          |
+| 5   | Version lockstep across all `Cargo.toml` manifests   | parse          |          |
+| 6   | `CHANGELOG.md` has a dated entry for this version    | parse          |          |
+| 7   | `CHANGELOG.md` reflects actual diff vs. prior tag    |                | reviewer |
+| 8   | `README.md` version headline matches tag             | grep           |          |
+| 9   | `docs/TECHNICAL_TEARDOWN.md` references tag version  | grep           |          |
+| 10  | `docs/ARCHITECTURE.md` is current                    |                | reviewer |
+| 11  | Guide file paths resolve to existing repo paths      | grep + stat    |          |
+| 12  | Guide cited commit SHAs exist in git history         | git cat-file   |          |
+| 13  | Guide claims are accurate                            |                | reviewer |
+| 14  | `docs-truth` manifest passes                         | `xtask`        |          |
+| 15  | `cargo audit` reports zero vulnerabilities           | shell          |          |
+| 16  | No WIP or `fixup!` commits in release range          | git log        |          |
+| 17  | Working tree is clean                                | git status     |          |
+| 18  | Tag commits to `main`                                | git branch     |          |
+| 19  | CI is green on HEAD at tag time                      | `gh` API       |          |
+| 20  | `BREAKING CHANGE` commits → major/minor version bump | git log        |          |
+| 21  | `cargo doc --workspace` builds with zero warnings    | cargo doc      |          |
+| 22  | No known issues silently shipped                     |                | reviewer |
 
 ## Automated Checks — Details
 
@@ -59,11 +63,22 @@ lacks the human sign-off is not a valid release, and vice versa.
 - **Check 4** — Prior-version issues: open issues from older version lanes
   (older SemVer milestone or label matches) that were never closed.
 
-### Check 3: Zero Failing Workspace Tests
+### Check 3: Strict Preflight Gate
 
-`cargo test --workspace` must exit 0. All Rust workspace crates are covered.
-This check runs as the final step of `release-guard` so local failures are
-caught before the publish workflow runs.
+`cargo xtask preflight` is the shared pre-PR and release truth. It must exit 0
+before a PR is considered ready and before a release tag can publish. The gate
+runs, in order:
+
+1. `cargo fmt --check`
+2. `cargo clippy --workspace --all-targets -- -D warnings`
+3. `pnpm audit --prod=false --json`
+4. `cargo xtask docs-check`
+5. `cargo test --workspace`
+6. `cargo run --bin wesley -- --help`
+
+`cargo xtask strict-preflight` is an explicit alias for the same gate.
+`cargo xtask release-check` starts with the same gate before building release
+artifacts.
 
 ### Check 5: Version Lockstep
 
@@ -112,7 +127,9 @@ manifest fields. All public mkdocs nav pages must appear in the manifest.
 
 `cargo audit` must report zero known vulnerabilities. Advisories for
 dev-dependencies are included. The check is not skippable at release time.
-Install `cargo-audit` with `cargo install cargo-audit` if not present.
+Install `cargo-audit` with `cargo install cargo-audit` if not present. This is
+the Rust advisory database check; the pnpm advisory check is part of strict
+preflight.
 
 ### Check 16: No WIP or fixup! Commits
 
