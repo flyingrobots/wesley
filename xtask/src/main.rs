@@ -1233,6 +1233,9 @@ fn looks_like_file_path(s: &str) -> bool {
     if s.starts_with("http://") || s.starts_with("https://") {
         return false;
     }
+    if s.chars().any(char::is_whitespace) {
+        return false;
+    }
     if !s.contains('/') {
         return false;
     }
@@ -3361,6 +3364,14 @@ mod tests {
         assert!(!looks_like_file_path("cargo-audit"));
         assert!(!looks_like_file_path("v0.0.5"));
         assert!(!looks_like_file_path("hello"));
+    }
+
+    #[test]
+    fn file_path_rejects_shell_commands_with_paths() {
+        assert!(looks_like_file_path("test/ci-workflows.bats"));
+        assert!(!looks_like_file_path(
+            "BATS_LIB_PATH=test bats -t test/ci-workflows.bats"
+        ));
     }
 
     #[test]
