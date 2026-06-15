@@ -34,6 +34,28 @@ jobs:
           rustc --version
           cargo --version
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+        with:
+          version: 9.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Verify pnpm version
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          node -v
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
+
       - name: Verify tag is on main
         run: |
           set -euo pipefail
@@ -130,6 +152,28 @@ jobs:
             echo "CARGO_REGISTRY_TOKEN is required to publish crates"
             exit 1
           fi
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
+        with:
+          version: 9.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Verify pnpm version
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          node -v
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
 
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
