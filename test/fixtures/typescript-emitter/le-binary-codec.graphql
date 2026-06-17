@@ -1,0 +1,33 @@
+enum Solo {
+  ONE
+}
+
+enum Color {
+  RED
+  GREEN
+  BLUE
+}
+
+input MakeWidgetInput {
+  label: String!
+  count: Int!
+  ratio: Float!
+  enabled: Boolean!
+  color: Color
+  solo: Solo!
+  tags: [String!]!
+  maybeTags: [String!]
+}
+
+type Widget {
+  id: ID!
+  label: String!
+}
+
+type Query {
+  widget(id: ID!): Widget!
+}
+
+type Mutation {
+  makeWidget(input: MakeWidgetInput!): Widget!
+}

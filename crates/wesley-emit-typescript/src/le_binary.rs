@@ -198,7 +198,7 @@ enum TsTypeExpr {
     Never,
     Uint8Array,
     Reference(String),
-    StringLiteral(String),
+    StringLiteralUnion(Vec<String>),
     Null,
     Array(Box<TsTypeExpr>),
     Union(Vec<TsTypeExpr>),
@@ -232,13 +232,7 @@ fn enum_declarations(type_def: &TypeDefinition) -> Vec<TsDeclaration> {
             type_expr: if type_def.enum_values.is_empty() {
                 TsTypeExpr::Never
             } else {
-                TsTypeExpr::union(
-                    type_def
-                        .enum_values
-                        .iter()
-                        .map(|value| TsTypeExpr::StringLiteral(value.clone()))
-                        .collect(),
-                )
+                TsTypeExpr::StringLiteralUnion(type_def.enum_values.clone())
             },
         }),
         TsDeclaration::Function(encode_enum_function(&name, &type_def.enum_values)),
@@ -711,24 +705,18 @@ fn print_declaration(out: &mut String, declaration: &TsDeclaration) {
 }
 
 fn print_type_alias(out: &mut String, alias: &TsTypeAlias) {
-    if let TsTypeExpr::Union(types) = &alias.type_expr {
-        if types
-            .iter()
-            .all(|type_expr| matches!(type_expr, TsTypeExpr::StringLiteral(_)))
-        {
-            writeln!(out, "export type {} =", alias.name)
-                .expect("writing to string should not fail");
-            for (index, type_expr) in types.iter().enumerate() {
-                out.push_str("    | ");
-                print_type_expr(out, type_expr, false);
-                if index + 1 == types.len() {
-                    out.push_str(";\n");
-                } else {
-                    out.push('\n');
-                }
+    if let TsTypeExpr::StringLiteralUnion(values) = &alias.type_expr {
+        writeln!(out, "export type {} =", alias.name).expect("writing to string should not fail");
+        for (index, value) in values.iter().enumerate() {
+            out.push_str("    | ");
+            print_string_literal(out, value);
+            if index + 1 == values.len() {
+                out.push_str(";\n");
+            } else {
+                out.push('\n');
             }
-            return;
         }
+        return;
     }
 
     write!(out, "export type {} = ", alias.name).expect("writing to string should not fail");
@@ -896,7 +884,20 @@ fn print_type_expr(out: &mut String, type_expr: &TsTypeExpr, parenthesize_union:
         TsTypeExpr::Never => out.push_str("never"),
         TsTypeExpr::Uint8Array => out.push_str("Uint8Array"),
         TsTypeExpr::Reference(name) => out.push_str(name),
-        TsTypeExpr::StringLiteral(value) => print_string_literal(out, value),
+        TsTypeExpr::StringLiteralUnion(values) => {
+            if parenthesize_union {
+                out.push('(');
+            }
+            for (index, value) in values.iter().enumerate() {
+                if index > 0 {
+                    out.push_str(" | ");
+                }
+                print_string_literal(out, value);
+            }
+            if parenthesize_union {
+                out.push(')');
+            }
+        }
         TsTypeExpr::Null => out.push_str("null"),
         TsTypeExpr::Array(item) => {
             print_type_expr(out, item, true);
@@ -1131,6 +1132,21 @@ mod tests {
         assert!(ts.contains("input: MakeWidgetInput;"));
         assert!(ts.contains("export function encodeMakeWidgetVars(v: MakeWidgetVars): Uint8Array"));
         assert!(ts.contains("export function decodeMakeWidgetVars(b: Uint8Array): MakeWidgetVars"));
+    }
+
+    #[test]
+    fn emits_le_binary_typescript_from_golden_fixture() {
+        let sdl = include_str!("../../../test/fixtures/typescript-emitter/le-binary-codec.graphql");
+        let expected =
+            include_str!("../../../test/fixtures/typescript-emitter/le-binary-codec.generated.ts");
+        let ir = lower_schema_sdl(sdl).expect("golden schema lowers");
+        let ops = list_schema_operations_sdl(sdl).expect("golden operations enumerable");
+
+        let actual = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
+
+        assert_eq!(actual, expected);
+        assert!(!actual.contains("OP_MAKE_WIDGET"));
+        assert!(!actual.contains("op id"));
     }
 
     #[test]
