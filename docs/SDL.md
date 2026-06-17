@@ -76,13 +76,13 @@ type Query {
 The generic claim is bounded: Wesley can preserve the root operation, argument
 type, result type, directive names, and directive arguments. An Echo-owned
 extension can then decide whether `@wes_footprint` is honest, sufficient, or
-admissible for Echo runtime law.
+acceptable for Echo runtime law.
 
 The `weslaw` design promotes this preserved law-shaped data into a future
 typed Law IR so semantic laws can be bound, hashed, diffed, and explained
 without making generic Wesley the owner of target runtime meaning.
 
-For runtime optic artifacts, `@wes_footprint` is admission-facing v0 metadata.
+For runtime optic artifacts, `@wes_footprint` is target-evaluation v0 metadata.
 It is legal only on the selected root field, must declare `reads` and `writes`
 arrays, may omit `forbids` to mean an empty forbidden-resource list, and must
 not repeat labels within any single footprint array. Nested, fragment,
@@ -110,9 +110,9 @@ arguments, and duplicate footprint labels.
 
 ## Canonical Runtime Requirements Artifact
 
-Runtime optic artifacts carry both structured `OpticAdmissionRequirements` for
-compiler-side inspection and a Wesley-owned
-`OpticAdmissionRequirementsArtifact` for runtime import.
+Runtime optic artifacts carry both structured `OpticRequirements` for
+compiler-side inspection and a Wesley-owned `OpticRequirementsArtifact` for
+target import.
 
 The requirements artifact contains:
 
@@ -121,9 +121,9 @@ The requirements artifact contains:
 - `codec`: the explicit codec, currently
   `wesley.requirements.canonical-json.v0`
 
-Downstream runtimes may import the bytes, digest, and codec directly. They
+Downstream targets may import the bytes, digest, and codec directly. They
 should not serialize Wesley structs with local `serde_json` settings to create
-admission truth, because Wesley owns the canonical runtime optic requirement
+target-owned truth, because Wesley owns the canonical runtime optic requirement
 bytes.
 
 ## Extension Interpretation
@@ -133,7 +133,7 @@ Extensions own interpretation.
 | Owner                    | Can interpret                                     |
 | ------------------------ | ------------------------------------------------- |
 | Rust/TypeScript emitters | Domain-empty model and operation bindings         |
-| Echo-owned tooling       | Footprints, observer plans, runtime admissibility |
+| Echo-owned tooling       | Footprints, observer plans, target policy         |
 | `wesley-postgres`        | SQL schemas, migrations, indexes, database tests  |
 | Continuum-owned modules  | Continuum release, witness, and protocol surfaces |
 

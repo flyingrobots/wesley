@@ -65,3 +65,8 @@ load 'bats-plugins/bats-assert/load'
   run rg -n "CapabilityGrant|CapabilityPresentation|AdmissionTicket|OpticArtifactHandle|Echo-owned|admission" crates/wesley-core/src/domain/optic.rs crates/wesley-core/src/adapters/apollo.rs
   assert_failure
 }
+
+@test "active SDL docs use contract requirements vocabulary" {
+  run rg -n "OpticAdmissionRequirements|admission truth|admission-facing" docs/SDL.md
+  assert_failure
+}
