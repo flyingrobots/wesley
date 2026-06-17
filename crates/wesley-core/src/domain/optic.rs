@@ -1,8 +1,8 @@
 //! Runtime optic artifact models.
 //!
 //! These types are intentionally domain-empty. They describe the GraphQL
-//! operation shape, declared bounds, and law claims that a host/runtime can
-//! admit, obstruct, witness, or replay.
+//! operation shape, declared bounds, and law claims that an external target can
+//! import, evaluate, witness, or replay.
 
 use crate::domain::ir::TypeReference;
 use crate::domain::operation::OperationType;
@@ -10,9 +10,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
 
-/// Canonical JSON codec for Wesley-owned runtime optic admission requirements.
-pub const OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC: &str =
-    "wesley.requirements.canonical-json.v0";
+/// Canonical JSON codec for Wesley-owned runtime optic contract requirements.
+pub const OPTIC_REQUIREMENTS_ARTIFACT_CODEC: &str = "wesley.requirements.canonical-json.v0";
 
 /// Compiled contract for one runtime-declared GraphQL optic operation.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -24,24 +23,23 @@ pub struct OpticArtifact {
     pub artifact_hash: String,
     /// Stable schema identity derived from the lowered Wesley IR.
     pub schema_id: String,
-    /// Stable digest of admission requirements and law claim templates.
+    /// Stable digest of contract requirements and law claim templates.
     pub requirements_digest: String,
-    /// Wesley-owned canonical byte artifact for admission requirements.
-    pub requirements_artifact: OpticAdmissionRequirementsArtifact,
+    /// Wesley-owned canonical byte artifact for contract requirements.
+    pub requirements_artifact: OpticRequirementsArtifact,
     /// The selected GraphQL operation compiled into an inspectable contract.
     pub operation: OpticOperation,
-    /// Admission requirements Echo or another runtime must enforce.
-    pub requirements: OpticAdmissionRequirements,
+    /// Compiler-described requirements an external target may evaluate.
+    pub requirements: OpticRequirements,
     /// Descriptor an application can present when registering this artifact.
     pub registration: OpticRegistrationDescriptor,
 }
 
 /// Wesley-produced descriptor for registering a compiled optic artifact.
 ///
-/// This is not a runtime handle and it is not an authority grant. It is the
-/// small descriptor an application can send to Echo alongside the full artifact
-/// so Echo can verify the exact artifact hash and requirements digest it is
-/// accepting into its registry.
+/// This is not a runtime handle and it is not an authority grant. It is a small
+/// descriptor an external target can compare with the full artifact before it
+/// stores or imports compiler-produced evidence.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct OpticRegistrationDescriptor {
@@ -53,29 +51,15 @@ pub struct OpticRegistrationDescriptor {
     pub schema_id: String,
     /// Stable operation identity for the referenced artifact.
     pub operation_id: String,
-    /// Stable digest of admission requirements and law claim templates.
+    /// Stable digest of contract requirements and law claim templates.
     pub requirements_digest: String,
 }
 
-/// Echo-owned opaque handle for a registered optic artifact.
-///
-/// Wesley defines the wire shape so callers can name it, but Wesley does not
-/// issue this handle. Echo or another runtime returns it after accepting and
-/// storing a specific artifact hash.
+/// Contract requirements for an optic artifact.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct OpticArtifactHandle {
-    /// Runtime-owned discriminator, normally `optic-artifact-handle`.
-    pub kind: String,
-    /// Runtime-local opaque handle identifier.
-    pub id: String,
-}
-
-/// Admission requirements for an optic artifact.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct OpticAdmissionRequirements {
-    /// Identity binding required before a host/runtime admits the handle.
+pub struct OpticRequirements {
+    /// Identity binding described by the compiler.
     pub identity: IdentityRequirement,
     /// Permission requirements inferred from the declared optic bounds.
     pub required_permissions: Vec<PermissionRequirement>,
@@ -83,177 +67,20 @@ pub struct OpticAdmissionRequirements {
     pub forbidden_resources: Vec<String>,
 }
 
-/// Wesley-owned canonical admission requirements byte artifact.
+/// Wesley-owned canonical contract requirements byte artifact.
 ///
 /// Downstream runtimes import these bytes directly. They should verify the
 /// digest and codec, but they should not serialize Wesley structs to create
-/// admission truth.
+/// target-owned truth.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct OpticAdmissionRequirementsArtifact {
+pub struct OpticRequirementsArtifact {
     /// Stable digest computed from `bytes` exactly.
     pub digest: String,
     /// Explicit codec describing how `bytes` were generated.
     pub codec: String,
     /// Canonical requirements bytes generated by Wesley.
     pub bytes: Vec<u8>,
-}
-
-/// Host, user, quorum, or policy authority grant for invoking an artifact.
-///
-/// Wesley core defines this shape so artifacts and runtime receipts can speak a
-/// shared language, but Wesley does not issue these grants. A host, user,
-/// quorum, or policy authority owns issuance, expiry, delegation, and
-/// attestation.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct CapabilityGrant {
-    /// Stable grant identity.
-    pub grant_id: String,
-    /// Principal receiving bounded authority.
-    pub subject: PrincipalRef,
-    /// Artifact hash this grant covers.
-    pub artifact_hash: String,
-    /// Operation identity this grant covers.
-    pub operation_id: String,
-    /// Requirements digest this grant covers.
-    pub requirements_digest: String,
-    /// Optional basis constraint for the invocation.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub allowed_basis: Option<BasisConstraint>,
-    /// Aperture constraints accepted by the grant.
-    pub allowed_apertures: Vec<ApertureConstraint>,
-    /// Budget constraint for invocations using the grant.
-    pub budget: BudgetConstraint,
-    /// Optional expiration timestamp supplied by the issuing authority.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub expires_at: Option<String>,
-    /// Rights granted under the artifact requirements.
-    pub rights: Vec<String>,
-    /// Principal or service that issued the grant.
-    pub issuer: PrincipalRef,
-    /// Optional signature supplied by the issuer.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub issuer_signature: Option<String>,
-    /// Optional digest of the delegation chain.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub delegation_chain_digest: Option<String>,
-    /// Optional observer class bound by the grant.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub observer_class: Option<ObserverClass>,
-    /// Whether the grant may be transferred to another subject.
-    pub non_transferable: bool,
-}
-
-/// Invocation-time presentation of a capability grant.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct CapabilityPresentation {
-    /// Grant identity being presented.
-    pub grant_id: String,
-    /// Principal presenting the grant.
-    pub subject: PrincipalRef,
-    /// Echo-owned artifact handle used for this invocation.
-    pub artifact_handle_id: String,
-    /// Operation identity being invoked.
-    pub operation_id: String,
-    /// Digest of the canonical variable bytes for this invocation.
-    pub variables_digest: String,
-    /// Optional digest of the requested basis/aperture.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub basis_request_digest: Option<String>,
-    /// Nonce preventing replay of the presentation.
-    pub nonce: String,
-    /// Presentation timestamp supplied by the caller or host.
-    pub presented_at: String,
-    /// Optional digest of a proof or signature over the presentation.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub proof_digest: Option<String>,
-}
-
-/// Echo-owned authorization for one exact admitted invocation.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct AdmissionTicket {
-    /// Stable ticket identity.
-    pub ticket_id: String,
-    /// Echo-owned artifact handle used for this invocation.
-    pub artifact_handle: OpticArtifactHandle,
-    /// Capability grant identity admitted for this invocation.
-    pub capability_grant_id: String,
-    /// Operation identity admitted for this invocation.
-    pub operation_id: String,
-    /// Digest of invocation inputs admitted by the runtime.
-    pub invocation_digest: String,
-    /// Runtime-issued admission timestamp.
-    pub issued_at: String,
-    /// Optional runtime-issued ticket expiry.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub expires_at: Option<String>,
-}
-
-/// Constraint over the state basis allowed by a capability grant.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct BasisConstraint {
-    /// Optional exact basis reference the grant permits.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub basis_ref: Option<String>,
-    /// Optional maximum staleness in milliseconds.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_staleness_ms: Option<u64>,
-}
-
-/// Constraint over a read or rewrite aperture.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct ApertureConstraint {
-    /// Aperture kind, such as `file_range` or `symbol_context`.
-    pub kind: String,
-    /// Optional numeric limit owned by the host/runtime policy.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub limit: Option<u64>,
-}
-
-/// Budget constraint attached to a capability grant.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct BudgetConstraint {
-    /// Optional maximum operation count.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_operations: Option<u64>,
-    /// Optional maximum byte budget.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_bytes: Option<u64>,
-    /// Optional maximum runtime in milliseconds.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_millis: Option<u64>,
-}
-
-/// Observer class bound by a capability grant.
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ObserverClass {
-    /// No runtime observation rights.
-    Oc0,
-    /// Minimal reading rights.
-    Oc1,
-    /// Bounded runtime observation rights.
-    Oc2,
-    /// Broad runtime observation rights under explicit policy.
-    Oc3,
-}
-
-/// Permission granted by a capability grant.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct PermissionGrant {
-    /// Granted action.
-    pub action: PermissionAction,
-    /// Resource label the grant applies to.
-    pub resource: String,
-    /// Host/session-owned source of the grant.
-    pub source: String,
 }
 
 /// Artifact resolver input accepted by Wesley-side registries.
@@ -428,24 +255,14 @@ impl fmt::Display for ResolveError {
 
 impl std::error::Error for ResolveError {}
 
-/// Identity requirement a host/runtime must satisfy before admission.
+/// Identity requirement described by compiler output.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct IdentityRequirement {
-    /// Whether the host/runtime must bind a principal before admission.
+    /// Whether an external target is expected to bind a principal.
     pub required: bool,
-    /// Accepted principal kinds, or empty when host policy owns the vocabulary.
+    /// Accepted principal kinds, or empty when target policy owns the vocabulary.
     pub accepted_principal_kinds: Vec<String>,
-}
-
-/// Opaque principal reference supplied by a host/session layer.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct PrincipalRef {
-    /// Principal namespace, such as `user`, `agent`, `session`, or `service`.
-    pub kind: String,
-    /// Principal identifier inside the namespace.
-    pub id: String,
 }
 
 /// Permission requirement inferred from an optic declaration.

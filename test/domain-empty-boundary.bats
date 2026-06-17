@@ -50,3 +50,18 @@ load 'bats-plugins/bats-assert/load'
   ' docs/BEARING.md
   assert_success
 }
+
+@test "wesley-core operation facts do not expose runtime dispatch ids" {
+  run rg -n "stable_op_id|operation_type_rank|EINT envelopes|deployed contract|op ids" crates/wesley-core/src/domain/operation.rs
+  assert_failure
+}
+
+@test "generic TypeScript LE emitter does not generate runtime op constants" {
+  run rg -n "stable_op_id|OP_[A-Z_]+|EINT op id|op id" crates/wesley-emit-typescript/src/le_binary.rs
+  assert_failure
+}
+
+@test "wesley-core optic model does not expose host authority vocabulary" {
+  run rg -n "CapabilityGrant|CapabilityPresentation|AdmissionTicket|OpticArtifactHandle|Echo-owned|admission" crates/wesley-core/src/domain/optic.rs crates/wesley-core/src/adapters/apollo.rs
+  assert_failure
+}

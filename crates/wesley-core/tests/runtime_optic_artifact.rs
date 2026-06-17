@@ -1,11 +1,9 @@
 use sha2::{Digest, Sha256};
 use wesley_core::{
-    compile_runtime_optic, compile_runtime_optic_registration, AdmissionTicket, ApertureConstraint,
-    BasisConstraint, BudgetConstraint, CapabilityGrant, CapabilityPresentation, CodecField,
-    DirectiveRecord, EvidenceKind, InMemoryOpticArtifactRegistry, LawVerdict, LawWitness,
-    ObserverClass, OperationKind, OpticArtifactHandle, OpticArtifactResolver, PermissionAction,
-    PermissionRequirement, PrincipalRef, ReplayHint, ResolveError,
-    OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC,
+    compile_runtime_optic, compile_runtime_optic_registration, CodecField, DirectiveRecord,
+    EvidenceKind, InMemoryOpticArtifactRegistry, LawVerdict, LawWitness, OperationKind,
+    OpticArtifactResolver, PermissionAction, PermissionRequirement, ReplayHint, ResolveError,
+    OPTIC_REQUIREMENTS_ARTIFACT_CODEC,
 };
 
 #[test]
@@ -300,7 +298,7 @@ fn canonical_requirements_codec_is_explicit() {
 
     assert_eq!(
         artifact.requirements_artifact.codec,
-        OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC
+        OPTIC_REQUIREMENTS_ARTIFACT_CODEC
     );
 }
 
@@ -333,7 +331,7 @@ fn canonical_requirements_json_keys_are_ordered_if_json_codec_is_used() {
         .expect("runtime optic should compile");
     assert_eq!(
         artifact.requirements_artifact.codec,
-        OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC
+        OPTIC_REQUIREMENTS_ARTIFACT_CODEC
     );
 
     let canonical = std::str::from_utf8(&artifact.requirements_artifact.bytes)
@@ -375,7 +373,7 @@ fn runtime_optic_artifact_exposes_requirements_artifact() {
     );
     assert_eq!(
         artifact.requirements_artifact.codec,
-        OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC
+        OPTIC_REQUIREMENTS_ARTIFACT_CODEC
     );
     assert!(!artifact.requirements_artifact.bytes.is_empty());
 }
@@ -1497,65 +1495,6 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
     let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
     let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
         .expect("runtime optic should compile");
-    let echo_handle = OpticArtifactHandle {
-        kind: "optic-artifact-handle".to_string(),
-        id: "echo.local.handle.1".to_string(),
-    };
-    let subject = PrincipalRef {
-        kind: "agent".to_string(),
-        id: "codex".to_string(),
-    };
-    let issuer = PrincipalRef {
-        kind: "host".to_string(),
-        id: "jedit".to_string(),
-    };
-    let grant = CapabilityGrant {
-        grant_id: "grant-1".to_string(),
-        subject: subject.clone(),
-        artifact_hash: artifact.artifact_hash.clone(),
-        operation_id: artifact.operation.operation_id.clone(),
-        requirements_digest: artifact.requirements_digest.clone(),
-        allowed_basis: Some(BasisConstraint {
-            basis_ref: Some("basis-1".to_string()),
-            max_staleness_ms: Some(250),
-        }),
-        allowed_apertures: vec![ApertureConstraint {
-            kind: "file_range".to_string(),
-            limit: Some(4096),
-        }],
-        budget: BudgetConstraint {
-            max_operations: Some(1),
-            max_bytes: Some(4096),
-            max_millis: Some(1000),
-        },
-        expires_at: Some("2026-05-12T00:05:00Z".to_string()),
-        rights: vec!["READ".to_string(), "WRITE".to_string()],
-        issuer: issuer.clone(),
-        issuer_signature: Some("issuer-signature-1".to_string()),
-        delegation_chain_digest: Some("delegation-digest-1".to_string()),
-        observer_class: Some(ObserverClass::Oc2),
-        non_transferable: true,
-    };
-    let presentation = CapabilityPresentation {
-        grant_id: "grant-1".to_string(),
-        subject: subject.clone(),
-        artifact_handle_id: echo_handle.id.clone(),
-        operation_id: artifact.operation.operation_id.clone(),
-        variables_digest: "vars-digest-1".to_string(),
-        basis_request_digest: None,
-        nonce: "nonce-1".to_string(),
-        presented_at: "2026-05-12T00:00:00Z".to_string(),
-        proof_digest: None,
-    };
-    let ticket = AdmissionTicket {
-        ticket_id: "ticket-1".to_string(),
-        artifact_handle: echo_handle.clone(),
-        capability_grant_id: presentation.grant_id.clone(),
-        operation_id: artifact.operation.operation_id.clone(),
-        invocation_digest: "invocation-digest-1".to_string(),
-        issued_at: "2026-05-12T00:00:01Z".to_string(),
-        expires_at: None,
-    };
     let witness = LawWitness {
         law_id: "footprint.closed.v1".to_string(),
         claim_id: "claim-1".to_string(),
@@ -1583,80 +1522,6 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
         })
     );
     assert_eq!(
-        serde_json::to_value(&echo_handle).expect("handle should serialize"),
-        serde_json::json!({
-            "kind": "optic-artifact-handle",
-            "id": "echo.local.handle.1",
-        })
-    );
-    assert_eq!(
-        serde_json::to_value(&grant).expect("grant should serialize"),
-        serde_json::json!({
-            "grantId": "grant-1",
-            "subject": {
-                "kind": "agent",
-                "id": "codex",
-            },
-            "artifactHash": artifact.artifact_hash,
-            "operationId": artifact.operation.operation_id,
-            "requirementsDigest": artifact.requirements_digest,
-            "allowedBasis": {
-                "basisRef": "basis-1",
-                "maxStalenessMs": 250,
-            },
-            "allowedApertures": [
-                {
-                    "kind": "file_range",
-                    "limit": 4096,
-                }
-            ],
-            "budget": {
-                "maxOperations": 1,
-                "maxBytes": 4096,
-                "maxMillis": 1000,
-            },
-            "expiresAt": "2026-05-12T00:05:00Z",
-            "rights": ["READ", "WRITE"],
-            "issuer": {
-                "kind": "host",
-                "id": "jedit",
-            },
-            "issuerSignature": "issuer-signature-1",
-            "delegationChainDigest": "delegation-digest-1",
-            "observerClass": "OC2",
-            "nonTransferable": true,
-        })
-    );
-    assert_eq!(
-        serde_json::to_value(&presentation).expect("presentation should serialize"),
-        serde_json::json!({
-            "grantId": "grant-1",
-            "subject": {
-                "kind": "agent",
-                "id": "codex",
-            },
-            "artifactHandleId": "echo.local.handle.1",
-            "operationId": artifact.operation.operation_id,
-            "variablesDigest": "vars-digest-1",
-            "nonce": "nonce-1",
-            "presentedAt": "2026-05-12T00:00:00Z",
-        })
-    );
-    assert_eq!(
-        serde_json::to_value(&ticket).expect("ticket should serialize"),
-        serde_json::json!({
-            "ticketId": "ticket-1",
-            "artifactHandle": {
-                "kind": "optic-artifact-handle",
-                "id": "echo.local.handle.1",
-            },
-            "capabilityGrantId": "grant-1",
-            "operationId": artifact.operation.operation_id,
-            "invocationDigest": "invocation-digest-1",
-            "issuedAt": "2026-05-12T00:00:01Z",
-        })
-    );
-    assert_eq!(
         serde_json::to_value(&witness).expect("witness should serialize"),
         serde_json::json!({
             "lawId": "footprint.closed.v1",
@@ -1675,22 +1540,6 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
                 }
             ],
         })
-    );
-    assert_eq!(
-        serde_json::to_value(ObserverClass::Oc0).expect("observer class should serialize"),
-        serde_json::json!("OC0")
-    );
-    assert_eq!(
-        serde_json::to_value(ObserverClass::Oc1).expect("observer class should serialize"),
-        serde_json::json!("OC1")
-    );
-    assert_eq!(
-        serde_json::to_value(ObserverClass::Oc2).expect("observer class should serialize"),
-        serde_json::json!("OC2")
-    );
-    assert_eq!(
-        serde_json::to_value(ObserverClass::Oc3).expect("observer class should serialize"),
-        serde_json::json!("OC3")
     );
     assert_eq!(
         serde_json::to_value(PermissionAction::Read).expect("permission action should serialize"),

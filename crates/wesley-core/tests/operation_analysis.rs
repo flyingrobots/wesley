@@ -353,11 +353,6 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         create_buffer.directives["wes_stack_witness"]["opId"],
         create_buffer_vector["opIdHex"]
     );
-    assert_op_id_forms_agree(create_buffer_vector, STACK_WITNESS_CREATE_BUFFER_OP_ID);
-    assert_eq!(
-        create_buffer_vector["opIdDecimal"],
-        serde_json::json!(STACK_WITNESS_CREATE_BUFFER_OP_ID)
-    );
     assert_eq!(
         create_buffer.directives["wes_stack_witness"]["helperKind"],
         serde_json::json!("EINT")
@@ -411,11 +406,6 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         replace_range_vector["opIdHex"]
     );
     assert_artifact_identity_matches_vector(replace_range, &vectors);
-    assert_op_id_forms_agree(replace_range_vector, STACK_WITNESS_REPLACE_RANGE_OP_ID);
-    assert_eq!(
-        replace_range_vector["opIdDecimal"],
-        serde_json::json!(STACK_WITNESS_REPLACE_RANGE_OP_ID)
-    );
     assert_eq!(
         replace_range.directives["wes_stack_witness"]["fixtureVarsEncoding"],
         vectors["fixtureVarsEncoding"]
@@ -472,11 +462,6 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         text_window_vector["opIdHex"]
     );
     assert_artifact_identity_matches_vector(text_window, &vectors);
-    assert_op_id_forms_agree(text_window_vector, STACK_WITNESS_TEXT_WINDOW_QUERY_ID);
-    assert_eq!(
-        text_window_vector["opIdDecimal"],
-        serde_json::json!(STACK_WITNESS_TEXT_WINDOW_QUERY_ID)
-    );
     assert_eq!(
         text_window.directives["wes_stack_witness"]["helperKind"],
         serde_json::json!("QueryView")
@@ -722,10 +707,6 @@ fn vector_for<'a>(vectors: &'a serde_json::Value, name: &str) -> &'a serde_json:
         .expect("fixture operation vector should exist")
 }
 
-const STACK_WITNESS_CREATE_BUFFER_OP_ID: u32 = 0x5357_0001;
-const STACK_WITNESS_REPLACE_RANGE_OP_ID: u32 = 0x5357_0002;
-const STACK_WITNESS_TEXT_WINDOW_QUERY_ID: u32 = 0x5357_1001;
-
 fn assert_artifact_identity_matches_vector(
     operation: &wesley_core::SchemaOperation,
     vectors: &serde_json::Value,
@@ -763,15 +744,4 @@ fn assert_helper_shape(vector: &serde_json::Value, frame: &str, entrypoint: &str
                 .collect()
         )
     );
-}
-
-fn assert_op_id_forms_agree(vector: &serde_json::Value, expected: u32) {
-    let hex = vector["opIdHex"]
-        .as_str()
-        .expect("opIdHex should be a string")
-        .strip_prefix("0x")
-        .expect("opIdHex should use 0x prefix");
-    let parsed = u32::from_str_radix(hex, 16).expect("opIdHex should parse as u32");
-    assert_eq!(parsed, expected);
-    assert_eq!(vector["opIdDecimal"], serde_json::json!(parsed));
 }

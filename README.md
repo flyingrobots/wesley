@@ -137,18 +137,20 @@ the common root for many different technical systems simultaneously.
 
 ---
 
-## Runtime optic north star
+## Runtime-Neutral Extension North Star
 
 Wesley's long-term north star is **bounded, lawful autonomy**.
 
-Agents and applications should be able to declare the GraphQL optic they need:
-the reading or rewrite shape, basis, aperture, footprint, variables, support
-obligations, and law hooks. Wesley compiles that declaration into a typed,
-inspectable contract artifact. Host policy and runtimes such as Echo then admit,
-obstruct, schedule, witness, and replay it under explicit law.
+Agents and applications should be able to declare the GraphQL operation shape,
+variables, directive evidence, and law hooks they need. Wesley compiles that
+declaration into typed, inspectable compiler evidence. External targets such as
+Echo, Continuum, PostgreSQL, or future modules decide how that evidence maps to
+runtime profiles, footprints, target identifiers, scheduling, witnesses, and
+receipts.
 
 The target is not ambient authority. It is a lawful path for agents to propose
-precise interactions and receive evidence-bearing readings or receipts.
+precise interactions without making Wesley core a runtime or an admission
+authority.
 
 ---
 
@@ -167,10 +169,11 @@ flowchart LR
 
 - **L1 - Semantic graph:** Normalizes types, fields, directives, and
   relationships.
-- **L2 - Domain law:** Validates operational footprints, admissibility rules,
-  capabilities, constraints, and interpreted semantics.
-- **L3 - Emitted outputs:** Generates runtime plans, witnesses,
-  materializations, bindings, and artifacts.
+- **L2 - Domain law:** Binds semantic law, constraints, compatibility rules,
+  and interpreted schema facts without owning target execution.
+- **L3 - Emitted outputs:** Generates target-neutral models, codecs,
+  operation variable bindings, metadata, and artifacts. External targets
+  generate runtime plans, witnesses, and target dispatch data.
 
 Most extensions operate entirely at L1 and L2. They remain completely unaware
 of L3. L3 exists strictly for runtimes with deeper execution requirements.
@@ -200,7 +203,7 @@ checkout.
 
 The native command can run Rust-native health checks, lower schema SDL to L1
 IR, compute schema hashes, diff schema structure, list schema root operations,
-emit Rust models and TypeScript declarations with root operation bindings,
+emit Rust models and TypeScript declarations with root operation variable bindings,
 resolve operation selections, validate `weslaw` semantic law against active
 schema facts, and extract operation directive arguments.
 
@@ -296,8 +299,8 @@ execution.
 
 Law answers: _What is permitted, required, or forbidden?_
 
-It governs execution, covering reads, writes, capabilities, footprints,
-admissibility rules, and operational constraints. Directives carry this law when
+It governs interpreted semantics such as reads, writes, capabilities,
+footprints, and operational constraints. Directives carry this law when
 interpreted by extensions.
 
 ```graphql
@@ -308,10 +311,11 @@ interpreted by extensions.
 )
 ```
 
-The Postgres extension ignores these directives completely. The Echo extension
-interprets them as runtime law. Neither extension needs to understand the other.
-Wesley sees both but assigns no meaning itself; that responsibility belongs
-solely to the extensions.
+The Postgres extension ignores these directives completely. An Echo-owned
+extension may interpret them as target law. Neither extension needs to
+understand the other. Wesley sees both as structured directive evidence but
+assigns no runtime meaning itself; that responsibility belongs solely to the
+extensions.
 
 ---
 
@@ -337,13 +341,11 @@ This enables extensions to:
 - Reject dishonest operations at compile time
 
 Arbitrary application code can lie about what it reads or writes. A GraphQL
-mutation structurally cannot: its footprint is an immutable part of the
-contract.
+operation plus directive evidence gives an owning target extension a static
+surface to check before it emits target runtime artifacts.
 
-**If your footprint is dishonest, Wesley becomes a compile-time error.**
-
-This is not merely code generation. It is semantic law enforcement through
-compilation.
+This is not merely code generation. It is semantic law evidence through
+compilation, with enforcement owned by the selected target.
 
 The Echo extension currently pushes this capability the furthest, but it is not
 required for all uses of Wesley. Most Wesley users may never touch causal

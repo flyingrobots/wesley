@@ -188,27 +188,27 @@ law artifacts remain the authority.
 
 ### Glossary Table
 
-| Term | Definition |
-| --- | --- |
-| [GraphQL SDL](#golden-path-1-schema-lowering-and-hashing) | The authored schema language Wesley consumes. SDL declares types, fields, arguments, directives, enums, unions, interfaces, inputs, and root operations. |
-| [Schema-first](#the-data-source-of-truth) | The discipline that the authored schema is the source of truth, while generated artifacts are projections. |
-| [Domain-empty core](#packages-overview) | The rule that `wesley-core` preserves generic compiler facts but does not interpret product, database, Echo, or deployment semantics. |
-| [L1 IR](#anatomy-of-l1-ir) | Wesley's Level 1 intermediate representation: deterministic, domain-empty GraphQL facts after parsing and consolidation. |
-| [Directive](#golden-path-3-operation-analysis) | GraphQL metadata attached to schema or operation locations. Wesley preserves directive data as JSON; modules or runtimes interpret it. |
-| [Root operation](#anatomy-of-a-schema-operation) | A field on Query, Mutation, or Subscription that represents a public operation boundary. |
-| [Emitter](#golden-path-4-emission) | A Rust crate that turns L1 IR plus root operation facts into generated Rust or TypeScript source. |
-| [Canonical JSON](#canonical-json-and-registry-hashes) | JSON serialized with sorted object keys and no whitespace so hashes are stable across runs. |
-| [Registry hash](#canonical-json-and-registry-hashes) | A SHA-256 hash of canonical L1 IR with nondeterministic metadata stripped. |
-| [weslaw](#golden-path-5-weslaw-semantic-law) | Wesley's semantic law authoring format and normalized Law IR layer for schema-bound constraints. |
-| [Law IR](#anatomy-of-law-ir) | Normalized, typed representation of active `weslaw/v1` entries after YAML loading. |
-| [Contract bundle manifest](#contract-bundle-manifest) | A JSON manifest linking schema hash, law hash, profile hash, bundle hash, compiler identity, and Law IR codec. |
-| [Law coverage](#law-capabilities-and-coverage) | A profile/category report showing which schema subjects have active law coverage. |
-| [Capability report](#law-capabilities-and-coverage) | A report-only summary of footprint resources read, written, created, or forbidden by operation law. |
-| [Runtime optic](#golden-path-6-runtime-optic-artifact) | A compiled GraphQL operation artifact that describes bounded operation shape, requirements, and law claims without executing anything. |
-| [Holmes](#golden-path-7-holmes-assurance-foundation) | Wesley's assurance family. Rust Holmes ingests law evidence; legacy JS Holmes still supports reports and historical tooling. |
-| [Port](#external-dependencies-and-borders) | A trait boundary used by hexagonal architecture so application logic can depend on capabilities without depending on filesystem, GitHub, MCP, or wall-clock implementations. |
-| [Evidence bundle](#evidence-bundle-validation) | A Holmes envelope that names required law evidence artifacts and their provenance. |
-| [Preflight](#test-coverage) | Repository health check run through `cargo xtask preflight`, combining docs checks, Rust tests, and native CLI help verification. |
+| Term                                                      | Definition                                                                                                                                                                   |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [GraphQL SDL](#golden-path-1-schema-lowering-and-hashing) | The authored schema language Wesley consumes. SDL declares types, fields, arguments, directives, enums, unions, interfaces, inputs, and root operations.                     |
+| [Schema-first](#the-data-source-of-truth)                 | The discipline that the authored schema is the source of truth, while generated artifacts are projections.                                                                   |
+| [Domain-empty core](#packages-overview)                   | The rule that `wesley-core` preserves generic compiler facts but does not interpret product, database, Echo, or deployment semantics.                                        |
+| [L1 IR](#anatomy-of-l1-ir)                                | Wesley's Level 1 intermediate representation: deterministic, domain-empty GraphQL facts after parsing and consolidation.                                                     |
+| [Directive](#golden-path-3-operation-analysis)            | GraphQL metadata attached to schema or operation locations. Wesley preserves directive data as JSON; modules or runtimes interpret it.                                       |
+| [Root operation](#anatomy-of-a-schema-operation)          | A field on Query, Mutation, or Subscription that represents a public operation boundary.                                                                                     |
+| [Emitter](#golden-path-4-emission)                        | A Rust crate that turns L1 IR plus root operation facts into generated Rust or TypeScript source.                                                                            |
+| [Canonical JSON](#canonical-json-and-registry-hashes)     | JSON serialized with sorted object keys and no whitespace so hashes are stable across runs.                                                                                  |
+| [Registry hash](#canonical-json-and-registry-hashes)      | A SHA-256 hash of canonical L1 IR with nondeterministic metadata stripped.                                                                                                   |
+| [weslaw](#golden-path-5-weslaw-semantic-law)              | Wesley's semantic law authoring format and normalized Law IR layer for schema-bound constraints.                                                                             |
+| [Law IR](#anatomy-of-law-ir)                              | Normalized, typed representation of active `weslaw/v1` entries after YAML loading.                                                                                           |
+| [Contract bundle manifest](#contract-bundle-manifest)     | A JSON manifest linking schema hash, law hash, profile hash, bundle hash, compiler identity, and Law IR codec.                                                               |
+| [Law coverage](#law-capabilities-and-coverage)            | A profile/category report showing which schema subjects have active law coverage.                                                                                            |
+| [Capability report](#law-capabilities-and-coverage)       | A report-only summary of footprint resources read, written, created, or forbidden by operation law.                                                                          |
+| [Runtime optic](#golden-path-6-runtime-optic-artifact)    | A compiled GraphQL operation artifact that describes bounded operation shape, requirements, and law claims without executing anything.                                       |
+| [Holmes](#golden-path-7-holmes-assurance-foundation)      | Wesley's assurance family. Rust Holmes ingests law evidence; legacy JS Holmes still supports reports and historical tooling.                                                 |
+| [Port](#external-dependencies-and-borders)                | A trait boundary used by hexagonal architecture so application logic can depend on capabilities without depending on filesystem, GitHub, MCP, or wall-clock implementations. |
+| [Evidence bundle](#evidence-bundle-validation)            | A Holmes envelope that names required law evidence artifacts and their provenance.                                                                                           |
+| [Preflight](#test-coverage)                               | Repository health check run through `cargo xtask preflight`, combining docs checks, Rust tests, and native CLI help verification.                                            |
 
 ### Conceptual Anchors
 
@@ -900,14 +900,15 @@ lighter posture.
 
 Runtime optics are not the ordinary CLI front door in this checkout, but they
 are an important core API. They compile a GraphQL operation into an artifact
-that a runtime can inspect, admit, reject, witness, or replay.
+that an external target can inspect, evaluate, reject, witness, or replay.
 
 #### Why The API Exists
 
 The runtime optic API supports the long-term bounded-autonomy direction. An
 agent or application can declare a precise GraphQL operation shape. Wesley
-compiles that declaration into a stable artifact. A host such as Echo owns
-runtime admission, identity, grants, tickets, and enforcement.
+compiles that declaration into a stable artifact. An external target such as
+Echo owns runtime policy, authority vocabulary, state checks, execution, and
+enforcement.
 
 #### Anatomy Of An Optic Artifact
 
@@ -1413,29 +1414,25 @@ security model is local-tool security: read only the input files the operator
 names, write only the output files the operator names, and treat external
 artifact bytes as untrusted until validated.
 
-### Capability Shapes Without Authority Issuance
+### Compiler Evidence Without Authority Issuance
 
-The runtime optic domain models define `CapabilityGrant`,
-`CapabilityPresentation`, and `AdmissionTicket`. These are shared wire shapes,
-not authorities Wesley issues. Echo or another host runtime owns grant issuance,
-expiry, delegation, admission tickets, opaque artifact handles, and runtime
-enforcement.
+The runtime optic domain model now stops at compiler-owned artifact,
+requirement, registration descriptor, and law witness evidence. It deliberately
+does not define host-issued handles, grants, invocation presentations, tickets,
+basis budgets, or observer authority classes. Echo, Continuum, or another
+external target owns those authority vocabularies and any runtime enforcement.
 
 ```mermaid
 sequenceDiagram
   actor Caller
   participant Wesley as Wesley compiler
-  participant Host as Echo or host runtime
-  participant Runtime as Runtime execution
+  participant Target as External target
 
   Caller->>Wesley: compile operation artifact
   Wesley-->>Caller: artifact hash and requirements digest
-  Caller->>Host: present artifact and requested registration
-  Host->>Host: verify artifact hash and requirements digest
-  Host-->>Caller: runtime-owned artifact handle
-  Caller->>Host: present capability grant and invocation variables
-  Host->>Host: decide admission under host policy
-  Host-->>Runtime: admission ticket if accepted
+  Caller->>Target: present artifact descriptor and evidence
+  Target->>Target: verify hashes and apply target policy
+  Target-->>Caller: target-owned receipt or obstruction
 ```
 
 ### Artifact And Path Security
@@ -1566,15 +1563,16 @@ preserves `listWrappers` from outermost to innermost and `leafNullable`.
 That extra structure lets emitters reconstruct types such as `[[Int!]!]!`
 without losing which layer is nullable.
 
-### Stable Operation IDs
+### Target-Owned Operation Identifiers
 
-`stable_op_id` computes a u32 FNV-1a identifier from operation type rank plus
-root field bytes. Query, Mutation, and Subscription ranks are pinned as
-`0`, `1`, and `2`. The tests pin exact IDs for domain-neutral operation names.
+Wesley core lists GraphQL root operations as shape facts: operation kind, root
+type, field name, arguments, result type, and preserved directives. It no
+longer computes generic runtime dispatch identifiers from those facts, and the
+generic TypeScript LE binary emitter no longer exports operation constants.
 
-This is a small algorithm with a large compatibility surface. If the seed,
-rank, byte order, or multiplier changes, every generated envelope consumer that
-routes by op id can break.
+External targets that need dispatch IDs, routing keys, runtime handles, or
+transport envelope identifiers must derive and publish them in their own
+target-owned artifacts.
 
 ### Semantic Law Hashes
 
@@ -1654,8 +1652,8 @@ operators about what Wesley core can prove.
 
 The host smoke packages demonstrate browser, Bun, and Deno compatibility
 surfaces. The runtime optic API demonstrates how a future host can admit
-bounded GraphQL operation artifacts without letting Wesley issue runtime
-authority.
+bounded GraphQL operation artifacts under target-owned policy without letting
+Wesley issue runtime authority.
 
 ## Summary Of The System's Key Features And Notable Design Decisions
 

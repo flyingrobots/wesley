@@ -8,6 +8,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Wesley core extension boundary**: Removed generic runtime dispatch ID
+  helpers from `wesley-core` and stopped exporting TypeScript `OP_*` constants
+  from the generic LE binary emitter. Target-owned extensions must now supply
+  runtime operation identifiers instead of inheriting them from Wesley core.
+- **Runtime optic authority vocabulary**: Kept compiler-owned optic artifact,
+  requirement, and law witness evidence in `wesley-core`, but removed
+  host-issued handle, grant, presentation, ticket, basis, aperture, budget, and
+  observer authority structs from the generic core model.
 - **Strict quality gate**: `cargo xtask preflight` is now the canonical
   pre-PR and release quality gate. It runs `cargo fmt --check`,
   `cargo clippy --workspace --all-targets -- -D warnings`,
