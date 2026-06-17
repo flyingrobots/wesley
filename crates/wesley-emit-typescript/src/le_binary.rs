@@ -1113,6 +1113,20 @@ mod tests {
         }
     ";
 
+    fn assert_no_runtime_operation_markers(ts: &str) {
+        let forbidden_constant = ["OP", "MAKE", "WIDGET"].join("_");
+        let forbidden_phrase = ["op", "id"].join(" ");
+
+        assert!(
+            !ts.contains(&forbidden_constant),
+            "unexpected runtime operation constant in:\n{ts}"
+        );
+        assert!(
+            !ts.contains(&forbidden_phrase),
+            "unexpected runtime operation identifier claim in:\n{ts}"
+        );
+    }
+
     #[test]
     fn emits_typescript_codec_for_minimal_schema() {
         let ir = lower_schema_sdl(SDL).expect("schema lowers");
@@ -1145,8 +1159,7 @@ mod tests {
         let actual = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
 
         assert_eq!(actual, expected);
-        assert!(!actual.contains("OP_MAKE_WIDGET"));
-        assert!(!actual.contains("op id"));
+        assert_no_runtime_operation_markers(&actual);
     }
 
     #[test]
@@ -1222,16 +1235,6 @@ mod tests {
         let ops = list_schema_operations_sdl(SDL).expect("operations enumerable");
 
         let ts = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
-        let forbidden_constant = ["OP", "MAKE", "WIDGET"].join("_");
-        let forbidden_phrase = ["op", "id"].join(" ");
-
-        assert!(
-            !ts.contains(&forbidden_constant),
-            "unexpected runtime operation constant in:\n{ts}"
-        );
-        assert!(
-            !ts.contains(&forbidden_phrase),
-            "unexpected runtime operation identifier claim in:\n{ts}"
-        );
+        assert_no_runtime_operation_markers(&ts);
     }
 }
