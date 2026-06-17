@@ -13,6 +13,7 @@ timeline
     Phase 4 : Legacy Node Retired : Rust-Native Release : Holmes Assurance
     Phase 5 : weslaw : Semantic Law IR : Contract Bundle Physics
     Phase 6 : Holmes + weslaw : Assurance PRDs : Evidence Judgment
+    Phase 7 : Continuum YOLO : Runtime-Neutral Edict : Target Profiles
 ```
 
 ## Active Gravity
@@ -374,34 +375,6 @@ validator helpers, report-only footprint capability summaries,
 profile/category-aware law coverage reports, an explicit Law Matrix v1.1
 deferral, and v1 playback/retrospective closeout evidence.
 
-## Tensions
-
-- **Rust Native Discipline**: The easy mistake after deletion is to recreate
-  the old JavaScript surface through scripts, docs, or compatibility shortcuts.
-  New compiler behavior belongs in Rust crates unless there is an explicit
-  non-compiler owner.
-- **Fixture Churn**: IR, hash, directive, or generated-artifact changes can
-  affect Echo and jedit fixtures. Those changes need explicit compatibility
-  notes rather than accidental hash churn.
-- **Alias Semantics**: Legacy directive aliases are compatibility input, not a
-  license to preserve arbitrary spelling in semantic Rust L1 output.
-- **Invalid Diagnostics**: The Rust lowerer now exposes stable diagnostic
-  codes and parser spans, but semantic lowering spans are still absent and
-  should not be implied by tests or release notes.
-- **External Module Gap**: Wesley has named the domain-empty boundary, but the
-  module seam still needs hermetic target-dispatch fixtures, runtime boundary
-  evidence, and artifact evidence before external modules can consume it
-  cleanly.
-- **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
-  the database authority without editing or overwriting sibling work from this
-  repo.
-- **Law Versus Runtime Meaning**: `weslaw` lets Wesley preserve and reason
-  about semantic law, but Echo, Continuum, jedit, warp-ttd, and
-  `wesley-postgres` still own target meaning and runtime behavior.
-- **Law IR Scope Control**: The first `weslaw` implementation must stay typed,
-  deterministic, and boring. It must not become an expression language, policy
-  engine, or YAML programming language.
-
 ### 12. Holmes `weslaw` Assurance Planning
 
 This completed 50-slice PRD and test-plan campaign turns the merged `weslaw`
@@ -430,6 +403,57 @@ transitional CLI aliases, operator documentation, schema-version compatibility,
 artifact retention, end-to-end workflow, release-gate rollout, and campaign
 closeout.
 
+### 13. Continuum YOLO Runtime-Neutral Edict
+
+Continuum standardizes lawful self-extension, not storage. The active platform
+posture is captured in
+[0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance](./design/0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/continuum-yolo-runtime-neutral-edict-sha-lock-assurance.md).
+
+The correction is narrow and binding:
+
+- Continuum has no official graph, database, event log, repository, or storage
+  runtime.
+- Edict Core is a deterministic lawful-effect language, not a graph scripting
+  language.
+- Storage operations enter through declared runtime target profiles such as
+  `echo.dpo@1`, `gitwarp.ref_crdt@1`, `kv.transactional@1`, or
+  `eventlog.append@1`.
+- Echo Span IR is Echo DPO target IR, not universal Continuum IR.
+- GraphQL/Wesley/weslaw are source-profile and compiler-substrate surfaces;
+  they do not own Echo operation ids, Echo DPO semantics, Continuum agent
+  policy, or runtime admission.
+- Declared footprints are policy bounds. The source of truth is checked,
+  target-specific effect and footprint inference.
+- FIDLAR-shaped raw callbacks are outside the normal YOLO lane.
+
+## Tensions
+
+- **Rust Native Discipline**: The easy mistake after deletion is to recreate
+  the old JavaScript surface through scripts, docs, or compatibility shortcuts.
+  New compiler behavior belongs in Rust crates unless there is an explicit
+  non-compiler owner.
+- **Fixture Churn**: IR, hash, directive, or generated-artifact changes can
+  affect Echo and jedit fixtures. Those changes need explicit compatibility
+  notes rather than accidental hash churn.
+- **Alias Semantics**: Legacy directive aliases are compatibility input, not a
+  license to preserve arbitrary spelling in semantic Rust L1 output.
+- **Invalid Diagnostics**: The Rust lowerer now exposes stable diagnostic
+  codes and parser spans, but semantic lowering spans are still absent and
+  should not be implied by tests or release notes.
+- **External Module Gap**: Wesley has named the domain-empty boundary, but the
+  module seam still needs hermetic target-dispatch fixtures, runtime boundary
+  evidence, and artifact evidence before external modules can consume it
+  cleanly.
+- **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
+  the database authority without editing or overwriting sibling work from this
+  repo.
+- **Law Versus Runtime Meaning**: `weslaw` lets Wesley preserve and reason
+  about semantic law, but Echo, Continuum, jedit, warp-ttd, and
+  `wesley-postgres` still own target meaning and runtime behavior.
+- **Law IR Scope Control**: The first `weslaw` implementation must stay typed,
+  deterministic, and boring. It must not become an expression language, policy
+  engine, or YAML programming language.
+
 ## Next Target
 
 The immediate focus is **Rust Holmes `weslaw` assurance implementation**: the
@@ -446,7 +470,10 @@ historical proof floor. The `0017` packet now closes the retirement campaign.
 The `0018` packet names the assurance architecture that lets Holmes mature
 without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
-runtime ownership into the base compiler.
+runtime ownership into the base compiler. The `0021` packet sharpens the next
+boundary: Continuum and Edict stay runtime-neutral while Echo, git-warp, KV,
+event-log, and future systems define target profiles, footprint algebras, and
+verifiers outside Wesley core.
 
 The implementation budget is **90 slices**. Status: **36 / 90 slices closed**.
 Closed implementation slices now cover `HIMP-001` through `HIMP-036`: the
