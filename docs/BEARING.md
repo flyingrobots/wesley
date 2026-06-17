@@ -13,6 +13,7 @@ timeline
     Phase 4 : Legacy Node Retired : Rust-Native Release : Holmes Assurance
     Phase 5 : weslaw : Semantic Law IR : Contract Bundle Physics
     Phase 6 : Holmes + weslaw : Assurance PRDs : Evidence Judgment
+    Phase 7 : Continuum YOLO : Runtime-Neutral Edict : Target Profiles
 ```
 
 ## Active Gravity
@@ -430,6 +431,29 @@ transitional CLI aliases, operator documentation, schema-version compatibility,
 artifact retention, end-to-end workflow, release-gate rollout, and campaign
 closeout.
 
+### 13. Continuum YOLO Runtime-Neutral Edict
+
+Continuum standardizes lawful self-extension, not storage. The active platform
+posture is captured in
+[0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance](./design/0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/continuum-yolo-runtime-neutral-edict-sha-lock-assurance.md).
+
+The correction is narrow and binding:
+
+- Continuum has no official graph, database, event log, repository, or storage
+  runtime.
+- Edict Core is a deterministic lawful-effect language, not a graph scripting
+  language.
+- Storage operations enter through declared runtime target profiles such as
+  `echo.dpo@1`, `gitwarp.ref_crdt@1`, `kv.transactional@1`, or
+  `eventlog.append@1`.
+- Echo Span IR is Echo DPO target IR, not universal Continuum IR.
+- GraphQL/Wesley/weslaw are source-profile and compiler-substrate surfaces;
+  they do not own Echo operation ids, Echo DPO semantics, Continuum agent
+  policy, or runtime admission.
+- Declared footprints are policy bounds. The source of truth is checked,
+  target-specific effect and footprint inference.
+- FIDLAR-shaped raw callbacks are outside the normal YOLO lane.
+
 ## Next Target
 
 The immediate focus is **Rust Holmes `weslaw` assurance implementation**: the
@@ -446,7 +470,10 @@ historical proof floor. The `0017` packet now closes the retirement campaign.
 The `0018` packet names the assurance architecture that lets Holmes mature
 without pinning Wesley to legacy Node. The `0019` packet names the semantic law
 architecture that lets Wesley compile meaning alongside shape without smuggling
-runtime ownership into the base compiler.
+runtime ownership into the base compiler. The `0021` packet sharpens the next
+boundary: Continuum and Edict stay runtime-neutral while Echo, git-warp, KV,
+event-log, and future systems define target profiles, footprint algebras, and
+verifiers outside Wesley core.
 
 The implementation budget is **90 slices**. Status: **36 / 90 slices closed**.
 Closed implementation slices now cover `HIMP-001` through `HIMP-036`: the
