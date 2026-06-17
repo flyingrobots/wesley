@@ -1,22 +1,25 @@
 ---
-title: "PLATFORM - Continuum YOLO, Runtime-Neutral Edict, and SHA-lock Assurance"
-legend: "PLATFORM"
-lane: "design"
-packet: "0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance"
-issue: "https://github.com/flyingrobots/wesley/issues/611"
-pr: "https://github.com/flyingrobots/wesley/pull/610"
-status: "draft"
+title: 'PLATFORM - Continuum YOLO, Runtime-Neutral Edict, and SHA-lock Assurance'
+legend: 'PLATFORM'
+lane: 'design'
+packet: '0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance'
+issue: 'https://github.com/flyingrobots/wesley/issues/611'
+pr: 'https://github.com/flyingrobots/wesley/pull/610'
+status: 'draft'
 owners:
-  - "@flyingrobots"
-created: "2026-06-17"
-updated: "2026-06-17"
+  - '@flyingrobots'
+created: '2026-06-17'
+updated: '2026-06-17'
 ---
 
 <!-- SPDX-License-Identifier: Apache-2.0 OR LicenseRef-MIND-UCAL-1.0 -->
 <!-- © James Ross Ω FLYING•ROBOTS <https://github.com/flyingrobots> -->
 
-<!-- markdownlint-disable-next-line MD025 -->
+<!-- markdownlint-disable MD025 -->
+
 # PLATFORM - Continuum YOLO, Runtime-Neutral Edict, and SHA-lock Assurance
+
+<!-- markdownlint-enable MD025 -->
 
 ## Linked Issue
 
@@ -96,25 +99,25 @@ By the end of this campaign, a Continuum participant can advertise accepted sour
 
 ## Core Vocabulary
 
-| Term | Meaning |
-| --- | --- |
-| Continuum | Runtime-neutral lawful self-extension and participant protocol. Does not define an official storage runtime. |
-| YOLO | Lawful self-extension mode: You Only Lawfully Operate. |
-| FIDLAR | Anti-pattern: Footprints Ignored; Developer Lies About Risk. |
-| Edict | Restricted deterministic source language for lawful operations. |
-| Edict Core | Runtime-neutral typed/effectful core language and canonical IR. Contains no graph-native built-ins. |
-| Source Profile | An accepted authoring syntax/profile, for example `edict@1`, `graphql-wesley@1`, or future LawSDL. |
-| Lawpack | Public versioned compiler/verifier semantics package. Defines domain law, directives or syntax extensions, target lowerings, law profiles, and conformance fixtures. |
-| Runtime Target Profile | A participant-supported storage/execution profile, for example `echo.dpo@1`, `gitwarp.ref_crdt@1`, `kv.transactional@1`, or `eventlog.append@1`. |
-| Target Intrinsics | Storage operations imported from a runtime target profile, such as Echo graph DPO primitives or git-warp ref/commit primitives. |
-| Target IR | Runtime-specific compiled operation IR. Echo's DPO target IR is Span IR. Other runtimes define their own IRs. |
-| Span IR | Echo DPO target IR representing typed `L <- K -> R` graph rewrite rules, graph footprint templates, and DPO side conditions. Not universal Continuum IR. |
-| Footprint Algebra | Runtime-target-specific effect model: graph reads/writes for Echo, ref/path writes for git-warp, key/range reads for KV, stream appends for event logs, etc. |
-| Contract Bundle | SHA-locked compiled registration artifact containing source hashes, Edict Core IR, target IR, manifests, generated artifacts, footprints, certificates, verifier reports, and provenance. |
-| SHA-lock | Canonical content-addressed lock tying source, IR, lawpacks, runtime profiles, compilers, generated artifacts, assurance reports, and signatures to exact hashes. |
-| HOLMES | Assurance engine over exact SHA-locked bundles and generated evidence. |
-| Watson | Explainer/remediator for compiler, verifier, HOLMES, and Moriarty findings. |
-| Moriarty | Adversarial reviewer that tries to falsify lawfulness, determinism, footprint honesty, schema compatibility, and supply-chain integrity. |
+| Term                   | Meaning                                                                                                                                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Continuum              | Runtime-neutral lawful self-extension and participant protocol. Does not define an official storage runtime.                                                                              |
+| YOLO                   | Lawful self-extension mode: You Only Lawfully Operate.                                                                                                                                    |
+| FIDLAR                 | Anti-pattern: Footprints Ignored; Developer Lies About Risk.                                                                                                                              |
+| Edict                  | Restricted deterministic source language for lawful operations.                                                                                                                           |
+| Edict Core             | Runtime-neutral typed/effectful core language and canonical IR. Contains no graph-native built-ins.                                                                                       |
+| Source Profile         | An accepted authoring syntax/profile, for example `edict@1`, `graphql-wesley@1`, or future LawSDL.                                                                                        |
+| Lawpack                | Public versioned compiler/verifier semantics package. Defines domain law, directives or syntax extensions, target lowerings, law profiles, and conformance fixtures.                      |
+| Runtime Target Profile | A participant-supported storage/execution profile, for example `echo.dpo@1`, `gitwarp.ref_crdt@1`, `kv.transactional@1`, or `eventlog.append@1`.                                          |
+| Target Intrinsics      | Storage operations imported from a runtime target profile, such as Echo graph DPO primitives or git-warp ref/commit primitives.                                                           |
+| Target IR              | Runtime-specific compiled operation IR. Echo's DPO target IR is Span IR. Other runtimes define their own IRs.                                                                             |
+| Span IR                | Echo DPO target IR representing typed `L <- K -> R` graph rewrite rules, graph footprint templates, and DPO side conditions. Not universal Continuum IR.                                  |
+| Footprint Algebra      | Runtime-target-specific effect model: graph reads/writes for Echo, ref/path writes for git-warp, key/range reads for KV, stream appends for event logs, etc.                              |
+| Contract Bundle        | SHA-locked compiled registration artifact containing source hashes, Edict Core IR, target IR, manifests, generated artifacts, footprints, certificates, verifier reports, and provenance. |
+| SHA-lock               | Canonical content-addressed lock tying source, IR, lawpacks, runtime profiles, compilers, generated artifacts, assurance reports, and signatures to exact hashes.                         |
+| HOLMES                 | Assurance engine over exact SHA-locked bundles and generated evidence.                                                                                                                    |
+| Watson                 | Explainer/remediator for compiler, verifier, HOLMES, and Moriarty findings.                                                                                                               |
+| Moriarty               | Adversarial reviewer that tries to falsify lawfulness, determinism, footprint honesty, schema compatibility, and supply-chain integrity.                                                  |
 
 ## Non-Negotiable Principle
 
@@ -196,20 +199,20 @@ Privileged/native extensions may exist, but they must use a separate trusted-hos
 
 ## Layer Ownership
 
-| Layer | Owns | Must Not Own |
-| --- | --- | --- |
-| Continuum | Participant discovery, capability catalogs, lawpack discovery, runtime profile discovery, bundle registration protocol, receipts, YOLO workflow. | Official storage model, Echo graph doctrine, runtime-specific rewrite semantics hard-coded into core. |
-| Edict Core | Deterministic expressions, types, operation declarations, law/profile references, assertions, target imports, effect framework, canonical core IR. | `graph.node`, `graph.edge`, commits, SQL tables, KV primitives, event streams, or any storage-native built-in. |
-| Source Frontends | Edict syntax, GraphQL/Wesley profile, weslaw sidecars, future LawSDL frontends. | Runtime authority or target-specific semantics outside declared lawpacks. |
-| Wesley / Compiler Substrate | Parsing, normalization, Shape IR/Law IR where applicable, canonicalization, source-profile compiler facts. | Echo dispatch IDs, Echo DPO semantics, Continuum agent policy, privileged runtime authority. |
-| Lawpacks | Domain law, target lowerings, source extensions, verifier profiles, conformance fixtures, compatibility matrices. | Ambient/unversioned semantics or hidden compiler behavior. |
-| Runtime Target Profile | Target intrinsics, footprint algebra, target IR, verifier rules, bundle profile, obstruction taxonomy. | Universal Continuum semantics. |
-| Echo Target | Echo DPO/Span IR, graph footprints, Echo op IDs, Echo registration artifacts, Echo generated bindings. | Generic Edict Core or all Continuum storage. |
-| git-warp Target | commit/ref/CRDT plan IR, ref/path/reducer footprints, convergence/idempotence checks. | Echo DPO or graph footprints unless explicitly modeled by a lawpack. |
-| Participant Runtime | Preflight, admission, registration, execution, receipts, obstructions, capability catalog. | Trusting unverified generated artifacts or raw callbacks in the YOLO lane. |
-| HOLMES | Assurance over exact SHA-locked evidence and generated artifacts. | Runtime authority or policy override. |
-| Watson | Explanation, repair suggestions, human/agent-readable remediation. | Admission authority. |
-| Moriarty | Adversarial falsification attempts and exploit-oriented probes. | Admission authority or production mutation. |
+| Layer                       | Owns                                                                                                                                               | Must Not Own                                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Continuum                   | Participant discovery, capability catalogs, lawpack discovery, runtime profile discovery, bundle registration protocol, receipts, YOLO workflow.   | Official storage model, Echo graph doctrine, runtime-specific rewrite semantics hard-coded into core.          |
+| Edict Core                  | Deterministic expressions, types, operation declarations, law/profile references, assertions, target imports, effect framework, canonical core IR. | `graph.node`, `graph.edge`, commits, SQL tables, KV primitives, event streams, or any storage-native built-in. |
+| Source Frontends            | Edict syntax, GraphQL/Wesley profile, weslaw sidecars, future LawSDL frontends.                                                                    | Runtime authority or target-specific semantics outside declared lawpacks.                                      |
+| Wesley / Compiler Substrate | Parsing, normalization, Shape IR/Law IR where applicable, canonicalization, source-profile compiler facts.                                         | Echo dispatch IDs, Echo DPO semantics, Continuum agent policy, privileged runtime authority.                   |
+| Lawpacks                    | Domain law, target lowerings, source extensions, verifier profiles, conformance fixtures, compatibility matrices.                                  | Ambient/unversioned semantics or hidden compiler behavior.                                                     |
+| Runtime Target Profile      | Target intrinsics, footprint algebra, target IR, verifier rules, bundle profile, obstruction taxonomy.                                             | Universal Continuum semantics.                                                                                 |
+| Echo Target                 | Echo DPO/Span IR, graph footprints, Echo op IDs, Echo registration artifacts, Echo generated bindings.                                             | Generic Edict Core or all Continuum storage.                                                                   |
+| git-warp Target             | commit/ref/CRDT plan IR, ref/path/reducer footprints, convergence/idempotence checks.                                                              | Echo DPO or graph footprints unless explicitly modeled by a lawpack.                                           |
+| Participant Runtime         | Preflight, admission, registration, execution, receipts, obstructions, capability catalog.                                                         | Trusting unverified generated artifacts or raw callbacks in the YOLO lane.                                     |
+| HOLMES                      | Assurance over exact SHA-locked evidence and generated artifacts.                                                                                  | Runtime authority or policy override.                                                                          |
+| Watson                      | Explanation, repair suggestions, human/agent-readable remediation.                                                                                 | Admission authority.                                                                                           |
+| Moriarty                    | Adversarial falsification attempts and exploit-oriented probes.                                                                                    | Admission authority or production mutation.                                                                    |
 
 ## Architecture Overview
 
@@ -443,12 +446,12 @@ A target profile declares:
 
 Example profile families:
 
-| Runtime target | Target IR | Footprint algebra | Verifier checks |
-| --- | --- | --- | --- |
-| `echo.dpo@1` | Echo Span IR | graph node/edge/attachment reads/writes/creates/deletes/forbids | typed DPO well-formedness, pushout complement side conditions, alias checks, boundary preservation, graph footprint soundness |
-| `gitwarp.ref_crdt@1` | Commit/Reducer IR | refs, paths, object IDs, merge bases, reducers | deterministic commit plan, idempotent event identity, CRDT convergence, reducer monotonicity, ref/path footprint soundness |
-| `kv.transactional@1` | Transaction/CAS IR | keys, ranges, compare guards | deterministic reads/writes, CAS guards, serializability profile, key/range footprint soundness |
-| `eventlog.append@1` | Append/Projection IR | streams, positions, event types, projections | append-only discipline, reducer determinism, projection law, stream footprint soundness |
+| Runtime target       | Target IR            | Footprint algebra                                               | Verifier checks                                                                                                               |
+| -------------------- | -------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `echo.dpo@1`         | Echo Span IR         | graph node/edge/attachment reads/writes/creates/deletes/forbids | typed DPO well-formedness, pushout complement side conditions, alias checks, boundary preservation, graph footprint soundness |
+| `gitwarp.ref_crdt@1` | Commit/Reducer IR    | refs, paths, object IDs, merge bases, reducers                  | deterministic commit plan, idempotent event identity, CRDT convergence, reducer monotonicity, ref/path footprint soundness    |
+| `kv.transactional@1` | Transaction/CAS IR   | keys, ranges, compare guards                                    | deterministic reads/writes, CAS guards, serializability profile, key/range footprint soundness                                |
+| `eventlog.append@1`  | Append/Projection IR | streams, positions, event types, projections                    | append-only discipline, reducer determinism, projection law, stream footprint soundness                                       |
 
 ## Footprint Inference
 
@@ -822,11 +825,11 @@ A generated bundle helper may expose:
 export const GRAFT_STRUCTURAL_HISTORY_CONTRACT: GeneratedContractBundle;
 
 export async function registerGraftStructuralHistoryContract(
-  participant: ContinuumYoloParticipant,
+  participant: ContinuumYoloParticipant
 ): Promise<ContractRegistrationReceipt>;
 
 export function createGraftStructuralHistoryClient(
-  participant: ContinuumCapabilityPort,
+  participant: ContinuumCapabilityPort
 ): GraftStructuralHistoryClient;
 ```
 
@@ -959,14 +962,14 @@ Schema evolution does not imply runtime target version changes.
 
 Version axes are separate:
 
-| Axis | Example | Bump when |
-| --- | --- | --- |
-| Source language | `edict@1` | syntax or language semantics change |
-| Runtime target | `echo.dpo@1` | target execution/footprint/verifier semantics change |
-| Lawpack | `history.optics@2.1.0` | domain law or lowering semantics change |
-| Schema epoch | `GitWarpImportBatch@v2` | domain shape changes |
-| Operation ABI | `recordGitWarpImportBatch@v2` | callable input/output/effect contract changes |
-| Bundle identity | `bundleHash` | any compiled evidence changes |
+| Axis            | Example                       | Bump when                                            |
+| --------------- | ----------------------------- | ---------------------------------------------------- |
+| Source language | `edict@1`                     | syntax or language semantics change                  |
+| Runtime target  | `echo.dpo@1`                  | target execution/footprint/verifier semantics change |
+| Lawpack         | `history.optics@2.1.0`        | domain law or lowering semantics change              |
+| Schema epoch    | `GitWarpImportBatch@v2`       | domain shape changes                                 |
+| Operation ABI   | `recordGitWarpImportBatch@v2` | callable input/output/effect contract changes        |
+| Bundle identity | `bundleHash`                  | any compiled evidence changes                        |
 
 If `GitWarpImportBatch` gains a new required field, the compiler must force one of:
 
@@ -1093,12 +1096,12 @@ If actor/provenance is needed, it must be explicit in operation input or runtime
 
 Continuum does not define state. Participant runtime profiles define state models.
 
-| Target | State model | Operation form | Footprint form |
-| --- | --- | --- | --- |
-| Echo | typed graph / WARP graph | DPO rewrite / observation | graph node/edge/attachment footprint |
-| git-warp | git refs, commits, trees, reducers | commit + CRDT reduction | ref/path/reducer footprint |
-| KV | key-value store with transaction/CAS profile | transaction plan | key/range/guard footprint |
-| event-log | streams and projections | append + reducer/projection | stream/event/projection footprint |
+| Target    | State model                                  | Operation form              | Footprint form                       |
+| --------- | -------------------------------------------- | --------------------------- | ------------------------------------ |
+| Echo      | typed graph / WARP graph                     | DPO rewrite / observation   | graph node/edge/attachment footprint |
+| git-warp  | git refs, commits, trees, reducers           | commit + CRDT reduction     | ref/path/reducer footprint           |
+| KV        | key-value store with transaction/CAS profile | transaction plan            | key/range/guard footprint            |
+| event-log | streams and projections                      | append + reducer/projection | stream/event/projection footprint    |
 
 Continuum standardizes how these targets are declared, discovered, compiled against, SHA-locked, assured, submitted, and receipted.
 
