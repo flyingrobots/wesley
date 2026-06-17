@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **Emitter syntax-model boundary**: Locked TypeScript and Rust code generation
+  behind explicit syntax-model-to-printer pipelines. The LE binary TypeScript
+  codec emitter now constructs a crate-local TypeScript syntax model before
+  rendering, keeping raw source string writes at the printer boundary.
 - **Wesley core extension boundary**: Removed generic runtime dispatch ID
   helpers from `wesley-core` and stopped exporting TypeScript `OP_*` constants
   from the generic LE binary emitter. Target-owned extensions must now supply
