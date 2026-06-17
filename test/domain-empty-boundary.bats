@@ -40,3 +40,13 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "LegacyPreflight --> NodeRetirement[Node retirement ledger guard]" docs/END_TO_END.md
   assert_failure
 }
+
+@test "BEARING active-gravity packet sections stay before tensions" {
+  run awk '
+    /^### 12\. Holmes `weslaw` Assurance Planning$/ { h12 = NR }
+    /^### 13\. Continuum YOLO Runtime-Neutral Edict$/ { h13 = NR }
+    /^## Tensions$/ { tensions = NR }
+    END { exit !(h12 && h13 && tensions && h12 < tensions && h13 < tensions) }
+  ' docs/BEARING.md
+  assert_success
+}

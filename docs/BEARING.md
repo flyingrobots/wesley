@@ -375,34 +375,6 @@ validator helpers, report-only footprint capability summaries,
 profile/category-aware law coverage reports, an explicit Law Matrix v1.1
 deferral, and v1 playback/retrospective closeout evidence.
 
-## Tensions
-
-- **Rust Native Discipline**: The easy mistake after deletion is to recreate
-  the old JavaScript surface through scripts, docs, or compatibility shortcuts.
-  New compiler behavior belongs in Rust crates unless there is an explicit
-  non-compiler owner.
-- **Fixture Churn**: IR, hash, directive, or generated-artifact changes can
-  affect Echo and jedit fixtures. Those changes need explicit compatibility
-  notes rather than accidental hash churn.
-- **Alias Semantics**: Legacy directive aliases are compatibility input, not a
-  license to preserve arbitrary spelling in semantic Rust L1 output.
-- **Invalid Diagnostics**: The Rust lowerer now exposes stable diagnostic
-  codes and parser spans, but semantic lowering spans are still absent and
-  should not be implied by tests or release notes.
-- **External Module Gap**: Wesley has named the domain-empty boundary, but the
-  module seam still needs hermetic target-dispatch fixtures, runtime boundary
-  evidence, and artifact evidence before external modules can consume it
-  cleanly.
-- **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
-  the database authority without editing or overwriting sibling work from this
-  repo.
-- **Law Versus Runtime Meaning**: `weslaw` lets Wesley preserve and reason
-  about semantic law, but Echo, Continuum, jedit, warp-ttd, and
-  `wesley-postgres` still own target meaning and runtime behavior.
-- **Law IR Scope Control**: The first `weslaw` implementation must stay typed,
-  deterministic, and boring. It must not become an expression language, policy
-  engine, or YAML programming language.
-
 ### 12. Holmes `weslaw` Assurance Planning
 
 This completed 50-slice PRD and test-plan campaign turns the merged `weslaw`
@@ -453,6 +425,34 @@ The correction is narrow and binding:
 - Declared footprints are policy bounds. The source of truth is checked,
   target-specific effect and footprint inference.
 - FIDLAR-shaped raw callbacks are outside the normal YOLO lane.
+
+## Tensions
+
+- **Rust Native Discipline**: The easy mistake after deletion is to recreate
+  the old JavaScript surface through scripts, docs, or compatibility shortcuts.
+  New compiler behavior belongs in Rust crates unless there is an explicit
+  non-compiler owner.
+- **Fixture Churn**: IR, hash, directive, or generated-artifact changes can
+  affect Echo and jedit fixtures. Those changes need explicit compatibility
+  notes rather than accidental hash churn.
+- **Alias Semantics**: Legacy directive aliases are compatibility input, not a
+  license to preserve arbitrary spelling in semantic Rust L1 output.
+- **Invalid Diagnostics**: The Rust lowerer now exposes stable diagnostic
+  codes and parser spans, but semantic lowering spans are still absent and
+  should not be implied by tests or release notes.
+- **External Module Gap**: Wesley has named the domain-empty boundary, but the
+  module seam still needs hermetic target-dispatch fixtures, runtime boundary
+  evidence, and artifact evidence before external modules can consume it
+  cleanly.
+- **Sibling Repo Coordination**: Wesley should reference `wesley-postgres` as
+  the database authority without editing or overwriting sibling work from this
+  repo.
+- **Law Versus Runtime Meaning**: `weslaw` lets Wesley preserve and reason
+  about semantic law, but Echo, Continuum, jedit, warp-ttd, and
+  `wesley-postgres` still own target meaning and runtime behavior.
+- **Law IR Scope Control**: The first `weslaw` implementation must stay typed,
+  deterministic, and boring. It must not become an expression language, policy
+  engine, or YAML programming language.
 
 ## Next Target
 
