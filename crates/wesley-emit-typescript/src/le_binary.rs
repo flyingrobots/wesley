@@ -1133,17 +1133,25 @@ mod tests {
     ";
 
     fn assert_no_runtime_operation_markers(ts: &str) {
-        let forbidden_constant = ["OP", "MAKE", "WIDGET"].join("_");
+        let forbidden_constant_prefix = ["OP", ""].join("_");
         let forbidden_phrase = ["op", "id"].join(" ");
 
         assert!(
-            !ts.contains(&forbidden_constant),
-            "unexpected runtime operation constant in:\n{ts}"
+            !ts.contains(&forbidden_constant_prefix),
+            "unexpected runtime operation constant prefix in:\n{ts}"
         );
         assert!(
             !ts.contains(&forbidden_phrase),
             "unexpected runtime operation identifier claim in:\n{ts}"
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "unexpected runtime operation constant prefix")]
+    fn runtime_marker_assertion_rejects_any_op_prefixed_constant() {
+        let runtime_marker = ["export const ", "OP", "_DELETE_WIDGET = 42;"].concat();
+
+        assert_no_runtime_operation_markers(&runtime_marker);
     }
 
     #[test]
