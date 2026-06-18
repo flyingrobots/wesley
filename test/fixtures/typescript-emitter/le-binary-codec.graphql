@@ -16,7 +16,11 @@ input MakeWidgetInput {
   color: Color
   solo: Solo!
   tags: [String!]!
+  nullishTags: [String]!
   maybeTags: [String!]
+  optionalNullishTags: [String]
+  matrix: [[Int!]!]!
+  optionalMatrix: [[Int!]]
 }
 
 type Widget {

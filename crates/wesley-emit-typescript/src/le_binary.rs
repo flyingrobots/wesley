@@ -528,40 +528,10 @@ fn encode_field_statement(parent: TsExpr, field_name: &str, ty: &TypeReference) 
 }
 
 fn encode_expr_for_reference(value: TsExpr, ty: &TypeReference) -> TsExpr {
-    if ty.is_list {
-        let element_lambda = TsExpr::Arrow {
-            params: vec!["w".to_string(), "x".to_string()],
-            body: Box::new(scalar_encode_call_expr(&ty.base, ident("w"), ident("x"))),
-        };
-        let list_call = method_call(ident("w"), "writeList", vec![value.clone(), element_lambda]);
-
-        if ty.nullable {
-            let option_lambda = TsExpr::Arrow {
-                params: vec!["w".to_string(), "xs".to_string()],
-                body: Box::new(method_call(
-                    ident("w"),
-                    "writeList",
-                    vec![
-                        ident("xs"),
-                        TsExpr::Arrow {
-                            params: vec!["w".to_string(), "x".to_string()],
-                            body: Box::new(scalar_encode_call_expr(
-                                &ty.base,
-                                ident("w"),
-                                ident("x"),
-                            )),
-                        },
-                    ],
-                )),
-            };
-            return method_call(ident("w"), "writeOption", vec![value, option_lambda]);
-        }
-
-        return list_call;
-    }
-
     if ty.nullable {
-        let inner = scalar_encode_call_expr(&ty.base, ident("w"), ident("x"));
+        let mut inner_ty = ty.clone();
+        inner_ty.nullable = false;
+        let inner = encode_expr_for_reference(ident("x"), &inner_ty);
         return method_call(
             ident("w"),
             "writeOption",
@@ -575,47 +545,37 @@ fn encode_expr_for_reference(value: TsExpr, ty: &TypeReference) -> TsExpr {
         );
     }
 
+    if let Some(item_ty) = list_item_type_reference(ty) {
+        let element_lambda = TsExpr::Arrow {
+            params: vec!["w".to_string(), "x".to_string()],
+            body: Box::new(encode_expr_for_reference(ident("x"), &item_ty)),
+        };
+        return method_call(ident("w"), "writeList", vec![value, element_lambda]);
+    }
+
     scalar_encode_call_expr(&ty.base, ident("w"), value)
 }
 
 fn decode_expr_for_reference(ty: &TypeReference) -> TsExpr {
-    if ty.is_list {
-        let element_lambda = TsExpr::Arrow {
-            params: vec!["r".to_string()],
-            body: Box::new(scalar_decode_call_expr(&ty.base, ident("r"))),
-        };
-        let list_call = method_call(ident("r"), "readList", vec![element_lambda]);
-
-        if ty.nullable {
-            return method_call(
-                ident("r"),
-                "readOption",
-                vec![TsExpr::Arrow {
-                    params: vec!["r".to_string()],
-                    body: Box::new(method_call(
-                        ident("r"),
-                        "readList",
-                        vec![TsExpr::Arrow {
-                            params: vec!["r".to_string()],
-                            body: Box::new(scalar_decode_call_expr(&ty.base, ident("r"))),
-                        }],
-                    )),
-                }],
-            );
-        }
-
-        return list_call;
-    }
-
     if ty.nullable {
+        let mut inner_ty = ty.clone();
+        inner_ty.nullable = false;
         return method_call(
             ident("r"),
             "readOption",
             vec![TsExpr::Arrow {
                 params: vec!["r".to_string()],
-                body: Box::new(scalar_decode_call_expr(&ty.base, ident("r"))),
+                body: Box::new(decode_expr_for_reference(&inner_ty)),
             }],
         );
+    }
+
+    if let Some(item_ty) = list_item_type_reference(ty) {
+        let element_lambda = TsExpr::Arrow {
+            params: vec!["r".to_string()],
+            body: Box::new(decode_expr_for_reference(&item_ty)),
+        };
+        return method_call(ident("r"), "readList", vec![element_lambda]);
     }
 
     scalar_decode_call_expr(&ty.base, ident("r"))
@@ -649,11 +609,27 @@ fn ts_type_for_reference(ty: &TypeReference) -> TsTypeExpr {
         other => TsTypeExpr::Reference(pascal_case(other)),
     };
 
-    let mut type_expr = if ty.is_list {
-        let element = if matches!(ty.list_item_nullable, Some(true)) {
+    if !ty.list_wrappers.is_empty() {
+        let mut type_expr = if ty.leaf_nullable.unwrap_or(true) {
             TsTypeExpr::union(vec![base, TsTypeExpr::Null])
         } else {
             base
+        };
+
+        for wrapper in ty.list_wrappers.iter().rev() {
+            type_expr = TsTypeExpr::Array(Box::new(type_expr));
+            if wrapper.nullable {
+                type_expr = TsTypeExpr::union(vec![type_expr, TsTypeExpr::Null]);
+            }
+        }
+
+        return type_expr;
+    }
+
+    let mut type_expr = if ty.is_list {
+        let element = match ty.list_item_nullable {
+            Some(false) => base,
+            Some(true) | None => TsTypeExpr::union(vec![base, TsTypeExpr::Null]),
         };
         TsTypeExpr::Array(Box::new(element))
     } else {
@@ -665,6 +641,49 @@ fn ts_type_for_reference(ty: &TypeReference) -> TsTypeExpr {
     }
 
     type_expr
+}
+
+fn list_item_type_reference(ty: &TypeReference) -> Option<TypeReference> {
+    if !ty.is_list {
+        return None;
+    }
+
+    if ty.list_wrappers.is_empty() {
+        return Some(TypeReference {
+            base: ty.base.clone(),
+            nullable: ty.list_item_nullable.unwrap_or(true),
+            is_list: false,
+            list_item_nullable: None,
+            list_wrappers: Vec::new(),
+            leaf_nullable: None,
+        });
+    }
+
+    let remaining_wrappers = ty.list_wrappers[1..].to_vec();
+    if remaining_wrappers.is_empty() {
+        return Some(TypeReference {
+            base: ty.base.clone(),
+            nullable: ty.leaf_nullable.unwrap_or(true),
+            is_list: false,
+            list_item_nullable: None,
+            list_wrappers: Vec::new(),
+            leaf_nullable: None,
+        });
+    }
+
+    Some(TypeReference {
+        base: ty.base.clone(),
+        nullable: remaining_wrappers[0].nullable,
+        is_list: true,
+        list_item_nullable: Some(
+            remaining_wrappers
+                .get(1)
+                .map(|wrapper| wrapper.nullable)
+                .unwrap_or(ty.leaf_nullable.unwrap_or(true)),
+        ),
+        list_wrappers: remaining_wrappers,
+        leaf_nullable: ty.leaf_nullable,
+    })
 }
 
 fn print_program(program: &TsProgram) -> String {

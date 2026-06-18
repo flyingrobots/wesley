@@ -52,7 +52,11 @@ export interface MakeWidgetInput {
     color: Color | null;
     solo: Solo;
     tags: string[];
+    nullishTags: (string | null)[];
     maybeTags: string[] | null;
+    optionalNullishTags: (string | null)[] | null;
+    matrix: number[][];
+    optionalMatrix: (number[] | null)[] | null;
 }
 
 export function _encMakeWidgetInput(w: Writer, v: MakeWidgetInput): void {
@@ -63,7 +67,11 @@ export function _encMakeWidgetInput(w: Writer, v: MakeWidgetInput): void {
     w.writeOption(v.color, (w, x) => _encColor(w, x));
     _encSolo(w, v.solo);
     w.writeList(v.tags, (w, x) => w.writeString(x));
-    w.writeOption(v.maybeTags, (w, xs) => w.writeList(xs, (w, x) => w.writeString(x)));
+    w.writeList(v.nullishTags, (w, x) => w.writeOption(x, (w, x) => w.writeString(x)));
+    w.writeOption(v.maybeTags, (w, x) => w.writeList(x, (w, x) => w.writeString(x)));
+    w.writeOption(v.optionalNullishTags, (w, x) => w.writeList(x, (w, x) => w.writeOption(x, (w, x) => w.writeString(x))));
+    w.writeList(v.matrix, (w, x) => w.writeList(x, (w, x) => w.writeI32Le(x)));
+    w.writeOption(v.optionalMatrix, (w, x) => w.writeList(x, (w, x) => w.writeOption(x, (w, x) => w.writeList(x, (w, x) => w.writeI32Le(x)))));
 }
 
 export function _decMakeWidgetInput(r: Reader): MakeWidgetInput {
@@ -75,7 +83,11 @@ export function _decMakeWidgetInput(r: Reader): MakeWidgetInput {
         color: r.readOption((r) => _decColor(r)),
         solo: _decSolo(r),
         tags: r.readList((r) => r.readString()),
+        nullishTags: r.readList((r) => r.readOption((r) => r.readString())),
         maybeTags: r.readOption((r) => r.readList((r) => r.readString())),
+        optionalNullishTags: r.readOption((r) => r.readList((r) => r.readOption((r) => r.readString()))),
+        matrix: r.readList((r) => r.readList((r) => r.readI32Le())),
+        optionalMatrix: r.readOption((r) => r.readList((r) => r.readOption((r) => r.readList((r) => r.readI32Le())))),
     };
 }
 

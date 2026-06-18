@@ -34,6 +34,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Package advisory cleanup**: Added an `undici` override to the patched
+  `7.28.0` line so `pnpm audit --prod=false --json` clears the latest
+  transitive `jsdom` advisories surfaced during preflight.
 - **Package advisory cleanup**: Removed the `rolldown-vite` alias that pulled
   `esbuild` `0.25.x` into the workspace and moved retained Vite tooling to the
   patched Vite 8 line so `pnpm audit --prod=false --json` reports zero known

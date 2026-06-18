@@ -353,6 +353,7 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         create_buffer.directives["wes_stack_witness"]["opId"],
         create_buffer_vector["opIdHex"]
     );
+    assert_target_op_id_forms_agree(create_buffer_vector);
     assert_eq!(
         create_buffer.directives["wes_stack_witness"]["helperKind"],
         serde_json::json!("EINT")
@@ -405,6 +406,7 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         replace_range.directives["wes_stack_witness"]["opId"],
         replace_range_vector["opIdHex"]
     );
+    assert_target_op_id_forms_agree(replace_range_vector);
     assert_artifact_identity_matches_vector(replace_range, &vectors);
     assert_eq!(
         replace_range.directives["wes_stack_witness"]["fixtureVarsEncoding"],
@@ -461,6 +463,7 @@ fn lists_stack_witness_0001_fixture_artifact_shape() {
         text_window.directives["wes_stack_witness"]["opId"],
         text_window_vector["opIdHex"]
     );
+    assert_target_op_id_forms_agree(text_window_vector);
     assert_artifact_identity_matches_vector(text_window, &vectors);
     assert_eq!(
         text_window.directives["wes_stack_witness"]["helperKind"],
@@ -705,6 +708,16 @@ fn vector_for<'a>(vectors: &'a serde_json::Value, name: &str) -> &'a serde_json:
         .iter()
         .find(|operation| operation["name"].as_str() == Some(name))
         .expect("fixture operation vector should exist")
+}
+
+fn assert_target_op_id_forms_agree(vector: &serde_json::Value) {
+    let hex = vector["opIdHex"]
+        .as_str()
+        .expect("target-owned opIdHex should be a string")
+        .strip_prefix("0x")
+        .expect("target-owned opIdHex should use 0x prefix");
+    let parsed = u32::from_str_radix(hex, 16).expect("target-owned opIdHex should parse as u32");
+    assert_eq!(vector["opIdDecimal"], serde_json::json!(parsed));
 }
 
 fn assert_artifact_identity_matches_vector(
