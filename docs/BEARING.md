@@ -403,28 +403,31 @@ transitional CLI aliases, operator documentation, schema-version compatibility,
 artifact retention, end-to-end workflow, release-gate rollout, and campaign
 closeout.
 
-### 13. Continuum YOLO Runtime-Neutral Edict
+### 13. Edict Extracted To Dedicated Repository
 
-Continuum standardizes lawful self-extension, not storage. The active platform
-posture is captured in
-[0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance](./design/0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/continuum-yolo-runtime-neutral-edict-sha-lock-assurance.md).
+The Continuum/Edict design packet originally captured in Wesley has been
+extracted to the dedicated
+[flyingrobots/edict](https://github.com/flyingrobots/edict) repository. Wesley's
+local packet
+[0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance](./design/0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/continuum-yolo-runtime-neutral-edict-sha-lock-assurance.md)
+is now a historical locator, not the canonical language/specification surface.
 
-The correction is narrow and binding:
+Continuing Edict implementation work is tracked in
+[flyingrobots/edict#1](https://github.com/flyingrobots/edict/issues/1). Wesley's
+remaining responsibility is GraphQL and `weslaw` source-profile adapter work,
+compiler evidence integration, and any future bridge code that consumes Edict
+artifacts without taking ownership of Edict Core or target-profile semantics.
 
-- Continuum has no official graph, database, event log, repository, or storage
-  runtime.
-- Edict Core is a deterministic lawful-effect language, not a graph scripting
-  language.
-- Storage operations enter through declared runtime target profiles such as
-  `echo.dpo@1`, `gitwarp.ref_crdt@1`, `kv.transactional@1`, or
-  `eventlog.append@1`.
-- Echo Span IR is Echo DPO target IR, not universal Continuum IR.
-- GraphQL/Wesley/weslaw are source-profile and compiler-substrate surfaces;
-  they do not own Echo operation ids, Echo DPO semantics, Continuum agent
-  policy, or runtime admission.
-- Declared footprints are policy bounds. The source of truth is checked,
-  target-specific effect and footprint inference.
-- FIDLAR-shaped raw callbacks are outside the normal YOLO lane.
+The repository boundary is binding:
+
+- Edict owns the language, Core IR, canonicalization, conformance fixtures, and
+  target-profile ABI surface.
+- Wesley owns GraphQL and `weslaw` source-profile adapters and compiler
+  evidence integration.
+- Continuum owns participant protocol and admission.
+- Echo owns `echo.dpo@1` target semantics.
+- Continuum still has no official graph, database, event log, repository, or
+  storage runtime.
 
 ## Tensions
 
