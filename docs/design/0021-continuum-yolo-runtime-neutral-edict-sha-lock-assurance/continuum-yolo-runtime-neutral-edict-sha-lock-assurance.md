@@ -23,7 +23,11 @@ updated: '2026-06-17'
 
 ## Linked Issue
 
-- [Implement runtime-neutral Continuum YOLO target profiles](https://github.com/flyingrobots/wesley/issues/611)
+- [Issue #611 - runtime-neutral Continuum target profiles](https://github.com/flyingrobots/wesley/issues/611)
+
+## Supporting Specifications
+
+- [SPEC - Edict Language v1](./SPEC_edict-language-v1.md)
 
 ## Decision Summary
 
@@ -33,6 +37,14 @@ This design keeps the YOLO north star:
 
 ```text
 YOLO = You Only Lawfully Operate
+```
+
+YOLO is a codename and attention hook, not the canonical lane identity.
+Provenance-bearing artifacts use:
+
+```text
+formal lane: lawful-autonomous
+canonical identifier: continuum.lane.lawful-autonomous/v1
 ```
 
 and rejects the FIDLAR anti-pattern:
@@ -102,7 +114,7 @@ By the end of this campaign, a Continuum participant can advertise accepted sour
 | Term                   | Meaning                                                                                                                                                                                   |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Continuum              | Runtime-neutral lawful self-extension and participant protocol. Does not define an official storage runtime.                                                                              |
-| YOLO                   | Lawful self-extension mode: You Only Lawfully Operate.                                                                                                                                    |
+| YOLO                   | Non-authoritative codename: You Only Lawfully Operate. Formal artifacts use `continuum.lane.lawful-autonomous/v1`.                                                                        |
 | FIDLAR                 | Anti-pattern: Footprints Ignored; Developer Lies About Risk.                                                                                                                              |
 | Edict                  | Restricted deterministic source language for lawful operations.                                                                                                                           |
 | Edict Core             | Runtime-neutral typed/effectful core language and canonical IR. Contains no graph-native built-ins.                                                                                       |
@@ -158,7 +170,7 @@ The first revision of this design correctly rejected FIDLAR, but it overfit the 
 
 The corrected problem statement:
 
-- normal YOLO-path operations must not receive raw runtime callbacks;
+- normal lawful-autonomous operations must not receive raw runtime callbacks;
 - Edict Core must be runtime-neutral;
 - every target profile must define its own storage intrinsics, footprint algebra, target IR, verifier, and bundle profile;
 - Continuum participants must advertise what they accept;
@@ -189,30 +201,30 @@ This campaign does not include:
 - defining a global Continuum graph;
 - forcing every Continuum participant to use Echo;
 - forcing every Continuum participant to use GraphQL;
-- forcing every Continuum participant to support dynamic YOLO registration;
+- forcing every Continuum participant to support dynamic lawful-autonomous registration;
 - proving arbitrary general-purpose programs lawful;
 - eliminating privileged/native host extensions in one campaign;
-- pretending privileged/native host extensions are normal YOLO contracts;
+- pretending privileged/native host extensions are normal lawful-autonomous contracts;
 - making HOLMES, Watson, or Moriarty runtime authorities.
 
 Privileged/native extensions may exist, but they must use a separate trusted-host lane and must not claim compile-time footprint honesty unless they lower to checked target IR with inferred effects.
 
 ## Layer Ownership
 
-| Layer                       | Owns                                                                                                                                               | Must Not Own                                                                                                   |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Continuum                   | Participant discovery, capability catalogs, lawpack discovery, runtime profile discovery, bundle registration protocol, receipts, YOLO workflow.   | Official storage model, Echo graph doctrine, runtime-specific rewrite semantics hard-coded into core.          |
-| Edict Core                  | Deterministic expressions, types, operation declarations, law/profile references, assertions, target imports, effect framework, canonical core IR. | `graph.node`, `graph.edge`, commits, SQL tables, KV primitives, event streams, or any storage-native built-in. |
-| Source Frontends            | Edict syntax, GraphQL/Wesley profile, weslaw sidecars, future LawSDL frontends.                                                                    | Runtime authority or target-specific semantics outside declared lawpacks.                                      |
-| Wesley / Compiler Substrate | Parsing, normalization, Shape IR/Law IR where applicable, canonicalization, source-profile compiler facts.                                         | Echo dispatch IDs, Echo DPO semantics, Continuum agent policy, privileged runtime authority.                   |
-| Lawpacks                    | Domain law, target lowerings, source extensions, verifier profiles, conformance fixtures, compatibility matrices.                                  | Ambient/unversioned semantics or hidden compiler behavior.                                                     |
-| Runtime Target Profile      | Target intrinsics, footprint algebra, target IR, verifier rules, bundle profile, obstruction taxonomy.                                             | Universal Continuum semantics.                                                                                 |
-| Echo Target                 | Echo DPO/Span IR, graph footprints, Echo op IDs, Echo registration artifacts, Echo generated bindings.                                             | Generic Edict Core or all Continuum storage.                                                                   |
-| git-warp Target             | commit/ref/CRDT plan IR, ref/path/reducer footprints, convergence/idempotence checks.                                                              | Echo DPO or graph footprints unless explicitly modeled by a lawpack.                                           |
-| Participant Runtime         | Preflight, admission, registration, execution, receipts, obstructions, capability catalog.                                                         | Trusting unverified generated artifacts or raw callbacks in the YOLO lane.                                     |
-| HOLMES                      | Assurance over exact SHA-locked evidence and generated artifacts.                                                                                  | Runtime authority or policy override.                                                                          |
-| Watson                      | Explanation, repair suggestions, human/agent-readable remediation.                                                                                 | Admission authority.                                                                                           |
-| Moriarty                    | Adversarial falsification attempts and exploit-oriented probes.                                                                                    | Admission authority or production mutation.                                                                    |
+| Layer                       | Owns                                                                                                                                                          | Must Not Own                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Continuum                   | Participant discovery, capability catalogs, lawpack discovery, runtime profile discovery, bundle registration protocol, receipts, lawful-autonomous workflow. | Official storage model, Echo graph doctrine, runtime-specific rewrite semantics hard-coded into core.          |
+| Edict Core                  | Deterministic expressions, types, operation declarations, law/profile references, assertions, target imports, effect framework, canonical core IR.            | `graph.node`, `graph.edge`, commits, SQL tables, KV primitives, event streams, or any storage-native built-in. |
+| Source Frontends            | Edict syntax, GraphQL/Wesley profile, weslaw sidecars, future LawSDL frontends.                                                                               | Runtime authority or target-specific semantics outside declared lawpacks.                                      |
+| Wesley / Compiler Substrate | Parsing, normalization, Shape IR/Law IR where applicable, canonicalization, source-profile compiler facts.                                                    | Echo dispatch IDs, Echo DPO semantics, Continuum agent policy, privileged runtime authority.                   |
+| Lawpacks                    | Domain law, target lowerings, source extensions, verifier profiles, conformance fixtures, compatibility matrices.                                             | Ambient/unversioned semantics or hidden compiler behavior.                                                     |
+| Runtime Target Profile      | Target intrinsics, footprint algebra, target IR, verifier rules, bundle profile, obstruction taxonomy.                                                        | Universal Continuum semantics.                                                                                 |
+| Echo Target                 | Echo DPO/Span IR, graph footprints, Echo op IDs, Echo registration artifacts, Echo generated bindings.                                                        | Generic Edict Core or all Continuum storage.                                                                   |
+| git-warp Target             | commit/ref/CRDT plan IR, ref/path/reducer footprints, convergence/idempotence checks.                                                                         | Echo DPO or graph footprints unless explicitly modeled by a lawpack.                                           |
+| Participant Runtime         | Preflight, admission, registration, execution, receipts, obstructions, capability catalog.                                                                    | Trusting unverified generated artifacts or raw callbacks in the lawful-autonomous lane.                        |
+| HOLMES                      | Assurance over exact SHA-locked evidence and generated artifacts.                                                                                             | Runtime authority or policy override.                                                                          |
+| Watson                      | Explanation, repair suggestions, human/agent-readable remediation.                                                                                            | Admission authority.                                                                                           |
+| Moriarty                    | Adversarial falsification attempts and exploit-oriented probes.                                                                                               | Admission authority or production mutation.                                                                    |
 
 ## Architecture Overview
 
@@ -318,11 +330,12 @@ use target echo.dpo@1 as echo;
 may expose:
 
 ```edict
-echo.node<T>(id).read()
-echo.node<T>(id).create(value)
-echo.node<T>(id).replace(value)
-echo.edge<E>(from, to).create(value)
-echo.edge<E>(from, to).delete()
+echo.ref<T>(id).read()
+echo.ref<T>(id).create(value)
+echo.ref<T>(id).ensure(value)
+echo.ref<T>(id).replace(value)
+echo.edge<From, To, E>(fromRef, toRef).create(value)
+echo.edge<From, To, E>(fromRef, toRef).delete()
 echo.attachment<A>(digest).create(bytes)
 ```
 
@@ -366,22 +379,30 @@ Runtime-native Edict targets a concrete runtime profile directly.
 
 ```edict
 contract graft.structural_history v1 {
+  use lawpack history.optics@1 as history;
   use target echo.dpo@1 as echo;
 
   intent recordGitWarpImportBatch(input: RecordGitWarpImportBatchInput)
     returns RecordGitWarpImportBatchReceipt
     profile echo.createOnly
+    budget <= history.recordBatchBudget
   {
-    let basis = echo.node<StructuralBasis>(input.basisId).read();
+    let basisRef = echo.ref<StructuralBasis>(input.basisId);
+    let basis = basisRef.read()
+      else history.StructuralBasisMissing;
 
     let batchId = hash("GitWarpImportBatch", input.repo, input.commit);
+    let batchRef = echo.ref<GitWarpImportBatch>(batchId);
 
-    let batch = echo.node<GitWarpImportBatch>(batchId).create({
+    let batch = batchRef.create({
       repo: input.repo,
       commit: input.commit,
-    });
+    }) else history.GitWarpImportBatchAlreadyExists;
 
-    echo.edge<BasedOn>(batch, basis).create({});
+    echo.edge<GitWarpImportBatch, StructuralBasis, BasedOn>(
+      batchRef,
+      basisRef
+    ).create({}) else history.BasedOnEdgeConflict;
 
     return { batchId };
   }
@@ -396,19 +417,20 @@ Portable semantic Edict targets an abstract lawpack and can lower to multiple ru
 
 ```edict
 contract graft.structural_history v1 {
-  use lawpack history.optics@1;
+  use lawpack history.optics@1 as history;
 
   intent recordGitWarpImportBatch(input: RecordGitWarpImportBatchInput)
     returns RecordGitWarpImportBatchReceipt
     implements history.recordEntry
+    budget <= history.recordBatchBudget
   {
-    record history.entry {
+    let entry = history.entry.record({
       id: hash("GitWarpImportBatch", input.repo, input.commit),
       kind: "gitWarpImportBatch",
       repo: input.repo,
       commit: input.commit,
       basis: input.basisId,
-    };
+    }) else history.EntryRecordObstructed;
 
     return { batchId: entry.id };
   }
@@ -466,7 +488,7 @@ The compiler infers footprints from typed effects in the selected target algebra
 For Echo:
 
 ```text
-read echo.node<StructuralBasis>(input.basisId)
+read echo.ref<StructuralBasis>(input.basisId)
 ```
 
 may infer:
@@ -776,7 +798,7 @@ fn callback(ctx: RawRuntimeContext) {
 }
 ```
 
-YOLO contracts must not be FIDLAR-shaped.
+Lawful-autonomous contracts must not be FIDLAR-shaped.
 
 If an operation requires privileged/native host code, it must use a separate privileged extension lane with explicit trust policy. It must not claim compile-time footprint honesty unless it lowers to target IR with inferred effects and verified artifacts.
 
@@ -825,7 +847,7 @@ A generated bundle helper may expose:
 export const GRAFT_STRUCTURAL_HISTORY_CONTRACT: GeneratedContractBundle;
 
 export async function registerGraftStructuralHistoryContract(
-  participant: ContinuumYoloParticipant
+  participant: ContinuumLawfulAutonomousParticipant
 ): Promise<ContractRegistrationReceipt>;
 
 export function createGraftStructuralHistoryClient(
@@ -849,14 +871,14 @@ Registration installs or advertises, depending on target profile:
 - assurance report references;
 - package/version metadata.
 
-Application code must not manually bind generated operation names, target IDs, codecs, or type descriptors to the runtime in the YOLO lane.
+Application code must not manually bind generated operation names, target IDs, codecs, or type descriptors to the runtime in the lawful-autonomous lane.
 
 ## Participant APIs
 
 Continuum defines protocol surfaces. Participant runtimes implement them.
 
 ```ts
-export interface ContinuumYoloParticipant {
+export interface ContinuumLawfulAutonomousParticipant {
   describeParticipant(): Promise<ParticipantDescriptor>;
 
   listAcceptedSourceProfiles(): Promise<SourceProfileRef[]>;
@@ -875,9 +897,9 @@ export interface ContinuumYoloParticipant {
 }
 ```
 
-A participant may support existing capability invocation without supporting dynamic YOLO registration.
+A participant may support existing capability invocation without supporting dynamic lawful-autonomous registration.
 
-A participant may support YOLO bundle registration without offering a compile service. Agents can compile locally or through another compiler participant, then submit the bundle for preflight/registration.
+A participant may support lawful-autonomous bundle registration without offering a compile service. Agents can compile locally or through another compiler participant, then submit the bundle for preflight/registration.
 
 ## Capability Catalog vs Lawpack Catalog
 
@@ -982,7 +1004,7 @@ If `GitWarpImportBatch` gains a new required field, the compiler must force one 
 
 It must not silently reinterpret old target IR under the new schema.
 
-Migrations are lawful operations. They compile, infer footprints, lower to target IR, SHA-lock, register, and emit receipts like any other YOLO operation.
+Migrations are lawful operations. They compile, infer footprints, lower to target IR, SHA-lock, register, and emit receipts like any other lawful-autonomous operation.
 
 ## SHA-lock
 
@@ -1076,7 +1098,7 @@ Allowed only when deterministic and profile-defined:
 - bounded collection operations with canonical ordering;
 - target intrinsics with declared effects and verifier rules.
 
-Forbidden in the YOLO lane unless explicitly modeled as input/provenance:
+Forbidden in the lawful-autonomous lane unless explicitly modeled as input/provenance:
 
 - wall-clock time;
 - randomness;
@@ -1141,7 +1163,7 @@ Preflight checks:
 
 Registration installs or advertises a capability in the participant runtime and emits a receipt.
 
-Registration must not grant scheduler tick authority to app/agent code unless the runtime profile explicitly models that as a privileged non-YOLO lane.
+Registration must not grant scheduler tick authority to app/agent code unless the runtime profile explicitly models that as a privileged non-lawful-autonomous lane.
 
 ## Acceptance Criteria
 
@@ -1151,11 +1173,11 @@ Registration must not grant scheduler tick authority to app/agent code unless th
 - Span IR is documented as Echo DPO target IR, not universal Continuum IR.
 - Runtime target profiles define their own footprint algebra.
 - Contract bundles are registered with participant runtimes, not a global Continuum runtime.
-- A participant can advertise YOLO support without supporting Echo DPO.
+- A participant can advertise lawful-autonomous support without supporting Echo DPO.
 - A participant can support existing capability invocation without supporting dynamic bundle registration.
 - Declared footprints are never the sole source of truth for operation effects.
 - Target-specific footprints are inferred from checked source/Core IR/target IR.
-- FIDLAR-shaped callbacks are rejected from the YOLO lane.
+- FIDLAR-shaped callbacks are rejected from the lawful-autonomous lane.
 - Echo DPO operations that fail DPO well-formedness do not generate Echo artifacts.
 - git-warp operations that fail reducer/convergence/idempotence checks do not generate git-warp artifacts.
 - Runtime state applicability failures become typed obstructions, not compiler failures.
@@ -1170,10 +1192,10 @@ Registration must not grant scheduler tick authority to app/agent code unless th
 
 - `edict_core_has_no_graph_builtins`
 - `span_ir_is_echo_target_ir_not_universal_ir`
-- `participant_can_advertise_yolo_without_echo_dpo`
+- `participant_can_advertise_lawful_autonomous_without_echo_dpo`
 - `runtime_target_profile_declares_footprint_algebra`
 - `declared_footprint_underclaim_rejects_compile`
-- `fidlar_raw_callback_rejected_from_yolo_lane`
+- `fidlar_raw_callback_rejected_from_lawful_autonomous_lane`
 - `echo_dpo_invalid_identification_condition_obstructs_runtime_preflight`
 - `echo_dpo_invalid_rule_fails_compile`
 - `gitwarp_reducer_nonconvergent_fails_compile`
@@ -1209,7 +1231,7 @@ Registration must not grant scheduler tick authority to app/agent code unless th
 - Calling everything an optic may blur lawful lens/traversal/profile distinctions. Mitigation: use operation profiles and target verifier certificates precisely.
 - Lawpack dependency resolution may become supply-chain risk. Mitigation: SHA-lock, signatures, reproducible builds, conformance fixtures, and revocation channels.
 - Runtime preflight may become inconsistent across participants. Mitigation: target profile conformance suites and HOLMES evidence.
-- Privileged host lanes may try to launder FIDLAR operations as YOLO. Mitigation: explicit FIDLAR rejection criteria and Moriarty probes.
+- Privileged host lanes may try to launder FIDLAR operations as lawful-autonomous. Mitigation: explicit FIDLAR rejection criteria and Moriarty probes.
 
 ## Relapse Checks
 
@@ -1218,7 +1240,7 @@ Registration must not grant scheduler tick authority to app/agent code unless th
 - Do not make Span IR the only possible compiled target.
 - Do not assume all lawful operations are DPO rewrites.
 - Do not require non-Echo participants to implement Echo's footprint algebra.
-- Do not let apps manually orchestrate raw Wesley/Echo/git-warp compiler stages for YOLO contracts.
+- Do not let apps manually orchestrate raw Wesley/Echo/git-warp compiler stages for lawful-autonomous contracts.
 - Do not trust declared footprints without compiler-inferred effects.
 - Do not claim compile-time footprint honesty if app code receives raw runtime mutation authority.
 - Do not let GraphQL directives become the permanent semantic core.
