@@ -62,10 +62,9 @@ Current packets:
   [implementation status](./0020-holmes-weslaw-assurance-prd-test-plan/IMPLEMENTATION_STATUS.md)
   tracking the Rust Holmes execution drift checks
 - [`0021`](./0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/continuum-yolo-runtime-neutral-edict-sha-lock-assurance.md):
-  Continuum lawful-autonomous lane (YOLO codename), runtime-neutral Edict Core,
-  runtime target profiles, FIDLAR rejection, and SHA-lock assurance posture,
-  including the
-  [Edict Language v1 spec](./0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/SPEC_edict-language-v1.md)
+  extracted Continuum lawful-autonomous lane and runtime-neutral Edict packet;
+  the canonical specs now live in
+  [flyingrobots/edict](https://github.com/flyingrobots/edict)
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values
