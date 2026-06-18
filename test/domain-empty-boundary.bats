@@ -44,7 +44,7 @@ load 'bats-plugins/bats-assert/load'
 @test "BEARING active-gravity packet sections stay before tensions" {
   run awk '
     /^### 12\. Holmes `weslaw` Assurance Planning$/ { h12 = NR }
-    /^### 13\. Continuum YOLO Runtime-Neutral Edict$/ { h13 = NR }
+    /^### 13\. Edict Extracted To Dedicated Repository$/ { h13 = NR }
     /^## Tensions$/ { tensions = NR }
     END { exit !(h12 && h13 && tensions && h12 < tensions && h13 < tensions) }
   ' docs/BEARING.md
