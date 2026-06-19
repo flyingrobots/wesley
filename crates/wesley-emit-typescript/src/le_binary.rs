@@ -1133,12 +1133,12 @@ mod tests {
     ";
 
     fn assert_no_runtime_operation_markers(ts: &str) {
-        let forbidden_constant_prefix = ["OP", ""].join("_");
+        let forbidden_constant_declaration = ["export const ", "OP", "_"].concat();
         let forbidden_phrase = ["op", "id"].join(" ");
 
         assert!(
-            !ts.contains(&forbidden_constant_prefix),
-            "unexpected runtime operation constant prefix in:\n{ts}"
+            !ts.contains(&forbidden_constant_declaration),
+            "unexpected runtime operation constant declaration in:\n{ts}"
         );
         assert!(
             !ts.contains(&forbidden_phrase),
@@ -1147,11 +1147,29 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "unexpected runtime operation constant prefix")]
+    #[should_panic(expected = "unexpected runtime operation constant declaration")]
     fn runtime_marker_assertion_rejects_any_op_prefixed_constant() {
         let runtime_marker = ["export const ", "OP", "_DELETE_WIDGET = 42;"].concat();
 
         assert_no_runtime_operation_markers(&runtime_marker);
+    }
+
+    #[test]
+    fn runtime_marker_assertion_allows_schema_values_containing_op_sequence() {
+        let enum_value = ["ST", "OP", "_NOW"].concat();
+        let sdl = format!(
+            "
+            enum WorkflowState {{ {enum_value} }}
+            input TransitionInput {{
+                state: WorkflowState!
+            }}
+        "
+        );
+        let ir = lower_schema_sdl(&sdl).expect("schema lowers");
+        let ts = emit_le_binary_typescript(&ir, &[], DEFAULT_CODEC_IMPORT);
+
+        assert!(ts.contains(&format!("'{enum_value}'")));
+        assert_no_runtime_operation_markers(&ts);
     }
 
     #[test]
