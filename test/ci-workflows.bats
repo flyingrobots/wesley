@@ -10,8 +10,22 @@ load 'bats-plugins/bats-assert/load'
 
   run bash -lc "grep -F 'uses: ./.github/actions/install-bats' .github/workflows/runtime-smokes.yml | wc -l || true"
   assert_success
-  # One per retained host experiment job.
-  [ "$output" -ge 1 ]
+  # Only the retained Bats-backed Deno runtime smoke should need this setup.
+  [ "$output" -eq 1 ]
+}
+
+@test "runtime-smokes Bun job uses official Bun setup without Bats" {
+  run bash -lc "sed -n '/^  bun-smoke:/,\$p' .github/workflows/runtime-smokes.yml | grep -F 'uses: ./.github/actions/install-bats' || true"
+  assert_success
+  [ -z "$output" ]
+
+  run bash -lc "sed -n '/^  bun-smoke:/,\$p' .github/workflows/runtime-smokes.yml | grep -F 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6' | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "sed -n '/^  bun-smoke:/,\$p' .github/workflows/runtime-smokes.yml | grep -F 'bun run scripts/host_contracts_bun.mjs' | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
 }
 
 @test "CI names distinguish Rust product checks from external host experiments" {
