@@ -72,7 +72,7 @@
     }
   },
   "dependencies": {
-    "@mantine/hooks": "^8.3.5",
+    "@mantine/hooks": "^9.3.2",
     "vite": "^8.0.16"
   },
   "devDependencies": {
