@@ -78,16 +78,16 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@git-stunts/alfred": "0.10.3",
-    "@playwright/test": "1.60.0",
+    "@playwright/test": "1.61.0",
     "autoprefixer": "^10.5.0",
-    "dependency-cruiser": "17.4.2",
-    "eslint": "^10.4.0",
+    "dependency-cruiser": "17.4.3",
+    "eslint": "^10.5.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-promise": "^7.3.0",
     "globals": "^17.6.0",
-    "graphql": "16.14.0",
+    "graphql": "17.0.1",
     "postcss": "^8.5.15",
     "postcss-nesting": "^14.0.0",
-    "prettier": "3.8.3"
+    "prettier": "3.8.4"
   }
 }
