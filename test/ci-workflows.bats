@@ -3,6 +3,16 @@
 load 'bats-plugins/bats-support/load'
 load 'bats-plugins/bats-assert/load'
 
+yaml_job_block() {
+  local job_name="$1"
+  local workflow="${2:-.github/workflows/runtime-smokes.yml}"
+  awk -v job="$job_name" '
+    $0 == "  " job ":" { in_block = 1 }
+    in_block && $0 ~ /^  [A-Za-z0-9_-]+:/ && $0 != "  " job ":" { exit }
+    in_block { print }
+  ' "$workflow"
+}
+
 @test "runtime-smokes uses composite action to install bats (no raw apt-get)" {
   run bash -lc "grep -n 'apt-get install -y bats jq' .github/workflows/runtime-smokes.yml | wc -l || true"
   assert_success
@@ -10,8 +20,37 @@ load 'bats-plugins/bats-assert/load'
 
   run bash -lc "grep -F 'uses: ./.github/actions/install-bats' .github/workflows/runtime-smokes.yml | wc -l || true"
   assert_success
-  # One per retained host experiment job.
-  [ "$output" -ge 1 ]
+  # Only the retained Bats-backed Deno runtime smoke should need this setup.
+  [ "$output" -eq 1 ]
+}
+
+@test "runtime-smokes Bun job uses official Bun setup without Bats" {
+  run yaml_job_block bun-smoke
+  assert_success
+  [[ "$output" != *"uses: ./.github/actions/install-bats"* ]]
+  [[ "$output" == *"oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6"* ]]
+  [[ "$output" == *"bun run scripts/host_contracts_bun.mjs"* ]]
+}
+
+@test "workflow job block helper stops before the next job" {
+  tmp_workflow="$(mktemp -t wesley-runtime-smoke-workflow-XXXXXX.yml)"
+  cat >"$tmp_workflow" <<'YAML'
+jobs:
+  bun-smoke:
+    steps:
+      - uses: oven-sh/setup-bun@example
+      - run: bun run scripts/host_contracts_bun.mjs
+  later-bats-job:
+    steps:
+      - uses: ./.github/actions/install-bats
+YAML
+
+  run yaml_job_block bun-smoke "$tmp_workflow"
+  rm -f "$tmp_workflow"
+  assert_success
+  [[ "$output" == *"bun run scripts/host_contracts_bun.mjs"* ]]
+  [[ "$output" != *"later-bats-job"* ]]
+  [[ "$output" != *"uses: ./.github/actions/install-bats"* ]]
 }
 
 @test "CI names distinguish Rust product checks from external host experiments" {

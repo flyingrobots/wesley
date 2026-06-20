@@ -20,8 +20,8 @@
 use std::fmt::Write;
 
 use wesley_core::{
-    stable_op_id, OperationArgument, OperationType, SchemaOperation, TypeDefinition, TypeKind,
-    TypeReference, WesleyIR,
+    OperationArgument, OperationType, SchemaOperation, TypeDefinition, TypeKind, TypeReference,
+    WesleyIR,
 };
 
 /// Default import path the emitted module uses to reach the TypeScript
@@ -48,298 +48,990 @@ pub fn emit_le_binary_typescript(
     operations: &[SchemaOperation],
     codec_import_path: &str,
 ) -> String {
-    let mut out = String::from(HEADER);
-    out.push('\n');
-    let _ = writeln!(
-        out,
-        "import {{ Writer, Reader, CodecError }} from {};",
-        quote_string(codec_import_path)
-    );
+    let program = TsProgram::from_ir(ir, operations, codec_import_path);
 
-    for type_def in &ir.types {
-        match type_def.kind {
-            TypeKind::Enum => emit_enum(&mut out, type_def),
-            TypeKind::InputObject => emit_input_object(&mut out, type_def),
-            _ => {}
+    print_program(&program)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsProgram {
+    imports: Vec<TsImport>,
+    declarations: Vec<TsDeclaration>,
+}
+
+impl TsProgram {
+    fn from_ir(ir: &WesleyIR, operations: &[SchemaOperation], codec_import_path: &str) -> Self {
+        let mut declarations = Vec::new();
+
+        for type_def in &ir.types {
+            match type_def.kind {
+                TypeKind::Enum => declarations.extend(enum_declarations(type_def)),
+                TypeKind::InputObject => declarations.extend(input_object_declarations(type_def)),
+                _ => {}
+            }
+        }
+
+        for operation in operations {
+            declarations.extend(operation_vars_declarations(operation));
+        }
+
+        Self {
+            imports: vec![TsImport {
+                named: vec!["Writer", "Reader", "CodecError"],
+                from: codec_import_path.to_string(),
+            }],
+            declarations,
         }
     }
-
-    for operation in operations {
-        emit_operation_vars(&mut out, operation);
-    }
-
-    out
 }
 
-fn emit_enum(out: &mut String, type_def: &TypeDefinition) {
-    let name = pascal_case(&type_def.name);
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsImport {
+    named: Vec<&'static str>,
+    from: String,
+}
 
-    let _ = writeln!(out, "\n// ─── enum {} ───", type_def.name);
-    if type_def.enum_values.is_empty() {
-        let _ = writeln!(out, "export type {name} = never;");
-    } else {
-        let mut iter = type_def.enum_values.iter();
-        let first = iter.next().expect("non-empty enum");
-        let _ = writeln!(out, "export type {name} =");
-        let _ = write!(out, "    | '{first}'");
-        for value in iter {
-            out.push('\n');
-            let _ = write!(out, "    | '{value}'");
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum TsDeclaration {
+    Comment(String),
+    TypeAlias(TsTypeAlias),
+    Interface(TsInterface),
+    Function(TsFunction),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsTypeAlias {
+    name: String,
+    type_expr: TsTypeExpr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsInterface {
+    name: String,
+    properties: Vec<TsProperty>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsProperty {
+    name: String,
+    type_expr: TsTypeExpr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsFunction {
+    name: String,
+    params: Vec<TsParam>,
+    return_type: TsTypeExpr,
+    body: Vec<TsStatement>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsParam {
+    name: String,
+    type_expr: TsTypeExpr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum TsStatement {
+    Const {
+        name: String,
+        expr: TsExpr,
+    },
+    Return(TsExpr),
+    ReturnVoid,
+    ReturnObject(Vec<TsObjectProperty>),
+    Expression(TsExpr),
+    Switch {
+        expr: TsExpr,
+        cases: Vec<TsSwitchCase>,
+        default: Vec<TsStatement>,
+    },
+    Throw(TsExpr),
+    Comment(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsSwitchCase {
+    match_expr: TsExpr,
+    body: Vec<TsStatement>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TsObjectProperty {
+    name: String,
+    expr: TsExpr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum TsExpr {
+    Identifier(String),
+    NumberLiteral(usize),
+    StringLiteral(String),
+    New {
+        callee: String,
+        args: Vec<TsExpr>,
+    },
+    Call {
+        callee: Box<TsExpr>,
+        args: Vec<TsExpr>,
+    },
+    PropertyAccess {
+        target: Box<TsExpr>,
+        property: String,
+    },
+    Arrow {
+        params: Vec<String>,
+        body: Box<TsExpr>,
+    },
+    Add {
+        left: Box<TsExpr>,
+        right: Box<TsExpr>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum TsTypeExpr {
+    String,
+    Number,
+    Boolean,
+    Void,
+    Never,
+    Uint8Array,
+    Reference(String),
+    StringLiteralUnion(Vec<String>),
+    Null,
+    Array(Box<TsTypeExpr>),
+    Union(Vec<TsTypeExpr>),
+}
+
+impl TsTypeExpr {
+    fn union(types: Vec<Self>) -> Self {
+        let mut unique = Vec::new();
+
+        for type_expr in types {
+            if !unique.contains(&type_expr) {
+                unique.push(type_expr);
+            }
         }
-        out.push_str(";\n");
-    }
 
-    let _ = writeln!(
-        out,
-        "export function _enc{name}(w: Writer, v: {name}): void {{"
-    );
-    let _ = writeln!(out, "    switch (v) {{");
-    for (index, value) in type_def.enum_values.iter().enumerate() {
-        let _ = writeln!(
-            out,
-            "        case '{value}': w.writeU32Le({index}); return;"
-        );
+        match unique.len() {
+            0 => Self::Never,
+            1 => unique.into_iter().next().expect("union has one item"),
+            _ => Self::Union(unique),
+        }
     }
-    if type_def.enum_values.is_empty() {
-        let _ = writeln!(out, "        // no variants");
-    } else {
-        let _ = writeln!(
-            out,
-            "        default: throw new CodecError('invalid {name} variant: ' + String(v));"
-        );
-    }
-    let _ = writeln!(out, "    }}");
-    let _ = writeln!(out, "}}");
-
-    let _ = writeln!(out, "export function _dec{name}(r: Reader): {name} {{");
-    let _ = writeln!(out, "    const d = r.readU32Le();");
-    let _ = writeln!(out, "    switch (d) {{");
-    for (index, value) in type_def.enum_values.iter().enumerate() {
-        let _ = writeln!(out, "        case {index}: return '{value}';");
-    }
-    let _ = writeln!(
-        out,
-        "        default: throw new CodecError('invalid {name} discriminant: ' + String(d));"
-    );
-    let _ = writeln!(out, "    }}");
-    let _ = writeln!(out, "}}");
-
-    let _ = writeln!(
-        out,
-        "export function encode{name}(v: {name}): Uint8Array {{"
-    );
-    let _ = writeln!(out, "    const w = new Writer();");
-    let _ = writeln!(out, "    _enc{name}(w, v);");
-    let _ = writeln!(out, "    return w.finish();");
-    let _ = writeln!(out, "}}");
-
-    let _ = writeln!(
-        out,
-        "export function decode{name}(b: Uint8Array): {name} {{"
-    );
-    let _ = writeln!(out, "    return _dec{name}(new Reader(b));");
-    let _ = writeln!(out, "}}");
 }
 
-fn emit_input_object(out: &mut String, type_def: &TypeDefinition) {
+fn enum_declarations(type_def: &TypeDefinition) -> Vec<TsDeclaration> {
     let name = pascal_case(&type_def.name);
 
-    let _ = writeln!(out, "\n// ─── input {} ───", type_def.name);
-    let _ = writeln!(out, "export interface {name} {{");
-    for field in &type_def.fields {
-        let ts_ty = ts_type_for_reference(&field.r#type);
-        let _ = writeln!(out, "    {}: {ts_ty};", property_key(&field.name));
-    }
-    let _ = writeln!(out, "}}");
-
-    let _ = writeln!(
-        out,
-        "export function _enc{name}(w: Writer, v: {name}): void {{"
-    );
-    for field in &type_def.fields {
-        emit_encode_field(out, "v", &field.name, &field.r#type);
-    }
-    let _ = writeln!(out, "}}");
-
-    let _ = writeln!(out, "export function _dec{name}(r: Reader): {name} {{");
-    let _ = writeln!(out, "    return {{");
-    for field in &type_def.fields {
-        emit_decode_field_initializer(out, &field.name, &field.r#type);
-    }
-    let _ = writeln!(out, "    }};");
-    let _ = writeln!(out, "}}");
+    vec![
+        TsDeclaration::Comment(format!("─── enum {} ───", type_def.name)),
+        TsDeclaration::TypeAlias(TsTypeAlias {
+            name: name.clone(),
+            type_expr: if type_def.enum_values.is_empty() {
+                TsTypeExpr::Never
+            } else {
+                TsTypeExpr::StringLiteralUnion(type_def.enum_values.clone())
+            },
+        }),
+        TsDeclaration::Function(encode_enum_function(&name, &type_def.enum_values)),
+        TsDeclaration::Function(decode_enum_function(&name, &type_def.enum_values)),
+        TsDeclaration::Function(encode_value_function(&name)),
+        TsDeclaration::Function(decode_value_function(&name)),
+    ]
 }
 
-fn emit_operation_vars(out: &mut String, operation: &SchemaOperation) {
+fn encode_enum_function(name: &str, values: &[String]) -> TsFunction {
+    let default = if values.is_empty() {
+        vec![TsStatement::Comment("no variants".to_string())]
+    } else {
+        vec![TsStatement::Throw(invalid_codec_error(
+            &format!("invalid {name} variant: "),
+            ident("v"),
+        ))]
+    };
+
+    TsFunction {
+        name: format!("_enc{name}"),
+        params: vec![
+            TsParam {
+                name: "w".to_string(),
+                type_expr: TsTypeExpr::Reference("Writer".to_string()),
+            },
+            TsParam {
+                name: "v".to_string(),
+                type_expr: TsTypeExpr::Reference(name.to_string()),
+            },
+        ],
+        return_type: TsTypeExpr::Void,
+        body: vec![TsStatement::Switch {
+            expr: ident("v"),
+            cases: values
+                .iter()
+                .enumerate()
+                .map(|(index, value)| TsSwitchCase {
+                    match_expr: TsExpr::StringLiteral(value.clone()),
+                    body: vec![
+                        TsStatement::Expression(method_call(
+                            ident("w"),
+                            "writeU32Le",
+                            vec![TsExpr::NumberLiteral(index)],
+                        )),
+                        TsStatement::ReturnVoid,
+                    ],
+                })
+                .collect(),
+            default,
+        }],
+    }
+}
+
+fn decode_enum_function(name: &str, values: &[String]) -> TsFunction {
+    TsFunction {
+        name: format!("_dec{name}"),
+        params: vec![TsParam {
+            name: "r".to_string(),
+            type_expr: TsTypeExpr::Reference("Reader".to_string()),
+        }],
+        return_type: TsTypeExpr::Reference(name.to_string()),
+        body: vec![
+            TsStatement::Const {
+                name: "d".to_string(),
+                expr: method_call(ident("r"), "readU32Le", vec![]),
+            },
+            TsStatement::Switch {
+                expr: ident("d"),
+                cases: values
+                    .iter()
+                    .enumerate()
+                    .map(|(index, value)| TsSwitchCase {
+                        match_expr: TsExpr::NumberLiteral(index),
+                        body: vec![TsStatement::Return(TsExpr::StringLiteral(value.clone()))],
+                    })
+                    .collect(),
+                default: vec![TsStatement::Throw(invalid_codec_error(
+                    &format!("invalid {name} discriminant: "),
+                    ident("d"),
+                ))],
+            },
+        ],
+    }
+}
+
+fn encode_value_function(name: &str) -> TsFunction {
+    TsFunction {
+        name: format!("encode{name}"),
+        params: vec![TsParam {
+            name: "v".to_string(),
+            type_expr: TsTypeExpr::Reference(name.to_string()),
+        }],
+        return_type: TsTypeExpr::Uint8Array,
+        body: vec![
+            TsStatement::Const {
+                name: "w".to_string(),
+                expr: TsExpr::New {
+                    callee: "Writer".to_string(),
+                    args: Vec::new(),
+                },
+            },
+            TsStatement::Expression(call_fn(
+                &format!("_enc{name}"),
+                vec![ident("w"), ident("v")],
+            )),
+            TsStatement::Return(method_call(ident("w"), "finish", vec![])),
+        ],
+    }
+}
+
+fn decode_value_function(name: &str) -> TsFunction {
+    TsFunction {
+        name: format!("decode{name}"),
+        params: vec![TsParam {
+            name: "b".to_string(),
+            type_expr: TsTypeExpr::Uint8Array,
+        }],
+        return_type: TsTypeExpr::Reference(name.to_string()),
+        body: vec![TsStatement::Return(call_fn(
+            &format!("_dec{name}"),
+            vec![TsExpr::New {
+                callee: "Reader".to_string(),
+                args: vec![ident("b")],
+            }],
+        ))],
+    }
+}
+
+fn input_object_declarations(type_def: &TypeDefinition) -> Vec<TsDeclaration> {
+    let name = pascal_case(&type_def.name);
+
+    vec![
+        TsDeclaration::Comment(format!("─── input {} ───", type_def.name)),
+        TsDeclaration::Interface(TsInterface {
+            name: name.clone(),
+            properties: type_def.fields.iter().map(property_from_field).collect(),
+        }),
+        TsDeclaration::Function(encode_input_object_function(&name, type_def)),
+        TsDeclaration::Function(decode_input_object_function(&name, type_def)),
+    ]
+}
+
+fn property_from_field(field: &wesley_core::Field) -> TsProperty {
+    TsProperty {
+        name: field.name.clone(),
+        type_expr: ts_type_for_reference(&field.r#type),
+    }
+}
+
+fn encode_input_object_function(name: &str, type_def: &TypeDefinition) -> TsFunction {
+    TsFunction {
+        name: format!("_enc{name}"),
+        params: vec![
+            TsParam {
+                name: "w".to_string(),
+                type_expr: TsTypeExpr::Reference("Writer".to_string()),
+            },
+            TsParam {
+                name: "v".to_string(),
+                type_expr: TsTypeExpr::Reference(name.to_string()),
+            },
+        ],
+        return_type: TsTypeExpr::Void,
+        body: type_def
+            .fields
+            .iter()
+            .map(|field| encode_field_statement(ident("v"), &field.name, &field.r#type))
+            .collect(),
+    }
+}
+
+fn decode_input_object_function(name: &str, type_def: &TypeDefinition) -> TsFunction {
+    TsFunction {
+        name: format!("_dec{name}"),
+        params: vec![TsParam {
+            name: "r".to_string(),
+            type_expr: TsTypeExpr::Reference("Reader".to_string()),
+        }],
+        return_type: TsTypeExpr::Reference(name.to_string()),
+        body: vec![TsStatement::ReturnObject(
+            type_def
+                .fields
+                .iter()
+                .map(|field| TsObjectProperty {
+                    name: field.name.clone(),
+                    expr: decode_expr_for_reference(&field.r#type),
+                })
+                .collect(),
+        )],
+    }
+}
+
+fn operation_vars_declarations(operation: &SchemaOperation) -> Vec<TsDeclaration> {
     let pascal = pascal_case(&operation.field_name);
     let vars_name = format!("{pascal}Vars");
-    let op_const = op_const_name(&operation.field_name);
-    let op_id = stable_op_id(operation.operation_type, &operation.field_name);
-
     let scope = match operation.operation_type {
         OperationType::Query => "query",
         OperationType::Mutation => "mutation",
         OperationType::Subscription => "subscription",
     };
-    let _ = writeln!(out, "\n// ─── {scope} {} ───", operation.field_name);
 
-    let _ = writeln!(
-        out,
-        "/** EINT op id for {} `{}`. Stable across Rust and TypeScript emitters. */",
-        scope, operation.field_name
+    vec![
+        TsDeclaration::Comment(format!("─── {scope} {} ───", operation.field_name)),
+        TsDeclaration::Interface(TsInterface {
+            name: vars_name.clone(),
+            properties: operation
+                .arguments
+                .iter()
+                .map(property_from_operation_argument)
+                .collect(),
+        }),
+        TsDeclaration::Function(encode_operation_vars_function(&vars_name, operation)),
+        TsDeclaration::Function(decode_operation_vars_function(&vars_name, operation)),
+    ]
+}
+
+fn property_from_operation_argument(argument: &OperationArgument) -> TsProperty {
+    TsProperty {
+        name: argument.name.clone(),
+        type_expr: ts_type_for_reference(&argument.r#type),
+    }
+}
+
+fn encode_operation_vars_function(vars_name: &str, operation: &SchemaOperation) -> TsFunction {
+    let mut body = vec![TsStatement::Const {
+        name: "w".to_string(),
+        expr: TsExpr::New {
+            callee: "Writer".to_string(),
+            args: Vec::new(),
+        },
+    }];
+    body.extend(
+        operation
+            .arguments
+            .iter()
+            .map(|argument| encode_field_statement(ident("v"), &argument.name, &argument.r#type)),
     );
-    let _ = writeln!(out, "export const {op_const}: number = {op_id};");
+    body.push(TsStatement::Return(method_call(
+        ident("w"),
+        "finish",
+        vec![],
+    )));
 
-    let _ = writeln!(out, "export interface {vars_name} {{");
-    for argument in &operation.arguments {
-        let ts_ty = ts_type_for_reference(&argument.r#type);
-        let _ = writeln!(out, "    {}: {ts_ty};", property_key(&argument.name));
-    }
-    let _ = writeln!(out, "}}");
-
-    let _ = writeln!(
-        out,
-        "export function encode{vars_name}(v: {vars_name}): Uint8Array {{"
-    );
-    let _ = writeln!(out, "    const w = new Writer();");
-    for argument in &operation.arguments {
-        emit_encode_argument(out, "v", argument);
-    }
-    let _ = writeln!(out, "    return w.finish();");
-    let _ = writeln!(out, "}}");
-
-    let _ = writeln!(
-        out,
-        "export function decode{vars_name}(b: Uint8Array): {vars_name} {{"
-    );
-    let _ = writeln!(out, "    const r = new Reader(b);");
-    let _ = writeln!(out, "    return {{");
-    for argument in &operation.arguments {
-        emit_decode_field_initializer(out, &argument.name, &argument.r#type);
-    }
-    let _ = writeln!(out, "    }};");
-    let _ = writeln!(out, "}}");
-}
-
-fn emit_encode_argument(out: &mut String, parent: &str, argument: &OperationArgument) {
-    emit_encode_field(out, parent, &argument.name, &argument.r#type);
-}
-
-fn emit_encode_field(out: &mut String, parent: &str, field_name: &str, ty: &TypeReference) {
-    let access = format!("{parent}.{}", property_key(field_name));
-
-    if ty.is_list {
-        let element_call = scalar_encode_call(&ty.base, "w", "x");
-        let element_lambda = format!("(w, x) => {element_call}");
-        if ty.nullable {
-            let _ = writeln!(
-                out,
-                "    w.writeOption({access}, (w, xs) => w.writeList(xs, {element_lambda}));"
-            );
-        } else {
-            let _ = writeln!(out, "    w.writeList({access}, {element_lambda});");
-        }
-        return;
-    }
-
-    if ty.nullable {
-        let inner = scalar_encode_call(&ty.base, "w", "x");
-        let _ = writeln!(out, "    w.writeOption({access}, (w, x) => {inner});");
-    } else {
-        let _ = writeln!(out, "    {};", scalar_encode_call(&ty.base, "w", &access));
+    TsFunction {
+        name: format!("encode{vars_name}"),
+        params: vec![TsParam {
+            name: "v".to_string(),
+            type_expr: TsTypeExpr::Reference(vars_name.to_string()),
+        }],
+        return_type: TsTypeExpr::Uint8Array,
+        body,
     }
 }
 
-fn emit_decode_field_initializer(out: &mut String, field_name: &str, ty: &TypeReference) {
-    let key = property_key(field_name);
-
-    if ty.is_list {
-        let element_call = scalar_decode_call(&ty.base, "r");
-        let list_expr = format!("r.readList((r) => {element_call})");
-        if ty.nullable {
-            let _ = writeln!(
-                out,
-                "        {key}: r.readOption((r) => r.readList((r) => {element_call})),"
-            );
-        } else {
-            let _ = writeln!(out, "        {key}: {list_expr},");
-        }
-        return;
-    }
-
-    if ty.nullable {
-        let inner = scalar_decode_call(&ty.base, "r");
-        let _ = writeln!(out, "        {key}: r.readOption((r) => {inner}),");
-    } else {
-        let _ = writeln!(out, "        {key}: {},", scalar_decode_call(&ty.base, "r"));
-    }
-}
-
-fn scalar_encode_call(type_name: &str, writer: &str, value: &str) -> String {
-    match type_name {
-        "Boolean" => format!("{writer}.writeBool({value})"),
-        "Int" => format!("{writer}.writeI32Le({value})"),
-        "Float" => format!("{writer}.writeF32Le({value})"),
-        "String" | "ID" => format!("{writer}.writeString({value})"),
-        other => format!("_enc{}({writer}, {value})", pascal_case(other)),
+fn decode_operation_vars_function(vars_name: &str, operation: &SchemaOperation) -> TsFunction {
+    TsFunction {
+        name: format!("decode{vars_name}"),
+        params: vec![TsParam {
+            name: "b".to_string(),
+            type_expr: TsTypeExpr::Uint8Array,
+        }],
+        return_type: TsTypeExpr::Reference(vars_name.to_string()),
+        body: vec![
+            TsStatement::Const {
+                name: "r".to_string(),
+                expr: TsExpr::New {
+                    callee: "Reader".to_string(),
+                    args: vec![ident("b")],
+                },
+            },
+            TsStatement::ReturnObject(
+                operation
+                    .arguments
+                    .iter()
+                    .map(|argument| TsObjectProperty {
+                        name: argument.name.clone(),
+                        expr: decode_expr_for_reference(&argument.r#type),
+                    })
+                    .collect(),
+            ),
+        ],
     }
 }
 
-fn scalar_decode_call(type_name: &str, reader: &str) -> String {
-    match type_name {
-        "Boolean" => format!("{reader}.readBool()"),
-        "Int" => format!("{reader}.readI32Le()"),
-        "Float" => format!("{reader}.readF32Le()"),
-        "String" | "ID" => format!("{reader}.readString()"),
-        other => format!("_dec{}({reader})", pascal_case(other)),
-    }
-}
-
-fn ts_type_for_reference(ty: &TypeReference) -> String {
-    let mut base = match ty.base.as_str() {
-        "ID" | "String" => "string".to_string(),
-        "Int" | "Float" => "number".to_string(),
-        "Boolean" => "boolean".to_string(),
-        other => pascal_case(other),
+fn encode_field_statement(parent: TsExpr, field_name: &str, ty: &TypeReference) -> TsStatement {
+    let access = TsExpr::PropertyAccess {
+        target: Box::new(parent),
+        property: field_name.to_string(),
     };
 
-    if ty.is_list {
-        let element = if matches!(ty.list_item_nullable, Some(true)) {
-            format!("({base} | null)")
-        } else {
-            base.clone()
-        };
-        base = format!("{element}[]");
+    TsStatement::Expression(encode_expr_for_reference(access, ty))
+}
+
+fn encode_expr_for_reference(value: TsExpr, ty: &TypeReference) -> TsExpr {
+    if ty.nullable {
+        let mut inner_ty = ty.clone();
+        inner_ty.nullable = false;
+        let inner = encode_expr_for_reference(ident("x"), &inner_ty);
+        return method_call(
+            ident("w"),
+            "writeOption",
+            vec![
+                value,
+                TsExpr::Arrow {
+                    params: vec!["w".to_string(), "x".to_string()],
+                    body: Box::new(inner),
+                },
+            ],
+        );
     }
 
+    if let Some(item_ty) = list_item_type_reference(ty) {
+        let element_lambda = TsExpr::Arrow {
+            params: vec!["w".to_string(), "x".to_string()],
+            body: Box::new(encode_expr_for_reference(ident("x"), &item_ty)),
+        };
+        return method_call(ident("w"), "writeList", vec![value, element_lambda]);
+    }
+
+    scalar_encode_call_expr(&ty.base, ident("w"), value)
+}
+
+fn decode_expr_for_reference(ty: &TypeReference) -> TsExpr {
     if ty.nullable {
-        format!("{base} | null")
-    } else {
-        base
+        let mut inner_ty = ty.clone();
+        inner_ty.nullable = false;
+        return method_call(
+            ident("r"),
+            "readOption",
+            vec![TsExpr::Arrow {
+                params: vec!["r".to_string()],
+                body: Box::new(decode_expr_for_reference(&inner_ty)),
+            }],
+        );
+    }
+
+    if let Some(item_ty) = list_item_type_reference(ty) {
+        let element_lambda = TsExpr::Arrow {
+            params: vec!["r".to_string()],
+            body: Box::new(decode_expr_for_reference(&item_ty)),
+        };
+        return method_call(ident("r"), "readList", vec![element_lambda]);
+    }
+
+    scalar_decode_call_expr(&ty.base, ident("r"))
+}
+
+fn scalar_encode_call_expr(type_name: &str, writer: TsExpr, value: TsExpr) -> TsExpr {
+    match type_name {
+        "Boolean" => method_call(writer, "writeBool", vec![value]),
+        "Int" => method_call(writer, "writeI32Le", vec![value]),
+        "Float" => method_call(writer, "writeF32Le", vec![value]),
+        "String" | "ID" => method_call(writer, "writeString", vec![value]),
+        other => call_fn(&format!("_enc{}", pascal_case(other)), vec![writer, value]),
     }
 }
 
-/// Convert an operation field name to its `OP_<UPPER_SNAKE>` constant name.
-///
-/// Matches the Wesley operation-constant convention so emitted op id constants
-/// share the same identifier shape across generated surfaces
-/// (e.g. `createRecord` → `OP_CREATE_RECORD`).
-fn op_const_name(name: &str) -> String {
-    let mut out = String::new();
-    for (index, ch) in name.chars().enumerate() {
-        if ch.is_alphanumeric() {
-            if ch.is_uppercase() && index > 0 {
-                out.push('_');
-            }
-            out.push(ch.to_ascii_uppercase());
+fn scalar_decode_call_expr(type_name: &str, reader: TsExpr) -> TsExpr {
+    match type_name {
+        "Boolean" => method_call(reader, "readBool", vec![]),
+        "Int" => method_call(reader, "readI32Le", vec![]),
+        "Float" => method_call(reader, "readF32Le", vec![]),
+        "String" | "ID" => method_call(reader, "readString", vec![]),
+        other => call_fn(&format!("_dec{}", pascal_case(other)), vec![reader]),
+    }
+}
+
+fn ts_type_for_reference(ty: &TypeReference) -> TsTypeExpr {
+    let base = match ty.base.as_str() {
+        "ID" | "String" => TsTypeExpr::String,
+        "Int" | "Float" => TsTypeExpr::Number,
+        "Boolean" => TsTypeExpr::Boolean,
+        other => TsTypeExpr::Reference(pascal_case(other)),
+    };
+
+    if !ty.list_wrappers.is_empty() {
+        let mut type_expr = if ty.leaf_nullable.unwrap_or(true) {
+            TsTypeExpr::union(vec![base, TsTypeExpr::Null])
         } else {
-            out.push('_');
+            base
+        };
+
+        for wrapper in ty.list_wrappers.iter().rev() {
+            type_expr = TsTypeExpr::Array(Box::new(type_expr));
+            if wrapper.nullable {
+                type_expr = TsTypeExpr::union(vec![type_expr, TsTypeExpr::Null]);
+            }
+        }
+
+        return type_expr;
+    }
+
+    let mut type_expr = if ty.is_list {
+        let element = match ty.list_item_nullable {
+            Some(false) => base,
+            Some(true) | None => TsTypeExpr::union(vec![base, TsTypeExpr::Null]),
+        };
+        TsTypeExpr::Array(Box::new(element))
+    } else {
+        base
+    };
+
+    if ty.nullable {
+        type_expr = TsTypeExpr::union(vec![type_expr, TsTypeExpr::Null]);
+    }
+
+    type_expr
+}
+
+fn list_item_type_reference(ty: &TypeReference) -> Option<TypeReference> {
+    if !ty.is_list {
+        return None;
+    }
+
+    if ty.list_wrappers.is_empty() {
+        return Some(TypeReference {
+            base: ty.base.clone(),
+            nullable: ty.list_item_nullable.unwrap_or(true),
+            is_list: false,
+            list_item_nullable: None,
+            list_wrappers: Vec::new(),
+            leaf_nullable: None,
+        });
+    }
+
+    let remaining_wrappers = ty.list_wrappers[1..].to_vec();
+    if remaining_wrappers.is_empty() {
+        return Some(TypeReference {
+            base: ty.base.clone(),
+            nullable: ty.leaf_nullable.unwrap_or(true),
+            is_list: false,
+            list_item_nullable: None,
+            list_wrappers: Vec::new(),
+            leaf_nullable: None,
+        });
+    }
+
+    Some(TypeReference {
+        base: ty.base.clone(),
+        nullable: remaining_wrappers[0].nullable,
+        is_list: true,
+        list_item_nullable: Some(
+            remaining_wrappers
+                .get(1)
+                .map(|wrapper| wrapper.nullable)
+                .unwrap_or(ty.leaf_nullable.unwrap_or(true)),
+        ),
+        list_wrappers: remaining_wrappers,
+        leaf_nullable: ty.leaf_nullable,
+    })
+}
+
+fn print_program(program: &TsProgram) -> String {
+    let mut out = String::from(HEADER);
+    out.push('\n');
+
+    for import in &program.imports {
+        print_import(&mut out, import);
+    }
+
+    for declaration in &program.declarations {
+        out.push('\n');
+        print_declaration(&mut out, declaration);
+    }
+
+    out
+}
+
+fn print_import(out: &mut String, import: &TsImport) {
+    writeln!(
+        out,
+        "import {{ {} }} from {};",
+        import.named.join(", "),
+        quote_string(&import.from)
+    )
+    .expect("writing to string should not fail");
+}
+
+fn print_declaration(out: &mut String, declaration: &TsDeclaration) {
+    match declaration {
+        TsDeclaration::Comment(comment) => {
+            writeln!(out, "// {comment}").expect("writing to string should not fail");
+        }
+        TsDeclaration::TypeAlias(alias) => print_type_alias(out, alias),
+        TsDeclaration::Interface(interface) => print_interface(out, interface),
+        TsDeclaration::Function(function) => print_function(out, function),
+    }
+}
+
+fn print_type_alias(out: &mut String, alias: &TsTypeAlias) {
+    if let TsTypeExpr::StringLiteralUnion(values) = &alias.type_expr {
+        writeln!(out, "export type {} =", alias.name).expect("writing to string should not fail");
+        for (index, value) in values.iter().enumerate() {
+            out.push_str("    | ");
+            print_string_literal(out, value);
+            if index + 1 == values.len() {
+                out.push_str(";\n");
+            } else {
+                out.push('\n');
+            }
+        }
+        return;
+    }
+
+    write!(out, "export type {} = ", alias.name).expect("writing to string should not fail");
+    print_type_expr(out, &alias.type_expr, false);
+    out.push_str(";\n");
+}
+
+fn print_interface(out: &mut String, interface: &TsInterface) {
+    writeln!(out, "export interface {} {{", interface.name)
+        .expect("writing to string should not fail");
+    for property in &interface.properties {
+        out.push_str("    ");
+        out.push_str(&property_key(&property.name));
+        out.push_str(": ");
+        print_type_expr(out, &property.type_expr, false);
+        out.push_str(";\n");
+    }
+    out.push_str("}\n");
+}
+
+fn print_function(out: &mut String, function: &TsFunction) {
+    write!(out, "export function {}(", function.name).expect("writing to string should not fail");
+    for (index, param) in function.params.iter().enumerate() {
+        if index > 0 {
+            out.push_str(", ");
+        }
+        out.push_str(&param.name);
+        out.push_str(": ");
+        print_type_expr(out, &param.type_expr, false);
+    }
+    out.push_str("): ");
+    print_type_expr(out, &function.return_type, false);
+    out.push_str(" {\n");
+    for statement in &function.body {
+        print_statement(out, statement, 1);
+    }
+    out.push_str("}\n");
+}
+
+fn print_statement(out: &mut String, statement: &TsStatement, indent_level: usize) {
+    match statement {
+        TsStatement::Const { name, expr } => {
+            write_indent(out, indent_level);
+            write!(out, "const {name} = ").expect("writing to string should not fail");
+            print_expr(out, expr);
+            out.push_str(";\n");
+        }
+        TsStatement::Return(expr) => {
+            write_indent(out, indent_level);
+            out.push_str("return ");
+            print_expr(out, expr);
+            out.push_str(";\n");
+        }
+        TsStatement::ReturnVoid => {
+            write_indent(out, indent_level);
+            out.push_str("return;\n");
+        }
+        TsStatement::ReturnObject(properties) => {
+            write_indent(out, indent_level);
+            out.push_str("return {\n");
+            for property in properties {
+                write_indent(out, indent_level + 1);
+                out.push_str(&property_key(&property.name));
+                out.push_str(": ");
+                print_expr(out, &property.expr);
+                out.push_str(",\n");
+            }
+            write_indent(out, indent_level);
+            out.push_str("};\n");
+        }
+        TsStatement::Expression(expr) => {
+            write_indent(out, indent_level);
+            print_expr(out, expr);
+            out.push_str(";\n");
+        }
+        TsStatement::Switch {
+            expr,
+            cases,
+            default,
+        } => print_switch(out, expr, cases, default, indent_level),
+        TsStatement::Throw(expr) => {
+            write_indent(out, indent_level);
+            out.push_str("throw ");
+            print_expr(out, expr);
+            out.push_str(";\n");
+        }
+        TsStatement::Comment(comment) => {
+            write_indent(out, indent_level);
+            writeln!(out, "// {comment}").expect("writing to string should not fail");
         }
     }
-    if out.is_empty() {
-        return "OP_UNNAMED".to_string();
+}
+
+fn print_switch(
+    out: &mut String,
+    expr: &TsExpr,
+    cases: &[TsSwitchCase],
+    default: &[TsStatement],
+    indent_level: usize,
+) {
+    write_indent(out, indent_level);
+    out.push_str("switch (");
+    print_expr(out, expr);
+    out.push_str(") {\n");
+
+    for case in cases {
+        let label = format!("case {}:", render_expr(&case.match_expr));
+        print_switch_arm(out, &label, &case.body, indent_level + 1);
     }
-    format!("OP_{out}")
+
+    if cases.is_empty()
+        && default.len() == 1
+        && matches!(default.first(), Some(TsStatement::Comment(_)))
+    {
+        print_statement(
+            out,
+            default.first().expect("default has one statement"),
+            indent_level + 1,
+        );
+    } else if !default.is_empty() {
+        print_switch_arm(out, "default:", default, indent_level + 1);
+    }
+
+    write_indent(out, indent_level);
+    out.push_str("}\n");
+}
+
+fn print_switch_arm(out: &mut String, label: &str, body: &[TsStatement], indent_level: usize) {
+    let inline = body
+        .iter()
+        .map(inline_statement)
+        .collect::<Option<Vec<_>>>();
+    if let Some(inline) = inline {
+        write_indent(out, indent_level);
+        writeln!(out, "{label} {}", inline.join(" ")).expect("writing to string should not fail");
+        return;
+    }
+
+    write_indent(out, indent_level);
+    writeln!(out, "{label}").expect("writing to string should not fail");
+    for statement in body {
+        print_statement(out, statement, indent_level + 1);
+    }
+}
+
+fn inline_statement(statement: &TsStatement) -> Option<String> {
+    match statement {
+        TsStatement::Expression(expr) => Some(format!("{};", render_expr(expr))),
+        TsStatement::Return(expr) => Some(format!("return {};", render_expr(expr))),
+        TsStatement::ReturnVoid => Some("return;".to_string()),
+        TsStatement::Throw(expr) => Some(format!("throw {};", render_expr(expr))),
+        TsStatement::Const { .. }
+        | TsStatement::ReturnObject(_)
+        | TsStatement::Switch { .. }
+        | TsStatement::Comment(_) => None,
+    }
+}
+
+fn print_type_expr(out: &mut String, type_expr: &TsTypeExpr, parenthesize_union: bool) {
+    match type_expr {
+        TsTypeExpr::String => out.push_str("string"),
+        TsTypeExpr::Number => out.push_str("number"),
+        TsTypeExpr::Boolean => out.push_str("boolean"),
+        TsTypeExpr::Void => out.push_str("void"),
+        TsTypeExpr::Never => out.push_str("never"),
+        TsTypeExpr::Uint8Array => out.push_str("Uint8Array"),
+        TsTypeExpr::Reference(name) => out.push_str(name),
+        TsTypeExpr::StringLiteralUnion(values) => {
+            if parenthesize_union {
+                out.push('(');
+            }
+            for (index, value) in values.iter().enumerate() {
+                if index > 0 {
+                    out.push_str(" | ");
+                }
+                print_string_literal(out, value);
+            }
+            if parenthesize_union {
+                out.push(')');
+            }
+        }
+        TsTypeExpr::Null => out.push_str("null"),
+        TsTypeExpr::Array(item) => {
+            print_type_expr(out, item, true);
+            out.push_str("[]");
+        }
+        TsTypeExpr::Union(types) => {
+            if parenthesize_union {
+                out.push('(');
+            }
+            for (index, nested) in types.iter().enumerate() {
+                if index > 0 {
+                    out.push_str(" | ");
+                }
+                print_type_expr(out, nested, false);
+            }
+            if parenthesize_union {
+                out.push(')');
+            }
+        }
+    }
+}
+
+fn render_expr(expr: &TsExpr) -> String {
+    let mut out = String::new();
+    print_expr(&mut out, expr);
+    out
+}
+
+fn print_expr(out: &mut String, expr: &TsExpr) {
+    match expr {
+        TsExpr::Identifier(name) => out.push_str(name),
+        TsExpr::NumberLiteral(value) => {
+            write!(out, "{value}").expect("writing to string should not fail");
+        }
+        TsExpr::StringLiteral(value) => print_string_literal(out, value),
+        TsExpr::New { callee, args } => {
+            out.push_str("new ");
+            out.push_str(callee);
+            print_call_args(out, args);
+        }
+        TsExpr::Call { callee, args } => {
+            print_expr(out, callee);
+            print_call_args(out, args);
+        }
+        TsExpr::PropertyAccess { target, property } => {
+            print_expr(out, target);
+            if is_safe_identifier(property) {
+                out.push('.');
+                out.push_str(property);
+            } else {
+                out.push('[');
+                print_string_literal(out, property);
+                out.push(']');
+            }
+        }
+        TsExpr::Arrow { params, body } => {
+            out.push('(');
+            out.push_str(&params.join(", "));
+            out.push_str(") => ");
+            print_expr(out, body);
+        }
+        TsExpr::Add { left, right } => {
+            print_expr(out, left);
+            out.push_str(" + ");
+            print_expr(out, right);
+        }
+    }
+}
+
+fn print_call_args(out: &mut String, args: &[TsExpr]) {
+    out.push('(');
+    for (index, arg) in args.iter().enumerate() {
+        if index > 0 {
+            out.push_str(", ");
+        }
+        print_expr(out, arg);
+    }
+    out.push(')');
+}
+
+fn write_indent(out: &mut String, indent_level: usize) {
+    for _ in 0..indent_level {
+        out.push_str("    ");
+    }
+}
+
+fn ident(name: &str) -> TsExpr {
+    TsExpr::Identifier(name.to_string())
+}
+
+fn call_fn(name: &str, args: Vec<TsExpr>) -> TsExpr {
+    TsExpr::Call {
+        callee: Box::new(ident(name)),
+        args,
+    }
+}
+
+fn method_call(target: TsExpr, method: &str, args: Vec<TsExpr>) -> TsExpr {
+    TsExpr::Call {
+        callee: Box::new(TsExpr::PropertyAccess {
+            target: Box::new(target),
+            property: method.to_string(),
+        }),
+        args,
+    }
+}
+
+fn invalid_codec_error(message_prefix: &str, value: TsExpr) -> TsExpr {
+    TsExpr::New {
+        callee: "CodecError".to_string(),
+        args: vec![TsExpr::Add {
+            left: Box::new(TsExpr::StringLiteral(message_prefix.to_string())),
+            right: Box::new(call_fn("String", vec![value])),
+        }],
+    }
 }
 
 fn pascal_case(name: &str) -> String {
@@ -397,16 +1089,24 @@ fn is_safe_identifier(name: &str) -> bool {
     true
 }
 
-fn quote_string(value: &str) -> String {
-    let mut out = String::from("'");
+fn print_string_literal(out: &mut String, value: &str) {
+    out.push('\'');
     for ch in value.chars() {
         match ch {
             '\\' => out.push_str("\\\\"),
             '\'' => out.push_str("\\'"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
             _ => out.push(ch),
         }
     }
     out.push('\'');
+}
+
+fn quote_string(value: &str) -> String {
+    let mut out = String::new();
+    print_string_literal(&mut out, value);
     out
 }
 
@@ -432,6 +1132,46 @@ mod tests {
         }
     ";
 
+    fn assert_no_runtime_operation_markers(ts: &str) {
+        let forbidden_constant_declaration = ["export const ", "OP", "_"].concat();
+        let forbidden_phrase = ["op", "id"].join(" ");
+
+        assert!(
+            !ts.contains(&forbidden_constant_declaration),
+            "unexpected runtime operation constant declaration in:\n{ts}"
+        );
+        assert!(
+            !ts.contains(&forbidden_phrase),
+            "unexpected runtime operation identifier claim in:\n{ts}"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "unexpected runtime operation constant declaration")]
+    fn runtime_marker_assertion_rejects_any_op_prefixed_constant() {
+        let runtime_marker = ["export const ", "OP", "_DELETE_WIDGET = 42;"].concat();
+
+        assert_no_runtime_operation_markers(&runtime_marker);
+    }
+
+    #[test]
+    fn runtime_marker_assertion_allows_schema_values_containing_op_sequence() {
+        let enum_value = ["ST", "OP", "_NOW"].concat();
+        let sdl = format!(
+            "
+            enum WorkflowState {{ {enum_value} }}
+            input TransitionInput {{
+                state: WorkflowState!
+            }}
+        "
+        );
+        let ir = lower_schema_sdl(&sdl).expect("schema lowers");
+        let ts = emit_le_binary_typescript(&ir, &[], DEFAULT_CODEC_IMPORT);
+
+        assert!(ts.contains(&format!("'{enum_value}'")));
+        assert_no_runtime_operation_markers(&ts);
+    }
+
     #[test]
     fn emits_typescript_codec_for_minimal_schema() {
         let ir = lower_schema_sdl(SDL).expect("schema lowers");
@@ -451,6 +1191,20 @@ mod tests {
         assert!(ts.contains("input: MakeWidgetInput;"));
         assert!(ts.contains("export function encodeMakeWidgetVars(v: MakeWidgetVars): Uint8Array"));
         assert!(ts.contains("export function decodeMakeWidgetVars(b: Uint8Array): MakeWidgetVars"));
+    }
+
+    #[test]
+    fn emits_le_binary_typescript_from_golden_fixture() {
+        let sdl = include_str!("../../../test/fixtures/typescript-emitter/le-binary-codec.graphql");
+        let expected =
+            include_str!("../../../test/fixtures/typescript-emitter/le-binary-codec.generated.ts");
+        let ir = lower_schema_sdl(sdl).expect("golden schema lowers");
+        let ops = list_schema_operations_sdl(sdl).expect("golden operations enumerable");
+
+        let actual = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
+
+        assert_eq!(actual, expected);
+        assert_no_runtime_operation_markers(&actual);
     }
 
     #[test]
@@ -479,28 +1233,53 @@ mod tests {
     }
 
     #[test]
-    fn op_const_name_matches_wesley_operation_constant_convention() {
-        assert_eq!(op_const_name("createRecord"), "OP_CREATE_RECORD");
-        assert_eq!(op_const_name("updateRecord"), "OP_UPDATE_RECORD");
-        assert_eq!(op_const_name("makeWidget"), "OP_MAKE_WIDGET");
-        assert_eq!(op_const_name(""), "OP_UNNAMED");
+    fn bracket_accesses_non_identifier_input_object_fields_from_ast() {
+        let ir = WesleyIR {
+            version: "1.0.0".to_string(),
+            metadata: None,
+            types: vec![TypeDefinition {
+                name: "OddInput".to_string(),
+                kind: TypeKind::InputObject,
+                description: None,
+                directives: Default::default(),
+                implements: Vec::new(),
+                fields: vec![wesley_core::Field {
+                    name: "with space".to_string(),
+                    description: None,
+                    r#type: TypeReference {
+                        base: "String".to_string(),
+                        nullable: false,
+                        is_list: false,
+                        list_item_nullable: None,
+                        list_wrappers: Vec::new(),
+                        leaf_nullable: None,
+                    },
+                    arguments: Vec::new(),
+                    default_value: None,
+                    directives: Default::default(),
+                }],
+                enum_values: Vec::new(),
+                union_members: Vec::new(),
+            }],
+        };
+
+        let ts = emit_le_binary_typescript(&ir, &[], DEFAULT_CODEC_IMPORT);
+
+        assert!(ts.contains("'with space': string;"));
+        assert!(ts.contains("w.writeString(v['with space']);"));
+        assert!(ts.contains("'with space': r.readString(),"));
+        assert!(
+            !ts.contains("v.'with space'"),
+            "property access must be syntax-aware:\n{ts}"
+        );
     }
 
     #[test]
-    fn emits_op_id_constant_for_each_operation() {
+    fn does_not_emit_runtime_operation_constants() {
         let ir = lower_schema_sdl(SDL).expect("schema lowers");
         let ops = list_schema_operations_sdl(SDL).expect("operations enumerable");
 
         let ts = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
-
-        // Concrete op id pinned by wesley-core's stable_op_id tests.
-        let expected_op_id =
-            wesley_core::stable_op_id(wesley_core::OperationType::Mutation, "makeWidget");
-        assert!(
-            ts.contains(&format!(
-                "export const OP_MAKE_WIDGET: number = {expected_op_id};"
-            )),
-            "expected OP_MAKE_WIDGET constant for op id {expected_op_id} in:\n{ts}",
-        );
+        assert_no_runtime_operation_markers(&ts);
     }
 }

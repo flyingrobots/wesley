@@ -8,10 +8,9 @@ use crate::domain::operation::{
 };
 use crate::domain::optic::{
     CodecField, CodecShape, DirectiveRecord, EvidenceKind, Footprint, IdentityRequirement,
-    LawClaimTemplate, OperationKind, OpticAdmissionRequirements,
-    OpticAdmissionRequirementsArtifact, OpticArtifact, OpticOperation, OpticRegistrationDescriptor,
-    PermissionAction, PermissionRequirement, RootArgumentBinding, SelectionArgumentBinding,
-    OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC,
+    LawClaimTemplate, OperationKind, OpticArtifact, OpticOperation, OpticRegistrationDescriptor,
+    OpticRequirements, OpticRequirementsArtifact, PermissionAction, PermissionRequirement,
+    RootArgumentBinding, SelectionArgumentBinding, OPTIC_REQUIREMENTS_ARTIFACT_CODEC,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
@@ -1197,7 +1196,7 @@ pub fn compile_runtime_optic(
     let operation_id = stable_json_hash(&identity_seed, "runtime optic operation identity")?;
     let law_claims =
         law_claims_for_operation(&operation_id, &directives, declared_footprint.as_ref())?;
-    let requirements = admission_requirements_from_footprint(declared_footprint.as_ref());
+    let requirements = requirements_from_footprint(declared_footprint.as_ref());
     let requirements_artifact = canonical_requirements_artifact(&serde_json::json!({
         "declaredFootprint": &declared_footprint,
         "lawClaims": &law_claims,
@@ -1253,9 +1252,8 @@ pub fn compile_runtime_optic(
 
 /// Compiles runtime-provided SDL plus one GraphQL operation into a registration descriptor.
 ///
-/// This returns the cross-process descriptor an application can present to Echo
-/// when registering the full artifact. Echo returns the runtime-local opaque
-/// `OpticArtifactHandle` after it accepts the artifact.
+/// This returns a descriptor an external target can compare against the full
+/// artifact before storing or importing compiler-produced evidence.
 pub fn compile_runtime_optic_registration(
     sdl: &str,
     operation_source: &str,
@@ -3219,9 +3217,7 @@ fn law_claims_for_operation(
     Ok(claims)
 }
 
-fn admission_requirements_from_footprint(
-    footprint: Option<&Footprint>,
-) -> OpticAdmissionRequirements {
+fn requirements_from_footprint(footprint: Option<&Footprint>) -> OpticRequirements {
     let mut required_permissions = Vec::new();
     let mut forbidden_resources = Vec::new();
 
@@ -3245,7 +3241,7 @@ fn admission_requirements_from_footprint(
         forbidden_resources = footprint.forbids.clone();
     }
 
-    OpticAdmissionRequirements {
+    OpticRequirements {
         identity: IdentityRequirement {
             required: true,
             accepted_principal_kinds: Vec::new(),
@@ -3309,14 +3305,14 @@ fn stable_json_hash<T: serde::Serialize>(value: &T, area: &str) -> Result<String
 
 fn canonical_requirements_artifact<T: serde::Serialize>(
     value: &T,
-) -> Result<OpticAdmissionRequirementsArtifact, WesleyError> {
+) -> Result<OpticRequirementsArtifact, WesleyError> {
     let canonical = stable_json_string(value, "runtime optic requirements artifact")?;
     let bytes = canonical.into_bytes();
     let digest = compute_content_hash_bytes(&bytes);
 
-    Ok(OpticAdmissionRequirementsArtifact {
+    Ok(OpticRequirementsArtifact {
         digest,
-        codec: OPTIC_ADMISSION_REQUIREMENTS_ARTIFACT_CODEC.to_string(),
+        codec: OPTIC_REQUIREMENTS_ARTIFACT_CODEC.to_string(),
         bytes,
     })
 }

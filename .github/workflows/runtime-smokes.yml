@@ -53,18 +53,8 @@ jobs:
         with:
           egress-policy: audit
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-      - name: Install bats
-        uses: ./.github/actions/install-bats
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:
           bun-version: 1.2.20
-      - name: Bun host contracts (Bats)
-        env:
-          BATS_LIB_PATH: test
-          TERM: xterm
-          BATS_NO_COLOR: '1'
-        run: |
-          rm -rf test/hosts/bats-plugins || true
-          timeout 2m bash scripts/setup-bats-plugins.sh
-          ln -sfn "$PWD/test/bats-plugins" test/hosts/bats-plugins
-          HOST=bun bats -t test/hosts/host-contracts.bats
+      - name: Bun host contracts
+        run: bun run scripts/host_contracts_bun.mjs

@@ -11,9 +11,9 @@ fixture-backed operation bindings. The long-term direction is larger:
 ```text
 agent or application declares the optic it needs
   -> Wesley compiles the GraphQL contract
-  -> host policy checks authority, support, and budget
-  -> a runtime such as Echo admits, obstructs, schedules, and witnesses it
-  -> the caller receives a lawful reading or receipt
+  -> external target policy checks authority, support, and budget
+  -> a target such as Echo evaluates, obstructs, schedules, and witnesses it
+  -> the caller receives a target-owned reading or receipt
 ```
 
 Wesley should feel like an empowerment tool for agents. It should let an agent
@@ -53,7 +53,7 @@ is a declarative optic shape:
 - result types make the reading shape explicit
 
 The transport can still look MCP-like. The interaction language is GraphQL.
-Wesley compiles that interaction language into a runtime optic artifact.
+Wesley compiles that interaction language into target-neutral compiler evidence.
 
 ## Programmable GraphQL APIs, But Lawful
 
@@ -69,14 +69,14 @@ server executes against app state
 response comes back
 ```
 
-Wesley runtime optics:
+Wesley contract evidence:
 
 ```text
 agent writes or selects a GraphQL operation
 Wesley compiles it into an optic contract
-host policy checks authority, support, and budget
-runtime admits or obstructs the operation
-reading or receipt comes back with witness posture
+external target policy checks authority, support, and budget
+target evaluates or obstructs the operation
+reading or receipt comes back with target-owned witness posture
 ```
 
 The operation is empowering because it is bounded. It names the basis,
@@ -222,9 +222,9 @@ At Echo's boundary, those nouns should erase into causal runtime facts:
 - reading identity
 - receipt and witness material
 
-That is why Wesley exists. It lets applications keep their shape while Echo
-receives only canonical buffers, identities, footprints, receipts, witnesses,
-and readings.
+That is why Wesley exists. It lets applications keep their shape while external
+targets receive canonical compiler evidence they can import into their own
+runtime profiles, receipts, witnesses, and readings.
 
 ## Target Admission Flow
 
@@ -235,37 +235,31 @@ application declares GraphQL operation
   -> Wesley compiles OpticArtifact
   -> Wesley returns OpticArtifact plus artifact hash, requirements digest,
      and canonical requirements artifact
-  -> application registers artifact with Echo or another runtime registry
-  -> runtime verifies Wesley artifact hash and stores requirements
-  -> runtime returns opaque OpticArtifactHandle
-  -> user, host, or quorum issues CapabilityGrant
-  -> caller invokes with OpticArtifactHandle, canonical variables,
-     capability presentation, and basis/aperture request
-  -> runtime checks artifact identity, capability authority, operation
-     permissions, expiry, basis validity, budget, and support requirements
-  -> runtime admits or obstructs
-  -> runtime instruments actual access
-  -> runtime compares actual access against declared requirements
-  -> runtime emits LawWitness / receipt
+  -> application presents descriptor and artifact to an external target
+  -> target verifies Wesley artifact hash and requirements digest
+  -> target applies target-owned profile, policy, authority, and state checks
+  -> target admits, obstructs, or rejects under its own vocabulary
+  -> target instruments actual access if it executes the operation
+  -> target compares actual access against declared requirements when supported
+  -> target emits target-owned receipt plus optional LawWitness evidence
 ```
 
 That flow preserves separate nouns:
 
-| Noun                                         | Owner                                   | Job                                                                                                                             |
-| -------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `OpticArtifact`                              | Wesley                                  | Compiled, content-addressed declaration of operation shape, codecs, law claims, and admission requirements.                     |
-| `OpticAdmissionRequirementsArtifact`         | Wesley                                  | Canonical requirements bytes, explicit codec, and digest computed from those exact bytes.                                       |
-| `OpticRegistrationDescriptor`                | Wesley                                  | Artifact id, artifact hash, schema id, operation id, and requirements digest used when registering the artifact with a runtime. |
-| `OpticArtifactHandle`                        | Echo or another runtime                 | Opaque registry handle proving the runtime accepted and stored a specific Wesley artifact hash.                                 |
-| `CapabilityGrant` / `CapabilityPresentation` | User, host, quorum, or policy authority | Bounded authority plus invocation-time proof to attempt a registered artifact under explicit constraints.                       |
-| `LawWitness` / receipt                       | Echo, runtime, or verifier              | Evidence describing admission, obstruction, access, basis, budget, and law satisfaction posture.                                |
+| Noun                           | Owner                       | Job                                                                                                  |
+| ------------------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `OpticArtifact`                | Wesley                      | Compiled, content-addressed declaration of operation shape, codecs, law claims, and requirements.    |
+| `OpticRequirementsArtifact`    | Wesley                      | Canonical requirements bytes, explicit codec, and digest computed from those exact bytes.            |
+| `OpticRegistrationDescriptor`  | Wesley                      | Artifact id, artifact hash, schema id, operation id, and requirements digest for target comparison.  |
+| Target handle / grant / ticket | External target or policy   | Target-owned authority, invocation, state, and execution vocabulary.                                 |
+| `LawWitness` / target receipt  | External target or verifier | Evidence describing obstruction, access, basis, budget, and law satisfaction posture when supported. |
 
 The critical boundary is that Wesley compiles the requirements, while the
-runtime registers the artifact, admits the interaction, instruments access, and
-witnesses what happened. Wesley owns canonical runtime optic requirement truth:
-downstream runtimes may import the requirements bytes, digest, and codec
-directly, but must not serialize Wesley structs to create admission truth. A
-runtime handle proves registration, not authority.
+external target owns import, target policy, authority, state applicability,
+execution, and receipts. Wesley owns canonical compiler requirement evidence:
+downstream targets may import the requirements bytes, digest, and codec
+directly, but must not serialize Wesley structs to create target-owned runtime
+truth.
 
 ## What Wesley Must Become
 
@@ -273,20 +267,21 @@ The target architecture is layered:
 
 1. **Static compiler**: lower SDL, list operations, diff schema structure, and
    emit Rust or TypeScript artifacts.
-2. **Contract artifact compiler**: produce operation ids, schema/artifact
-   identity, canonical variable codecs, payload codecs, and footprint
-   certificates.
+2. **Contract artifact compiler**: produce schema/artifact identity, canonical
+   variable codecs, payload codecs, and footprint evidence without owning target
+   dispatch identifiers.
 3. **Runtime library**: compile runtime-provided SDL fragments into in-memory
    contract artifacts without requiring file generation.
 4. **Optic plan compiler**: produce read, rewrite, observation, codec,
    footprint, support, and witness plans.
 5. **Law claim compiler**: bind operations to law declarations, verifier
    requirements, and witness codecs.
-6. **Admission handoff**: hand the compiled artifact to Echo, host policy, or
-   another runtime for actual admission, scheduling, obstruction, and witness.
+6. **Target handoff**: hand the compiled artifact to Echo, Continuum, host
+   policy, or another target for profile-specific policy, scheduling,
+   obstruction, execution, and witness.
 
 Wesley does not become the runtime. It gives runtimes a lawful artifact they can
-admit, obstruct, schedule, witness, and replay.
+evaluate, obstruct, schedule, witness, and replay.
 
 ## First Concrete Hill
 
@@ -314,7 +309,7 @@ The first witness does not need Echo. It can be a Rust test proving:
 - same-response-name field selections must be merge-compatible before payload
   codec extraction can collapse duplicate response paths
 - executable directive arguments must be unique before directive metadata can
-  influence law claims or admission requirements
+  influence law claims or contract requirements
 - fragment spreads and inline fragments have compatible type conditions before
   they contribute payload, directive, or argument metadata
 - directive law data is preserved across the operation and selected field tree,
@@ -332,18 +327,17 @@ identity, artifact hash, operation identity, operation kind, operation name,
 canonical root argument bindings, canonical selected field argument bindings,
 variable codec shape, response payload codec shape, preserved directive records
 from the executable operation and selected field tree, declared footprint, law
-claim templates, structured admission requirements, canonical admission
-requirements artifact, requirements digest, and an `OpticRegistrationDescriptor`.
+claim templates, structured contract requirements, canonical requirements
+artifact, requirements digest, and an `OpticRegistrationDescriptor`.
 `compile_runtime_optic_registration()` returns just the registration descriptor
 for callers that need the cross-process registration reference without
 receiving the full in-memory artifact object.
 
 The registration descriptor carries artifact id, artifact hash, schema id,
 operation id, and requirements digest. It is not an authority grant and it is not
-the Echo-owned `OpticArtifactHandle`. Echo or another runtime returns the opaque
-handle after it accepts the artifact and stores the requirements. Wesley
-deliberately does not execute the operation, issue capabilities, call Echo, run a
-policy engine, or verify runtime law satisfaction.
+an external target handle. Wesley deliberately does not execute the operation,
+issue capabilities, call Echo, run a policy engine, or verify runtime law
+satisfaction.
 
 The first resolver hill is equally small: an `OpticArtifactResolver` can resolve
 an `OpticRegistrationDescriptor` back to its `OpticArtifact` and reject
@@ -370,10 +364,10 @@ That is the first real proof of bounded, lawful autonomy.
 
 ## Doctrine
 
-Wesley compiles lawful optic claims. Echo or another runtime registers, admits,
-obstructs, instruments, and witnesses them. Applications hold product-facing
-capabilities that hide artifact handles, basis references, and runtime
-coordinates.
+Wesley compiles lawful optic claims. Echo or another target imports, evaluates,
+obstructs, instruments, and witnesses them under target-owned policy.
+Applications hold product-facing capabilities that hide target handles, basis
+references, and runtime coordinates.
 
 Agents do not get ambient authority. They get a lawful way to propose precise
 readings and rewrites, and an evidence-bearing way to learn why a proposal was

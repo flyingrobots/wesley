@@ -44,9 +44,29 @@ load 'bats-plugins/bats-assert/load'
 @test "BEARING active-gravity packet sections stay before tensions" {
   run awk '
     /^### 12\. Holmes `weslaw` Assurance Planning$/ { h12 = NR }
-    /^### 13\. Continuum YOLO Runtime-Neutral Edict$/ { h13 = NR }
+    /^### 13\. Edict Extracted To Dedicated Repository$/ { h13 = NR }
     /^## Tensions$/ { tensions = NR }
     END { exit !(h12 && h13 && tensions && h12 < tensions && h13 < tensions) }
   ' docs/BEARING.md
   assert_success
+}
+
+@test "wesley-core operation facts do not expose runtime dispatch ids" {
+  run rg -n "stable_op_id|operation_type_rank|EINT envelopes|deployed contract|op ids" crates/wesley-core/src/domain/operation.rs
+  assert_failure
+}
+
+@test "generic TypeScript LE emitter does not generate runtime op constants" {
+  run rg -n "stable_op_id|OP_[A-Z_]+|EINT op id|op id" crates/wesley-emit-typescript/src/le_binary.rs
+  assert_failure
+}
+
+@test "wesley-core optic model does not expose host authority vocabulary" {
+  run rg -n "CapabilityGrant|CapabilityPresentation|AdmissionTicket|OpticArtifactHandle|Echo-owned|admission" crates/wesley-core/src/domain/optic.rs crates/wesley-core/src/adapters/apollo.rs
+  assert_failure
+}
+
+@test "active SDL docs use contract requirements vocabulary" {
+  run rg -n "OpticAdmissionRequirements|admission truth|admission-facing" docs/SDL.md
+  assert_failure
 }
