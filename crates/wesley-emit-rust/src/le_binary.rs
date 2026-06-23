@@ -61,7 +61,7 @@ fn render_def(out: &mut String, def: &CodecDef) {
         CodecDef::Enum { name, variants } => {
             render_enum(out, &rust_type_name(name), &to_snake_case(name), variants);
         }
-        CodecDef::Struct { name, fields } => {
+        CodecDef::Struct { name, fields, .. } => {
             render_struct(out, &rust_type_name(name), &to_snake_case(name), fields);
         }
         CodecDef::Operation {

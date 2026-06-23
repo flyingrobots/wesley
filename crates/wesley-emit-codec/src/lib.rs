@@ -54,6 +54,18 @@ pub struct FieldPlan {
     pub op: CodecOp,
 }
 
+/// Which SDL declaration a struct codec came from. Carried so a backend can
+/// label the declaration in its own idiom; it does not affect the wire format.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StructKind {
+    /// A GraphQL `input` object.
+    Input,
+    /// A GraphQL output `type`.
+    Object,
+    /// A GraphQL `interface`.
+    Interface,
+}
+
 /// A top-level codec, emitted as an `encode_*` / `decode_*` pair.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CodecDef {
@@ -68,6 +80,8 @@ pub enum CodecDef {
     Struct {
         /// Source type name.
         name: String,
+        /// Which SDL declaration it came from.
+        kind: StructKind,
         /// Fields in wire order.
         fields: Vec<FieldPlan>,
     },
@@ -108,6 +122,11 @@ pub fn plan(ir: &WesleyIR, operations: &[SchemaOperation]) -> Vec<CodecDef> {
             {
                 defs.push(CodecDef::Struct {
                     name: type_def.name.clone(),
+                    kind: match type_def.kind {
+                        TypeKind::InputObject => StructKind::Input,
+                        TypeKind::Interface => StructKind::Interface,
+                        _ => StructKind::Object,
+                    },
                     fields: type_def
                         .fields
                         .iter()
