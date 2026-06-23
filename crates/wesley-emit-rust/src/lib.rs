@@ -10,6 +10,11 @@ use wesley_core::{
     SchemaOperation, TypeDefinition, TypeKind, TypeReference, WesleyIR,
 };
 
+mod le_binary;
+pub use le_binary::{
+    emit_le_binary_rust, DEFAULT_CODEC_IMPORT as LE_BINARY_RUST_DEFAULT_CODEC_IMPORT,
+};
+
 /// Stable generator identifier recorded in native emit metadata.
 pub const GENERATOR_NAME: &str = "wesley-emit-rust";
 
