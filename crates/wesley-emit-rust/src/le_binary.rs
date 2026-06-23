@@ -13,7 +13,9 @@
 //!
 //! The emitted code **references** the Wesley-generated Rust types (it does not
 //! redefine them), so place it in a module where those types — and the runtime
-//! `Writer` / `Reader` / `CodecError` — are in scope.
+//! `Writer` / `Reader` / `CodecError` — are in scope. Each `decode_*` rejects
+//! trailing input via `Reader::remaining()`, so a decoder cannot silently accept
+//! a padded or corrupted envelope.
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
@@ -83,10 +85,14 @@ fn emit_wrappers(out: &mut String, ty: &str, snake: &str) {
          \x20   writer.finish()\n\
          }}\n\
          \n\
-         /// Decode a `{ty}` from LE-binary bytes.\n\
+         /// Decode a `{ty}` from LE-binary bytes, rejecting trailing input.\n\
          pub fn decode_{snake}(bytes: &[u8]) -> Result<{ty}, CodecError> {{\n\
          \x20   let mut reader = Reader::new(bytes);\n\
-         \x20   dec_{snake}(&mut reader)\n\
+         \x20   let value = dec_{snake}(&mut reader)?;\n\
+         \x20   if reader.remaining() > 0 {{\n\
+         \x20       return Err(CodecError::new(\"trailing bytes after decode\".to_string()));\n\
+         \x20   }}\n\
+         \x20   Ok(value)\n\
          }}\n"
     );
 }
@@ -434,6 +440,28 @@ mod tests {
         );
         assert!(
             rust.contains("tags: reader.read_list(|reader| reader.read_string())?,"),
+            "{rust}"
+        );
+    }
+
+    #[test]
+    fn decode_wrappers_reject_trailing_bytes() {
+        let color = type_def(
+            "Color",
+            TypeKind::Enum,
+            Vec::new(),
+            vec!["RED".into(), "GREEN".into()],
+        );
+        let rust = emit(vec![color]);
+        assert!(
+            rust.contains("let value = dec_color(&mut reader)?;"),
+            "{rust}"
+        );
+        assert!(rust.contains("if reader.remaining() > 0 {"), "{rust}");
+        assert!(
+            rust.contains(
+                "return Err(CodecError::new(\"trailing bytes after decode\".to_string()));"
+            ),
             "{rust}"
         );
     }

@@ -8,10 +8,14 @@ pub fn encode_color(value: &Color) -> Vec<u8> {
     writer.finish()
 }
 
-/// Decode a `Color` from LE-binary bytes.
+/// Decode a `Color` from LE-binary bytes, rejecting trailing input.
 pub fn decode_color(bytes: &[u8]) -> Result<Color, CodecError> {
     let mut reader = Reader::new(bytes);
-    dec_color(&mut reader)
+    let value = dec_color(&mut reader)?;
+    if reader.remaining() > 0 {
+        return Err(CodecError::new("trailing bytes after decode".to_string()));
+    }
+    Ok(value)
 }
 
 fn enc_color(writer: &mut Writer, value: &Color) {
@@ -39,10 +43,14 @@ pub fn encode_make_widget_input(value: &MakeWidgetInput) -> Vec<u8> {
     writer.finish()
 }
 
-/// Decode a `MakeWidgetInput` from LE-binary bytes.
+/// Decode a `MakeWidgetInput` from LE-binary bytes, rejecting trailing input.
 pub fn decode_make_widget_input(bytes: &[u8]) -> Result<MakeWidgetInput, CodecError> {
     let mut reader = Reader::new(bytes);
-    dec_make_widget_input(&mut reader)
+    let value = dec_make_widget_input(&mut reader)?;
+    if reader.remaining() > 0 {
+        return Err(CodecError::new("trailing bytes after decode".to_string()));
+    }
+    Ok(value)
 }
 
 fn enc_make_widget_input(writer: &mut Writer, value: &MakeWidgetInput) {
@@ -84,10 +92,14 @@ pub fn encode_solo(value: &Solo) -> Vec<u8> {
     writer.finish()
 }
 
-/// Decode a `Solo` from LE-binary bytes.
+/// Decode a `Solo` from LE-binary bytes, rejecting trailing input.
 pub fn decode_solo(bytes: &[u8]) -> Result<Solo, CodecError> {
     let mut reader = Reader::new(bytes);
-    dec_solo(&mut reader)
+    let value = dec_solo(&mut reader)?;
+    if reader.remaining() > 0 {
+        return Err(CodecError::new("trailing bytes after decode".to_string()));
+    }
+    Ok(value)
 }
 
 fn enc_solo(writer: &mut Writer, value: &Solo) {
@@ -111,10 +123,14 @@ pub fn encode_widget(value: &Widget) -> Vec<u8> {
     writer.finish()
 }
 
-/// Decode a `Widget` from LE-binary bytes.
+/// Decode a `Widget` from LE-binary bytes, rejecting trailing input.
 pub fn decode_widget(bytes: &[u8]) -> Result<Widget, CodecError> {
     let mut reader = Reader::new(bytes);
-    dec_widget(&mut reader)
+    let value = dec_widget(&mut reader)?;
+    if reader.remaining() > 0 {
+        return Err(CodecError::new("trailing bytes after decode".to_string()));
+    }
+    Ok(value)
 }
 
 fn enc_widget(writer: &mut Writer, value: &Widget) {
@@ -136,10 +152,14 @@ pub fn encode_query_widget_request(value: &QueryWidgetRequest) -> Vec<u8> {
     writer.finish()
 }
 
-/// Decode a `QueryWidgetRequest` from LE-binary bytes.
+/// Decode a `QueryWidgetRequest` from LE-binary bytes, rejecting trailing input.
 pub fn decode_query_widget_request(bytes: &[u8]) -> Result<QueryWidgetRequest, CodecError> {
     let mut reader = Reader::new(bytes);
-    dec_query_widget_request(&mut reader)
+    let value = dec_query_widget_request(&mut reader)?;
+    if reader.remaining() > 0 {
+        return Err(CodecError::new("trailing bytes after decode".to_string()));
+    }
+    Ok(value)
 }
 
 fn enc_query_widget_request(writer: &mut Writer, value: &QueryWidgetRequest) {
@@ -159,10 +179,14 @@ pub fn encode_mutation_make_widget_request(value: &MutationMakeWidgetRequest) ->
     writer.finish()
 }
 
-/// Decode a `MutationMakeWidgetRequest` from LE-binary bytes.
+/// Decode a `MutationMakeWidgetRequest` from LE-binary bytes, rejecting trailing input.
 pub fn decode_mutation_make_widget_request(bytes: &[u8]) -> Result<MutationMakeWidgetRequest, CodecError> {
     let mut reader = Reader::new(bytes);
-    dec_mutation_make_widget_request(&mut reader)
+    let value = dec_mutation_make_widget_request(&mut reader)?;
+    if reader.remaining() > 0 {
+        return Err(CodecError::new("trailing bytes after decode".to_string()));
+    }
+    Ok(value)
 }
 
 fn enc_mutation_make_widget_request(writer: &mut Writer, value: &MutationMakeWidgetRequest) {
