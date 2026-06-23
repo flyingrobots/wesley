@@ -1138,6 +1138,10 @@ mod tests {
 
         type Widget { id: ID! label: String! }
 
+        type Query {
+            widget(id: ID!): Widget!
+        }
+
         type Mutation {
             makeWidget(input: MakeWidgetInput!): Widget!
         }
