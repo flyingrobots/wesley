@@ -1010,7 +1010,9 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
                     "unknown option '--metadata-out' for `{command}`"
                 )));
             }
-            "--codec-import" if command == "emit le-binary-typescript" => {
+            "--codec-import"
+                if command == "emit le-binary-typescript" || command == "emit le-binary-rust" =>
+            {
                 index += 1;
                 options.codec_import = Some(required_value(args, index, "--codec-import")?);
             }
@@ -2051,6 +2053,7 @@ Commands:
   emit rust                 Emit Rust models and operation bindings from GraphQL SDL
   emit typescript           Emit TypeScript declarations and operation bindings from GraphQL SDL
   emit le-binary-typescript Emit TypeScript LE binary codecs from GraphQL SDL
+  emit le-binary-rust       Emit Rust LE binary codecs from GraphQL SDL
   operation selections      Resolve selected operation fields
   operation directive-args  Extract operation directive arguments as JSON
   version                   Print the native CLI version
