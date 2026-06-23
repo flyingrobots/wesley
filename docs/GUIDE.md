@@ -15,7 +15,7 @@ artifacts.
 
 - **Inspect native CLI**: `cargo wesley --help`
 - **Doctor native CLI**: `cargo wesley doctor`
-- **Install alpha from crates.io**: `cargo install wesley-cli --version 0.0.5`
+- **Install alpha from crates.io**: `cargo install wesley-cli --version 0.1.0`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
 - **Strict preflight**: `cargo xtask preflight`
 - **Explicit alias**: `cargo xtask strict-preflight`
@@ -33,7 +33,7 @@ Use `wesley doctor` when you need a narrow Rust-native health check for the
 native CLI, Rust lowerer, normalized SDL hashing, and Rust emitter crates. It
 does not inspect legacy Node config, plugins, or package state.
 
-Use `cargo install wesley-cli --version 0.0.5` when you want the published
+Use `cargo install wesley-cli --version 0.1.0` when you want the published
 alpha `wesley` binary on your PATH. Use
 `cargo install --locked --path crates/wesley-cli` when working from this
 checkout. Use `cargo xtask preflight` before opening a PR. This is the strict

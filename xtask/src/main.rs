@@ -33,14 +33,19 @@ const PUBLISH_CRATES: &[PublishCrate] = &[
         dependencies: &[],
     },
     PublishCrate {
+        name: "wesley-emit-codec",
+        path: "crates/wesley-emit-codec",
+        dependencies: &["wesley-core"],
+    },
+    PublishCrate {
         name: "wesley-emit-rust",
         path: "crates/wesley-emit-rust",
-        dependencies: &["wesley-core"],
+        dependencies: &["wesley-core", "wesley-emit-codec"],
     },
     PublishCrate {
         name: "wesley-emit-typescript",
         path: "crates/wesley-emit-typescript",
-        dependencies: &["wesley-core"],
+        dependencies: &["wesley-core", "wesley-emit-codec"],
     },
     PublishCrate {
         name: "wesley-cli",

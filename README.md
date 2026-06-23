@@ -31,24 +31,27 @@ For a full first-principles walkthrough, read
 
 ---
 
-## What's New in v0.0.5
+## What's New in v0.1.0
 
-Wesley `0.0.5` hardens the compiler and toolchain surface with a set of
-correctness and boundary fixes:
+Wesley `0.1.0` is the LE-binary codec-plan release. It ships the breaking
+decode API cleanup needed to keep Rust and TypeScript codec emitters aligned:
 
-- **Object extension folding**: The Rust GraphQL lowering now rejects duplicate
-  fields and repeated Wesley directives when `extend type` blocks are folded
-  into base object definitions, preventing silent shadowing.
-- **L1 fixture regeneration**: `pnpm fixtures:ir` now regenerates the tracked
-  Rust L1 `*.l1.json` and `*.l1.hash` corpus through the native Wesley CLI and
-  exits nonzero when any fixture fails.
-- **Release dependency audit**: pnpm overrides for `fast-uri`,
-  `brace-expansion`, and `ws` ensure `pnpm audit --prod=false` reports no known
-  vulnerabilities during release prep.
+- **Shared codec plan**: `wesley-emit-codec` lowers GraphQL L1 IR and selected
+  operations into a language-neutral LE-binary codec plan. Rust and TypeScript
+  emitters now render from that same plan instead of each re-deriving codec
+  shape.
+- **Decode result contract**: TypeScript generated `decode*` functions now
+  return `Result<T>` instead of throwing directly from the public boundary,
+  matching the Rust `Result<T, CodecError>` style more closely.
+- **Trailing-byte rejection**: TypeScript decoders now reject extra bytes after
+  a top-level decode, closing the same #603 class already fixed for Rust.
+- **Runtime ports**: Generated codec modules include explicit
+  `Writer`/`Reader`/`CodecError` port contracts so consumer runtimes can see the
+  required shape at the generated boundary.
 
-The Holmes law assurance substrate (`weslaw` assessment policy, suppression
-rules, coverage gates, and traceability decisions) continues to grow in the
-unreleased campaign.
+This release also carries the accumulated Rust-native compiler hardening,
+strict preflight, and Holmes law-assurance foundation work that had been staged
+under `[Unreleased]`.
 
 For the complete release history, read [CHANGELOG.md](./CHANGELOG.md).
 
