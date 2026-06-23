@@ -13,6 +13,7 @@ use wesley_core::{
 mod le_binary;
 pub use le_binary::{
     emit_le_binary_rust, DEFAULT_CODEC_IMPORT as LE_BINARY_RUST_DEFAULT_CODEC_IMPORT,
+    LE_BINARY_GENERATOR_NAME as LE_BINARY_RUST_GENERATOR_NAME,
 };
 
 /// Stable generator identifier recorded in native emit metadata.

@@ -25,6 +25,9 @@ use crate::{rust_field_name, rust_type_name, rust_variant_name, to_snake_case};
 /// The default Rust module path the emitted codec imports its runtime from.
 pub const DEFAULT_CODEC_IMPORT: &str = "crate::codec";
 
+/// Stable generator identifier recorded in native emit metadata for this codec.
+pub const LE_BINARY_GENERATOR_NAME: &str = "wesley-emit-rust:le-binary";
+
 /// Emit a Rust LE-binary codec for the data types in `ir`.
 ///
 /// Enums, input objects, and output objects each get an `encode_*` / `decode_*`
@@ -402,6 +405,21 @@ mod tests {
         assert!(
             rust.contains("tags: reader.read_list(|reader| reader.read_string())?,"),
             "{rust}"
+        );
+    }
+
+    #[test]
+    fn emits_le_binary_rust_from_golden_fixture() {
+        use wesley_core::{list_schema_operations_sdl, lower_schema_sdl};
+        let sdl = include_str!("../../../test/fixtures/typescript-emitter/le-binary-codec.graphql");
+        let expected =
+            include_str!("../../../test/fixtures/rust-emitter/le-binary-codec.generated.rs");
+        let ir = lower_schema_sdl(sdl).expect("golden schema lowers");
+        let ops = list_schema_operations_sdl(sdl).expect("golden operations enumerable");
+
+        assert_eq!(
+            emit_le_binary_rust(&ir, &ops, DEFAULT_CODEC_IMPORT),
+            expected
         );
     }
 
