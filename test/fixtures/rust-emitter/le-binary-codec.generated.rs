@@ -128,3 +128,49 @@ fn dec_widget(reader: &mut Reader) -> Result<Widget, CodecError> {
         label: reader.read_string()?,
     })
 }
+
+/// Encode a `QueryWidgetRequest` into LE-binary bytes.
+pub fn encode_query_widget_request(value: &QueryWidgetRequest) -> Vec<u8> {
+    let mut writer = Writer::new();
+    enc_query_widget_request(&mut writer, value);
+    writer.finish()
+}
+
+/// Decode a `QueryWidgetRequest` from LE-binary bytes.
+pub fn decode_query_widget_request(bytes: &[u8]) -> Result<QueryWidgetRequest, CodecError> {
+    let mut reader = Reader::new(bytes);
+    dec_query_widget_request(&mut reader)
+}
+
+fn enc_query_widget_request(writer: &mut Writer, value: &QueryWidgetRequest) {
+    writer.write_string(&value.id);
+}
+
+fn dec_query_widget_request(reader: &mut Reader) -> Result<QueryWidgetRequest, CodecError> {
+    Ok(QueryWidgetRequest {
+        id: reader.read_string()?,
+    })
+}
+
+/// Encode a `MutationMakeWidgetRequest` into LE-binary bytes.
+pub fn encode_mutation_make_widget_request(value: &MutationMakeWidgetRequest) -> Vec<u8> {
+    let mut writer = Writer::new();
+    enc_mutation_make_widget_request(&mut writer, value);
+    writer.finish()
+}
+
+/// Decode a `MutationMakeWidgetRequest` from LE-binary bytes.
+pub fn decode_mutation_make_widget_request(bytes: &[u8]) -> Result<MutationMakeWidgetRequest, CodecError> {
+    let mut reader = Reader::new(bytes);
+    dec_mutation_make_widget_request(&mut reader)
+}
+
+fn enc_mutation_make_widget_request(writer: &mut Writer, value: &MutationMakeWidgetRequest) {
+    enc_make_widget_input(writer, &value.input);
+}
+
+fn dec_mutation_make_widget_request(reader: &mut Reader) -> Result<MutationMakeWidgetRequest, CodecError> {
+    Ok(MutationMakeWidgetRequest {
+        input: dec_make_widget_input(reader)?,
+    })
+}

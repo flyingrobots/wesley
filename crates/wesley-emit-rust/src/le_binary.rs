@@ -64,6 +64,10 @@ pub fn emit_le_binary_rust(
         }
     }
 
+    for operation in operations {
+        emit_operation(&mut out, operation);
+    }
+
     out
 }
 
@@ -128,18 +132,45 @@ fn emit_enum(out: &mut String, type_def: &TypeDefinition) {
 fn emit_object(out: &mut String, type_def: &TypeDefinition) {
     let ty = rust_type_name(&type_def.name);
     let snake = to_snake_case(&type_def.name);
-    emit_wrappers(out, &ty, &snake);
+    let fields: Vec<(String, &TypeReference)> = type_def
+        .fields
+        .iter()
+        .map(|field| (rust_field_name(&field.name), &field.r#type))
+        .collect();
+    emit_struct_codec(out, &ty, &snake, &fields);
+}
+
+/// Emit the codec for an operation's variables — the Wesley-generated
+/// `<Operation>Request` struct, whose fields are the operation arguments. The
+/// field set and order match `le-binary-typescript`'s `<field>Vars`, so the two
+/// agree on the wire even though the struct is named differently.
+fn emit_operation(out: &mut String, operation: &wesley_core::SchemaOperation) {
+    let ty = crate::operation_type_name(operation, "Request");
+    let snake = to_snake_case(&ty);
+    let fields: Vec<(String, &TypeReference)> = operation
+        .arguments
+        .iter()
+        .map(|argument| (rust_field_name(&argument.name), &argument.r#type))
+        .collect();
+    emit_struct_codec(out, &ty, &snake, &fields);
+}
+
+/// Emit `encode_*` / `decode_*` (and the private `enc_*` / `dec_*`) for a struct
+/// `ty` whose fields, in wire order, are `fields` (a Rust field name and its
+/// type reference each).
+fn emit_struct_codec(out: &mut String, ty: &str, snake: &str, fields: &[(String, &TypeReference)]) {
+    emit_wrappers(out, ty, snake);
 
     let _ = write!(
         out,
         "\nfn enc_{snake}(writer: &mut Writer, value: &{ty}) {{\n"
     );
-    if type_def.fields.is_empty() {
+    if fields.is_empty() {
         let _ = writeln!(out, "    let _ = (writer, value);");
     }
-    for field in &type_def.fields {
-        let access = format!("&value.{}", rust_field_name(&field.name));
-        let _ = writeln!(out, "    {};", encode_ref(&access, &field.r#type));
+    for (name, ty_ref) in fields {
+        let access = format!("&value.{name}");
+        let _ = writeln!(out, "    {};", encode_ref(&access, ty_ref));
     }
     let _ = writeln!(out, "}}");
 
@@ -147,14 +178,13 @@ fn emit_object(out: &mut String, type_def: &TypeDefinition) {
         out,
         "\nfn dec_{snake}(reader: &mut Reader) -> Result<{ty}, CodecError> {{\n"
     );
-    if type_def.fields.is_empty() {
+    if fields.is_empty() {
         let _ = writeln!(out, "    let _ = reader;");
         let _ = writeln!(out, "    Ok({ty} {{}})");
     } else {
         let _ = writeln!(out, "    Ok({ty} {{");
-        for field in &type_def.fields {
-            let name = rust_field_name(&field.name);
-            let _ = writeln!(out, "        {name}: {}?,", decode_ref(&field.r#type));
+        for (name, ty_ref) in fields {
+            let _ = writeln!(out, "        {name}: {}?,", decode_ref(ty_ref));
         }
         let _ = writeln!(out, "    }})");
     }
@@ -424,7 +454,7 @@ mod tests {
     }
 
     #[test]
-    fn skips_operation_root_types() {
+    fn skips_root_object_type_but_emits_its_operation_vars() {
         let mutation = type_def("Mutation", TypeKind::Object, Vec::new(), Vec::new());
         let ir = WesleyIR {
             version: "1.0.0".to_string(),
@@ -433,7 +463,13 @@ mod tests {
         };
         let operations = [make_operation("Mutation")];
         let rust = emit_le_binary_rust(&ir, &operations, DEFAULT_CODEC_IMPORT);
-        assert!(!rust.contains("encode_mutation"), "{rust}");
+        // The Mutation *root object type* gets no data codec...
+        assert!(!rust.contains("fn enc_mutation("), "{rust}");
+        // ...but its operation's variables (the generated Request struct) do.
+        assert!(
+            rust.contains("pub fn encode_mutation_noop_request("),
+            "{rust}"
+        );
     }
 
     /// A minimal `SchemaOperation` whose root type is `root`.
