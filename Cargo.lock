@@ -1557,6 +1557,7 @@ dependencies = [
  "serde_json",
  "syn",
  "wesley-core",
+ "wesley-emit-codec",
 ]
 
 [[package]]
