@@ -1567,6 +1567,7 @@ dependencies = [
  "pretty_assertions",
  "serde_json",
  "wesley-core",
+ "wesley-emit-codec",
 ]
 
 [[package]]
