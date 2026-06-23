@@ -47,12 +47,86 @@ pub fn emit_le_binary_rust(
         out,
         "use {codec_import_path}::{{CodecError, Reader, Writer}};"
     );
+    emit_runtime_port_contract(&mut out);
 
     for def in plan(ir, operations) {
         render_def(&mut out, &def);
     }
 
     out
+}
+
+fn emit_runtime_port_contract(out: &mut String) {
+    let _ = write!(
+        out,
+        "\n\
+         /// Runtime port contract expected by the generated LE-binary codecs.\n\
+         pub mod codec_port {{\n\
+         \x20   /// Error type constructible from a diagnostic message.\n\
+         \x20   pub trait CodecError {{\n\
+         \x20       /// Build a codec error from a human-readable message.\n\
+         \x20       fn new(message: String) -> Self;\n\
+         \x20   }}\n\
+         \n\
+         \x20   /// Writer primitives required by generated encoders.\n\
+         \x20   pub trait Writer {{\n\
+         \x20       /// Create an empty byte writer.\n\
+         \x20       fn new() -> Self\n\
+         \x20       where\n\
+         \x20           Self: Sized;\n\
+         \x20       /// Write an unsigned 32-bit integer in little-endian order.\n\
+         \x20       fn write_u32_le(&mut self, value: u32);\n\
+         \x20       /// Write a signed 32-bit integer in little-endian order.\n\
+         \x20       fn write_i32_le(&mut self, value: i32);\n\
+         \x20       /// Write a canonical 32-bit float in little-endian order.\n\
+         \x20       fn write_f32_le(&mut self, value: f32);\n\
+         \x20       /// Write a boolean tag byte.\n\
+         \x20       fn write_bool(&mut self, value: bool);\n\
+         \x20       /// Write a length-prefixed UTF-8 string.\n\
+         \x20       fn write_string(&mut self, value: &str);\n\
+         \x20       /// Write a nullable value with a presence tag.\n\
+         \x20       fn write_option<T, F>(&mut self, value: &Option<T>, write: F)\n\
+         \x20       where\n\
+         \x20           F: FnOnce(&mut Self, &T);\n\
+         \x20       /// Write a length-prefixed list.\n\
+         \x20       fn write_list<T, F>(&mut self, value: &[T], write: F)\n\
+         \x20       where\n\
+         \x20           F: FnMut(&mut Self, &T);\n\
+         \x20       /// Finish the writer and return its bytes.\n\
+         \x20       fn finish(self) -> Vec<u8>;\n\
+         \x20   }}\n\
+         \n\
+         \x20   /// Reader primitives required by generated decoders.\n\
+         \x20   pub trait Reader<'a> {{\n\
+         \x20       /// Error returned by fallible read operations.\n\
+         \x20       type Error;\n\
+         \x20       /// Create a reader over encoded bytes.\n\
+         \x20       fn new(bytes: &'a [u8]) -> Self\n\
+         \x20       where\n\
+         \x20           Self: Sized;\n\
+         \x20       /// Read an unsigned 32-bit little-endian integer.\n\
+         \x20       fn read_u32_le(&mut self) -> Result<u32, Self::Error>;\n\
+         \x20       /// Read a signed 32-bit little-endian integer.\n\
+         \x20       fn read_i32_le(&mut self) -> Result<i32, Self::Error>;\n\
+         \x20       /// Read a canonical 32-bit little-endian float.\n\
+         \x20       fn read_f32_le(&mut self) -> Result<f32, Self::Error>;\n\
+         \x20       /// Read a boolean tag byte.\n\
+         \x20       fn read_bool(&mut self) -> Result<bool, Self::Error>;\n\
+         \x20       /// Read a length-prefixed UTF-8 string.\n\
+         \x20       fn read_string(&mut self) -> Result<String, Self::Error>;\n\
+         \x20       /// Read a nullable value with a presence tag.\n\
+         \x20       fn read_option<T, F>(&mut self, read: F) -> Result<Option<T>, Self::Error>\n\
+         \x20       where\n\
+         \x20           F: FnOnce(&mut Self) -> Result<T, Self::Error>;\n\
+         \x20       /// Read a length-prefixed list.\n\
+         \x20       fn read_list<T, F>(&mut self, read: F) -> Result<Vec<T>, Self::Error>\n\
+         \x20       where\n\
+         \x20           F: FnMut(&mut Self) -> Result<T, Self::Error>;\n\
+         \x20       /// Number of unread bytes remaining.\n\
+         \x20       fn remaining(&self) -> usize;\n\
+         \x20   }}\n\
+         }}\n"
+    );
 }
 
 /// Render one codec definition into the output buffer.
@@ -296,6 +370,10 @@ mod tests {
         let rust = emit(vec![color]);
 
         assert!(rust.contains("use crate::codec::{CodecError, Reader, Writer};"));
+        assert!(rust.contains("pub mod codec_port {"));
+        assert!(rust.contains("pub trait Writer {"));
+        assert!(rust.contains("pub trait Reader<'a> {"));
+        assert!(rust.contains("fn remaining(&self) -> usize;"));
         assert!(rust.contains("pub fn encode_color(value: &Color) -> Vec<u8> {"));
         assert!(rust.contains("pub fn decode_color(bytes: &[u8]) -> Result<Color, CodecError> {"));
         assert!(

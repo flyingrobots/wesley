@@ -13,9 +13,9 @@
 //! - Non-null list `[T!]!` → `u32` LE element count + inline elements.
 //!
 //! Every emitted operation produces an `encode<Op>Vars(v) -> Uint8Array` /
-//! `decode<Op>Vars(b) -> <Op>Vars` pair. Hosts or extension modules can use
-//! those helpers as their transport boundary without Wesley owning the runtime
-//! behavior behind the operation.
+//! `decode<Op>Vars(b) -> Result<<Op>Vars>` pair. Hosts or extension modules can
+//! use those helpers as their transport boundary without Wesley owning the
+//! runtime behavior behind the operation.
 
 use std::fmt::Write;
 
@@ -67,10 +67,16 @@ impl TsProgram {
 
         Self {
             imports: vec![TsImport {
-                named: vec!["Writer", "Reader", "CodecError"],
+                named: vec![
+                    "Writer as RuntimeWriter",
+                    "Reader as RuntimeReader",
+                    "CodecError as RuntimeCodecError",
+                ],
                 from: codec_import_path.to_string(),
             }],
-            declarations,
+            declarations: std::iter::once(TsDeclaration::Raw(runtime_port_definitions()))
+                .chain(declarations)
+                .collect(),
         }
     }
 }
@@ -87,6 +93,72 @@ fn declarations_for_codec_def(def: &CodecDef) -> Vec<TsDeclaration> {
     }
 }
 
+fn runtime_port_definitions() -> String {
+    "\
+export type Result<T> =
+    | { ok: true; value: T }
+    | { ok: false; error: CodecError };
+
+export interface CodecError {
+    readonly message: string;
+}
+
+export interface Writer {
+    writeU32Le(value: number): void;
+    writeI32Le(value: number): void;
+    writeF32Le(value: number): void;
+    writeBool(value: boolean): void;
+    writeString(value: string): void;
+    writeOption<T>(value: T | null, write: (writer: Writer, value: T) => void): void;
+    writeList<T>(value: T[], write: (writer: Writer, value: T) => void): void;
+    finish(): Uint8Array;
+}
+
+export interface Reader {
+    readU32Le(): number;
+    readI32Le(): number;
+    readF32Le(): number;
+    readBool(): boolean;
+    readString(): string;
+    readOption<T>(read: (reader: Reader) => T): T | null;
+    readList<T>(read: (reader: Reader) => T): T[];
+    remaining(): number;
+}
+
+function ok<T>(value: T): Result<T> {
+    return { ok: true, value };
+}
+
+function err<T>(error: CodecError): Result<T> {
+    return { ok: false, error };
+}
+
+function codecErrorFromUnknown(error: unknown): CodecError {
+    if (error instanceof RuntimeCodecError) {
+        return error;
+    }
+    if (error instanceof Error) {
+        return new RuntimeCodecError(error.message);
+    }
+    return new RuntimeCodecError(String(error));
+}
+
+function decodeWithBoundary<T>(b: Uint8Array, read: (reader: Reader) => T): Result<T> {
+    try {
+        const r = new RuntimeReader(b);
+        const value = read(r);
+        if (r.remaining() > 0) {
+            return err(new RuntimeCodecError('trailing bytes after decode'));
+        }
+        return ok(value);
+    } catch (error) {
+        return err(codecErrorFromUnknown(error));
+    }
+}
+"
+    .to_string()
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct TsImport {
     named: Vec<&'static str>,
@@ -95,6 +167,7 @@ struct TsImport {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum TsDeclaration {
+    Raw(String),
     Comment(String),
     TypeAlias(TsTypeAlias),
     Interface(TsInterface),
@@ -204,6 +277,7 @@ enum TsTypeExpr {
     Null,
     Array(Box<TsTypeExpr>),
     Union(Vec<TsTypeExpr>),
+    Generic { name: String, args: Vec<TsTypeExpr> },
 }
 
 impl TsTypeExpr {
@@ -333,7 +407,7 @@ fn encode_value_function(name: &str) -> TsFunction {
             TsStatement::Const {
                 name: "w".to_string(),
                 expr: TsExpr::New {
-                    callee: "Writer".to_string(),
+                    callee: "RuntimeWriter".to_string(),
                     args: Vec::new(),
                 },
             },
@@ -353,13 +427,16 @@ fn decode_value_function(name: &str) -> TsFunction {
             name: "b".to_string(),
             type_expr: TsTypeExpr::Uint8Array,
         }],
-        return_type: TsTypeExpr::Reference(name.to_string()),
+        return_type: result_type(TsTypeExpr::Reference(name.to_string())),
         body: vec![TsStatement::Return(call_fn(
-            &format!("_dec{name}"),
-            vec![TsExpr::New {
-                callee: "Reader".to_string(),
-                args: vec![ident("b")],
-            }],
+            "decodeWithBoundary",
+            vec![
+                ident("b"),
+                TsExpr::Arrow {
+                    params: vec!["r".to_string()],
+                    body: Box::new(call_fn(&format!("_dec{name}"), vec![ident("r")])),
+                },
+            ],
         ))],
     }
 }
@@ -454,24 +531,25 @@ fn operation_vars_declarations(
             name: vars_name.clone(),
             properties: fields.iter().map(property_from_field_plan).collect(),
         }),
+        TsDeclaration::Function(encode_struct_function(&vars_name, fields)),
+        TsDeclaration::Function(decode_struct_function(&vars_name, fields)),
         TsDeclaration::Function(encode_operation_vars_function(&vars_name, fields)),
         TsDeclaration::Function(decode_operation_vars_function(&vars_name, fields)),
     ]
 }
 
-fn encode_operation_vars_function(vars_name: &str, fields: &[FieldPlan]) -> TsFunction {
+fn encode_operation_vars_function(vars_name: &str, _fields: &[FieldPlan]) -> TsFunction {
     let mut body = vec![TsStatement::Const {
         name: "w".to_string(),
         expr: TsExpr::New {
-            callee: "Writer".to_string(),
+            callee: "RuntimeWriter".to_string(),
             args: Vec::new(),
         },
     }];
-    body.extend(
-        fields
-            .iter()
-            .map(|field| encode_field_statement(ident("v"), field)),
-    );
+    body.push(TsStatement::Expression(call_fn(
+        &format!("_enc{vars_name}"),
+        vec![ident("w"), ident("v")],
+    )));
     body.push(TsStatement::Return(method_call(
         ident("w"),
         "finish",
@@ -489,32 +567,24 @@ fn encode_operation_vars_function(vars_name: &str, fields: &[FieldPlan]) -> TsFu
     }
 }
 
-fn decode_operation_vars_function(vars_name: &str, fields: &[FieldPlan]) -> TsFunction {
+fn decode_operation_vars_function(vars_name: &str, _fields: &[FieldPlan]) -> TsFunction {
     TsFunction {
         name: format!("decode{vars_name}"),
         params: vec![TsParam {
             name: "b".to_string(),
             type_expr: TsTypeExpr::Uint8Array,
         }],
-        return_type: TsTypeExpr::Reference(vars_name.to_string()),
-        body: vec![
-            TsStatement::Const {
-                name: "r".to_string(),
-                expr: TsExpr::New {
-                    callee: "Reader".to_string(),
-                    args: vec![ident("b")],
+        return_type: result_type(TsTypeExpr::Reference(vars_name.to_string())),
+        body: vec![TsStatement::Return(call_fn(
+            "decodeWithBoundary",
+            vec![
+                ident("b"),
+                TsExpr::Arrow {
+                    params: vec!["r".to_string()],
+                    body: Box::new(call_fn(&format!("_dec{vars_name}"), vec![ident("r")])),
                 },
-            },
-            TsStatement::ReturnObject(
-                fields
-                    .iter()
-                    .map(|field| TsObjectProperty {
-                        name: field.name.clone(),
-                        expr: decode_expr_for_op(&field.op),
-                    })
-                    .collect(),
-            ),
-        ],
+            ],
+        ))],
     }
 }
 
@@ -625,6 +695,12 @@ fn print_import(out: &mut String, import: &TsImport) {
 
 fn print_declaration(out: &mut String, declaration: &TsDeclaration) {
     match declaration {
+        TsDeclaration::Raw(raw) => {
+            out.push_str(raw);
+            if !raw.ends_with('\n') {
+                out.push('\n');
+            }
+        }
         TsDeclaration::Comment(comment) => {
             writeln!(out, "// {comment}").expect("writing to string should not fail");
         }
@@ -847,6 +923,17 @@ fn print_type_expr(out: &mut String, type_expr: &TsTypeExpr, parenthesize_union:
                 out.push(')');
             }
         }
+        TsTypeExpr::Generic { name, args } => {
+            out.push_str(name);
+            out.push('<');
+            for (index, arg) in args.iter().enumerate() {
+                if index > 0 {
+                    out.push_str(", ");
+                }
+                print_type_expr(out, arg, false);
+            }
+            out.push('>');
+        }
     }
 }
 
@@ -937,11 +1024,18 @@ fn method_call(target: TsExpr, method: &str, args: Vec<TsExpr>) -> TsExpr {
 
 fn invalid_codec_error(message_prefix: &str, value: TsExpr) -> TsExpr {
     TsExpr::New {
-        callee: "CodecError".to_string(),
+        callee: "RuntimeCodecError".to_string(),
         args: vec![TsExpr::Add {
             left: Box::new(TsExpr::StringLiteral(message_prefix.to_string())),
             right: Box::new(call_fn("String", vec![value])),
         }],
+    }
+}
+
+fn result_type(value: TsTypeExpr) -> TsTypeExpr {
+    TsTypeExpr::Generic {
+        name: "Result".to_string(),
+        args: vec![value],
     }
 }
 
@@ -1096,7 +1190,14 @@ mod tests {
 
         let ts = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
 
-        assert!(ts.contains("import { Writer, Reader, CodecError } from '../../codec.js';"));
+        assert!(ts.contains(
+            "import { Writer as RuntimeWriter, Reader as RuntimeReader, CodecError as RuntimeCodecError } from '../../codec.js';"
+        ));
+        assert!(ts.contains("export type Result<T> ="));
+        assert!(ts.contains("export interface Writer {"));
+        assert!(ts.contains("export interface Reader {"));
+        assert!(ts.contains("function decodeWithBoundary<T>("));
+        assert!(ts.contains("if (r.remaining() > 0) {"));
         assert!(ts.contains("export type Color =\n    | 'RED'\n    | 'GREEN'\n    | 'BLUE';"));
         assert!(ts.contains("case 'RED': w.writeU32Le(0); return;"));
         assert!(ts.contains("case 'BLUE': w.writeU32Le(2); return;"));
@@ -1107,7 +1208,9 @@ mod tests {
         assert!(ts.contains("export interface MakeWidgetVars"));
         assert!(ts.contains("input: MakeWidgetInput;"));
         assert!(ts.contains("export function encodeMakeWidgetVars(v: MakeWidgetVars): Uint8Array"));
-        assert!(ts.contains("export function decodeMakeWidgetVars(b: Uint8Array): MakeWidgetVars"));
+        assert!(ts.contains(
+            "export function decodeMakeWidgetVars(b: Uint8Array): Result<MakeWidgetVars>"
+        ));
     }
 
     #[test]
