@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/wesley-core",
+    "crates/wesley-emit-codec",
     "crates/wesley-emit-typescript",
     "crates/wesley-emit-rust",
     "crates/wesley-holmes",

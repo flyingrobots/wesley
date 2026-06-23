@@ -1543,6 +1543,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "wesley-emit-codec"
+version = "0.0.5"
+dependencies = [
+ "wesley-core",
+]
+
+[[package]]
 name = "wesley-emit-rust"
 version = "0.0.5"
 dependencies = [
