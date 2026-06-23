@@ -66,7 +66,13 @@ impl TsProgram {
         for type_def in &ir.types {
             match type_def.kind {
                 TypeKind::Enum => declarations.extend(enum_declarations(type_def)),
-                TypeKind::InputObject => declarations.extend(input_object_declarations(type_def)),
+                TypeKind::InputObject | TypeKind::Object | TypeKind::Interface
+                    if !operations
+                        .iter()
+                        .any(|operation| operation.root_type_name == type_def.name) =>
+                {
+                    declarations.extend(object_declarations(type_def));
+                }
                 _ => {}
             }
         }
@@ -362,11 +368,16 @@ fn decode_value_function(name: &str) -> TsFunction {
     }
 }
 
-fn input_object_declarations(type_def: &TypeDefinition) -> Vec<TsDeclaration> {
+fn object_declarations(type_def: &TypeDefinition) -> Vec<TsDeclaration> {
     let name = pascal_case(&type_def.name);
+    let label = match type_def.kind {
+        TypeKind::InputObject => "input",
+        TypeKind::Interface => "interface",
+        _ => "type",
+    };
 
     vec![
-        TsDeclaration::Comment(format!("─── input {} ───", type_def.name)),
+        TsDeclaration::Comment(format!("─── {label} {} ───", type_def.name)),
         TsDeclaration::Interface(TsInterface {
             name: name.clone(),
             properties: type_def.fields.iter().map(property_from_field).collect(),
@@ -1191,6 +1202,22 @@ mod tests {
         assert!(ts.contains("input: MakeWidgetInput;"));
         assert!(ts.contains("export function encodeMakeWidgetVars(v: MakeWidgetVars): Uint8Array"));
         assert!(ts.contains("export function decodeMakeWidgetVars(b: Uint8Array): MakeWidgetVars"));
+    }
+
+    #[test]
+    fn emits_codec_for_output_object_types_but_not_operation_roots() {
+        let ir = lower_schema_sdl(SDL).expect("schema lowers");
+        let ops = list_schema_operations_sdl(SDL).expect("operations enumerable");
+
+        let ts = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
+
+        // An output `type Widget` now gets a codec...
+        assert!(ts.contains("// ─── type Widget ───"), "{ts}");
+        assert!(ts.contains("export function _encWidget(w: Writer, v: Widget): void"));
+        assert!(ts.contains("export function _decWidget(r: Reader): Widget"));
+        // ...but the Mutation/Query operation roots do not.
+        assert!(!ts.contains("_encMutation"), "{ts}");
+        assert!(!ts.contains("_encQuery"), "{ts}");
     }
 
     #[test]
