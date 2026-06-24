@@ -42,16 +42,17 @@ Example:
 
 Do not use this section as a progress tracker.
 
-## Cycle Start
+## Cycle Preparation
 
-- [ ] `git fetch origin` completed.
-- [ ] Local `main` synced to `origin/main` without rebase or force operations.
-- [ ] Cycle branch checked out from the synced merge target.
-- [ ] GitHub issue assigned to a goalpost milestone and added to the Wesley
-      Roadmap Project.
-- [ ] GitHub issue labeled `work-in-progress`.
-- [ ] Design doc, issue link, and initial cycle scaffold staged and committed.
-- [ ] Branch pushed; PR opened to `main` when the slice is ready for review.
+Record the reviewable setup facts in prose or plain bullets. Do not use this
+section as a progress checklist.
+
+Include:
+
+- branch basis from synced `origin/main`
+- linked GitHub issue, goalpost milestone, and Project item
+- `work-in-progress` label state, when applicable
+- branch and PR links, when available
 
 ## Decision Summary
 
@@ -260,24 +261,24 @@ Cons:
 State the chosen option and why. If the decision is temporary, name the
 expiration, migration window, or follow-on issue.
 
-## Implementation Slices
+## GitHub Slice Plan
 
-- [ ] Slice 1:
-- [ ] Slice 2:
-- [ ] Slice 3:
+List the GitHub issues or issue titles that carry the implementation work. Keep
+completion state in GitHub, not in this document.
 
-Each slice should be small enough to commit or review independently and should
-correspond to one test case, fixture, golden file, or user story.
+| Slice | GitHub issue | Required proof |
+| ----- | ------------ | -------------- |
+| ...   | ...          | ...            |
 
 ## Tests To Write First
 
 Behavior tests required:
 
-- [ ] ...
+- ...
 
 Documentation or process tests, only if relevant:
 
-- [ ] ...
+- ...
 
 Rule: documentation tests and golden fixture diffs cannot be the only proof for
 product or runtime work.
@@ -292,17 +293,18 @@ product or runtime work.
 
 The work is done when:
 
-- [ ] Behavior test proves the core contract.
-- [ ] CLI or artifact output proves the operator-visible outcome.
-- [ ] Schema or artifact compatibility is documented when a versioned format
-      changes.
-- [ ] Agent-inspectable fields are stable and documented when an MCP surface
-      changes.
-- [ ] New user-visible strings are accounted for when diagnostic or report
-      copy changes.
-- [ ] `docs/BEARING.md` campaign status is updated when a campaign slice lands.
-- [ ] `CHANGELOG.md` is updated when behavior changes.
-- [ ] CI and `cargo xtask preflight` are green.
+- Behavior tests prove the core contract.
+- CLI or artifact output proves the operator-visible outcome.
+- Schema or artifact compatibility is documented when a versioned format
+  changes.
+- Agent-inspectable fields are stable and documented when an MCP surface
+  changes.
+- New user-visible strings are accounted for when diagnostic or report copy
+  changes.
+- `docs/BEARING.md` is updated only when system direction or active tensions
+  changed; do not record campaign status there.
+- `CHANGELOG.md` is updated when behavior changes.
+- CI and `cargo xtask preflight` are green.
 
 ## Validation Plan
 
