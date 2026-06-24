@@ -27,7 +27,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 
 | #   | Check                                                | Automated      | Human    |
 | --- | ---------------------------------------------------- | -------------- | -------- |
-| 1   | Zero open `lane:asap` GitHub issues                  | `xtask` + `gh` |          |
+| 1   | Zero open retired urgent-lane GitHub issues          | `xtask` + `gh` |          |
 | 2   | Zero open version-lane issues                        | `xtask` + `gh` |          |
 | 3   | Strict preflight gate                                | `xtask`        |          |
 | 4   | Zero open issues from prior-version lanes            | `gh`           |          |
@@ -56,8 +56,10 @@ lacks the human sign-off is not a valid release, and vice versa.
 
 `cargo xtask release-guard` calls the GitHub CLI to list open issues:
 
-- **Check 1** — `lane:asap`: any open issue with this label blocks the release
-  regardless of version affinity.
+- **Check 1** — retired urgent lane: during the label migration, any open issue
+  with the retired `lane:asap` label blocks the release regardless of version
+  affinity. Under the current triage doctrine, the fix is to schedule it into a
+  concrete `lane:vX.Y.Z`, split it, move it, or close it.
 - **Check 2** — Version-lane issues: open issues labeled or milestoned with the
   release tag or version (e.g. `v0.1.0`) or matching the exact tag/version token
   in issue title or body. Comments and automatic cross-reference chatter are not
@@ -213,7 +215,9 @@ post-release merge to make the released commit truthful.
 
 If a release is discovered to have shipped in violation of this policy:
 
-1. File a `lane:asap` GitHub Issue immediately documenting the violation.
+1. File a `triage:bad-code` GitHub Issue immediately documenting the violation,
+   or schedule the corrective fix into a concrete patch release lane if the
+   release target is already known.
 2. Do not attempt to retroactively fix the published crate — crates.io publishes
    are permanent.
 3. If the violation involves a security defect, follow `SECURITY.md`.

@@ -2,10 +2,10 @@
 
 This legacy lane is retained only as a signpost.
 
-Raw intake is tracked with the GitHub label `lane:inbox`:
+Raw intake is tracked with the GitHub label `triage:requests`:
 
 ```bash
-gh issue list --label lane:inbox
+gh issue list --label triage:requests
 ```
 
 Former cards from this lane were archived under

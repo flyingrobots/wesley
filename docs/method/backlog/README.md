@@ -4,11 +4,10 @@ This directory is no longer Wesley's live work queue.
 
 GitHub Issues are the live Method tracker. Use lane labels:
 
-- `lane:inbox` for raw captured ideas
-- `lane:asap` for imminent work
-- `lane:cool-ideas` for non-commitment exploration
-- `lane:bad-code` for technical debt worth naming
-- `lane:release` for release-scoped work
+- `triage:requests` for raw captured ideas
+- `triage:cool-ideas` for exploratory idea intake
+- `triage:bad-code` for debt intake
+- `lane:vX.Y.Z` for work scheduled into a named future release
 
 Repository files are the evidence ledger. The former filesystem backlog cards
 were migrated on 2026-06-04 and archived under
@@ -17,10 +16,11 @@ were migrated on 2026-06-04 and archived under
 Use:
 
 ```bash
-gh issue list --label lane:asap
-gh issue list --label lane:bad-code
-gh issue list --label lane:cool-ideas
-gh issue list --label lane:inbox
+gh issue list --label triage:requests
+gh issue list --label triage:bad-code
+gh issue list --label triage:cool-ideas
+gh issue list --label lane:v0.2.0
 ```
 
 Do not add new live backlog cards here. Create or update GitHub Issues instead.
+See `docs/topics/contributing/triage.md` for the scheduling flow.

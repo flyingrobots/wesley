@@ -16,6 +16,7 @@ Read these surfaces in order:
 - [docs/VISION.md](docs/VISION.md) for a bounded executive synthesis
 - [docs/design/README.md](docs/design/README.md) for active design packets and boundary doctrine
 - [docs/METHOD.md](docs/METHOD.md) for the workflow contract
+- [docs/topics/contributing/triage.md](docs/topics/contributing/triage.md) for issue triage and release-lane scheduling
 - [docs/governance/labels.md](docs/governance/labels.md) for issue and PR label semantics
 - [AGENTS.md](AGENTS.md) for repository-specific automation rules
 
@@ -48,7 +49,8 @@ GitHub owns live work state:
 - GitHub Issues hold slices and raw intake.
 - GitHub Milestones hold goalposts and release gates.
 - GitHub Projects provide roadmap board views.
-- GitHub labels carry lane, legend, work-shape, and ownership metadata.
+- GitHub labels carry triage state, release scheduling, legend, work-shape,
+  and ownership metadata.
 
 Repository files are the evidence ledger. Design packets, witnesses, retros,
 release notes, and signpost docs record stable truth and proof after work is
@@ -103,14 +105,18 @@ See `docs/method/legends/` for the standing questions each legend owns.
 
 ## Default Loop
 
-1. Pull a GitHub Issue with the right goalpost milestone and `lane:*` label.
+1. Pull a GitHub Issue with the right goalpost milestone and either a
+   `triage:*` intake label or concrete `lane:vX.Y.Z` release label.
 2. Add `work-in-progress` while the slice is active.
-3. Write or update the design packet when the work needs durable design context.
-4. Write failing tests from the playback questions or issue acceptance criteria.
-5. Implement.
-6. Produce a reproducible witness.
-7. File follow-up work as GitHub Issues with the right milestone and lane.
-8. Update ship surfaces such as `docs/BEARING.md`, `CHANGELOG.md`, and release
+3. If the issue is still under `triage:*`, schedule it into a named release,
+   split it, move it, or close it before implementation.
+4. Write or update the design packet when the work needs durable design context.
+5. Write failing tests from the playback questions or issue acceptance criteria.
+6. Implement.
+7. Produce a reproducible witness.
+8. File follow-up work as GitHub Issues with the right goalpost and either a
+   `triage:*` intake label or concrete release lane.
+9. Update ship surfaces such as `docs/BEARING.md`, `CHANGELOG.md`, and release
    notes only from merged `main` state.
 
 Review state rides on branches and PRs. GitHub Issues, Milestones, Projects, and

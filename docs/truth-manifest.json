@@ -112,6 +112,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/contributing/triage.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/governance/RELEASE_POLICY.md",
       "status": "current",
       "owner": "@flyingrobots"
