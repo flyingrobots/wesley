@@ -1,5 +1,8 @@
-# Advanced E-Commerce Schema with RLS, Mutations, and RPC Functions
-# Demonstrates Wesley's production-grade capabilities
+# Experimental/historical broad RLS/RPC sketch.
+#
+# This file intentionally uses directive families and RLS option semantics that
+# are not current-path compiler guarantees. Use schema.graphql,
+# schema-v2.graphql, or ecommerce.graphql for stable current-path examples.
 
 scalar UUID
 scalar DateTime

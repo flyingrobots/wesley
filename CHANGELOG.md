@@ -24,6 +24,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `cargo xtask release-guard` now block on concrete `lane:vX.Y.Z` release-lane
   issues for the release being cut, recognize older `lane:v*` labels as
   prior-version blockers, and no longer depend on the retired `lane:asap` label.
+- **Directive example honesty**: Current-path example fixtures now use only
+  directive families that the Rust-native SDL hot path actually lowers, while
+  broader RLS/RPC/reference fixtures are explicitly marked experimental or
+  historical.
 
 ## [0.1.0] - 2026-06-24
 
