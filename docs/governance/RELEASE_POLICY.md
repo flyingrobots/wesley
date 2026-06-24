@@ -58,8 +58,10 @@ lacks the human sign-off is not a valid release, and vice versa.
 
 - **Check 1** — `lane:asap`: any open issue with this label blocks the release
   regardless of version affinity.
-- **Check 2** — Version-lane issues: open issues labeled with the release tag
-  (e.g. `v0.1.0`) or matching the version string in title or body.
+- **Check 2** — Version-lane issues: open issues labeled or milestoned with the
+  release tag or version (e.g. `v0.1.0`) or matching the exact tag/version token
+  in issue title or body. Comments and automatic cross-reference chatter are not
+  release-lane ownership.
 - **Check 4** — Prior-version issues: open issues from older version lanes
   (older SemVer milestone or label matches) that were never closed.
 

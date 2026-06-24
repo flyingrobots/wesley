@@ -39,34 +39,22 @@ These checks were run during release preparation on `feat/codec-plan`:
 | `cargo xtask package-crates --version 0.1.0` | Passed after adding `wesley-emit-codec` to the publish set and adding its crate README. |
 | `cargo xtask preflight` | Passed. Includes workspace clippy, pnpm audit, docs checks, workspace tests, doctests, and native CLI smoke. |
 | `cargo xtask release-check` | Passed. Includes strict preflight, optimized CLI build/smoke, and `wesley-core` package check. |
-| `cargo xtask release-prep-guard --version 0.1.0` | Blocked by existing open GitHub issues that mention `v0.1.0`; see tracker blocker below. |
+| `cargo xtask release-prep-guard --version 0.1.0` | Blocked only by the release umbrella #60 after issue-tracker triage; see tracker blocker below. |
 
 ## Tracker Blocker
 
 `cargo xtask release-prep-guard --version 0.1.0` passes local manifest and docs
-checks, then fails the issue-tracker check because historical open issues still
-mention the old `v0.1.0` lane. The guard reported these open issues:
+checks, then fails the issue-tracker check only for the live release umbrella:
 
-- #549 Generator plugin docs use stale config shape
-- #550 Preflight Latency Instrumentation
-- #551 README release surface cleanup
-- #552 Dependency audit release gate
-- #554 Module load report release artifact
-- #560 Generate execution orchestration split
-- #561 Module loading structured diagnostics
-- #565 Optic Artifact ID And Hash Semantics
-- #566 Optic Authority Vocabulary Boundary
-- #578 PR Feedback Session Witness
-- #580 Holmes Comment Loader Policy Module
-- #582 Review Supersession Explainer
-- #587 EVIDENCE v2 certified evidence cutover and placeholder bundle removal
-- #590 RUNTIME v2 transform runtime and ledger cutover
-- #591 SOURCE v2 directive truth table and example boundary cleanup
-- #595 WASM capability versioning and state
 - #60 release: plan and ship v0.1.0
 
-Do not cut the `v0.1.0` tag until those tracker references are closed,
-retargeted, or otherwise deliberately cleared according to release policy.
+The older noisy blocker set was triaged. Satisfied or obsolete items were
+closed; future Method backlog remains open but no longer counts as release-lane
+ownership unless the issue title/body, milestone, or label owns the exact tag or
+version. Third-party comments and automatic cross-reference chatter are ignored.
+
+Do not cut the `v0.1.0` tag until #60 is closed as part of the final release
+handoff.
 
 ## Publish Evidence
 

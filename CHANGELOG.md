@@ -88,8 +88,9 @@ No unreleased changes.
   string as a legacy input alias and normalizes it internally.
 - **Release guard tracker checks**: `cargo xtask release-prep-guard` and
   `cargo xtask release-guard` now query live GitHub Issues for open
-  tag/version blockers instead of relying only on the retired filesystem
-  backlog tree.
+  tag/version blockers by owned issue title/body, milestone, or label instead
+  of relying only on the retired filesystem backlog tree. Third-party comments
+  and automatic cross-reference chatter no longer create false release blockers.
 - **Release governance hardening**: Release guards now require exact README and
   changelog release headings, validate real calendar dates, reject shell
   commands as guide path citations, require guide SHAs to be commit objects,
