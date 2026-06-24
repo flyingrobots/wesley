@@ -18,6 +18,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   Project, and labels. Repo docs now define direction and evidence instead of
   tracking live backlog/progress state.
 
+### Fixed
+
+- **Release guard lane scheduling**: `cargo xtask release-prep-guard` and
+  `cargo xtask release-guard` now block on concrete `lane:vX.Y.Z` release-lane
+  issues for the release being cut, recognize older `lane:v*` labels as
+  prior-version blockers, and no longer depend on the retired `lane:asap` label.
+
 ## [0.1.0] - 2026-06-24
 
 ### Added

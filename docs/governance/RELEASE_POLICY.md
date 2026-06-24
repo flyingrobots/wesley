@@ -27,8 +27,8 @@ lacks the human sign-off is not a valid release, and vice versa.
 
 | #   | Check                                                | Automated      | Human    |
 | --- | ---------------------------------------------------- | -------------- | -------- |
-| 1   | Zero open retired urgent-lane GitHub issues          | `xtask` + `gh` |          |
-| 2   | Zero open version-lane issues                        | `xtask` + `gh` |          |
+| 1   | Zero open current release-lane GitHub issues         | `xtask` + `gh` |          |
+| 2   | Zero open exact-version tracker references           | `xtask` + `gh` |          |
 | 3   | Strict preflight gate                                | `xtask`        |          |
 | 4   | Zero open issues from prior-version lanes            | `gh`           |          |
 | 5   | Version lockstep across all `Cargo.toml` manifests   | parse          |          |
@@ -56,16 +56,17 @@ lacks the human sign-off is not a valid release, and vice versa.
 
 `cargo xtask release-guard` calls the GitHub CLI to list open issues:
 
-- **Check 1** — retired urgent lane: during the label migration, any open issue
-  with the retired `lane:asap` label blocks the release regardless of version
-  affinity. Under the current triage doctrine, the fix is to schedule it into a
-  concrete `lane:vX.Y.Z`, split it, move it, or close it.
-- **Check 2** — Version-lane issues: open issues labeled or milestoned with the
-  release tag or version (e.g. `v0.1.0`) or matching the exact tag/version token
-  in issue title or body. Comments and automatic cross-reference chatter are not
-  release-lane ownership.
+- **Check 1** — Current release lane: open issues labeled with the concrete
+  release lane `lane:vX.Y.Z` block that release. Those issues are scheduled
+  work for the release being cut, so they must be closed, moved to a later
+  release lane, split, or explicitly removed from the release before tagging.
+- **Check 2** — Exact-version tracker references: open issues labeled or
+  milestoned with the release tag or version (e.g. `v0.1.0`) or matching the
+  exact tag/version token in issue title or body. Comments and automatic
+  cross-reference chatter are not release-lane ownership.
 - **Check 4** — Prior-version issues: open issues from older version lanes
-  (older SemVer milestone or label matches) that were never closed.
+  (older `lane:v*` labels, SemVer milestones, or exact SemVer labels) that were
+  never closed.
 
 ### Check 3: Strict Preflight Gate
 

@@ -100,6 +100,5 @@ replace them as follows:
 | `lane:asap`       | A concrete `lane:vX.Y.Z`, or close/split.      |
 | `lane:planned`    | A concrete `lane:vX.Y.Z`, or triage intake.    |
 
-Before deleting retired GitHub labels, update any automation that still queries
-them. In particular, release checks must not depend on `lane:asap` after the
-label migration is complete.
+Release checks query concrete `lane:vX.Y.Z` labels. Retired generic lane labels
+are migration residue only; they are not release gates.
