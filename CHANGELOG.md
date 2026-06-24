@@ -13,6 +13,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `v0.1.0` release, and tightened the release doctrine so future releases treat
   the signed tag on synced `main` as the repo release boundary instead of
   relying on manual post-release evidence backfills.
+- **Roadmap governance**: Moved Wesley's live roadmap model to GitHub Issues,
+  `Goalpost: ...` milestones, `Release: ...` milestones, the Wesley Roadmap
+  Project, and labels. Repo docs now define direction and evidence instead of
+  tracking live backlog/progress state.
 
 ## [0.1.0] - 2026-06-24
 

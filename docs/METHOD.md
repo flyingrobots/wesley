@@ -1,40 +1,63 @@
 # METHOD
 
+<!-- docs-truth: status=current owner=@flyingrobots -->
+
 The Wesley work doctrine: GitHub Issues, a loop, and honest bookkeeping.
 
 ## Principles
 
 - **The agent and the human sit at the same table.** Both matter. Both are named in every design.
 - **The schema is the source of truth.** We never reconcile; we regenerate.
-- **GitHub Issues are the live tracker.** Labels are lanes, legends, status, and work type. Repository files are durable evidence.
+- **GitHub owns live work state.** Issues, Milestones, Projects, and labels are
+  the live tracker. Repository files are durable evidence.
 - **The repository is the evidence ledger.** Design docs, tests, playback witnesses, retros, release notes, and migration records stay in git because they are inspectable proof.
+- **Markdown is not a backlog.** Repo docs may explain direction and preserve
+  evidence, but they must not mirror live queues, progress counters, or release
+  gates.
 - **Tests are the executable spec.** Design names the hill and the playback questions. Tests prove the answers.
 - **Reproducibility is the definition of done.** Results must be re-runnable proof, not static artifacts.
 
 ## Structure
 
-| Signpost                   | Role                                              |
-| :------------------------- | :------------------------------------------------ |
-| **`README.md`**            | Public front door and project identity.           |
-| **`docs/GUIDE.md`**        | Orientation and productive-fast path.             |
-| **`BEARING.md`**           | Current direction and active tensions.            |
-| **`VISION.md`**            | Core tenets and the "Trustworthy Change" mission. |
-| **`docs/ARCHITECTURE.md`** | Authoritative system map and pipeline.            |
-| **`docs/design/`**         | Active design packets and cycle-bound doctrine.   |
-| **GitHub Issues**          | Live work tracker using Method labels.            |
-| **`AGENTS.md`**            | Context recovery protocol for AI and humans.      |
-| **`docs/METHOD.md`**       | Repo work doctrine (this document).               |
+| Signpost                                            | Role                                                                |
+| :-------------------------------------------------- | :------------------------------------------------------------------ |
+| **`README.md`**                                     | Public front door and project identity.                             |
+| **`docs/GUIDE.md`**                                 | Orientation and productive-fast path.                               |
+| **`BEARING.md`**                                    | Current direction and active tensions.                              |
+| **`VISION.md`**                                     | Core tenets and the "Trustworthy Change" mission.                   |
+| **`docs/ARCHITECTURE.md`**                          | Authoritative system map and pipeline.                              |
+| **`docs/design/`**                                  | Active design packets and cycle-bound doctrine.                     |
+| **GitHub Issues**                                   | Live work slices and raw intake.                                    |
+| **GitHub Milestones**                               | Goalposts and versioned release gates.                              |
+| **GitHub Projects**                                 | Roadmap board views over issues and milestones.                     |
+| **`AGENTS.md`**                                     | Context recovery protocol for AI and humans.                        |
+| **`docs/METHOD.md`**                                | Repo work doctrine (this document).                                 |
 | **`docs/method/graveyard/github-issue-migration/`** | Historical migration evidence for retired filesystem backlog cards. |
+
+## Work Hierarchy
+
+| Concept              | Canonical Surface                                                           | Rule                                                       |
+| :------------------- | :-------------------------------------------------------------------------- | :--------------------------------------------------------- |
+| **Goalpost**         | GitHub Milestone named `Goalpost: ...`                                      | Groups implementation slices.                              |
+| **Slice**            | GitHub Issue                                                                | Assigned to exactly one goalpost milestone.                |
+| **Release**          | GitHub Milestone named `Release: vX.Y.Z`                                    | Holds release-gate issues, not every implementation slice. |
+| **Release Gate**     | GitHub Issue with `lane:release`                                            | Links to the goalposts selected for that version.          |
+| **Roadmap Board**    | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) | Board/view layer over live GitHub Issues.                  |
+| **Lane/Legend/Type** | GitHub labels                                                               | Classification and triage metadata.                        |
+
+GitHub allows only one milestone per issue. Keep implementation issues in their
+goalpost milestones. Put release checklist/gate issues in release milestones and
+link the relevant goalposts from the gate issue body.
 
 ## GitHub Issue Lanes
 
-| Label               | Purpose                                  |
-| :------------------ | :--------------------------------------- |
-| **`lane:asap`**     | Imminent work; pull into the next cycle. |
-| **`lane:bad-code`** | Technical debt that must be addressed.   |
-| **`lane:cool-ideas`** | Uncommitted experiments.               |
-| **`lane:inbox`**    | Raw ideas before triage.                 |
-| **`lane:release`**  | Release-scoped work, usually with a milestone. |
+| Label                 | Purpose                                                                      |
+| :-------------------- | :--------------------------------------------------------------------------- |
+| **`lane:asap`**       | Imminent work; pull into the next cycle.                                     |
+| **`lane:bad-code`**   | Technical debt that must be addressed.                                       |
+| **`lane:cool-ideas`** | Uncommitted experiments.                                                     |
+| **`lane:inbox`**      | Raw ideas before triage. Remove after milestone assignment or lane decision. |
+| **`lane:release`**    | Release-gate or release-scoped work, usually in a `Release: ...` milestone.  |
 
 The former filesystem lane `up-next/` was migrated into `lane:asap`.
 The directory `docs/method/backlog/` is now a compatibility signpost only, not
@@ -46,7 +69,10 @@ Legend labels preserve Wesley's work taxonomy: `legend:SOURCE`,
 `legend:PROCESS`.
 
 Active work should carry `work-in-progress`. Follow-up work belongs in GitHub
-Issues, not in chat or local-only backlog files.
+Issues, not in chat, TODO prose, or local-only backlog files.
+
+Open `lane:inbox` should be empty or genuinely raw. If an issue is assigned to a
+goalpost milestone, it is no longer inbox.
 
 ## The Cycle Loop
 
@@ -62,13 +88,14 @@ stateDiagram-v2
     Ship --> [*]
 ```
 
-1. **Pull**: Select a GitHub Issue, add `work-in-progress`, and link it from
-   any design doc frontmatter or body.
+1. **Pull**: Select a GitHub Issue, assign the right goalpost milestone, add it
+   to the Wesley Roadmap Project if missing, add `work-in-progress`, and link it
+   from any design doc frontmatter or body.
 2. **Branch**: Create a branch from the issue title slug.
 3. **Red**: Write failing tests based on the design's playback questions.
 4. **Green**: Implement the solution until tests pass.
-5. **Retro**: Document findings, witness evidence, and follow-on issues in the
-   cycle doc or PR closeout.
+5. **Retro**: Document findings and witness evidence in the cycle doc or PR
+   closeout. File follow-on work as GitHub Issues.
 6. **Ship**: Open a PR to `main`. After merge, update `BEARING.md` and
    `CHANGELOG.md` on `main` when the shipped behavior changes those surfaces.
 
@@ -80,3 +107,13 @@ Design and retro files should keep the legend visible when it helps:
 
 GitHub Issue titles are workflow identity. Keep titles short, branch-safe, and
 readable before starting work.
+
+## Documentation Standard
+
+Use [Wesley Documentation Standard](./governance/DOCUMENTATION_STANDARD.md) for
+the repo-specific documentation contract. The short version:
+
+- docs explain stable truth, direction, and evidence
+- GitHub tracks backlog, progress, release gates, and roadmap state
+- design packets are not live status boards
+- `CHANGELOG.md` records merged behavior, not plans

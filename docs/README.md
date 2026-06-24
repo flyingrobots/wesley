@@ -9,21 +9,24 @@ which signpost is supposed to answer which question.
 
 ## Signposts
 
-| Surface                                                | Role                                                                                                  |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| [README.md](../README.md)                              | Product-facing front door: what Wesley is, what is real today, and where to start.                    |
-| [END_TO_END.md](./END_TO_END.md)                       | Full system narrative from authored GraphQL through compiler facts, artifacts, evidence, and owners.  |
-| [ENTRYPOINTS.md](./ENTRYPOINTS.md)                     | Short answer for which Wesley to run or edit: Rust kernel, native CLI, xtask, or legacy Node tooling. |
-| [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md) | Deletion map for the historical Node CLI, packages, generators, hosts, and evidence tooling.          |
-| [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)             | Fast noun map for the Wesley base platform, modules, and project workspace.                           |
-| [Wesley North Star](./NORTHSTAR.md)                    | Ultimate doctrine for bounded, lawful autonomy through GraphQL-declared runtime optics.               |
-| [SDL, Shape, And Law](./SDL.md)                        | Why GraphQL SDL is Wesley's contract substrate and where domain law interpretation belongs.           |
-| [BEARING](./BEARING.md)                                | Current direction, what is already real in the repo, and the tensions that still matter.              |
-| [Extending Wesley](./guides/extending.md)              | How to add Rust compiler behavior, native CLI commands, emitter projections, or external modules.     |
-| [VISION](./VISION.md)                                  | Bounded executive synthesis grounded in repo-visible truth.                                           |
-| [Design Packets](./design/README.md)                   | Active design packets and doctrinal boundary notes.                                                   |
-| [METHOD Process](./method/process.md)                  | How cycles run, close, and reconcile in this repo.                                                    |
-| [METHOD Release](./method/release.md)                  | How releases are shaped, verified, and documented.                                                    |
+| Surface                                                                     | Role                                                                                                  |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [README.md](../README.md)                                                   | Product-facing front door: what Wesley is, what is real today, and where to start.                    |
+| [END_TO_END.md](./END_TO_END.md)                                            | Full system narrative from authored GraphQL through compiler facts, artifacts, evidence, and owners.  |
+| [ENTRYPOINTS.md](./ENTRYPOINTS.md)                                          | Short answer for which Wesley to run or edit: Rust kernel, native CLI, xtask, or legacy Node tooling. |
+| [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md)                      | Deletion map for the historical Node CLI, packages, generators, hosts, and evidence tooling.          |
+| [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)                                  | Fast noun map for the Wesley base platform, modules, and project workspace.                           |
+| [Wesley North Star](./NORTHSTAR.md)                                         | Ultimate doctrine for bounded, lawful autonomy through GraphQL-declared runtime optics.               |
+| [SDL, Shape, And Law](./SDL.md)                                             | Why GraphQL SDL is Wesley's contract substrate and where domain law interpretation belongs.           |
+| [BEARING](./BEARING.md)                                                     | Current direction, what is already real in the repo, and the tensions that still matter.              |
+| [Extending Wesley](./guides/extending.md)                                   | How to add Rust compiler behavior, native CLI commands, emitter projections, or external modules.     |
+| [VISION](./VISION.md)                                                       | Bounded executive synthesis grounded in repo-visible truth.                                           |
+| [Design Packets](./design/README.md)                                        | Active design packets and doctrinal boundary notes.                                                   |
+| [METHOD Process](./method/process.md)                                       | How cycles run, close, and reconcile in this repo.                                                    |
+| [METHOD Release](./method/release.md)                                       | How releases are shaped, verified, and documented.                                                    |
+| [Documentation Standard](./governance/DOCUMENTATION_STANDARD.md)            | How Wesley docs stay useful without becoming a shadow backlog.                                        |
+| [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) | Live GitHub Project for roadmap board views.                                                          |
+| [GitHub Milestones](https://github.com/flyingrobots/wesley/milestones)      | Live goalpost and release milestones.                                                                 |
 
 ## Current Center Of Gravity
 
@@ -95,7 +98,10 @@ It also now has a more explicit METHOD closeout surface under
 
 - [METHOD Process](./method/process.md)
 - [METHOD Guide](./method/guide.md)
-- [Legacy Backlog Signpost](./method/backlog/README.md)
+- [Documentation Standard](./governance/DOCUMENTATION_STANDARD.md)
+- [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
+- [GitHub Milestones](https://github.com/flyingrobots/wesley/milestones)
+- [Legacy Backlog Signpost](./method/backlog/README.md) (historical only)
 - [Retro Packets](./method/retro/README.md)
 - [METHOD Release](./method/release.md)
 
@@ -109,9 +115,10 @@ It also now has a more explicit METHOD closeout surface under
 
 - The root `README.md` is intentionally product-facing, not the full METHOD
   doctrine front door.
-- Active execution lives in GitHub Issues with Method lane labels, with
-  `docs/BEARING.md` as the current direction surface and
-  `docs/design/README.md` as the design packet index.
+- Active execution lives in GitHub Issues, Milestones, Projects, and labels.
+  `docs/BEARING.md` is a direction surface, not a progress tracker.
 - If docs contradict runtime behavior, the docs must change.
 - Retros and witnesses are the closeout surface; chat and PR commentary are
   not enough on their own.
+- Do not add repo-local backlog cards, live progress bars, slice ledgers, or
+  release-gate checklists. File and triage GitHub Issues instead.

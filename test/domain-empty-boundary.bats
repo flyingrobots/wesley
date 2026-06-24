@@ -41,12 +41,18 @@ load 'bats-plugins/bats-assert/load'
   assert_failure
 }
 
-@test "BEARING active-gravity packet sections stay before tensions" {
+@test "BEARING keeps roadmap authority before tensions and closeouts" {
   run awk '
-    /^### 12\. Holmes `weslaw` Assurance Planning$/ { h12 = NR }
-    /^### 13\. Edict Extracted To Dedicated Repository$/ { h13 = NR }
+    /^## Roadmap Authority$/ { authority = NR }
+    /^## Active Gravity$/ { gravity = NR }
     /^## Tensions$/ { tensions = NR }
-    END { exit !(h12 && h13 && tensions && h12 < tensions && h13 < tensions) }
+    /^## Durable Closeouts$/ { closeouts = NR }
+    /^## Next Target$/ { next_target = NR }
+    END {
+      exit !(authority && gravity && tensions && closeouts && next_target &&
+        authority < gravity && gravity < tensions &&
+        tensions < closeouts && closeouts < next_target)
+    }
   ' docs/BEARING.md
   assert_success
 }

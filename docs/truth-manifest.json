@@ -22,6 +22,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/METHOD.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/VISION.md",
       "status": "experimental",
       "owner": "@flyingrobots"
@@ -93,6 +98,16 @@
     },
     {
       "path": "docs/holmes-merge-projection-plan.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/governance/DOCUMENTATION_STANDARD.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/governance/labels.md",
       "status": "current",
       "owner": "@flyingrobots"
     },

@@ -2,13 +2,20 @@
 
 <!-- docs-truth: status=current owner=@flyingrobots -->
 
-Wesley uses METHOD for repo coordination. Current execution lives in METHOD
-surfaces, `docs/BEARING.md`, and active design packets.
+Wesley uses METHOD for repo coordination. Current execution lives in GitHub
+Issues, Milestones, Projects, and labels. Repository docs preserve doctrine,
+direction, and evidence.
 
 ## Rules
 
 - The queue lives in GitHub Issues, organized by Method labels such as
   `lane:asap`, `lane:bad-code`, `lane:cool-ideas`, and `lane:inbox`.
+- Goalposts live in GitHub Milestones named `Goalpost: ...`.
+- Versioned releases live in GitHub Milestones named `Release: ...`; their
+  release-gate issues link to goalpost milestones because GitHub allows one
+  milestone per issue.
+- The roadmap board is the
+  [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18).
 - Pulling work into `docs/design/<cycle>/` is commitment.
 - Design packets must name sponsor human, sponsor agent, hill, playback
   questions, accessibility posture, localization posture,
@@ -17,7 +24,7 @@ surfaces, `docs/BEARING.md`, and active design packets.
 - If a claimed result cannot be reproduced, it is not done.
 - Drift is checked explicitly at close. Invariant preservation is part of that
   check.
-- Retros and backlog reconciliation happen at cycle boundaries.
+- Retros and GitHub issue reconciliation happen at cycle boundaries.
 - Closeout packets live in `docs/method/retro/<cycle>/` and carry a
   `witness/` directory with a witness index plus playback and verification
   artifacts.
@@ -31,18 +38,22 @@ surfaces, `docs/BEARING.md`, and active design packets.
 - Retros, witnesses, and updated signposts are the repo-visible closeout
   surface. Do not rely on an append-only activity log as a substitute for
   them.
+- Do not add Markdown progress trackers, backlog cards, live slice ledgers, or
+  release-gate checklists to repo docs.
 
 ## Default Loop
 
 1. Pull a GitHub Issue into `docs/design/<cycle>/` when a design packet is
-   needed.
+   needed, assign its goalpost milestone, and add it to the Wesley Roadmap
+   Project if missing.
 2. Write the design with both human and agent sponsors named.
 3. Write failing tests from the playback questions.
 4. Make the tests pass.
 5. Produce a reproducible playback witness.
 6. Close the cycle packet with a retro in `docs/method/retro/<cycle>/` and a
    `witness/` directory that records playback and verification evidence.
-7. Reconcile GitHub Issue labels and move genuinely rejected or retired
+7. Reconcile GitHub Issue labels, milestone, and Project state; move genuinely
+   rejected or retired
    repo evidence into `docs/method/graveyard/` instead of letting it drift
    silently.
 8. After merge, update `docs/BEARING.md`, `CHANGELOG.md`, and release notes

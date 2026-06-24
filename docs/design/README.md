@@ -1,13 +1,22 @@
 # Design Packets
 
-Active cycle packets live here. Once work is pulled from the backlog, it becomes
-a design packet and does not continue to live in the queue.
+Design packets live here as specifications, boundary notes, and durable
+evidence. They are not live progress trackers.
+
+Work slices live in GitHub Issues. Goalposts live in GitHub Milestones. The
+roadmap board lives in the
+[Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18).
 
 Use [`TEMPLATE.md`](./TEMPLATE.md) as the starting point for every new design
 packet or PRD slice.
 
 Packet directories may also carry supporting implementation notes, playback
 closeouts, and retrospectives for slices completed under that packet.
+
+Do not add packet-local progress bars, live slice ledgers, or unchecked
+roadmap checklists. Use
+[Wesley Documentation Standard](../governance/DOCUMENTATION_STANDARD.md) for
+the repo documentation contract.
 
 Current packets:
 
@@ -57,10 +66,9 @@ Current packets:
   [canonicalization and diagnostic](./0019-weslaw-semantic-law-ir/CANONICALIZATION_AND_DIAGNOSTICS.md)
   substrate notes
 - [`0020`](./0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md):
-  completed 50-slice Holmes `weslaw` assurance PRD and test-plan campaign,
-  with
-  [implementation status](./0020-holmes-weslaw-assurance-prd-test-plan/IMPLEMENTATION_STATUS.md)
-  tracking the Rust Holmes execution drift checks
+  completed Holmes `weslaw` assurance PRD and test-plan campaign. Rust Holmes
+  implementation work is tracked by GitHub Issues and goalpost milestones, not
+  packet-local status docs
 - [`0021`](./0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/continuum-yolo-runtime-neutral-edict-sha-lock-assurance.md):
   extracted Continuum lawful-autonomous lane and runtime-neutral Edict packet;
   the canonical specs now live in
