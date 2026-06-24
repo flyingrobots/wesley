@@ -13,16 +13,14 @@
 //! - Non-null list `[T!]!` → `u32` LE element count + inline elements.
 //!
 //! Every emitted operation produces an `encode<Op>Vars(v) -> Uint8Array` /
-//! `decode<Op>Vars(b) -> <Op>Vars` pair. Hosts or extension modules can use
-//! those helpers as their transport boundary without Wesley owning the runtime
-//! behavior behind the operation.
+//! `decode<Op>Vars(b) -> Result<<Op>Vars>` pair. Hosts or extension modules can
+//! use those helpers as their transport boundary without Wesley owning the
+//! runtime behavior behind the operation.
 
 use std::fmt::Write;
 
-use wesley_core::{
-    OperationArgument, OperationType, SchemaOperation, TypeDefinition, TypeKind, TypeReference,
-    WesleyIR,
-};
+use wesley_core::{OperationType, SchemaOperation, WesleyIR};
+use wesley_emit_codec::{plan, CodecDef, CodecOp, FieldPlan, ScalarKind, StructKind};
 
 /// Default import path the emitted module uses to reach the TypeScript
 /// `Writer` / `Reader` / `CodecError` primitives. Suitable for files written
@@ -63,32 +61,102 @@ impl TsProgram {
     fn from_ir(ir: &WesleyIR, operations: &[SchemaOperation], codec_import_path: &str) -> Self {
         let mut declarations = Vec::new();
 
-        for type_def in &ir.types {
-            match type_def.kind {
-                TypeKind::Enum => declarations.extend(enum_declarations(type_def)),
-                TypeKind::InputObject | TypeKind::Object | TypeKind::Interface
-                    if !operations
-                        .iter()
-                        .any(|operation| operation.root_type_name == type_def.name) =>
-                {
-                    declarations.extend(object_declarations(type_def));
-                }
-                _ => {}
-            }
-        }
-
-        for operation in operations {
-            declarations.extend(operation_vars_declarations(operation));
+        for def in plan(ir, operations) {
+            declarations.extend(declarations_for_codec_def(&def));
         }
 
         Self {
             imports: vec![TsImport {
-                named: vec!["Writer", "Reader", "CodecError"],
+                named: vec![
+                    "Writer as RuntimeWriter",
+                    "Reader as RuntimeReader",
+                    "CodecError as RuntimeCodecError",
+                ],
                 from: codec_import_path.to_string(),
             }],
-            declarations,
+            declarations: std::iter::once(TsDeclaration::Raw(runtime_port_definitions()))
+                .chain(declarations)
+                .collect(),
         }
     }
+}
+
+fn declarations_for_codec_def(def: &CodecDef) -> Vec<TsDeclaration> {
+    match def {
+        CodecDef::Enum { name, variants } => enum_declarations(name, variants),
+        CodecDef::Struct { name, kind, fields } => struct_declarations(name, *kind, fields),
+        CodecDef::Operation {
+            operation_type,
+            field_name,
+            fields,
+        } => operation_vars_declarations(*operation_type, field_name, fields),
+    }
+}
+
+fn runtime_port_definitions() -> String {
+    "\
+export type Result<T> =
+    | { ok: true; value: T }
+    | { ok: false; error: CodecError };
+
+export interface CodecError {
+    readonly message: string;
+}
+
+export interface Writer {
+    writeU32Le(value: number): void;
+    writeI32Le(value: number): void;
+    writeF32Le(value: number): void;
+    writeBool(value: boolean): void;
+    writeString(value: string): void;
+    writeOption<T>(value: T | null, write: (writer: Writer, value: T) => void): void;
+    writeList<T>(value: T[], write: (writer: Writer, value: T) => void): void;
+    finish(): Uint8Array;
+}
+
+export interface Reader {
+    readU32Le(): number;
+    readI32Le(): number;
+    readF32Le(): number;
+    readBool(): boolean;
+    readString(): string;
+    readOption<T>(read: (reader: Reader) => T): T | null;
+    readList<T>(read: (reader: Reader) => T): T[];
+    remaining(): number;
+}
+
+function ok<T>(value: T): Result<T> {
+    return { ok: true, value };
+}
+
+function err<T>(error: CodecError): Result<T> {
+    return { ok: false, error };
+}
+
+function codecErrorFromUnknown(error: unknown): CodecError {
+    if (error instanceof RuntimeCodecError) {
+        return error;
+    }
+    if (error instanceof Error) {
+        return new RuntimeCodecError(error.message);
+    }
+    return new RuntimeCodecError(String(error));
+}
+
+function decodeWithBoundary<T>(b: Uint8Array, read: (reader: Reader) => T): Result<T> {
+    try {
+        const r = new RuntimeReader(b);
+        const value = read(r);
+        if (r.remaining() > 0) {
+            return err(new RuntimeCodecError('trailing bytes after decode'));
+        }
+        return ok(value);
+    } catch (error) {
+        return err(codecErrorFromUnknown(error));
+    }
+}
+"
+    .to_string()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -99,6 +167,7 @@ struct TsImport {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum TsDeclaration {
+    Raw(String),
     Comment(String),
     TypeAlias(TsTypeAlias),
     Interface(TsInterface),
@@ -208,6 +277,7 @@ enum TsTypeExpr {
     Null,
     Array(Box<TsTypeExpr>),
     Union(Vec<TsTypeExpr>),
+    Generic { name: String, args: Vec<TsTypeExpr> },
 }
 
 impl TsTypeExpr {
@@ -228,21 +298,21 @@ impl TsTypeExpr {
     }
 }
 
-fn enum_declarations(type_def: &TypeDefinition) -> Vec<TsDeclaration> {
-    let name = pascal_case(&type_def.name);
+fn enum_declarations(source_name: &str, values: &[String]) -> Vec<TsDeclaration> {
+    let name = pascal_case(source_name);
 
     vec![
-        TsDeclaration::Comment(format!("─── enum {} ───", type_def.name)),
+        TsDeclaration::Comment(format!("─── enum {source_name} ───")),
         TsDeclaration::TypeAlias(TsTypeAlias {
             name: name.clone(),
-            type_expr: if type_def.enum_values.is_empty() {
+            type_expr: if values.is_empty() {
                 TsTypeExpr::Never
             } else {
-                TsTypeExpr::StringLiteralUnion(type_def.enum_values.clone())
+                TsTypeExpr::StringLiteralUnion(values.to_vec())
             },
         }),
-        TsDeclaration::Function(encode_enum_function(&name, &type_def.enum_values)),
-        TsDeclaration::Function(decode_enum_function(&name, &type_def.enum_values)),
+        TsDeclaration::Function(encode_enum_function(&name, values)),
+        TsDeclaration::Function(decode_enum_function(&name, values)),
         TsDeclaration::Function(encode_value_function(&name)),
         TsDeclaration::Function(decode_value_function(&name)),
     ]
@@ -337,7 +407,7 @@ fn encode_value_function(name: &str) -> TsFunction {
             TsStatement::Const {
                 name: "w".to_string(),
                 expr: TsExpr::New {
-                    callee: "Writer".to_string(),
+                    callee: "RuntimeWriter".to_string(),
                     args: Vec::new(),
                 },
             },
@@ -357,44 +427,51 @@ fn decode_value_function(name: &str) -> TsFunction {
             name: "b".to_string(),
             type_expr: TsTypeExpr::Uint8Array,
         }],
-        return_type: TsTypeExpr::Reference(name.to_string()),
+        return_type: result_type(TsTypeExpr::Reference(name.to_string())),
         body: vec![TsStatement::Return(call_fn(
-            &format!("_dec{name}"),
-            vec![TsExpr::New {
-                callee: "Reader".to_string(),
-                args: vec![ident("b")],
-            }],
+            "decodeWithBoundary",
+            vec![
+                ident("b"),
+                TsExpr::Arrow {
+                    params: vec!["r".to_string()],
+                    body: Box::new(call_fn(&format!("_dec{name}"), vec![ident("r")])),
+                },
+            ],
         ))],
     }
 }
 
-fn object_declarations(type_def: &TypeDefinition) -> Vec<TsDeclaration> {
-    let name = pascal_case(&type_def.name);
-    let label = match type_def.kind {
-        TypeKind::InputObject => "input",
-        TypeKind::Interface => "interface",
-        _ => "type",
+fn struct_declarations(
+    source_name: &str,
+    kind: StructKind,
+    fields: &[FieldPlan],
+) -> Vec<TsDeclaration> {
+    let name = pascal_case(source_name);
+    let label = match kind {
+        StructKind::Input => "input",
+        StructKind::Interface => "interface",
+        StructKind::Object => "type",
     };
 
     vec![
-        TsDeclaration::Comment(format!("─── {label} {} ───", type_def.name)),
+        TsDeclaration::Comment(format!("─── {label} {source_name} ───")),
         TsDeclaration::Interface(TsInterface {
             name: name.clone(),
-            properties: type_def.fields.iter().map(property_from_field).collect(),
+            properties: fields.iter().map(property_from_field_plan).collect(),
         }),
-        TsDeclaration::Function(encode_input_object_function(&name, type_def)),
-        TsDeclaration::Function(decode_input_object_function(&name, type_def)),
+        TsDeclaration::Function(encode_struct_function(&name, fields)),
+        TsDeclaration::Function(decode_struct_function(&name, fields)),
     ]
 }
 
-fn property_from_field(field: &wesley_core::Field) -> TsProperty {
+fn property_from_field_plan(field: &FieldPlan) -> TsProperty {
     TsProperty {
         name: field.name.clone(),
-        type_expr: ts_type_for_reference(&field.r#type),
+        type_expr: ts_type_for_op(&field.op),
     }
 }
 
-fn encode_input_object_function(name: &str, type_def: &TypeDefinition) -> TsFunction {
+fn encode_struct_function(name: &str, fields: &[FieldPlan]) -> TsFunction {
     TsFunction {
         name: format!("_enc{name}"),
         params: vec![
@@ -408,15 +485,14 @@ fn encode_input_object_function(name: &str, type_def: &TypeDefinition) -> TsFunc
             },
         ],
         return_type: TsTypeExpr::Void,
-        body: type_def
-            .fields
+        body: fields
             .iter()
-            .map(|field| encode_field_statement(ident("v"), &field.name, &field.r#type))
+            .map(|field| encode_field_statement(ident("v"), field))
             .collect(),
     }
 }
 
-fn decode_input_object_function(name: &str, type_def: &TypeDefinition) -> TsFunction {
+fn decode_struct_function(name: &str, fields: &[FieldPlan]) -> TsFunction {
     TsFunction {
         name: format!("_dec{name}"),
         params: vec![TsParam {
@@ -425,63 +501,55 @@ fn decode_input_object_function(name: &str, type_def: &TypeDefinition) -> TsFunc
         }],
         return_type: TsTypeExpr::Reference(name.to_string()),
         body: vec![TsStatement::ReturnObject(
-            type_def
-                .fields
+            fields
                 .iter()
                 .map(|field| TsObjectProperty {
                     name: field.name.clone(),
-                    expr: decode_expr_for_reference(&field.r#type),
+                    expr: decode_expr_for_op(&field.op),
                 })
                 .collect(),
         )],
     }
 }
 
-fn operation_vars_declarations(operation: &SchemaOperation) -> Vec<TsDeclaration> {
-    let pascal = pascal_case(&operation.field_name);
+fn operation_vars_declarations(
+    operation_type: OperationType,
+    field_name: &str,
+    fields: &[FieldPlan],
+) -> Vec<TsDeclaration> {
+    let pascal = pascal_case(field_name);
     let vars_name = format!("{pascal}Vars");
-    let scope = match operation.operation_type {
+    let scope = match operation_type {
         OperationType::Query => "query",
         OperationType::Mutation => "mutation",
         OperationType::Subscription => "subscription",
     };
 
     vec![
-        TsDeclaration::Comment(format!("─── {scope} {} ───", operation.field_name)),
+        TsDeclaration::Comment(format!("─── {scope} {field_name} ───")),
         TsDeclaration::Interface(TsInterface {
             name: vars_name.clone(),
-            properties: operation
-                .arguments
-                .iter()
-                .map(property_from_operation_argument)
-                .collect(),
+            properties: fields.iter().map(property_from_field_plan).collect(),
         }),
-        TsDeclaration::Function(encode_operation_vars_function(&vars_name, operation)),
-        TsDeclaration::Function(decode_operation_vars_function(&vars_name, operation)),
+        TsDeclaration::Function(encode_struct_function(&vars_name, fields)),
+        TsDeclaration::Function(decode_struct_function(&vars_name, fields)),
+        TsDeclaration::Function(encode_operation_vars_function(&vars_name, fields)),
+        TsDeclaration::Function(decode_operation_vars_function(&vars_name, fields)),
     ]
 }
 
-fn property_from_operation_argument(argument: &OperationArgument) -> TsProperty {
-    TsProperty {
-        name: argument.name.clone(),
-        type_expr: ts_type_for_reference(&argument.r#type),
-    }
-}
-
-fn encode_operation_vars_function(vars_name: &str, operation: &SchemaOperation) -> TsFunction {
+fn encode_operation_vars_function(vars_name: &str, _fields: &[FieldPlan]) -> TsFunction {
     let mut body = vec![TsStatement::Const {
         name: "w".to_string(),
         expr: TsExpr::New {
-            callee: "Writer".to_string(),
+            callee: "RuntimeWriter".to_string(),
             args: Vec::new(),
         },
     }];
-    body.extend(
-        operation
-            .arguments
-            .iter()
-            .map(|argument| encode_field_statement(ident("v"), &argument.name, &argument.r#type)),
-    );
+    body.push(TsStatement::Expression(call_fn(
+        &format!("_enc{vars_name}"),
+        vec![ident("w"), ident("v")],
+    )));
     body.push(TsStatement::Return(method_call(
         ident("w"),
         "finish",
@@ -499,202 +567,104 @@ fn encode_operation_vars_function(vars_name: &str, operation: &SchemaOperation) 
     }
 }
 
-fn decode_operation_vars_function(vars_name: &str, operation: &SchemaOperation) -> TsFunction {
+fn decode_operation_vars_function(vars_name: &str, _fields: &[FieldPlan]) -> TsFunction {
     TsFunction {
         name: format!("decode{vars_name}"),
         params: vec![TsParam {
             name: "b".to_string(),
             type_expr: TsTypeExpr::Uint8Array,
         }],
-        return_type: TsTypeExpr::Reference(vars_name.to_string()),
-        body: vec![
-            TsStatement::Const {
-                name: "r".to_string(),
-                expr: TsExpr::New {
-                    callee: "Reader".to_string(),
-                    args: vec![ident("b")],
-                },
-            },
-            TsStatement::ReturnObject(
-                operation
-                    .arguments
-                    .iter()
-                    .map(|argument| TsObjectProperty {
-                        name: argument.name.clone(),
-                        expr: decode_expr_for_reference(&argument.r#type),
-                    })
-                    .collect(),
-            ),
-        ],
-    }
-}
-
-fn encode_field_statement(parent: TsExpr, field_name: &str, ty: &TypeReference) -> TsStatement {
-    let access = TsExpr::PropertyAccess {
-        target: Box::new(parent),
-        property: field_name.to_string(),
-    };
-
-    TsStatement::Expression(encode_expr_for_reference(access, ty))
-}
-
-fn encode_expr_for_reference(value: TsExpr, ty: &TypeReference) -> TsExpr {
-    if ty.nullable {
-        let mut inner_ty = ty.clone();
-        inner_ty.nullable = false;
-        let inner = encode_expr_for_reference(ident("x"), &inner_ty);
-        return method_call(
-            ident("w"),
-            "writeOption",
+        return_type: result_type(TsTypeExpr::Reference(vars_name.to_string())),
+        body: vec![TsStatement::Return(call_fn(
+            "decodeWithBoundary",
             vec![
-                value,
+                ident("b"),
                 TsExpr::Arrow {
-                    params: vec!["w".to_string(), "x".to_string()],
-                    body: Box::new(inner),
+                    params: vec!["r".to_string()],
+                    body: Box::new(call_fn(&format!("_dec{vars_name}"), vec![ident("r")])),
                 },
             ],
-        );
+        ))],
     }
-
-    if let Some(item_ty) = list_item_type_reference(ty) {
-        let element_lambda = TsExpr::Arrow {
-            params: vec!["w".to_string(), "x".to_string()],
-            body: Box::new(encode_expr_for_reference(ident("x"), &item_ty)),
-        };
-        return method_call(ident("w"), "writeList", vec![value, element_lambda]);
-    }
-
-    scalar_encode_call_expr(&ty.base, ident("w"), value)
 }
 
-fn decode_expr_for_reference(ty: &TypeReference) -> TsExpr {
-    if ty.nullable {
-        let mut inner_ty = ty.clone();
-        inner_ty.nullable = false;
-        return method_call(
+fn encode_field_statement(parent: TsExpr, field: &FieldPlan) -> TsStatement {
+    let access = TsExpr::PropertyAccess {
+        target: Box::new(parent),
+        property: field.name.clone(),
+    };
+
+    TsStatement::Expression(encode_expr_for_op(access, &field.op))
+}
+
+fn encode_expr_for_op(value: TsExpr, op: &CodecOp) -> TsExpr {
+    match op {
+        CodecOp::Option(inner) => {
+            let inner_expr = encode_expr_for_op(ident("x"), inner);
+            method_call(
+                ident("w"),
+                "writeOption",
+                vec![
+                    value,
+                    TsExpr::Arrow {
+                        params: vec!["w".to_string(), "x".to_string()],
+                        body: Box::new(inner_expr),
+                    },
+                ],
+            )
+        }
+        CodecOp::List(inner) => {
+            let element_lambda = TsExpr::Arrow {
+                params: vec!["w".to_string(), "x".to_string()],
+                body: Box::new(encode_expr_for_op(ident("x"), inner)),
+            };
+            method_call(ident("w"), "writeList", vec![value, element_lambda])
+        }
+        CodecOp::Scalar(ScalarKind::Bool) => method_call(ident("w"), "writeBool", vec![value]),
+        CodecOp::Scalar(ScalarKind::Int) => method_call(ident("w"), "writeI32Le", vec![value]),
+        CodecOp::Scalar(ScalarKind::Float) => method_call(ident("w"), "writeF32Le", vec![value]),
+        CodecOp::Scalar(ScalarKind::String) => method_call(ident("w"), "writeString", vec![value]),
+        CodecOp::Named(name) => call_fn(
+            &format!("_enc{}", pascal_case(name)),
+            vec![ident("w"), value],
+        ),
+    }
+}
+
+fn decode_expr_for_op(op: &CodecOp) -> TsExpr {
+    match op {
+        CodecOp::Option(inner) => method_call(
             ident("r"),
             "readOption",
             vec![TsExpr::Arrow {
                 params: vec!["r".to_string()],
-                body: Box::new(decode_expr_for_reference(&inner_ty)),
+                body: Box::new(decode_expr_for_op(inner)),
             }],
-        );
-    }
-
-    if let Some(item_ty) = list_item_type_reference(ty) {
-        let element_lambda = TsExpr::Arrow {
-            params: vec!["r".to_string()],
-            body: Box::new(decode_expr_for_reference(&item_ty)),
-        };
-        return method_call(ident("r"), "readList", vec![element_lambda]);
-    }
-
-    scalar_decode_call_expr(&ty.base, ident("r"))
-}
-
-fn scalar_encode_call_expr(type_name: &str, writer: TsExpr, value: TsExpr) -> TsExpr {
-    match type_name {
-        "Boolean" => method_call(writer, "writeBool", vec![value]),
-        "Int" => method_call(writer, "writeI32Le", vec![value]),
-        "Float" => method_call(writer, "writeF32Le", vec![value]),
-        "String" | "ID" => method_call(writer, "writeString", vec![value]),
-        other => call_fn(&format!("_enc{}", pascal_case(other)), vec![writer, value]),
-    }
-}
-
-fn scalar_decode_call_expr(type_name: &str, reader: TsExpr) -> TsExpr {
-    match type_name {
-        "Boolean" => method_call(reader, "readBool", vec![]),
-        "Int" => method_call(reader, "readI32Le", vec![]),
-        "Float" => method_call(reader, "readF32Le", vec![]),
-        "String" | "ID" => method_call(reader, "readString", vec![]),
-        other => call_fn(&format!("_dec{}", pascal_case(other)), vec![reader]),
-    }
-}
-
-fn ts_type_for_reference(ty: &TypeReference) -> TsTypeExpr {
-    let base = match ty.base.as_str() {
-        "ID" | "String" => TsTypeExpr::String,
-        "Int" | "Float" => TsTypeExpr::Number,
-        "Boolean" => TsTypeExpr::Boolean,
-        other => TsTypeExpr::Reference(pascal_case(other)),
-    };
-
-    if !ty.list_wrappers.is_empty() {
-        let mut type_expr = if ty.leaf_nullable.unwrap_or(true) {
-            TsTypeExpr::union(vec![base, TsTypeExpr::Null])
-        } else {
-            base
-        };
-
-        for wrapper in ty.list_wrappers.iter().rev() {
-            type_expr = TsTypeExpr::Array(Box::new(type_expr));
-            if wrapper.nullable {
-                type_expr = TsTypeExpr::union(vec![type_expr, TsTypeExpr::Null]);
-            }
-        }
-
-        return type_expr;
-    }
-
-    let mut type_expr = if ty.is_list {
-        let element = match ty.list_item_nullable {
-            Some(false) => base,
-            Some(true) | None => TsTypeExpr::union(vec![base, TsTypeExpr::Null]),
-        };
-        TsTypeExpr::Array(Box::new(element))
-    } else {
-        base
-    };
-
-    if ty.nullable {
-        type_expr = TsTypeExpr::union(vec![type_expr, TsTypeExpr::Null]);
-    }
-
-    type_expr
-}
-
-fn list_item_type_reference(ty: &TypeReference) -> Option<TypeReference> {
-    if !ty.is_list {
-        return None;
-    }
-
-    if ty.list_wrappers.is_empty() {
-        return Some(TypeReference {
-            base: ty.base.clone(),
-            nullable: ty.list_item_nullable.unwrap_or(true),
-            is_list: false,
-            list_item_nullable: None,
-            list_wrappers: Vec::new(),
-            leaf_nullable: None,
-        });
-    }
-
-    let remaining_wrappers = ty.list_wrappers[1..].to_vec();
-    if remaining_wrappers.is_empty() {
-        return Some(TypeReference {
-            base: ty.base.clone(),
-            nullable: ty.leaf_nullable.unwrap_or(true),
-            is_list: false,
-            list_item_nullable: None,
-            list_wrappers: Vec::new(),
-            leaf_nullable: None,
-        });
-    }
-
-    Some(TypeReference {
-        base: ty.base.clone(),
-        nullable: remaining_wrappers[0].nullable,
-        is_list: true,
-        list_item_nullable: Some(
-            remaining_wrappers
-                .get(1)
-                .map(|wrapper| wrapper.nullable)
-                .unwrap_or(ty.leaf_nullable.unwrap_or(true)),
         ),
-        list_wrappers: remaining_wrappers,
-        leaf_nullable: ty.leaf_nullable,
-    })
+        CodecOp::List(inner) => {
+            let element_lambda = TsExpr::Arrow {
+                params: vec!["r".to_string()],
+                body: Box::new(decode_expr_for_op(inner)),
+            };
+            method_call(ident("r"), "readList", vec![element_lambda])
+        }
+        CodecOp::Scalar(ScalarKind::Bool) => method_call(ident("r"), "readBool", vec![]),
+        CodecOp::Scalar(ScalarKind::Int) => method_call(ident("r"), "readI32Le", vec![]),
+        CodecOp::Scalar(ScalarKind::Float) => method_call(ident("r"), "readF32Le", vec![]),
+        CodecOp::Scalar(ScalarKind::String) => method_call(ident("r"), "readString", vec![]),
+        CodecOp::Named(name) => call_fn(&format!("_dec{}", pascal_case(name)), vec![ident("r")]),
+    }
+}
+
+fn ts_type_for_op(op: &CodecOp) -> TsTypeExpr {
+    match op {
+        CodecOp::Option(inner) => TsTypeExpr::union(vec![ts_type_for_op(inner), TsTypeExpr::Null]),
+        CodecOp::List(inner) => TsTypeExpr::Array(Box::new(ts_type_for_op(inner))),
+        CodecOp::Scalar(ScalarKind::Bool) => TsTypeExpr::Boolean,
+        CodecOp::Scalar(ScalarKind::Int | ScalarKind::Float) => TsTypeExpr::Number,
+        CodecOp::Scalar(ScalarKind::String) => TsTypeExpr::String,
+        CodecOp::Named(name) => TsTypeExpr::Reference(pascal_case(name)),
+    }
 }
 
 fn print_program(program: &TsProgram) -> String {
@@ -725,6 +695,12 @@ fn print_import(out: &mut String, import: &TsImport) {
 
 fn print_declaration(out: &mut String, declaration: &TsDeclaration) {
     match declaration {
+        TsDeclaration::Raw(raw) => {
+            out.push_str(raw);
+            if !raw.ends_with('\n') {
+                out.push('\n');
+            }
+        }
         TsDeclaration::Comment(comment) => {
             writeln!(out, "// {comment}").expect("writing to string should not fail");
         }
@@ -947,6 +923,17 @@ fn print_type_expr(out: &mut String, type_expr: &TsTypeExpr, parenthesize_union:
                 out.push(')');
             }
         }
+        TsTypeExpr::Generic { name, args } => {
+            out.push_str(name);
+            out.push('<');
+            for (index, arg) in args.iter().enumerate() {
+                if index > 0 {
+                    out.push_str(", ");
+                }
+                print_type_expr(out, arg, false);
+            }
+            out.push('>');
+        }
     }
 }
 
@@ -1037,11 +1024,18 @@ fn method_call(target: TsExpr, method: &str, args: Vec<TsExpr>) -> TsExpr {
 
 fn invalid_codec_error(message_prefix: &str, value: TsExpr) -> TsExpr {
     TsExpr::New {
-        callee: "CodecError".to_string(),
+        callee: "RuntimeCodecError".to_string(),
         args: vec![TsExpr::Add {
             left: Box::new(TsExpr::StringLiteral(message_prefix.to_string())),
             right: Box::new(call_fn("String", vec![value])),
         }],
+    }
+}
+
+fn result_type(value: TsTypeExpr) -> TsTypeExpr {
+    TsTypeExpr::Generic {
+        name: "Result".to_string(),
+        args: vec![value],
     }
 }
 
@@ -1124,7 +1118,9 @@ fn quote_string(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wesley_core::{list_schema_operations_sdl, lower_schema_sdl};
+    use wesley_core::{
+        list_schema_operations_sdl, lower_schema_sdl, TypeDefinition, TypeKind, TypeReference,
+    };
 
     const SDL: &str = "
         enum Color { RED GREEN BLUE }
@@ -1194,7 +1190,14 @@ mod tests {
 
         let ts = emit_le_binary_typescript(&ir, &ops, DEFAULT_CODEC_IMPORT);
 
-        assert!(ts.contains("import { Writer, Reader, CodecError } from '../../codec.js';"));
+        assert!(ts.contains(
+            "import { Writer as RuntimeWriter, Reader as RuntimeReader, CodecError as RuntimeCodecError } from '../../codec.js';"
+        ));
+        assert!(ts.contains("export type Result<T> ="));
+        assert!(ts.contains("export interface Writer {"));
+        assert!(ts.contains("export interface Reader {"));
+        assert!(ts.contains("function decodeWithBoundary<T>("));
+        assert!(ts.contains("if (r.remaining() > 0) {"));
         assert!(ts.contains("export type Color =\n    | 'RED'\n    | 'GREEN'\n    | 'BLUE';"));
         assert!(ts.contains("case 'RED': w.writeU32Le(0); return;"));
         assert!(ts.contains("case 'BLUE': w.writeU32Le(2); return;"));
@@ -1205,7 +1208,9 @@ mod tests {
         assert!(ts.contains("export interface MakeWidgetVars"));
         assert!(ts.contains("input: MakeWidgetInput;"));
         assert!(ts.contains("export function encodeMakeWidgetVars(v: MakeWidgetVars): Uint8Array"));
-        assert!(ts.contains("export function decodeMakeWidgetVars(b: Uint8Array): MakeWidgetVars"));
+        assert!(ts.contains(
+            "export function decodeMakeWidgetVars(b: Uint8Array): Result<MakeWidgetVars>"
+        ));
     }
 
     #[test]

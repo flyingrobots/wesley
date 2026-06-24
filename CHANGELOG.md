@@ -6,8 +6,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.1.0] - 2026-06-23
+
 ### Added
 
+- **Shared LE binary codec plan**: Added `wesley-emit-codec`, a
+  language-neutral LE-binary codec planning crate. Rust and TypeScript codec
+  emitters now consume the same `CodecDef`/`CodecOp` plan instead of duplicating
+  generator-side codec lowering.
+- **LE binary runtime port contracts**: Generated codec modules now expose the
+  `Writer`, `Reader`, and `CodecError` port shapes required by the generated
+  runtime boundary.
 - **LE binary Rust codec emitter**: `wesley emit le-binary-rust` (and
   `wesley_emit_rust::emit_le_binary_rust`) emits Rust `encode_*`/`decode_*`
   functions over a consumer-provided `Writer`/`Reader`/`CodecError` runtime,
@@ -23,6 +34,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- **TypeScript LE binary decode result contract**: Generated TypeScript
+  `decode*` functions now return `Result<T>` instead of returning raw decoded
+  values and throwing through the public API. Internals still use ordinary
+  throwing helpers, with one boundary wrapper converting failures to `err`.
+- **Codec emitter drift reduction**: Rust and TypeScript LE-binary emitters now
+  render from the shared codec plan, preserving the existing TypeScript golden
+  bytes for the pure refactor slice before the public decode contract changed.
 - **Emitter syntax-model boundary**: Locked TypeScript and Rust code generation
   behind explicit syntax-model-to-printer pipelines. The LE binary TypeScript
   codec emitter now constructs a crate-local TypeScript syntax model before
@@ -49,6 +67,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **TypeScript trailing-byte rejection**: TypeScript LE-binary public decode
+  wrappers now reject trailing bytes after a top-level decode, closing the #603
+  class for TypeScript and matching the Rust decoder guard.
 - **Package advisory cleanup**: Added an `undici` override to the patched
   `7.28.0` line so `pnpm audit --prod=false --json` clears the latest
   transitive `jsdom` advisories surfaced during preflight.
@@ -67,8 +88,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   string as a legacy input alias and normalizes it internally.
 - **Release guard tracker checks**: `cargo xtask release-prep-guard` and
   `cargo xtask release-guard` now query live GitHub Issues for open
-  tag/version blockers instead of relying only on the retired filesystem
-  backlog tree.
+  tag/version blockers by owned issue title/body, milestone, or label instead
+  of relying only on the retired filesystem backlog tree. Third-party comments
+  and automatic cross-reference chatter no longer create false release blockers.
 - **Release governance hardening**: Release guards now require exact README and
   changelog release headings, validate real calendar dates, reject shell
   commands as guide path citations, require guide SHAs to be commit objects,
@@ -1443,11 +1465,12 @@ kind` instead of being silently accepted via structural duck-typing. All
 - **CR-R6-15 (Trivial):** Bats tests `plan-report-schema.bats` and `realm-schema.bats` now assert output content, not just exit status
 - **CR-R6-16 (Trivial):** Test coverage: cursor null/undefined/non-object edge cases, qualified join refs positive path, builder-based pkResolver test, LIKE/CONTAINS param guard tests
 
-## [0.1.0] - 2025-09-01
+## Initial public repository layout - 2025-09-01
 
 - Initial public repository layout
 
-[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/flyingrobots/wesley/compare/v0.0.5...v0.1.0
 [0.0.5]: https://github.com/flyingrobots/wesley/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/flyingrobots/wesley/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/flyingrobots/wesley/compare/v0.0.2...v0.0.3

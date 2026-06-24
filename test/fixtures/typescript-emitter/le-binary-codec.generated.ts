@@ -4,7 +4,68 @@
 // Wire layout is Wesley little-endian variable codec v0. Field order is SDL
 // declaration order. Enums encode their zero-based variant index as u32 LE.
 
-import { Writer, Reader, CodecError } from '../../codec.js';
+import { Writer as RuntimeWriter, Reader as RuntimeReader, CodecError as RuntimeCodecError } from '../../codec.js';
+
+export type Result<T> =
+    | { ok: true; value: T }
+    | { ok: false; error: CodecError };
+
+export interface CodecError {
+    readonly message: string;
+}
+
+export interface Writer {
+    writeU32Le(value: number): void;
+    writeI32Le(value: number): void;
+    writeF32Le(value: number): void;
+    writeBool(value: boolean): void;
+    writeString(value: string): void;
+    writeOption<T>(value: T | null, write: (writer: Writer, value: T) => void): void;
+    writeList<T>(value: T[], write: (writer: Writer, value: T) => void): void;
+    finish(): Uint8Array;
+}
+
+export interface Reader {
+    readU32Le(): number;
+    readI32Le(): number;
+    readF32Le(): number;
+    readBool(): boolean;
+    readString(): string;
+    readOption<T>(read: (reader: Reader) => T): T | null;
+    readList<T>(read: (reader: Reader) => T): T[];
+    remaining(): number;
+}
+
+function ok<T>(value: T): Result<T> {
+    return { ok: true, value };
+}
+
+function err<T>(error: CodecError): Result<T> {
+    return { ok: false, error };
+}
+
+function codecErrorFromUnknown(error: unknown): CodecError {
+    if (error instanceof RuntimeCodecError) {
+        return error;
+    }
+    if (error instanceof Error) {
+        return new RuntimeCodecError(error.message);
+    }
+    return new RuntimeCodecError(String(error));
+}
+
+function decodeWithBoundary<T>(b: Uint8Array, read: (reader: Reader) => T): Result<T> {
+    try {
+        const r = new RuntimeReader(b);
+        const value = read(r);
+        if (r.remaining() > 0) {
+            return err(new RuntimeCodecError('trailing bytes after decode'));
+        }
+        return ok(value);
+    } catch (error) {
+        return err(codecErrorFromUnknown(error));
+    }
+}
 
 // ─── enum Color ───
 
@@ -18,7 +79,7 @@ export function _encColor(w: Writer, v: Color): void {
         case 'RED': w.writeU32Le(0); return;
         case 'GREEN': w.writeU32Le(1); return;
         case 'BLUE': w.writeU32Le(2); return;
-        default: throw new CodecError('invalid Color variant: ' + String(v));
+        default: throw new RuntimeCodecError('invalid Color variant: ' + String(v));
     }
 }
 
@@ -28,18 +89,18 @@ export function _decColor(r: Reader): Color {
         case 0: return 'RED';
         case 1: return 'GREEN';
         case 2: return 'BLUE';
-        default: throw new CodecError('invalid Color discriminant: ' + String(d));
+        default: throw new RuntimeCodecError('invalid Color discriminant: ' + String(d));
     }
 }
 
 export function encodeColor(v: Color): Uint8Array {
-    const w = new Writer();
+    const w = new RuntimeWriter();
     _encColor(w, v);
     return w.finish();
 }
 
-export function decodeColor(b: Uint8Array): Color {
-    return _decColor(new Reader(b));
+export function decodeColor(b: Uint8Array): Result<Color> {
+    return decodeWithBoundary(b, (r) => _decColor(r));
 }
 
 // ─── input MakeWidgetInput ───
@@ -99,7 +160,7 @@ export type Solo =
 export function _encSolo(w: Writer, v: Solo): void {
     switch (v) {
         case 'ONE': w.writeU32Le(0); return;
-        default: throw new CodecError('invalid Solo variant: ' + String(v));
+        default: throw new RuntimeCodecError('invalid Solo variant: ' + String(v));
     }
 }
 
@@ -107,18 +168,18 @@ export function _decSolo(r: Reader): Solo {
     const d = r.readU32Le();
     switch (d) {
         case 0: return 'ONE';
-        default: throw new CodecError('invalid Solo discriminant: ' + String(d));
+        default: throw new RuntimeCodecError('invalid Solo discriminant: ' + String(d));
     }
 }
 
 export function encodeSolo(v: Solo): Uint8Array {
-    const w = new Writer();
+    const w = new RuntimeWriter();
     _encSolo(w, v);
     return w.finish();
 }
 
-export function decodeSolo(b: Uint8Array): Solo {
-    return _decSolo(new Reader(b));
+export function decodeSolo(b: Uint8Array): Result<Solo> {
+    return decodeWithBoundary(b, (r) => _decSolo(r));
 }
 
 // ─── type Widget ───
@@ -146,17 +207,24 @@ export interface WidgetVars {
     id: string;
 }
 
-export function encodeWidgetVars(v: WidgetVars): Uint8Array {
-    const w = new Writer();
+export function _encWidgetVars(w: Writer, v: WidgetVars): void {
     w.writeString(v.id);
-    return w.finish();
 }
 
-export function decodeWidgetVars(b: Uint8Array): WidgetVars {
-    const r = new Reader(b);
+export function _decWidgetVars(r: Reader): WidgetVars {
     return {
         id: r.readString(),
     };
+}
+
+export function encodeWidgetVars(v: WidgetVars): Uint8Array {
+    const w = new RuntimeWriter();
+    _encWidgetVars(w, v);
+    return w.finish();
+}
+
+export function decodeWidgetVars(b: Uint8Array): Result<WidgetVars> {
+    return decodeWithBoundary(b, (r) => _decWidgetVars(r));
 }
 
 // ─── mutation makeWidget ───
@@ -165,15 +233,22 @@ export interface MakeWidgetVars {
     input: MakeWidgetInput;
 }
 
-export function encodeMakeWidgetVars(v: MakeWidgetVars): Uint8Array {
-    const w = new Writer();
+export function _encMakeWidgetVars(w: Writer, v: MakeWidgetVars): void {
     _encMakeWidgetInput(w, v.input);
-    return w.finish();
 }
 
-export function decodeMakeWidgetVars(b: Uint8Array): MakeWidgetVars {
-    const r = new Reader(b);
+export function _decMakeWidgetVars(r: Reader): MakeWidgetVars {
     return {
         input: _decMakeWidgetInput(r),
     };
+}
+
+export function encodeMakeWidgetVars(v: MakeWidgetVars): Uint8Array {
+    const w = new RuntimeWriter();
+    _encMakeWidgetVars(w, v);
+    return w.finish();
+}
+
+export function decodeMakeWidgetVars(b: Uint8Array): Result<MakeWidgetVars> {
+    return decodeWithBoundary(b, (r) => _decMakeWidgetVars(r));
 }

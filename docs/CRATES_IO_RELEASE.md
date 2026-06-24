@@ -71,8 +71,8 @@ The `release-gauntlet` job must verify:
 - every publishable crate has the minimum package file set
 - root `README.md` exists
 - root `CHANGELOG.md` contains release notes for the exact version
-- no open GitHub Issue is associated with the exact tag or version by text,
-  milestone, or label
+- no open GitHub Issue is associated with the exact tag or version by issue
+  title/body text, milestone, or label
 - Rust check, test, clippy, docs, release-check, package sanity, and audit pass
 
 The `publish-crates` job must depend on `release-gauntlet` and must repeat the
@@ -185,8 +185,9 @@ cargo xtask package-crates --version X.Y.Z
 ```
 
 The release workflow also checks open GitHub issues for the exact tag and
-version using text search, milestone association, and label association. Any
-matching open issue blocks publication.
+version using issue title/body text, milestone association, and label
+association. Third-party comments and automatic cross-reference chatter are not
+release-lane ownership. Any matching open issue blocks publication.
 
 For a multi-crate release where later crates depend on earlier Wesley crates,
 the full registry-backed `cargo publish --dry-run` for dependent crates cannot

@@ -1,6 +1,6 @@
 [package]
 name = "wesley-holmes"
-version = "0.0.5"
+version = "0.1.0"
 edition = "2021"
 description = "Rust Holmes law assurance foundation for Wesley semantic evidence"
 license = "MIT"

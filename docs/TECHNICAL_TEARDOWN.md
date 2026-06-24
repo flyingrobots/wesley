@@ -52,12 +52,13 @@ assurance ingestion lives in `wesley-holmes`.
 
 ### Current Version And Next Work
 
-The Rust crates in this checkout declare version `0.0.5`, and the public README
-now carries the matching "What's New in v0.0.5" release note. The changelog's
-`[Unreleased]` section carries substantial ongoing work around `weslaw`, Rust
-Holmes law evidence gates, and release-governance hardening. A future
-`v0.0.6` release must move those notes into a dated release section and bump the
-publishable crate manifests before tagging.
+The Rust crates in this checkout declare version `0.1.0`, and the public README
+now carries the matching "What's New in v0.1.0" release note. The changelog's
+dated `0.1.0` section carries the accumulated Rust-native compiler hardening,
+Holmes law evidence gates, release-governance work, and the LE-binary codec-plan
+breaking change. The skipped `v0.0.6` packet remains planning context; the
+public decode-signature change makes this a pre-1.0 minor release instead of a
+patch release.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion
@@ -255,10 +256,10 @@ intentionally not yet exposed as a public Holmes CLI from Rust.
 
 ### Current Tensions
 
-The README now describes `v0.0.5`, aligned with the `Cargo.toml` crate version
-declared across the workspace. The changelog's `[Unreleased]` section carries
-the Holmes law assurance substrate work (`HIMP-001–036`) which has not yet been
-cut into a versioned release.
+The README now describes `v0.1.0`, aligned with the `Cargo.toml` crate version
+declared across the workspace. The changelog's dated `0.1.0` section carries
+the Holmes law assurance substrate work (`HIMP-001–036`) plus the LE-binary
+codec-plan and decode-result contract changes.
 
 ## Package(s) Overview
 
@@ -1707,10 +1708,10 @@ for Rust and JavaScript, then attach those reports to Holmes or CI artifacts.
 
 ### Next Release Narrative
 
-The next crates.io release should decide whether the accumulated Rust-native
-front-door, `weslaw`, Holmes foundation, and release-governance work ships as
-`v0.0.6` on the current alpha line or as a larger pre-1.0 milestone. Either
-path must keep README, CHANGELOG, tags, and publishable crate manifests aligned.
+The next crates.io release should decide which remaining Rust-native front-door,
+`weslaw`, Holmes foundation, and release-governance work belongs in a patch
+release versus a later pre-1.0 milestone. Every path must keep README,
+CHANGELOG, tags, and publishable crate manifests aligned.
 
 ### Host Package Fate
 

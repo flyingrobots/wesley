@@ -4,6 +4,7 @@ Store user-facing release notes here.
 
 ## Release Notes
 
+- [Wesley v0.1.0](./v0.1.0.md)
 - [Wesley v0.0.5](./v0.0.5.md)
 - [Wesley v0.0.4](./v0.0.4.md)
 
