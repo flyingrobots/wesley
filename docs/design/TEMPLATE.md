@@ -1,14 +1,14 @@
 ---
-title: "{ID} - {Short Title}"
-legend: "SPEC|SOURCE|TRANSMUTE|OWN|EVIDENCE|RUNTIME|RE|CI"
-packet: "NNNN-short-slug"
-issue: "https://github.com/flyingrobots/wesley/issues/{number}"
-pr: "https://github.com/flyingrobots/wesley/pull/{number}"
-status: "draft|active|landed|superseded"
+title: '{ID} - {Short Title}'
+legend: 'SPEC|SOURCE|TRANSMUTE|OWN|EVIDENCE|RUNTIME|RE|CI'
+packet: 'NNNN-short-slug'
+issue: 'https://github.com/flyingrobots/wesley/issues/{number}'
+pr: 'https://github.com/flyingrobots/wesley/pull/{number}'
+status: 'draft|active|landed|superseded'
 owners:
-  - "@flyingrobots"
-created: "YYYY-MM-DD"
-updated: "YYYY-MM-DD"
+  - '@flyingrobots'
+created: 'YYYY-MM-DD'
+updated: 'YYYY-MM-DD'
 ---
 
 <!-- legend token reference:
@@ -23,30 +23,35 @@ updated: "YYYY-MM-DD"
   Set legend to the pipe-separated subset that applies to this packet.
 -->
 <!-- markdownlint-disable-next-line MD025 -->
+
 # {ID} - {Short Title}
 
 ## Linked Issue
 
 - [{issue URL}](https://github.com/flyingrobots/wesley/issues/{number})
 
-## Roadmap Gate
+## GitHub Work
 
-Name the BEARING section or active campaign this work advances.
+Name the issue, goalpost milestone, and project item this packet supports.
 
 Example:
 
-- §11 weslaw Semantic Law IR
-- HIMP-036–038: Rollout policy and abuse prevention
-- §6 Module Capability Boundary
+- Issue: `https://github.com/flyingrobots/wesley/issues/{number}`
+- Goalpost milestone: `Goalpost: Make It Truthful`
+- Project: `https://github.com/users/flyingrobots/projects/18`
+
+Do not use this section as a progress tracker.
 
 ## Cycle Start
 
 - [ ] `git fetch origin` completed.
 - [ ] Local `main` synced to `origin/main` without rebase or force operations.
 - [ ] Cycle branch checked out from the synced merge target.
-- [ ] GitHub issue created and labeled `work-in-progress`.
+- [ ] GitHub issue assigned to a goalpost milestone and added to the Wesley
+      Roadmap Project.
+- [ ] GitHub issue labeled `work-in-progress`.
 - [ ] Design doc, issue link, and initial cycle scaffold staged and committed.
-- [ ] Branch pushed; PR opened to `main` when the goalpost slice set is complete (one branch per goalpost).
+- [ ] Branch pushed; PR opened to `main` when the slice is ready for review.
 
 ## Decision Summary
 
@@ -188,12 +193,12 @@ Examples:
 
 Required for CLI or MCP surfaces that produce structured operator output.
 
-| Surface | Requirement |
-| ------- | ----------- |
-| Exit codes and error envelopes | ... |
-| Structured JSON output | ... |
-| Human-readable Markdown summaries | ... |
-| Agent-safe summary fields | ... |
+| Surface                           | Requirement |
+| --------------------------------- | ----------- |
+| Exit codes and error envelopes    | ...         |
+| Structured JSON output            | ...         |
+| Human-readable Markdown summaries | ...         |
+| Agent-safe summary fields         | ...         |
 
 For purely internal crate work with no operator-facing output, write "Not
 applicable — internal crate with no operator surface" and explain briefly.
@@ -203,11 +208,11 @@ applicable — internal crate with no operator surface" and explain briefly.
 Required when user-visible strings, error messages, or diagnostic text are
 added or changed.
 
-| String or surface | Requirement |
-| ----------------- | ----------- |
-| Diagnostic messages | ... |
-| CLI help text | ... |
-| Report or summary strings | ... |
+| String or surface         | Requirement |
+| ------------------------- | ----------- |
+| Diagnostic messages       | ...         |
+| CLI help text             | ...         |
+| Report or summary strings | ...         |
 
 For purely internal crate work with no user-visible strings, write "Not
 applicable" and explain briefly.
@@ -279,8 +284,8 @@ product or runtime work.
 
 ## Proof Matrix
 
-| Claim | Required proof |
-| ----- | -------------- |
+| Claim               | Required proof                       |
+| ------------------- | ------------------------------------ |
 | `{behavior exists}` | `{test / fixture / cargo test path}` |
 
 ## Acceptance Criteria
@@ -329,7 +334,7 @@ path a reviewer can diff.
 
 | Question | Owner | Resolution |
 | -------- | ----- | ---------- |
-| ... | ... | ... |
+| ...      | ...   | ...        |
 
 ## Follow-On Issues
 

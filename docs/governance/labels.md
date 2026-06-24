@@ -1,5 +1,7 @@
 # Issue & PR Labels
 
+<!-- docs-truth: status=current owner=@flyingrobots -->
+
 Wesley uses a small, well-documented label set so contributors can quickly find
 work and maintainers can triage effectively. All labels are applied directly on
 GitHub and can be reviewed with `gh label list`.
@@ -20,10 +22,42 @@ GitHub and can be reviewed with `gh label list`.
 | `holmes`, `scoring`            | Work specific to the HOLMES evidence stack.                                                                     |
 | `status: non-blocking`         | Nice-to-have items that are not release blockers.                                                               |
 | `pkg:*`                        | Ownership hints for the affected package(s).                                                                    |
+| `lane:*`                       | METHOD lane classification.                                                                                     |
+| `legend:*`                     | Wesley legend classification.                                                                                   |
+| `work:*`                       | Product, integrity, or enabler work shape.                                                                      |
+
+## METHOD lanes
+
+| Label             | Purpose                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| `lane:inbox`      | Raw, untriaged intake only. Remove it after milestone assignment or lane decision.   |
+| `lane:asap`       | Imminent work that blocks the next cycle or release gate.                            |
+| `lane:bad-code`   | Named technical debt or trust debt.                                                  |
+| `lane:cool-ideas` | Exploratory ideas with no commitment yet.                                            |
+| `lane:release`    | Release-gate or release-scoped work, usually assigned to a `Release: ...` milestone. |
+
+Open `lane:inbox` should be empty unless genuinely raw intake exists.
+
+## Legends
+
+Legend labels preserve Wesley's work taxonomy:
+
+- `legend:SOURCE`
+- `legend:TRANSMUTE`
+- `legend:RUNTIME`
+- `legend:EVIDENCE`
+- `legend:SPEC`
+- `legend:BLADE`
+- `legend:DX`
+- `legend:DOCS`
+- `legend:PLATFORM`
+- `legend:PROCESS`
 
 ## Label conventions
 
 - Every newly opened issue should get **one work-type label** (bug/feature/chore/docs/tests).
+- Every implementation issue should have a goalpost milestone.
+- Release-gate issues should have a `Release: ...` milestone.
 - Use **module labels** (`pkg:*`) when the work sits in a single package; skip
   them for cross-cutting features.
 - Add `good first issue` only if the description already includes clear steps

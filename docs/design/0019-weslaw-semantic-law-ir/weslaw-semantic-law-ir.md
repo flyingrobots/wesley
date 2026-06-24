@@ -802,12 +802,12 @@ externally consumed representation needs a schema artifact.
 
 Initial schema artifacts:
 
-| Artifact                                                  | Status                        | Purpose                                                    |
-| --------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
-| `schemas/wesley-law-ir-v1.schema.json`                    | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON.                      |
-| `schemas/weslaw-v1.schema.json`                           | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
-| `schemas/wesley-contract-bundle-manifest-v1.schema.json`  | v1 implementation requirement | JSON Schema for emitted contract bundle manifests.         |
-| `schemas/wesley-law-diff-v1.schema.json`                  | v1 implementation requirement | JSON Schema for machine-readable law diff events.          |
+| Artifact                                                 | Status                        | Purpose                                                    |
+| -------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
+| `schemas/wesley-law-ir-v1.schema.json`                   | v1 implementation requirement | JSON Schema for typed Law IR v1 JSON.                      |
+| `schemas/weslaw-v1.schema.json`                          | v1 implementation requirement | JSON Schema for the parsed `weslaw/v1` authoring document. |
+| `schemas/wesley-contract-bundle-manifest-v1.schema.json` | v1 implementation requirement | JSON Schema for emitted contract bundle manifests.         |
+| `schemas/wesley-law-diff-v1.schema.json`                 | v1 implementation requirement | JSON Schema for machine-readable law diff events.          |
 
 These schemas validate public structure. They are not semantic hash inputs.
 Changing comments, descriptions, `$id`, or schema annotations must not change
@@ -850,36 +850,36 @@ sequenceDiagram
 
 Initial `WLAW-046` through `WLAW-050` event classes:
 
-| Event                      | Meaning                                                                  |
-| -------------------------- | ------------------------------------------------------------------------ |
-| `LAW_BUNDLE_CHANGED`       | Bundle-level semantic fields changed.                                    |
-| `REGISTRY_CHANGED`         | Semantic registry facts changed.                                         |
-| `LAW_ADDED`                | New active law entry.                                                    |
-| `LAW_REMOVED`              | Active law entry removed.                                                |
-| `LAW_TAGS_CHANGED`         | Existing law classifier tags changed.                                    |
-| `LAW_CHANGED`              | Existing law changed outside a narrower v1 event class.                  |
+| Event                      | Meaning                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| `LAW_BUNDLE_CHANGED`       | Bundle-level semantic fields changed.                                               |
+| `REGISTRY_CHANGED`         | Semantic registry facts changed.                                                    |
+| `LAW_ADDED`                | New active law entry.                                                               |
+| `LAW_REMOVED`              | Active law entry removed.                                                           |
+| `LAW_TAGS_CHANGED`         | Existing law classifier tags changed.                                               |
+| `LAW_CHANGED`              | Existing law changed outside a narrower v1 event class.                             |
 | `SCALAR_SEMANTICS_CHANGED` | Scalar representation, range, ordering, scope, or forbidden interpretation changed. |
-| `VARIANT_LAW_CHANGED`      | Variant discriminator or case requires/forbids changed.                  |
-| `FOOTPRINT_EXPANDED`       | Reads, writes, creates, or closure reach expanded.                       |
-| `FOOTPRINT_CONTRACTED`     | Footprint reach contracted.                                              |
-| `FOOTPRINT_CHANGED`        | Footprint changed in mixed or structural ways.                           |
-| `SCHEMA_HASH_REBOUND`      | Law was explicitly rebound to a new schema hash.                         |
+| `VARIANT_LAW_CHANGED`      | Variant discriminator or case requires/forbids changed.                             |
+| `FOOTPRINT_EXPANDED`       | Reads, writes, creates, or closure reach expanded.                                  |
+| `FOOTPRINT_CONTRACTED`     | Footprint reach contracted.                                                         |
+| `FOOTPRINT_CHANGED`        | Footprint changed in mixed or structural ways.                                      |
+| `SCHEMA_HASH_REBOUND`      | Law was explicitly rebound to a new schema hash.                                    |
 
 Self-review repair added these classes before the next planned slice:
 
-| Event                     | Meaning                                           |
-| ------------------------- | ------------------------------------------------- |
-| `CHANNEL_VERSION_CHANGED` | Channel version changed.                         |
-| `CHANNEL_LAW_CHANGED`     | Channel law changed without a version change.    |
-| `PREDICATE_CHANGED`       | Invariant predicate changed.                     |
+| Event                     | Meaning                                       |
+| ------------------------- | --------------------------------------------- |
+| `CHANNEL_VERSION_CHANGED` | Channel version changed.                      |
+| `CHANNEL_LAW_CHANGED`     | Channel law changed without a version change. |
+| `PREDICATE_CHANGED`       | Invariant predicate changed.                  |
 
 Semantic-diff completion classes:
 
-| Event                     | Meaning                                              |
-| ------------------------- | ---------------------------------------------------- |
-| `LAW_STRENGTHENED`        | Constraint narrowed or forbidden behavior increased. |
-| `LAW_WEAKENED`            | Constraint widened or forbidden behavior decreased.  |
-| `BINDING_BROKEN`          | Previously bound law no longer binds.                |
+| Event              | Meaning                                              |
+| ------------------ | ---------------------------------------------------- |
+| `LAW_STRENGTHENED` | Constraint narrowed or forbidden behavior increased. |
+| `LAW_WEAKENED`     | Constraint widened or forbidden behavior decreased.  |
+| `BINDING_BROKEN`   | Previously bound law no longer binds.                |
 
 The report records `oldSchemaHash`, `newSchemaHash`, `oldLawHash`,
 `newLawHash`, and an ordered `changes` array. v1 events carry
@@ -1261,141 +1261,29 @@ layer because it creates false confidence.
 - Let Holmes/BLADE consume machine-readable semantic diffs and bundle hashes.
 - Consider Law Matrix and LSP support after CLI explain output stabilizes.
 
-## Implementation Slices
+## Implementation Evidence
 
-Working budget: **75 slices**.
+The v1 runway is closed. This packet no longer carries a live slice ledger; live
+work belongs in GitHub Issues and goalpost milestones.
 
-The budget is intentionally larger than the minimal compiler substrate because
-`weslaw` must become an operator-usable contract-bundle feature, not just an
-internal parser. The `WLAW-050` checkpoint preserved the runway through
-semantic diff completion, and the `WLAW-069` checkpoint moves the remaining
-work into first consumer payoff and v1 packet closeout.
+Durable evidence from the closed runway covers:
 
-### Phase 0: Design Lock
+- Law IR v1 model, subject coordinates, registries, discovery rules,
+  canonicalization rules, diagnostics, fixtures, and examples.
+- Rust Law IR v1 types and the `weslaw/v1` YAML structure loader.
+- Strict schema-hash anchoring and schema/operation/law subject binding.
+- Canonical semantic Law IR serialization, `lawHash`, optional
+  `lawDocumentHash`, profile and bundle hashes, and manifest output.
+- `wesley.law-diff/v1`, semantic diff events, Markdown summaries, CI-ready
+  fixtures, and Holmes/BLADE-facing fixtures.
+- Known directive lowering, `wesley law lint`, `wesley init-law`,
+  comment-derived draft suggestions, `wesley law explain`, and
+  `wesley law rebind`.
+- Rust law-backed scalar and variant validator helpers, footprint capability
+  summaries, law coverage reports, and Law Matrix deferral evidence.
 
-- [x] WLAW-001 Publish the Law IR v1 schema note as a closed, versioned model.
-- [x] WLAW-002 Define the subject coordinate grammar for schema and law
-      subjects.
-- [x] WLAW-003 Define the non-shape law registry model for resources,
-      verifiers, channels, and capability domains.
-- [x] WLAW-004 Define the law file discovery rules and explicit
-      schema-hash-anchor rules.
-- [x] WLAW-005 Define canonicalization rules for ordering, defaults, comments,
-      source spans, set-like arrays, and order-sensitive arrays.
-- [x] WLAW-006 Define the v1 diagnostic catalog and stable error codes.
-- [x] WLAW-007 Define active versus draft law semantics.
-- [x] WLAW-008 Define the v1 fixture corpus for accepted and rejected law
-      documents.
-- [x] WLAW-009 Add the first `weslaw/v1` examples for scalar, variant,
-      footprint, channel, and typed invariant law.
-- [x] WLAW-010 Update docs and changelog with the locked v1 substrate scope.
-
-### Phase 1: Law Loader And Typed IR
-
-- [x] WLAW-011 Add Rust Law IR v1 types for common law entry metadata.
-- [x] WLAW-012 Add Rust Law IR v1 types for `ScalarSemanticsLaw`.
-- [x] WLAW-013 Add Rust Law IR v1 types for `VariantLaw`.
-- [x] WLAW-014 Add Rust Law IR v1 types for `FootprintLaw`.
-- [x] WLAW-015 Add Rust Law IR v1 types for `ChannelLaw`.
-- [x] WLAW-016 Add Rust Law IR v1 types for typed `InvariantLaw`.
-- [x] WLAW-017 Parse `weslaw/v1` YAML through the v1 structure loader and
-      publish the initial `weslaw/v1` authoring schema artifact.
-- [x] WLAW-018 Normalize loader output into typed Law IR.
-- [x] WLAW-019 Reject unknown active law kinds and unknown active fields with stable
-      diagnostics.
-- [x] WLAW-020 Add fixture tests proving accepted YAML lowers into typed Law
-      IR and the accepted fixtures satisfy the published authoring schema.
-
-### Phase 2: Strict Binding
-
-- [x] WLAW-021 Parse and validate schema-hash anchors.
-- [x] WLAW-022 Fail loudly on schema-hash mismatch.
-- [x] WLAW-023 Bind scalar subjects to Shape IR.
-- [x] WLAW-024 Bind type, input, enum, and field subjects to Shape IR.
-- [x] WLAW-025 Bind operation subjects to root operation fields.
-- [x] WLAW-026 Bind variant discriminator fields and enum values.
-- [x] WLAW-027 Bind footprint argument paths to operation input paths.
-- [x] WLAW-028 Bind footprint resource kinds through schema coordinates or
-      explicit law registries.
-- [x] WLAW-029 Bind channel subjects through known directives or law
-      registries.
-- [x] WLAW-030 Bind typed invariant field references.
-- [x] WLAW-031 Reject duplicate law ids across the active bundle.
-- [x] WLAW-032 Reject wrong subject kind for each Law IR variant.
-- [x] WLAW-033 Reject contradictory law entries in the same bundle.
-- [x] WLAW-034 Add closest-match diagnostics for unresolved schema
-      coordinates.
-- [x] WLAW-035 Add `wesley law validate` for full schema-bound validation.
-
-### Phase 3: Canonicalization And Hashes
-
-- [x] WLAW-036 Implement canonical Law IR serialization.
-- [x] WLAW-037 Compute `lawHash` from active semantic Law IR only.
-- [x] WLAW-038 Exclude comments, source spans, and rationale prose from
-      `lawHash`.
-- [x] WLAW-039 Compute optional `lawDocumentHash` for provenance-bearing
-      documents.
-- [x] WLAW-040 Add canonicalization fixtures for key order and file-order
-      independence.
-- [x] WLAW-041 Add canonicalization fixtures for omitted defaults versus
-      explicit defaults.
-- [x] WLAW-042 Add canonicalization fixtures for set-like and order-sensitive
-      arrays.
-- [x] WLAW-043 Add bundle manifest fields for `schemaHash`, `lawHash`,
-      `profileHash`, and `bundleHash`.
-- [x] WLAW-044 Embed schema and law hash constants in one generated artifact
-      path.
-- [x] WLAW-045 Update docs and changelog for canonical law hash behavior.
-
-### Phase 4: Semantic Diffs
-
-- [x] WLAW-046 Define `wesley.law-diff/v1` JSON output.
-- [x] WLAW-047 Emit scalar semantic diff events.
-- [x] WLAW-048 Emit variant law diff events.
-- [x] WLAW-049 Emit footprint law diff events.
-- [x] WLAW-050 Drift checkpoint: reassess scope, split v1/v1.1 if needed, and
-      update this checklist before continuing.
-- [x] WLAW-051 Emit channel law diff events.
-- [x] WLAW-052 Emit typed invariant diff events.
-- [x] WLAW-053 Add `LAW_STRENGTHENED` and `LAW_WEAKENED` classifications.
-- [x] WLAW-054 Add `BINDING_BROKEN` and `SCHEMA_HASH_REBOUND`
-      classifications.
-- [x] WLAW-055 Add `wesley law diff --json`.
-- [x] WLAW-056 Generate Markdown summaries from structured diff events.
-- [x] WLAW-057 Add CI-ready semantic diff fixture output.
-- [x] WLAW-058 Add Holmes/BLADE-facing semantic diff fixtures.
-- [x] WLAW-059 Update docs and changelog for law diff output.
-
-### Phase 5: Directive Lowering And Adoption Tools
-
-- [x] WLAW-060 Lower one known formal directive family into Law IR.
-- [x] WLAW-061 Prove directive-authored and YAML-authored law canonicalize to
-      the same Law IR.
-- [x] WLAW-062 Add `wesley law lint` for structure-only validation.
-- [x] WLAW-063 Add `wesley init-law` scaffolding from known formal directives.
-- [x] WLAW-064 Add comment-derived draft suggestions with mandatory human
-      promotion.
-- [x] WLAW-065 Add `wesley law explain scalar:<Name>`.
-- [x] WLAW-066 Add `wesley law explain operation:<Root>.<Field>`.
-- [x] WLAW-067 Add `wesley law rebind` report generation.
-- [x] WLAW-068 Add explicit rebind acceptance flow for schema-hash anchor
-      updates.
-- [x] WLAW-069 Update docs and changelog for law authoring and adoption
-      workflows.
-
-### Phase 6: First Consumer Payoff
-
-- [x] WLAW-070 Generate scalar validators for one retained emitter or module
-      target.
-- [x] WLAW-071 Generate variant validators for one retained emitter or module
-      target.
-- [x] WLAW-072 Emit first footprint-to-capability report without claiming
-      runtime enforcement.
-- [x] WLAW-073 Add profile/category-aware law coverage reporting.
-- [x] WLAW-074 Add a minimal Law Matrix static report prototype or defer it
-      explicitly to v1.1 with evidence.
-- [x] WLAW-075 Close the v1 packet with playback, retrospective, docs,
-      changelog, and release-readiness evidence.
+The checkpoint and closeout sections below are historical evidence, not active
+progress tracking.
 
 ## WLAW-050 Drift Checkpoint
 
