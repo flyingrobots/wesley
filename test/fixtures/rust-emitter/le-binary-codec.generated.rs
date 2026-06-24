@@ -39,30 +39,28 @@ pub mod codec_port {
 
     /// Reader primitives required by generated decoders.
     pub trait Reader<'a> {
-        /// Error returned by fallible read operations.
-        type Error;
         /// Create a reader over encoded bytes.
         fn new(bytes: &'a [u8]) -> Self
         where
             Self: Sized;
         /// Read an unsigned 32-bit little-endian integer.
-        fn read_u32_le(&mut self) -> Result<u32, Self::Error>;
+        fn read_u32_le(&mut self) -> Result<u32, super::CodecError>;
         /// Read a signed 32-bit little-endian integer.
-        fn read_i32_le(&mut self) -> Result<i32, Self::Error>;
+        fn read_i32_le(&mut self) -> Result<i32, super::CodecError>;
         /// Read a canonical 32-bit little-endian float.
-        fn read_f32_le(&mut self) -> Result<f32, Self::Error>;
+        fn read_f32_le(&mut self) -> Result<f32, super::CodecError>;
         /// Read a boolean tag byte.
-        fn read_bool(&mut self) -> Result<bool, Self::Error>;
+        fn read_bool(&mut self) -> Result<bool, super::CodecError>;
         /// Read a length-prefixed UTF-8 string.
-        fn read_string(&mut self) -> Result<String, Self::Error>;
+        fn read_string(&mut self) -> Result<String, super::CodecError>;
         /// Read a nullable value with a presence tag.
-        fn read_option<T, F>(&mut self, read: F) -> Result<Option<T>, Self::Error>
+        fn read_option<T, F>(&mut self, read: F) -> Result<Option<T>, super::CodecError>
         where
-            F: FnOnce(&mut Self) -> Result<T, Self::Error>;
+            F: FnOnce(&mut Self) -> Result<T, super::CodecError>;
         /// Read a length-prefixed list.
-        fn read_list<T, F>(&mut self, read: F) -> Result<Vec<T>, Self::Error>
+        fn read_list<T, F>(&mut self, read: F) -> Result<Vec<T>, super::CodecError>
         where
-            F: FnMut(&mut Self) -> Result<T, Self::Error>;
+            F: FnMut(&mut Self) -> Result<T, super::CodecError>;
         /// Number of unread bytes remaining.
         fn remaining(&self) -> usize;
     }

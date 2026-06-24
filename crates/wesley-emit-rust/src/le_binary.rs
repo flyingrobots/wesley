@@ -98,30 +98,28 @@ fn emit_runtime_port_contract(out: &mut String) {
          \n\
          \x20   /// Reader primitives required by generated decoders.\n\
          \x20   pub trait Reader<'a> {{\n\
-         \x20       /// Error returned by fallible read operations.\n\
-         \x20       type Error;\n\
          \x20       /// Create a reader over encoded bytes.\n\
          \x20       fn new(bytes: &'a [u8]) -> Self\n\
          \x20       where\n\
          \x20           Self: Sized;\n\
          \x20       /// Read an unsigned 32-bit little-endian integer.\n\
-         \x20       fn read_u32_le(&mut self) -> Result<u32, Self::Error>;\n\
+         \x20       fn read_u32_le(&mut self) -> Result<u32, super::CodecError>;\n\
          \x20       /// Read a signed 32-bit little-endian integer.\n\
-         \x20       fn read_i32_le(&mut self) -> Result<i32, Self::Error>;\n\
+         \x20       fn read_i32_le(&mut self) -> Result<i32, super::CodecError>;\n\
          \x20       /// Read a canonical 32-bit little-endian float.\n\
-         \x20       fn read_f32_le(&mut self) -> Result<f32, Self::Error>;\n\
+         \x20       fn read_f32_le(&mut self) -> Result<f32, super::CodecError>;\n\
          \x20       /// Read a boolean tag byte.\n\
-         \x20       fn read_bool(&mut self) -> Result<bool, Self::Error>;\n\
+         \x20       fn read_bool(&mut self) -> Result<bool, super::CodecError>;\n\
          \x20       /// Read a length-prefixed UTF-8 string.\n\
-         \x20       fn read_string(&mut self) -> Result<String, Self::Error>;\n\
+         \x20       fn read_string(&mut self) -> Result<String, super::CodecError>;\n\
          \x20       /// Read a nullable value with a presence tag.\n\
-         \x20       fn read_option<T, F>(&mut self, read: F) -> Result<Option<T>, Self::Error>\n\
+         \x20       fn read_option<T, F>(&mut self, read: F) -> Result<Option<T>, super::CodecError>\n\
          \x20       where\n\
-         \x20           F: FnOnce(&mut Self) -> Result<T, Self::Error>;\n\
+         \x20           F: FnOnce(&mut Self) -> Result<T, super::CodecError>;\n\
          \x20       /// Read a length-prefixed list.\n\
-         \x20       fn read_list<T, F>(&mut self, read: F) -> Result<Vec<T>, Self::Error>\n\
+         \x20       fn read_list<T, F>(&mut self, read: F) -> Result<Vec<T>, super::CodecError>\n\
          \x20       where\n\
-         \x20           F: FnMut(&mut Self) -> Result<T, Self::Error>;\n\
+         \x20           F: FnMut(&mut Self) -> Result<T, super::CodecError>;\n\
          \x20       /// Number of unread bytes remaining.\n\
          \x20       fn remaining(&self) -> usize;\n\
          \x20   }}\n\
@@ -457,6 +455,34 @@ mod tests {
             rust.contains(
                 "return Err(CodecError::new(\"trailing bytes after decode\".to_string()));"
             ),
+            "{rust}"
+        );
+    }
+
+    #[test]
+    fn runtime_port_contract_ties_reader_errors_to_imported_codec_error() {
+        let color = type_def(
+            "Color",
+            TypeKind::Enum,
+            Vec::new(),
+            vec!["RED".into(), "GREEN".into()],
+        );
+        let rust = emit(vec![color]);
+
+        assert!(
+            !rust.contains("type Error;"),
+            "reader port contract must not allow an arbitrary error type:\n{rust}"
+        );
+        assert!(
+            rust.contains("fn read_u32_le(&mut self) -> Result<u32, super::CodecError>;"),
+            "{rust}"
+        );
+        assert!(
+            rust.contains("F: FnOnce(&mut Self) -> Result<T, super::CodecError>;"),
+            "{rust}"
+        );
+        assert!(
+            rust.contains("F: FnMut(&mut Self) -> Result<T, super::CodecError>;"),
             "{rust}"
         );
     }
