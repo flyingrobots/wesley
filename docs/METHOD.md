@@ -57,6 +57,7 @@ link the relevant goalposts from the gate issue body.
 | **`lane:bad-code`**   | Technical debt that must be addressed.                                       |
 | **`lane:cool-ideas`** | Uncommitted experiments.                                                     |
 | **`lane:inbox`**      | Raw ideas before triage. Remove after milestone assignment or lane decision. |
+| **`lane:planned`**    | Accepted goalpost work that is planned but not active this cycle.            |
 | **`lane:release`**    | Release-gate or release-scoped work, usually in a `Release: ...` milestone.  |
 
 The former filesystem lane `up-next/` was migrated into `lane:asap`.
@@ -71,7 +72,8 @@ Legend labels preserve Wesley's work taxonomy: `legend:SOURCE`,
 Active work should carry `work-in-progress`. Follow-up work belongs in GitHub
 Issues, not in chat, TODO prose, or local-only backlog files.
 
-Open `lane:inbox` should be empty or genuinely raw. If an issue is assigned to a
+Every open issue should carry one `lane:*` label after triage. Open
+`lane:inbox` should be empty or genuinely raw. If an issue is assigned to a
 goalpost milestone, it is no longer inbox.
 
 ## The Cycle Loop

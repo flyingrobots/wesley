@@ -15,8 +15,8 @@ Read these surfaces in order:
 - [docs/BEARING.md](docs/BEARING.md) for current direction and tensions
 - [docs/VISION.md](docs/VISION.md) for a bounded executive synthesis
 - [docs/design/README.md](docs/design/README.md) for active design packets and boundary doctrine
-- [docs/method/process.md](docs/method/process.md) for the workflow contract
-- [docs/method/guide.md](docs/method/guide.md) for practical repo guidance
+- [docs/METHOD.md](docs/METHOD.md) for the workflow contract
+- [docs/governance/labels.md](docs/governance/labels.md) for issue and PR label semantics
 - [AGENTS.md](AGENTS.md) for repository-specific automation rules
 
 ## Repository Doctrine
@@ -43,15 +43,16 @@ repos such as `wesley-postgres`.
 
 ## Repo Queue
 
-The queue is in the filesystem:
+GitHub owns live work state:
 
-- `docs/method/backlog/` for queued work
-- `docs/design/` for active cycle packets
-- `docs/method/retro/` for closed cycle packets
+- GitHub Issues hold slices and raw intake.
+- GitHub Milestones hold goalposts and release gates.
+- GitHub Projects provide roadmap board views.
+- GitHub labels carry lane, legend, work-shape, and ownership metadata.
 
-The backlog names what should happen next. Retros, witnesses, and updated repo
-surfaces record what was actually proved. The Chronicle files in the repo root
-are historical archive only.
+Repository files are the evidence ledger. Design packets, witnesses, retros,
+release notes, and signpost docs record stable truth and proof after work is
+done. The Chronicle files in the repo root are historical archive only.
 
 ## Design Requirements
 
@@ -102,24 +103,23 @@ See `docs/method/legends/` for the standing questions each legend owns.
 
 ## Default Loop
 
-1. Pull a backlog item into `docs/design/<cycle>/`, or add a new backlog item
-   first if the work emerged during the current cycle.
-2. Write the design packet with the required METHOD fields.
-3. Write failing tests from the playback questions.
-4. Implement.
-5. Produce a reproducible witness.
-6. Close the cycle with a retro in `docs/method/retro/<cycle>/`.
-7. Reconcile backlog lanes at cycle boundaries, not continuously.
+1. Pull a GitHub Issue with the right goalpost milestone and `lane:*` label.
+2. Add `work-in-progress` while the slice is active.
+3. Write or update the design packet when the work needs durable design context.
+4. Write failing tests from the playback questions or issue acceptance criteria.
+5. Implement.
+6. Produce a reproducible witness.
+7. File follow-up work as GitHub Issues with the right milestone and lane.
 8. Update ship surfaces such as `docs/BEARING.md`, `CHANGELOG.md`, and release
    notes only from merged `main` state.
 
-Review state still rides on branches and PRs. METHOD does not pretend GitHub is
-the queue.
+Review state rides on branches and PRs. GitHub Issues, Milestones, Projects, and
+labels are the live queue.
 
 ## Wesley-Specific Closeout Rules
 
-- Do not append new Chronicle entries. Close the loop in backlog, design,
-  retro, witness, and signpost files instead.
+- Do not append new Chronicle entries. Close the loop in GitHub Issues, design
+  packets, retros, witnesses, and signpost files instead.
 - If docs contradict runtime behavior, fix the docs.
 - If a claimed result cannot be reproduced from committed commands, tests,
   fixtures, or witness artifacts, it is not done.

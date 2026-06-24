@@ -35,8 +35,10 @@ GitHub and can be reviewed with `gh label list`.
 | `lane:bad-code`   | Named technical debt or trust debt.                                                  |
 | `lane:cool-ideas` | Exploratory ideas with no commitment yet.                                            |
 | `lane:release`    | Release-gate or release-scoped work, usually assigned to a `Release: ...` milestone. |
+| `lane:planned`    | Accepted goalpost work that is planned but not active this cycle.                    |
 
-Open `lane:inbox` should be empty unless genuinely raw intake exists.
+Every open issue should carry one `lane:*` label after triage. Open
+`lane:inbox` should be empty unless genuinely raw intake exists.
 
 ## Legends
 
