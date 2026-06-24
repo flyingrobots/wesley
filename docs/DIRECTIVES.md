@@ -19,6 +19,7 @@ directives by what that path truly parses and lowers today.
 - `external`: owned by an external module or product repo, not by generic
   Wesley.
 - `deferred`: declared in the registry or docs, but not yet part of a stable public contract.
+- `dead`: historical syntax that generic Wesley must not present as supported.
 
 ## Current On The Main Database Compiler Path
 
@@ -78,7 +79,21 @@ The directive registry and draft docs still contain broader semantics than the m
 | ---------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Full `@wes_rls(...)` option matrix                                           | `deferred` | The registry exposes a broad option shape, but the stable hot-path contract today is the presence of `@wes_rls`, not the full option matrix. |
 | Broad alias support beyond the core compiler directives                      | `deferred` | The registry declares many alias forms, but the current parser alias map only covers the core compiler directives plus `@wes_rls`.           |
+| `@wes_join`, `@wes_view`                                                     | `deferred` | These are registered as generic metadata shapes, but no stable Rust-native user command interprets them end to end today.                    |
 | “Everything in `schemas/directives.graphql` is supported by native emitters” | `deferred` | That is not true today and should not be assumed.                                                                                            |
+
+## Dead Or Historical Syntax
+
+Older examples and migration archives still contain syntax from the deleted
+Node/Postgres era, Prisma-like sketches, or product-specific experiments. These
+forms are not current generic Wesley semantics.
+
+| Syntax family                                     | Status | Notes                                                                                           |
+| ------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| `@check`, `@updatedAt`, `@email`                  | `dead` | Historical example-only annotations. Generic Wesley does not declare or lower these today.      |
+| `@hasOne`                                         | `dead` | Historical virtual-relation sketch. It is not in the generic registry or current Rust hot path. |
+| `@rpc`, `@function`                               | `dead` | Product/database RPC sketches from the deleted Node/Postgres era.                               |
+| Prisma-style `@@primaryKey(...)`, `@@unique(...)` | `dead` | Not GraphQL SDL directive syntax and not accepted as Wesley current-path SDL.                   |
 
 ## Practical Guidance
 
@@ -89,6 +104,24 @@ The directive registry and draft docs still contain broader semantics than the m
 - If you are working on protocol/TTD flows, use the Continuum-owned module or
   package; do not assume TTD directives are part of generic Wesley emitters or
   the generic `schemas/directives.graphql` registry.
+
+## Fixture Boundary
+
+Stable current-path examples:
+
+- `test/fixtures/examples/schema.graphql`
+- `test/fixtures/examples/schema-v2.graphql`
+- `test/fixtures/examples/ecommerce.graphql`
+
+Experimental or historical examples:
+
+- `test/fixtures/examples/schema-with-rls.graphql`
+- `test/fixtures/examples/multi-tenant.graphql`
+- `test/fixtures/examples/rpc-example.graphql`
+- `test/fixtures/reference/schema.graphql`
+
+Docs and quick starts must cite the stable current-path examples unless they
+are explicitly explaining an experimental or historical boundary.
 
 ## Minimal Happy-Path Example
 

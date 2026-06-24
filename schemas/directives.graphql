@@ -7,7 +7,10 @@ compiler metadata. Product-specific directive families belong in their owning
 modules.
 
 CANONICAL NAMESPACE: @wes_* (preferred)
-Legacy aliases: @wesley_* and bare names (@table, @pk) supported with deprecation warnings
+
+This file is a registry, not a support guarantee. See docs/DIRECTIVES.md for
+the directive truth table that classifies current, experimental, external,
+deferred, and dead directive semantics.
 """
 
 # Shared scalars used by directives
@@ -112,7 +115,7 @@ directive @wes_rls(
 # ═══════════════════════════════════════════════════════════════════
 
 directive @wesley_table(name: String) on OBJECT
-directive @wesley_pk on FIELD_DEFINITION  
+directive @wesley_pk on FIELD_DEFINITION
 directive @wesley_fk(ref: String!) on FIELD_DEFINITION
 directive @wesley_unique on FIELD_DEFINITION
 directive @wesley_index(name: String, using: String) on FIELD_DEFINITION | OBJECT
@@ -147,7 +150,7 @@ directive @wesley_rls(
 
 directive @table on OBJECT
 directive @pk on FIELD_DEFINITION
-directive @fk(ref: String!) on FIELD_DEFINITION  
+directive @fk(ref: String!) on FIELD_DEFINITION
 directive @unique on FIELD_DEFINITION
 directive @index(name: String, using: String) on FIELD_DEFINITION | OBJECT
 directive @tenant(by: String!) on OBJECT

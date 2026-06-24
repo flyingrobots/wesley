@@ -1,5 +1,8 @@
-# Multi-tenant SaaS Example Schema
-# Demonstrates Wesley's @tenant and @owner directives
+# Experimental/historical multi-tenant sketch.
+#
+# This file intentionally uses directive families that are not current-path
+# compiler guarantees. Use schema.graphql, schema-v2.graphql, or
+# ecommerce.graphql for stable current-path examples.
 
 type Org @wes_table {
   id: ID! @wes_pk

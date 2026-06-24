@@ -1,75 +1,43 @@
-# E-Commerce Platform Schema - Production-Grade Demo
-# Shows Wesley + SHA-lock HOLMES capabilities
+# Stable current-path e-commerce fixture.
+#
+# This schema is used by quick-start docs and the example generation script, so
+# it must not rely on experimental directive families. Keep it aligned with
+# docs/DIRECTIVES.md current support.
 
 scalar UUID
 scalar DateTime
-scalar JSON
 
-directive @uid(value: String!) on OBJECT | FIELD_DEFINITION
-directive @weight(value: Int! = 5) on OBJECT | FIELD_DEFINITION
-directive @critical on OBJECT | FIELD_DEFINITION
-directive @sensitive on FIELD_DEFINITION
-directive @pii on FIELD_DEFINITION
-
-# Core User table with authentication
-type User @wes_table @critical @uid(value: "tbl:user") {
-  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:user.id")
-  email: String! @wes_unique @pii @weight(value: 9) @uid(value: "col:user.email")
-  password_hash: String! @sensitive @weight(value: 10) @uid(value: "col:user.password")
-  
-  full_name: String @pii @weight(value: 7) @uid(value: "col:user.full_name")
-  phone: String @pii @weight(value: 8) @uid(value: "col:user.phone")
-  
-  email_verified: Boolean! @wes_default(expr: "false") @weight(value: 8)
-  created_at: DateTime! @wes_default(expr: "now()")
-  
-  orders: [Order!]! @hasMany
+type Customer @wes_table {
+  id: UUID! @wes_pk @wes_default(value: "gen_random_uuid()")
+  email: String! @wes_unique @wes_index
+  full_name: String
+  created_at: DateTime! @wes_default(value: "now()")
 }
 
-# Products with inventory tracking
-type Product @wes_table @uid(value: "tbl:product") {
-  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:product.id")
-  
-  sku: String! @wes_unique @weight(value: 9) @uid(value: "col:product.sku")
-  name: String! @weight(value: 8) @uid(value: "col:product.name")
-  slug: String! @wes_unique @wes_index @weight(value: 7) @uid(value: "col:product.slug")
-  
-  price_cents: Int! @weight(value: 9) @uid(value: "col:product.price")
-  stock_quantity: Int! @wes_default(expr: "0") @weight(value: 8)
-  
-  published: Boolean! @wes_default(expr: "false") @wes_index @weight(value: 7)
-  created_at: DateTime! @wes_default(expr: "now()")
-  
-  order_items: [OrderItem!]! @hasMany
+type Product @wes_table {
+  id: UUID! @wes_pk @wes_default(value: "gen_random_uuid()")
+  sku: String! @wes_unique @wes_index
+  name: String!
+  slug: String! @wes_unique @wes_index
+  price_cents: Int!
+  stock_quantity: Int! @wes_default(value: "0")
+  published: Boolean! @wes_default(value: "false") @wes_index
+  created_at: DateTime! @wes_default(value: "now()")
 }
 
-# Orders with payment tracking
-type Order @wes_table @critical @uid(value: "tbl:order") {
-  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()") @uid(value: "col:order.id")
-  order_number: String! @wes_unique @weight(value: 10) @uid(value: "col:order.number")
-  user_id: UUID! @wes_fk(ref: "User.id") @wes_index @weight(value: 9)
-  
-  status: String! @weight(value: 9) @uid(value: "col:order.status")
-  total_cents: Int! @weight(value: 9)
-  
-  payment_intent_id: String @wes_unique @sensitive @weight(value: 9)
-  paid_at: DateTime @weight(value: 7)
-  
-  created_at: DateTime! @wes_default(expr: "now()")
-  
-  user: User! @belongsTo
-  items: [OrderItem!]! @hasMany
+type Order @wes_table @wes_tenant(by: "customer_id") @wes_rls {
+  id: UUID! @wes_pk @wes_default(value: "gen_random_uuid()")
+  order_number: String! @wes_unique @wes_index
+  customer_id: UUID! @wes_fk(ref: "Customer.id") @wes_index
+  status: String! @wes_default(value: "'pending'") @wes_index
+  total_cents: Int!
+  created_at: DateTime! @wes_default(value: "now()")
 }
 
-# Order line items
-type OrderItem @wes_table @uid(value: "tbl:order_item") {
-  id: UUID! @wes_pk @wes_default(expr: "gen_random_uuid()")
-  order_id: UUID! @wes_fk(ref: "Order.id") @wes_index @weight(value: 8)
-  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index @weight(value: 7)
-  
-  quantity: Int! @weight(value: 8)
-  unit_price_cents: Int! @weight(value: 8)
-  
-  order: Order! @belongsTo
-  product: Product! @belongsTo
+type OrderItem @wes_table {
+  id: UUID! @wes_pk @wes_default(value: "gen_random_uuid()")
+  order_id: UUID! @wes_fk(ref: "Order.id") @wes_index
+  product_id: UUID! @wes_fk(ref: "Product.id") @wes_index
+  quantity: Int! @wes_default(value: "1")
+  unit_price_cents: Int!
 }
