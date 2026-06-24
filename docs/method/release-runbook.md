@@ -89,17 +89,18 @@ CI state.
 
 1. Review the final diff.
 2. Stage the release changes.
-3. Create the release commit.
-4. Create the release tag.
-5. Verify the tag points at the release commit and satisfies signing
+3. Create the release commit on a release branch.
+4. Land the release commit through the protected `main` branch.
+5. Sync local main to origin/main after the release commit has landed.
+6. Create the release tag on the synced `main` commit.
+7. Verify the tag points at the release commit and satisfies signing
    requirements where applicable.
-6. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally.
-7. Push `main` and the exact release tag together, for example:
-   `git push origin main vX.Y.Z`.
-8. Create the GitHub Release or equivalent forge release using the versioned
+8. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally.
+9. Push the exact release tag only, for example: `git push origin vX.Y.Z`.
+10. Create the GitHub Release or equivalent forge release using the versioned
    release notes.
-9. Monitor triggered workflows to completion.
-10. Verify registries directly before claiming publication succeeded.
+11. Monitor triggered workflows to completion.
+12. Verify registries directly before claiming publication succeeded.
 
 ## Evidence
 
