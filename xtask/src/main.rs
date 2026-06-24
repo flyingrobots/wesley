@@ -1430,6 +1430,34 @@ fn check_release_issue_tracker_clear(tag: &str, version: &str) -> Result<(), Err
     let queries = release_issue_query_specs(tag, version, &repo);
     let mut matches = BTreeMap::new();
 
+    let text_query = release_issue_title_body_query(&repo);
+    let text_output = Command::new("gh")
+        .args(&text_query)
+        .output()
+        .map_err(|source| {
+            Error::Usage(format!(
+                "failed to spawn `gh {}` for release issue tracker check: {source}",
+                text_query.join(" ")
+            ))
+        })?;
+
+    if !text_output.status.success() {
+        let stderr = String::from_utf8_lossy(&text_output.stderr);
+        return Err(Error::CheckFailed {
+            check: "release issue tracker".to_string(),
+            failures: vec![format!(
+                "`gh {}` failed: {}",
+                text_query.join(" "),
+                stderr.trim()
+            )],
+        });
+    }
+
+    let text_stdout = String::from_utf8_lossy(&text_output.stdout);
+    for issue in parse_current_version_issue_text(&text_stdout, tag, version)? {
+        matches.entry(issue.key).or_insert(issue.display);
+    }
+
     for query in queries {
         let output = Command::new("gh")
             .args(&query.args)
@@ -1517,28 +1545,17 @@ struct ReleaseIssueMatch {
 
 #[cfg(test)]
 fn release_issue_queries(tag: &str, version: &str, repo: &str) -> Vec<Vec<String>> {
-    release_issue_query_specs(tag, version, repo)
-        .into_iter()
-        .map(|query| query.args)
+    std::iter::once(release_issue_title_body_query(repo))
+        .chain(
+            release_issue_query_specs(tag, version, repo)
+                .into_iter()
+                .map(|query| query.args),
+        )
         .collect()
 }
 
-fn release_issue_query_specs(tag: &str, version: &str, repo: &str) -> Vec<ReleaseIssueQuery> {
+fn release_issue_query_specs(tag: &str, version: &str, _repo: &str) -> Vec<ReleaseIssueQuery> {
     vec![
-        ReleaseIssueQuery {
-            args: vec![
-                "issue".to_string(),
-                "list".to_string(),
-                "--state".to_string(),
-                "open".to_string(),
-                "--search".to_string(),
-                format!("\"{tag}\" OR \"{version}\" repo:{repo}"),
-                "--json".to_string(),
-                "number,title,url".to_string(),
-            ],
-            source: "text search".to_string(),
-            ignore_missing_selector: false,
-        },
         ReleaseIssueQuery {
             args: release_issue_selector_query("--milestone", tag),
             source: format!("milestone `{tag}`"),
@@ -1559,6 +1576,21 @@ fn release_issue_query_specs(tag: &str, version: &str, repo: &str) -> Vec<Releas
             source: format!("label `{version}`"),
             ignore_missing_selector: true,
         },
+    ]
+}
+
+fn release_issue_title_body_query(repo: &str) -> Vec<String> {
+    vec![
+        "issue".to_string(),
+        "list".to_string(),
+        "--repo".to_string(),
+        repo.to_string(),
+        "--state".to_string(),
+        "open".to_string(),
+        "--limit".to_string(),
+        "1000".to_string(),
+        "--json".to_string(),
+        "number,title,url,body".to_string(),
     ]
 }
 
@@ -1613,6 +1645,95 @@ fn parse_release_issue_list(content: &str, source: &str) -> Result<Vec<ReleaseIs
         });
     }
     Ok(matches)
+}
+
+fn parse_current_version_issue_text(
+    content: &str,
+    tag: &str,
+    version: &str,
+) -> Result<Vec<ReleaseIssueMatch>, Error> {
+    let issues = serde_json::from_str::<serde_json::Value>(content).map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse release issue tracker title/body output as JSON: {source}"
+        ))
+    })?;
+    let Some(issues) = issues.as_array() else {
+        return Err(Error::Usage(
+            "release issue tracker title/body output must be a JSON array".to_string(),
+        ));
+    };
+
+    let mut matches = Vec::new();
+    for issue in issues {
+        let number = issue
+            .get("number")
+            .and_then(serde_json::Value::as_u64)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "release issue tracker title/body issue is missing numeric `number`"
+                        .to_string(),
+                )
+            })?;
+        let title = issue
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "release issue tracker title/body issue is missing string `title`".to_string(),
+                )
+            })?;
+        let url = issue
+            .get("url")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::Usage(
+                    "release issue tracker title/body issue is missing string `url`".to_string(),
+                )
+            })?;
+        let body = issue
+            .get("body")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
+
+        if contains_exact_release_reference(title, tag, version)
+            || contains_exact_release_reference(body, tag, version)
+        {
+            matches.push(ReleaseIssueMatch {
+                key: url.to_string(),
+                display: format!("#{number} {title} {url} (title/body text)"),
+            });
+        }
+    }
+    Ok(matches)
+}
+
+fn contains_exact_release_reference(content: &str, tag: &str, version: &str) -> bool {
+    contains_exact_release_token(content, tag) || contains_exact_release_token(content, version)
+}
+
+fn contains_exact_release_token(content: &str, needle: &str) -> bool {
+    let mut search = content;
+    while let Some(pos) = search.find(needle) {
+        let before = search[..pos].chars().next_back();
+        let after = &search[pos + needle.len()..];
+        if is_release_version_boundary(before) && is_release_issue_token_end_boundary(after) {
+            return true;
+        }
+        search = &search[pos + 1..];
+    }
+    false
+}
+
+fn is_release_issue_token_end_boundary(after: &str) -> bool {
+    let mut chars = after.chars();
+    match chars.next() {
+        None => true,
+        Some('.') => match chars.next() {
+            None => true,
+            Some(c) => c.is_whitespace(),
+        },
+        Some(c) => !c.is_ascii_alphanumeric() && c != '-' && c != '+' && c != '_',
+    }
 }
 
 fn parse_prior_version_issue_lanes(
@@ -2912,12 +3033,14 @@ mod tests {
                 vec![
                     "issue",
                     "list",
+                    "--repo",
+                    "flyingrobots/wesley",
                     "--state",
                     "open",
-                    "--search",
-                    "\"v1.2.3\" OR \"1.2.3\" repo:flyingrobots/wesley",
+                    "--limit",
+                    "1000",
                     "--json",
-                    "number,title,url",
+                    "number,title,url,body",
                 ],
                 vec![
                     "issue",
@@ -2960,6 +3083,61 @@ mod tests {
                     "number,title,url",
                 ],
             ]
+        );
+    }
+
+    #[test]
+    fn current_release_issue_text_ignores_comment_only_matches() {
+        let content = serde_json::json!([
+            {
+                "number": 1,
+                "title": "release: ship v1.2.3",
+                "url": "https://github.com/flyingrobots/wesley/issues/1",
+                "body": "release umbrella"
+            },
+            {
+                "number": 2,
+                "title": "future runtime work",
+                "url": "https://github.com/flyingrobots/wesley/issues/2",
+                "body": "No current release assignment here."
+            },
+            {
+                "number": 3,
+                "title": "future evidence work",
+                "url": "https://github.com/flyingrobots/wesley/issues/3",
+                "body": "Related PR comment mentions are not part of this JSON payload."
+            },
+            {
+                "number": 4,
+                "title": "version substring",
+                "url": "https://github.com/flyingrobots/wesley/issues/4",
+                "body": "v1.2.30 belongs to another release lane."
+            },
+            {
+                "number": 5,
+                "title": "bare version blocker",
+                "url": "https://github.com/flyingrobots/wesley/issues/5",
+                "body": "Must clear before 1.2.3."
+            },
+            {
+                "number": 6,
+                "title": "unrelated method migration",
+                "url": "https://github.com/flyingrobots/wesley/issues/6",
+                "body": "METHOD v2.1.0 migration text is not this release lane."
+            }
+        ])
+        .to_string();
+
+        let matches = parse_current_version_issue_text(&content, "v1.2.3", "1.2.3").unwrap();
+
+        assert_eq!(matches.len(), 2);
+        assert_eq!(
+            matches[0].display,
+            "#1 release: ship v1.2.3 https://github.com/flyingrobots/wesley/issues/1 (title/body text)"
+        );
+        assert_eq!(
+            matches[1].display,
+            "#5 bare version blocker https://github.com/flyingrobots/wesley/issues/5 (title/body text)"
         );
     }
 
