@@ -47,6 +47,12 @@ and rationale.
       already marked as release issues. Anything knowingly deferred is acknowledged
       in the CHANGELOG or a documented follow-on issue.
 
+- [ ] **Tagged `main` is the release boundary**
+      I confirmed every repo-resident release fact that must ship with this
+      version is already on synced `main` before tagging. The release does not
+      depend on a manual post-publish merge to make README, changelog, release
+      notes, runbooks, or verification docs accurate.
+
 ### Notes
 
 _Add any relevant context, known deferred issues, or reviewer observations._

@@ -44,7 +44,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 | 15  | `cargo audit` reports zero vulnerabilities           | shell          |          |
 | 16  | No WIP or `fixup!` commits in release range          | git log        |          |
 | 17  | Working tree is clean                                | git status     |          |
-| 18  | Tag commits to `main`                                | git branch     |          |
+| 18  | Tag is the synced `main` release boundary            | git branch     | reviewer |
 | 19  | CI is green on HEAD at tag time                      | `gh` API       |          |
 | 20  | `BREAKING CHANGE` commits → major/minor version bump | git log        |          |
 | 21  | `cargo doc --workspace` builds with zero warnings    | cargo doc      |          |
@@ -144,11 +144,15 @@ history that was not cleaned up before tagging.
 `git status --porcelain` must return no output. Uncommitted changes at tag
 time indicate the tag does not represent a clean, reproducible state.
 
-### Check 18: Tag on main
+### Check 18: Tagged main release boundary
 
-The tag's commit must be reachable from `origin/main`
-(`git merge-base --is-ancestor`). Releases from feature branches are not
-permitted.
+The release tag must be created from local `main` after fetching `origin/main`
+and verifying local `HEAD` equals `origin/main`. The tag's commit must remain
+reachable from `origin/main` in CI (`git merge-base --is-ancestor`), but
+reachability alone is not enough for human release preparation. Releases from
+feature branches are not permitted, and humans must not merge manual
+release-truth or publication-evidence backfills to `main` after the version has
+published.
 
 ### Check 19: CI Green
 
@@ -199,6 +203,11 @@ are being knowingly shipped without acknowledgment in the CHANGELOG or a
 documented follow-on issue. Automated issue-tracker checks surface issues by
 version label and milestone; they cannot detect an issue that was never labeled
 but is nonetheless blocking.
+
+The reviewer must also confirm that repo-resident release evidence is complete
+enough before tagging. Post-publish facts may live in the GitHub Release,
+workflow logs, and crates.io registry; they should not require a manual
+post-release merge to make the released commit truthful.
 
 ## Policy Violations
 

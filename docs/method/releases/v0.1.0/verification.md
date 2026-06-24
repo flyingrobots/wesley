@@ -1,8 +1,6 @@
 # Wesley v0.1.0 Verification
 
-This packet records pre-release evidence for `v0.1.0`. Publish evidence must be
-appended after the signed tag, GitHub release, CI run, and crates.io
-publication complete.
+This packet records pre-release and publication evidence for `v0.1.0`.
 
 ## Release Inputs
 
@@ -79,14 +77,26 @@ Validation after that refresh:
 
 ## Publish Evidence
 
-Publication has not been performed in this branch. Append evidence here when
-the release is cut:
+Publication was performed from the signed `v0.1.0` tag after PR #620 merged to
+`main`. The tag-triggered Release Crates workflow completed successfully on
+attempt 2. Attempt 1 stopped before publishing because a legacy shell guard
+matched stale open issue comments; no crates were published before the retry.
 
 | Item | Evidence |
 | --- | --- |
-| Release tag | Pending. |
-| Tag signature | Pending. |
-| GitHub Release | Pending. |
-| CI workflow | Pending. |
-| Crates workflow | Pending. |
-| Crates.io visibility | Pending. |
+| Release tag | `v0.1.0` tag object `94449806ab0b08c2023afe1721c9bcca83174188`; tag commit `214d27a94e4aa46614f32d18daf9827e5dfbd058`. |
+| Tag signature | `git tag -v v0.1.0` reported a good signature from `James Ross <james@flyingrobots.dev>` using RSA key `01A63D8E9DBEEDE32918AF9C39560E0406CA9135`. |
+| GitHub Release | `https://github.com/flyingrobots/wesley/releases/tag/v0.1.0`; published `2026-06-24T15:40:30Z`; not draft; not prerelease. |
+| CI workflow | Tag CI run for `v0.1.0` completed successfully before the release rerun. |
+| Crates workflow | `https://github.com/flyingrobots/wesley/actions/runs/28109147150`, attempt 2, completed successfully at `2026-06-24T15:40:35Z`. |
+| Crates.io visibility | `cargo info` from outside the repository downloaded `wesley-core@0.1.0`, `wesley-emit-codec@0.1.0`, `wesley-emit-rust@0.1.0`, `wesley-emit-typescript@0.1.0`, and `wesley-cli@0.1.0` from crates.io. |
+
+The crates.io API reported the following published versions, all not yanked:
+
+| Crate | Version | Created at |
+| --- | --- | --- |
+| `wesley-core` | `0.1.0` | `2026-06-24T15:39:07.393094Z` |
+| `wesley-emit-codec` | `0.1.0` | `2026-06-24T15:39:15.992300Z` |
+| `wesley-emit-rust` | `0.1.0` | `2026-06-24T15:39:20.464557Z` |
+| `wesley-emit-typescript` | `0.1.0` | `2026-06-24T15:39:23.559832Z` |
+| `wesley-cli` | `0.1.0` | `2026-06-24T15:40:27.522439Z` |
