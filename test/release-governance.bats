@@ -36,3 +36,8 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "cargo audit" docs/CRATES_IO_RELEASE.md
   assert_success
 }
+
+@test "entrypoints command map lists Rust LE binary emitter" {
+  run grep -F "wesley emit le-binary-rust --schema <path> --out <path>" docs/ENTRYPOINTS.md
+  assert_success
+}

@@ -89,6 +89,7 @@ wesley law capabilities --law <law.weslaw.yaml> [--json]
 wesley law coverage --schema <path> --law <law.weslaw.yaml> [--profile release|ci-release|local] [--json]
 wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
 wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
+wesley emit le-binary-rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
 wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
