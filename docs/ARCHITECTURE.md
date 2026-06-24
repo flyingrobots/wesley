@@ -32,11 +32,12 @@ The repo is now split into three practical layers:
    structure, lists schema root operations, and exposes generic operation facts.
 2. **Native CLI / body**: `crates/wesley-cli` is the Rust product command. It
    exposes schema lowering, schema hashing, schema operation listing, schema
-   diffing, Rust/TypeScript emission, operation selection analysis, and
+   diffing, Rust/TypeScript emission, LE-binary codec emission, `weslaw`
+   validation/diff/coverage commands, operation selection analysis, and
    directive argument extraction from Rust crates.
 3. **Rust Holmes assurance foundation**: `crates/wesley-holmes` is the new
    law-assurance foundation for Holmes evidence, versioning, ports, and future
-   reports. It consumes Wesley-published artifacts and does not expose product
+   reports. It consumes Wesley compiler artifacts and does not expose product
    CLI commands yet.
 4. **Non-compiler JavaScript surfaces**: `packages/` now contains Holmes
    assurance tooling and browser/Bun/Deno host smoke experiments only. These
@@ -58,6 +59,7 @@ flowchart LR
     subgraph WesleyRepo["Wesley repository"]
         subgraph Rust["Rust workspace"]
             Core[wesley-core]
+            CodecPlan[wesley-emit-codec]
             RustEmitter[wesley-emit-rust]
             TsEmitter[wesley-emit-typescript]
             RustHolmes[wesley-holmes]
@@ -88,10 +90,13 @@ flowchart LR
     SDL --> Core
     OP --> Core
     NativeCli --> Core
+    NativeCli --> CodecPlan
     NativeCli --> RustEmitter
     NativeCli --> TsEmitter
     RustEmitter --> Core
+    RustEmitter --> CodecPlan
     TsEmitter --> Core
+    TsEmitter --> CodecPlan
     RustHolmes --> Fixtures
     Xtask --> NativeCli
     Xtask --> Core
@@ -118,6 +123,7 @@ semantics.
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `crates/wesley-core/`                                                    | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, lists schema root operations, and analyzes operation documents.                 |
 | `crates/wesley-cli/`                                                     | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts.                                                            |
+| `crates/wesley-emit-codec/`                                               | Shared LE-binary codec planning crate consumed by Rust and TypeScript codec emitters.                                                                                    |
 | `crates/wesley-emit-rust/`                                               | Rust projection crate. Builds a Rust item/type AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations.                    |
 | `crates/wesley-emit-typescript/`                                         | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
 | `crates/wesley-holmes/`                                                  | Rust Holmes law-assurance foundation. Defines pure domain models, deterministic ports/fakes, evidence bundle validation, artifact path resolution, and version diagnostics without exposing public CLI commands yet. |
@@ -201,7 +207,9 @@ deployments, or runtime policy.
 projection crates. They do not parse or rewrite existing source files. They take
 `WesleyIR` for models and, when available, `SchemaOperation` data for root
 operation bindings. Each crate builds structured language-specific ASTs and
-prints deterministic artifacts.
+prints deterministic artifacts. LE-binary codec emission now shares the
+language-neutral plan from `crates/wesley-emit-codec` before each emitter
+renders language-specific syntax.
 
 This generation path does not need tree-sitter. Tree-sitter, SWC, oxc, or a
 similar parser becomes relevant when Wesley needs to inspect or edit existing
@@ -595,6 +603,9 @@ Wesley currently does these things in this repo:
 - Resolves operation selection paths in schema-coordinate mode.
 - Extracts operation directive arguments by directive name.
 - Provides a native Rust workspace preflight and release check.
+- Emits Rust and TypeScript models, operation bindings, and LE-binary codecs.
+- Validates, lints, diffs, explains, rebinds, and reports coverage for
+  `weslaw/v1` documents.
 - Maintains non-compiler JavaScript tooling only where it has an explicit owner.
 - Maintains docs, schemas, fixtures, CI scripts, and design packets around the
   broader compiler-and-assurance system.

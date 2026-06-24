@@ -2759,6 +2759,7 @@ Publish options:
   cargo xtask publish-alpha                    Print alpha plan and run safe dry-runs
   cargo xtask publish-alpha --execute          CI tag-only compatibility publish path
   cargo xtask package-crates --tag vX.Y.Z      Check release package file sets
+  cargo xtask package-crates --version X.Y.Z   Check pre-tag release package file sets
   cargo xtask publish-crates --tag vX.Y.Z      Print tag-derived plan and run safe dry-runs
   cargo xtask publish-crates --tag vX.Y.Z --execute  Publish in GitHub Actions only
   cargo xtask release-prep-guard --version X.Y.Z

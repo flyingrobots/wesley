@@ -159,11 +159,14 @@ Wesley crates when paired with an exact matching `version`.
 ### Phase 3: Documentation
 
 1. Locate `[Unreleased]` in `CHANGELOG.md`.
-2. `ABORT` if `[Unreleased]` is missing or empty.
-3. Rename it to `[X.Y.Z] - YYYY-MM-DD` using the target version and UTC date.
+2. If the release has not been shaped yet, `ABORT` when `[Unreleased]` is
+   missing or empty.
+3. If the release has already been shaped, verify the exact
+   `[X.Y.Z] - YYYY-MM-DD` section exists and `[Unreleased]` contains no changes
+   that should be pulled into the tag.
 4. Preserve the existing changelog style, anchors, and compare links.
 5. Find or create `## What's New in vX.Y.Z` in `README.md`.
-6. Write a concise user-facing summary.
+6. Write or verify a concise user-facing summary.
 7. Ensure `README.md` visibly links to `CHANGELOG.md`.
 8. Extract the final changelog section for GitHub Release notes.
 
@@ -174,13 +177,9 @@ Wesley crates when paired with an exact matching `version`.
 The Rust gauntlet for Wesley is:
 
 ```bash
-cargo xtask docs-check
-cargo check --workspace --all-targets
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets -- -D warnings
-cargo xtask release-check
-cargo audit
 cargo xtask release-prep-guard --version X.Y.Z
+cargo xtask preflight
+cargo xtask release-check
 cargo xtask package-crates --version X.Y.Z
 ```
 

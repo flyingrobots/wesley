@@ -8,8 +8,9 @@ Wesley has one intended front door:
 cargo wesley --help
 ```
 
-For installed alpha builds, the crates.io package is `wesley-cli` and the
-installed command is `wesley`:
+For published alpha builds, the crates.io package is `wesley-cli` and the
+installed command is `wesley`. The `0.1.0` install command is valid after the
+tag-driven release workflow publishes that version:
 
 ```bash
 cargo install wesley-cli --version 0.1.0
@@ -32,6 +33,7 @@ smoke experiments outside compiler authority. The migration map lives in
 | ----------------------- | ------------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Rust compiler kernel    | `crates/wesley-core/`                 | Canonical for new compiler work     | Lowers GraphQL SDL into domain-empty L1 IR; diffs L1 schema structure; lists schema root operations; resolves operation selections; extracts directive arguments.                                                                             |
 | Native Wesley command   | `crates/wesley-cli/`                  | Rust product CLI                    | Provides Rust-native health checks, SDL normalization, schema lowering, schema hashing, schema operation listing, schema diffing, Rust/TypeScript emission, operation selection analysis, and directive argument extraction from Rust crates. |
+| Shared codec planner    | `crates/wesley-emit-codec/`           | Rust projection support crate       | Lowers L1 IR and selected schema operations into a language-neutral LE-binary codec plan consumed by Rust and TypeScript codec emitters.                                                                                                      |
 | Rust model emitter      | `crates/wesley-emit-rust/`            | Rust projection crate               | Emits Rust data models and root operation request/response bindings from Wesley L1 IR plus `SchemaOperation` data through a structured Rust item/type AST and printer.                                                                        |
 | Rust TypeScript emitter | `crates/wesley-emit-typescript/`      | Rust projection crate               | Emits TypeScript declarations, root operation request/response bindings, and operation metadata constants from Wesley L1 IR plus `SchemaOperation` data through a structured TypeScript declaration AST and printer.                          |
 | Repo automation         | `xtask/`                              | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the JavaScript package preflight bridge.                                                                                                                                  |
@@ -54,7 +56,7 @@ It can:
 - list schema root operations with arguments, result types, and directives
 - emit Rust data models and operation bindings through a Rust AST/printer path
 - emit TypeScript declarations and operation bindings through a Rust AST/printer path
-- emit TypeScript little-endian operation-variable codec helpers
+- emit Rust and TypeScript little-endian codec helpers from a shared codec plan
 - write deterministic emit metadata sidecars with schema hash, generator
   identity, generator version, execution mode, and optional law bundle hashes
 - run narrow Rust-native health checks without inspecting legacy Node config,
@@ -135,9 +137,10 @@ compiler work should not depend on them.
 
 ## Crates.io Alpha Packages
 
-The first crates.io alpha is intentionally small:
+The crates.io alpha package set is intentionally small:
 
 - `wesley-core`: compiler kernel library
+- `wesley-emit-codec`: shared LE-binary codec planning crate
 - `wesley-emit-rust`: Rust projection crate
 - `wesley-emit-typescript`: TypeScript projection crate
 - `wesley-cli`: installable CLI package that provides the `wesley` binary

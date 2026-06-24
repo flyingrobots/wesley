@@ -15,7 +15,7 @@ artifacts.
 
 - **Inspect native CLI**: `cargo wesley --help`
 - **Doctor native CLI**: `cargo wesley doctor`
-- **Install alpha from crates.io**: `cargo install wesley-cli --version 0.1.0`
+- **Install published alpha**: `cargo install wesley-cli --version 0.1.0`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
 - **Strict preflight**: `cargo xtask preflight`
 - **Explicit alias**: `cargo xtask strict-preflight`
@@ -34,10 +34,10 @@ native CLI, Rust lowerer, normalized SDL hashing, and Rust emitter crates. It
 does not inspect legacy Node config, plugins, or package state.
 
 Use `cargo install wesley-cli --version 0.1.0` when you want the published
-alpha `wesley` binary on your PATH. Use
-`cargo install --locked --path crates/wesley-cli` when working from this
-checkout. Use `cargo xtask preflight` before opening a PR. This is the strict
-quality gate: it runs `cargo fmt --check`,
+`0.1.0` alpha `wesley` binary on your PATH. Before the release workflow has
+published that version, use `cargo install --locked --path crates/wesley-cli`
+when working from this checkout. Use `cargo xtask preflight` before opening a
+PR. This is the strict quality gate: it runs `cargo fmt --check`,
 `cargo clippy --workspace --all-targets -- -D warnings`,
 `pnpm audit --prod=false --json`, docs checks, workspace tests, and a native
 CLI smoke test. Use `cargo xtask release-check` before cutting native release
@@ -60,6 +60,8 @@ The historical package CLI is retired. Use the native commands:
 
 - **Rust**: `wesley emit rust --schema <path> --out <path> [--law <path>]`
 - **TypeScript**: `wesley emit typescript --schema <path> --out <path> [--law <path>]`
+- **LE Binary Rust**: `wesley emit le-binary-rust --schema <path> --out <path> [--law <path>] [--codec-import <path>]`
+- **LE Binary TypeScript**: `wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--codec-import <path>]`
 - **Emit metadata**: add `--metadata-out <path>` to record schema hash,
   generator identity, generator version, and `rust-native` execution mode. When
   `--law <path>` is supplied, metadata also records `schemaHashQualified`,

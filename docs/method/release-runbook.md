@@ -64,9 +64,10 @@ per-version release log by default.
 Run validation strictly in order, using repo-native commands where available:
 
 - release pre-flight script, if the repo already has one
+- `cargo xtask release-prep-guard --version X.Y.Z`, before the tag exists
 - `cargo xtask preflight`
 - `cargo xtask release-check`
-- `cargo xtask package-crates --tag vX.Y.Z`
+- `cargo xtask package-crates --version X.Y.Z`, before the tag exists
 - `cargo xtask legacy-preflight`, only when the release changes legacy
   packages, pnpm workspace files, or compatibility-only package metadata
 - build
@@ -92,12 +93,13 @@ CI state.
 4. Create the release tag.
 5. Verify the tag points at the release commit and satisfies signing
    requirements where applicable.
-6. Push `main` and the exact release tag together, for example:
+6. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally.
+7. Push `main` and the exact release tag together, for example:
    `git push origin main vX.Y.Z`.
-7. Create the GitHub Release or equivalent forge release using the versioned
+8. Create the GitHub Release or equivalent forge release using the versioned
    release notes.
-8. Monitor triggered workflows to completion.
-9. Verify registries directly before claiming publication succeeded.
+9. Monitor triggered workflows to completion.
+10. Verify registries directly before claiming publication succeeded.
 
 ## Evidence
 

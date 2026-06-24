@@ -2,11 +2,10 @@
 
 ## Status
 
-Pending release finalization.
+Superseded by [Wesley v0.1.0](../v0.1.0/release.md).
 
-This file is reserved for the final guard, versioning, tag, publish, and
-registry evidence gathered when v0.0.6 is actually cut. The release-proof PR
-must not fill this with guessed evidence.
+This file is retained as planning context. Do not use it as an active release
+gate, and do not fill it with guessed tag, publish, or registry evidence.
 
 ## Current Pre-Release Evidence
 

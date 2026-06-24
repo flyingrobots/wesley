@@ -8,7 +8,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 No unreleased changes.
 
-## [0.1.0] - 2026-06-23
+## [0.1.0] - 2026-06-24
 
 ### Added
 
@@ -64,6 +64,12 @@ No unreleased changes.
   tracker. Former filesystem backlog cards were migrated to GitHub Issues with
   Method lane/legend labels, and the local backlog tree now points to the
   archived migration evidence under `docs/method/graveyard/`.
+- **Release signpost accuracy**: Refreshed README, GUIDE, ENTRYPOINTS,
+  ARCHITECTURE, TECHNICAL_TEARDOWN, release packet signposts, release runbooks,
+  and xtask help so `0.1.0` describes the current LE-binary codec-plan release,
+  names the shared `wesley-emit-codec` crate, distinguishes pre-tag source
+  checkout usage from published crates.io installs, and marks the superseded
+  `v0.0.6` planning packet as historical context.
 
 ### Fixed
 
