@@ -8,8 +8,10 @@ direction, and evidence.
 
 ## Rules
 
-- The queue lives in GitHub Issues, organized by Method labels such as
-  `lane:asap`, `lane:bad-code`, `lane:cool-ideas`, and `lane:inbox`.
+- The queue lives in GitHub Issues. Unscheduled intake uses `triage:*` labels;
+  scheduled work uses concrete release lanes such as `lane:v0.2.0`.
+- The full triage flow lives in
+  [`docs/topics/contributing/triage.md`](../topics/contributing/triage.md).
 - Goalposts live in GitHub Milestones named `Goalpost: ...`.
 - Versioned releases live in GitHub Milestones named `Release: ...`; their
   release-gate issues link to goalpost milestones because GitHub allows one
@@ -46,6 +48,8 @@ direction, and evidence.
 1. Pull a GitHub Issue into `docs/design/<cycle>/` when a design packet is
    needed, assign its goalpost milestone, and add it to the Wesley Roadmap
    Project if missing.
+   If the issue still has a `triage:*` label, schedule, split, move, or close it
+   before implementation.
 2. Write the design with both human and agent sponsors named.
 3. Write failing tests from the playback questions.
 4. Make the tests pass.

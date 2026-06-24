@@ -15,13 +15,14 @@ Live work state belongs in GitHub:
 
 | Work State     | Canonical Surface                                                           |
 | -------------- | --------------------------------------------------------------------------- |
-| Raw intake     | GitHub Issue with `lane:inbox`                                              |
+| Raw intake     | GitHub Issue with a `triage:*` label                                        |
 | Goalpost       | GitHub Milestone named `Goalpost: ...`                                      |
 | Slice          | GitHub Issue assigned to one goalpost milestone                             |
+| Release lane   | GitHub label named `lane:vX.Y.Z`                                            |
 | Release target | GitHub Milestone named `Release: vX.Y.Z`                                    |
 | Release gate   | GitHub Issue assigned to the release milestone                              |
 | Roadmap board  | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) |
-| Classification | GitHub labels for lane, legend, work type, package, and status              |
+| Classification | GitHub labels for triage, release lane, legend, work type, package, status  |
 
 Repository docs may link to GitHub state. They must not mirror live counts,
 unchecked work queues, velocity, burn-down, or "next issue" lists.
@@ -95,8 +96,8 @@ coverage should be filed as GitHub Issues and assigned to a goalpost.
 - Do not add new Markdown backlog cards.
 - Do not add progress bars, score tables, live slice ledgers, or unchecked
   roadmap checklists to repo docs.
-- Do not let `lane:inbox` remain on an issue after it has been triaged into a
-  milestone or another lane.
+- Do not let `triage:*` remain on an issue after it has been scheduled into a
+  named release lane.
 - Do not move implementation issues into release milestones. Link goalposts
   from release-gate issues instead.
 - Do not cite chat as proof. Use code, tests, commits, PRs, releases, workflow

@@ -455,7 +455,6 @@ fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     check_publish_manifest_versions(&version)?;
     check_release_required_files(&version)?;
     check_release_tracker_clear(tag, &version)?;
-    check_lane_asap_clear()?;
     check_readme_version_headline(&version)?;
     check_technical_teardown_version(&version)?;
     check_no_wip_fixup_commits(tag)?;
@@ -958,50 +957,6 @@ fn check_release_backlog_clear(tag: &str, version: &str) -> Result<(), Error> {
 fn check_release_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
     check_release_backlog_clear(tag, version)?;
     check_release_issue_tracker_clear(tag, version)
-}
-
-fn check_lane_asap_clear() -> Result<(), Error> {
-    let repo = release_github_repository()?;
-    let output = Command::new("gh")
-        .args([
-            "issue",
-            "list",
-            "--repo",
-            &repo,
-            "--label",
-            "lane:asap",
-            "--state",
-            "open",
-            "--json",
-            "number,title,url",
-        ])
-        .output()
-        .map_err(|source| {
-            Error::Usage(format!(
-                "failed to spawn `gh issue list --label lane:asap`: {source}"
-            ))
-        })?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(Error::CheckFailed {
-            check: "lane:asap issues".to_string(),
-            failures: vec![format!(
-                "`gh issue list --label lane:asap` failed: {}",
-                stderr.trim()
-            )],
-        });
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let issues = parse_release_issue_list(&stdout, "lane:asap")?;
-    finish_check(
-        "lane:asap issues",
-        issues
-            .into_iter()
-            .map(|issue| issue.display)
-            .collect::<Vec<_>>(),
-    )
 }
 
 fn check_readme_version_headline(version: &str) -> Result<(), Error> {
@@ -1555,7 +1510,13 @@ fn release_issue_queries(tag: &str, version: &str, repo: &str) -> Vec<Vec<String
 }
 
 fn release_issue_query_specs(tag: &str, version: &str, _repo: &str) -> Vec<ReleaseIssueQuery> {
+    let release_lane = format!("lane:{tag}");
     vec![
+        ReleaseIssueQuery {
+            args: release_issue_selector_query("--label", &release_lane),
+            source: format!("release lane `{release_lane}`"),
+            ignore_missing_selector: true,
+        },
         ReleaseIssueQuery {
             args: release_issue_selector_query("--milestone", tag),
             source: format!("milestone `{tag}`"),
@@ -1824,6 +1785,7 @@ fn version_lane_is_prior(lane: &str, current: &Version) -> bool {
 
 fn version_from_lane_name(lane: &str) -> Option<Version> {
     let lane = lane.trim();
+    let lane = lane.strip_prefix("lane:").unwrap_or(lane);
     let version = lane.strip_prefix('v').unwrap_or(lane);
     let parsed = Version::parse(version).ok()?;
     if parsed.build.is_empty() {
@@ -3048,6 +3010,16 @@ mod tests {
                     "list",
                     "--state",
                     "open",
+                    "--label",
+                    "lane:v1.2.3",
+                    "--json",
+                    "number,title,url",
+                ],
+                vec![
+                    "issue",
+                    "list",
+                    "--state",
+                    "open",
                     "--milestone",
                     "v1.2.3",
                     "--json",
@@ -3256,9 +3228,12 @@ mod tests {
                 "title": "Older label",
                 "url": "https://github.com/flyingrobots/wesley/issues/1",
                 "labels": [
-                    { "name": "lane:asap" },
+                    { "name": "triage:bad-code" },
+                    { "name": "lane:v0.0.4" },
                     { "name": "v0.0.4" },
+                    { "name": "lane:v0.0.5" },
                     { "name": "v0.0.5" },
+                    { "name": "lane:v0.0.4+build" },
                     { "name": "v0.0.4+build" }
                 ],
                 "milestone": null
@@ -3285,12 +3260,15 @@ mod tests {
         assert_eq!(matches.len(), 2);
         assert_eq!(
             matches[0].display,
-            "#1 Older label https://github.com/flyingrobots/wesley/issues/1 (prior version label `v0.0.4`)"
+            "#1 Older label https://github.com/flyingrobots/wesley/issues/1 (prior version label `lane:v0.0.4`, label `v0.0.4`)"
         );
         assert_eq!(
             matches[1].display,
             "#2 Older milestone https://github.com/flyingrobots/wesley/issues/2 (prior version milestone `0.0.3`)"
         );
+        assert!(version_from_lane_name("lane:v0.0.4").is_some());
+        assert!(version_from_lane_name("triage:bad-code").is_none());
+        assert!(version_from_lane_name("lane:v0.0.4+build").is_none());
         assert!(version_from_lane_name("v0.0.4+build").is_none());
     }
 

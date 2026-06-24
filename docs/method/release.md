@@ -31,8 +31,9 @@ in `docs/releases/`.
 ## Scope
 
 Releases aggregate shipped work. They do not create version-scoped filesystem
-backlog directories, and they do not move GitHub Issues by version. Method lane
-labels stay about priority and scope, not release membership.
+backlog directories, and implementation issues stay in goalpost milestones.
+Release membership is tracked with concrete release lane labels such as
+`lane:v0.2.0`; release milestones hold release-gate issues.
 
 The release design names and justifies the intended version before tagging.
 Commit history, diff inspection, and validation can support or challenge that

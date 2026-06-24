@@ -22,21 +22,27 @@ GitHub and can be reviewed with `gh label list`.
 | `holmes`, `scoring`            | Work specific to the HOLMES evidence stack.                                                                     |
 | `status: non-blocking`         | Nice-to-have items that are not release blockers.                                                               |
 | `pkg:*`                        | Ownership hints for the affected package(s).                                                                    |
-| `lane:*`                       | METHOD lane classification.                                                                                     |
+| `triage:*`                     | Unscheduled intake classification.                                                                              |
+| `lane:v*`                      | Named future release scheduling.                                                                                |
 | `legend:*`                     | Wesley legend classification.                                                                                   |
 | `work:*`                       | Product, integrity, or enabler work shape.                                                                      |
 
-## METHOD lanes
+## Triage And Release Scheduling
 
-| Label             | Purpose                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| `lane:inbox`      | Raw, untriaged intake only. Remove it after milestone assignment or lane decision.   |
-| `lane:asap`       | Imminent work that blocks the next cycle or release gate.                            |
-| `lane:bad-code`   | Named technical debt or trust debt.                                                  |
-| `lane:cool-ideas` | Exploratory ideas with no commitment yet.                                            |
-| `lane:release`    | Release-gate or release-scoped work, usually assigned to a `Release: ...` milestone. |
+See [Issue Triage](../topics/contributing/triage.md) for the full scheduling
+flow.
 
-Open `lane:inbox` should be empty unless genuinely raw intake exists.
+| Label               | Purpose                                                   |
+| ------------------- | --------------------------------------------------------- |
+| `triage:requests`   | Raw requests and incoming asks.                           |
+| `triage:bad-code`   | Debt intake awaiting scheduling, split, move, or closure. |
+| `triage:cool-ideas` | Idea intake awaiting scheduling, split, move, or closure. |
+| `lane:vX.Y.Z`       | Work scheduled for a named future release.                |
+
+Every open issue should carry exactly one scheduling-state label: either one
+`triage:*` label or one `lane:vX.Y.Z` label. Do not use generic labels such as
+`lane:asap`, `lane:inbox`, `lane:bad-code`, `lane:cool-ideas`,
+`lane:release`, or `lane:planned` for active work.
 
 ## Legends
 
