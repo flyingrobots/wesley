@@ -3587,6 +3587,19 @@ mod tests {
         );
     }
 
+    #[test]
+    fn release_procedure_lists_all_publish_crates() {
+        let doc = include_str!("../../docs/CRATES_IO_RELEASE.md");
+        for publish_crate in PUBLISH_CRATES {
+            let table_entry = format!("| `{}`", publish_crate.name);
+            assert!(
+                doc.contains(&table_entry),
+                "release procedure should list `{}` in Published Units",
+                publish_crate.name
+            );
+        }
+    }
+
     // --- looks_like_file_path ---
 
     #[test]

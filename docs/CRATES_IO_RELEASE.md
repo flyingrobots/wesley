@@ -39,6 +39,7 @@ For example, tag `v0.1.0-alpha.1` requires every published Wesley crate to have
 | Crate                    | Publishes      | Purpose                                                                                              |
 | ------------------------ | -------------- | ---------------------------------------------------------------------------------------------------- |
 | `wesley-core`            | library        | GraphQL lowering, schema hashing, schema diffing, operation analysis, and directive data extraction. |
+| `wesley-emit-codec`      | library        | Shared LE-binary codec planning consumed by the Rust and TypeScript codec emitters.                  |
 | `wesley-emit-rust`       | library        | Rust model and operation-binding projection from Wesley IR.                                          |
 | `wesley-emit-typescript` | library        | TypeScript declaration and operation-binding projection from Wesley IR.                              |
 | `wesley-cli`             | binary package | Installs the `wesley` command.                                                                       |
