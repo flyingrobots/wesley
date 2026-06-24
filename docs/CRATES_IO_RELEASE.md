@@ -10,8 +10,8 @@ Humans prepare commits and tags; GitHub Actions performs the publish.
 ## Non-Negotiable Policy
 
 1. Releases must only be performed by GitHub Actions.
-2. Releases must only be performed from a versioned `v*` tag whose commit is
-   reachable from `origin/main`.
+2. Releases must only be performed from a versioned `v*` tag created on a
+   synced `main` commit where local `HEAD` equals `origin/main`.
 3. The publish job must only run after the full release gauntlet succeeds.
 4. The publish job must perform its own sanity checks before uploading crates.
 5. A local `cargo publish` is never an official Wesley release.
@@ -19,6 +19,8 @@ Humans prepare commits and tags; GitHub Actions performs the publish.
    GitHub Actions tag workflow whose ref matches the requested release tag.
 7. The legacy `cargo xtask publish-alpha` command remains a dry-run planning
    helper for the first alpha package set; it is not the project release path.
+8. The tagged `main` commit is the repo release boundary. Do not merge manual
+   release-truth or publication-evidence backfills to `main` after publishing.
 
 A valid release tag looks like one of these:
 
@@ -51,6 +53,21 @@ installable package is `wesley-cli`:
 cargo install wesley-cli --version X.Y.Z
 wesley --help
 ```
+
+## Tagged Main Boundary
+
+The signed tag on synced `main` is the source of truth for a release. Every
+repo-resident fact humans intend to ship with the release must already be on
+`origin/main` before the tag is created: version bumps, changelog entries,
+README copy, release notes, release packets, runbook changes, and any
+verification plan.
+
+After the release tag is pushed, publication facts should be verified from the
+tag workflow, GitHub Release, and crates.io registry. Do not merge a manual
+post-release PR solely to backfill release evidence for the version that just
+published. If repo-resident evidence is missing at tag time, treat that as a
+process defect, file follow-up work, and fix the release preparation process
+before the next tag.
 
 ## GitHub Actions Release Shape
 
@@ -170,6 +187,8 @@ Wesley crates when paired with an exact matching `version`.
 6. Write or verify a concise user-facing summary.
 7. Ensure `README.md` visibly links to `CHANGELOG.md`.
 8. Extract the final changelog section for GitHub Release notes.
+9. Verify repo-resident release packets and verification docs do not require a
+   manual post-release merge to become accurate.
 
 ### Phase 4: The Gauntlet
 
@@ -254,6 +273,8 @@ git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
 9. Monitor every workflow triggered by the release tag.
 10. Do not infer success from queued or in-progress jobs.
 11. Verify crates.io directly for every published crate.
+12. Do not merge manual release-evidence backfills to `main` for the release
+    that just published.
 
 `ABORT LOUDLY` if any of these fail:
 
