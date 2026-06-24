@@ -181,6 +181,7 @@ The Rust gauntlet for Wesley is:
 cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask preflight
 cargo xtask release-check
+cargo audit
 cargo xtask package-crates --version X.Y.Z
 ```
 

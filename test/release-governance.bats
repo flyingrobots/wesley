@@ -31,3 +31,8 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "Verify the release commit is already reachable from origin/main before" docs/CRATES_IO_RELEASE.md
   assert_success
 }
+
+@test "crates.io pre-tag gauntlet includes Rust dependency audit" {
+  run grep -F "cargo audit" docs/CRATES_IO_RELEASE.md
+  assert_success
+}
