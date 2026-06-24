@@ -9,6 +9,11 @@ JS/Rust parity record that no longer acts as the release oracle.
 
 ## Included Scope
 
+- **LE binary Rust codec emitter** (`emit le-binary-rust`), symmetric with
+  `le-binary-typescript` and byte-compatible on the wire, covering enums, input
+  and output objects, and operation variables; both LE binary emitters now also
+  cover output `type` objects. Lets echo/jedit retire their hand-mirrored Rust
+  codecs.
 - Rust L1 fixture corpus expansion for directive-heavy SDL, schema extensions,
   legacy aliases, nested list type references, and invalid SDL diagnostics.
 - Rust self-consistency and fixture truth as the product release gate.

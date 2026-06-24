@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- **LE binary Rust codec emitter**: `wesley emit le-binary-rust` (and
+  `wesley_emit_rust::emit_le_binary_rust`) emits Rust `encode_*`/`decode_*`
+  functions over a consumer-provided `Writer`/`Reader`/`CodecError` runtime,
+  with a wire format identical to `le-binary-typescript` — enums as a `u32` LE
+  ordinal discriminant, `Int`/`Float` as `i32`/`f32` LE, length-prefixed UTF-8
+  strings, tagged options, length-prefixed lists. Covers enums, input and output
+  objects, and operation variables (the generated `*Request` struct), so a Rust
+  producer and a TypeScript consumer interoperate byte for byte. This lets
+  domain repos (echo, jedit) drop their hand-mirrored Rust codecs.
+- **LE binary output-object codecs**: both the TypeScript and Rust LE binary
+  emitters now emit codecs for output `type` objects (not just `input`),
+  excluding operation root types, so domain-empty data contracts round-trip.
+
 ### Changed
 
 - **Emitter syntax-model boundary**: Locked TypeScript and Rust code generation

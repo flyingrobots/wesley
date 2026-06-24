@@ -121,6 +121,25 @@ export function decodeSolo(b: Uint8Array): Solo {
     return _decSolo(new Reader(b));
 }
 
+// ─── type Widget ───
+
+export interface Widget {
+    id: string;
+    label: string;
+}
+
+export function _encWidget(w: Writer, v: Widget): void {
+    w.writeString(v.id);
+    w.writeString(v.label);
+}
+
+export function _decWidget(r: Reader): Widget {
+    return {
+        id: r.readString(),
+        label: r.readString(),
+    };
+}
+
 // ─── query widget ───
 
 export interface WidgetVars {

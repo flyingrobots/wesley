@@ -15,8 +15,9 @@ use wesley_core::{
     OperationType, ScalarSemanticsLawV1, SchemaDelta, TypeKind, WeslawError, WesleyError, WesleyIR,
 };
 use wesley_emit_rust::{
-    emit_rust_with_operations, emit_rust_with_operations_and_law,
+    emit_le_binary_rust, emit_rust_with_operations, emit_rust_with_operations_and_law,
     GENERATOR_NAME as RUST_GENERATOR_NAME, GENERATOR_VERSION as RUST_GENERATOR_VERSION,
+    LE_BINARY_RUST_DEFAULT_CODEC_IMPORT, LE_BINARY_RUST_GENERATOR_NAME,
 };
 use wesley_emit_typescript::{
     emit_le_binary_typescript, emit_typescript_with_operations, DEFAULT_CODEC_IMPORT,
@@ -563,6 +564,36 @@ fn run_emit_command(args: &[String]) -> Result<u8, CliError> {
             )?;
             Ok(EXIT_OK)
         }
+        Some("le-binary-rust") if wants_help(&args[1..]) => {
+            print_emit_help();
+            Ok(EXIT_OK)
+        }
+        Some("le-binary-rust") => {
+            let options = parse_options(&args[1..], "emit le-binary-rust")?;
+            let schema_path = options.required_schema("emit le-binary-rust")?;
+            let out_path = options.required_out("emit le-binary-rust")?;
+            let sdl = read_file(&schema_path, "schema")?;
+            let ir = lower_schema_sdl(&sdl)?;
+            let operations = list_schema_operations_sdl(&sdl)?;
+            let bundle =
+                load_contract_bundle_if_requested(options.law.as_deref(), &ir, &operations)?;
+            let manifest = bundle.as_ref().map(|bundle| &bundle.manifest);
+            let codec_import = options
+                .codec_import
+                .as_deref()
+                .unwrap_or(LE_BINARY_RUST_DEFAULT_CODEC_IMPORT);
+            let rust = emit_le_binary_rust(&ir, &operations, codec_import);
+
+            write_file(&out_path, &rust, "LE binary Rust output")?;
+            write_emit_metadata_if_requested(
+                options.metadata_out.as_deref(),
+                &ir,
+                manifest,
+                LE_BINARY_RUST_GENERATOR_NAME,
+                RUST_GENERATOR_VERSION,
+            )?;
+            Ok(EXIT_OK)
+        }
         Some(command) => Err(CliError::usage(format!("unknown emit command '{command}'"))),
     }
 }
@@ -979,7 +1010,9 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
                     "unknown option '--metadata-out' for `{command}`"
                 )));
             }
-            "--codec-import" if command == "emit le-binary-typescript" => {
+            "--codec-import"
+                if command == "emit le-binary-typescript" || command == "emit le-binary-rust" =>
+            {
                 index += 1;
                 options.codec_import = Some(required_value(args, index, "--codec-import")?);
             }
@@ -2020,6 +2053,7 @@ Commands:
   emit rust                 Emit Rust models and operation bindings from GraphQL SDL
   emit typescript           Emit TypeScript declarations and operation bindings from GraphQL SDL
   emit le-binary-typescript Emit TypeScript LE binary codecs from GraphQL SDL
+  emit le-binary-rust       Emit Rust LE binary codecs from GraphQL SDL
   operation selections      Resolve selected operation fields
   operation directive-args  Extract operation directive arguments as JSON
   version                   Print the native CLI version
@@ -2141,13 +2175,14 @@ Usage:
   wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
   wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
   wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
+  wesley emit le-binary-rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
 
 Options:
   -s, --schema <path>    GraphQL SDL file
   --law <path>           Optional weslaw/v1 file for bundle hashes
   --out <path>           Output file
   --metadata-out <path>  Deterministic metadata JSON sidecar
-  --codec-import <path>  Module specifier for Writer/Reader/CodecError (le-binary-typescript only)"
+  --codec-import <path>  Module specifier for Writer/Reader/CodecError (le-binary-* only)"
     );
 }
 
