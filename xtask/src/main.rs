@@ -2759,6 +2759,7 @@ Publish options:
   cargo xtask publish-alpha                    Print alpha plan and run safe dry-runs
   cargo xtask publish-alpha --execute          CI tag-only compatibility publish path
   cargo xtask package-crates --tag vX.Y.Z      Check release package file sets
+  cargo xtask package-crates --version X.Y.Z   Check pre-tag release package file sets
   cargo xtask publish-crates --tag vX.Y.Z      Print tag-derived plan and run safe dry-runs
   cargo xtask publish-crates --tag vX.Y.Z --execute  Publish in GitHub Actions only
   cargo xtask release-prep-guard --version X.Y.Z
@@ -3584,6 +3585,19 @@ mod tests {
             !doc.contains("cargo install wesley-cli --version 0.0.1"),
             "release procedure should not hardcode the first alpha version"
         );
+    }
+
+    #[test]
+    fn release_procedure_lists_all_publish_crates() {
+        let doc = include_str!("../../docs/CRATES_IO_RELEASE.md");
+        for publish_crate in PUBLISH_CRATES {
+            let table_entry = format!("| `{}`", publish_crate.name);
+            assert!(
+                doc.contains(&table_entry),
+                "release procedure should list `{}` in Published Units",
+                publish_crate.name
+            );
+        }
     }
 
     // --- looks_like_file_path ---

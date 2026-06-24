@@ -39,6 +39,7 @@ For example, tag `v0.1.0-alpha.1` requires every published Wesley crate to have
 | Crate                    | Publishes      | Purpose                                                                                              |
 | ------------------------ | -------------- | ---------------------------------------------------------------------------------------------------- |
 | `wesley-core`            | library        | GraphQL lowering, schema hashing, schema diffing, operation analysis, and directive data extraction. |
+| `wesley-emit-codec`      | library        | Shared LE-binary codec planning consumed by the Rust and TypeScript codec emitters.                  |
 | `wesley-emit-rust`       | library        | Rust model and operation-binding projection from Wesley IR.                                          |
 | `wesley-emit-typescript` | library        | TypeScript declaration and operation-binding projection from Wesley IR.                              |
 | `wesley-cli`             | binary package | Installs the `wesley` command.                                                                       |
@@ -159,11 +160,14 @@ Wesley crates when paired with an exact matching `version`.
 ### Phase 3: Documentation
 
 1. Locate `[Unreleased]` in `CHANGELOG.md`.
-2. `ABORT` if `[Unreleased]` is missing or empty.
-3. Rename it to `[X.Y.Z] - YYYY-MM-DD` using the target version and UTC date.
+2. If the release has not been shaped yet, `ABORT` when `[Unreleased]` is
+   missing or empty.
+3. If the release has already been shaped, verify the exact
+   `[X.Y.Z] - YYYY-MM-DD` section exists and `[Unreleased]` contains no changes
+   that should be pulled into the tag.
 4. Preserve the existing changelog style, anchors, and compare links.
 5. Find or create `## What's New in vX.Y.Z` in `README.md`.
-6. Write a concise user-facing summary.
+6. Write or verify a concise user-facing summary.
 7. Ensure `README.md` visibly links to `CHANGELOG.md`.
 8. Extract the final changelog section for GitHub Release notes.
 
@@ -174,13 +178,10 @@ Wesley crates when paired with an exact matching `version`.
 The Rust gauntlet for Wesley is:
 
 ```bash
-cargo xtask docs-check
-cargo check --workspace --all-targets
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets -- -D warnings
+cargo xtask release-prep-guard --version X.Y.Z
+cargo xtask preflight
 cargo xtask release-check
 cargo audit
-cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask package-crates --version X.Y.Z
 ```
 
@@ -206,11 +207,11 @@ Packaging sanity must fail on:
 - unresolved workspace references
 - registry-incompatible dependencies
 
-### Phase 5: Commit And Tagging
+### Phase 5: Commit And Main Sync
 
 1. Summarize the final diff.
 2. Stage all release-prep changes.
-3. Create exactly one release commit:
+3. Create exactly one release-prep commit on a release branch:
 
 ```bash
 git commit -m "chore(release): vX.Y.Z"
@@ -222,7 +223,16 @@ For prereleases:
 git commit -m "chore(release): vX.Y.Z-alpha.1"
 ```
 
-4. Create exactly one signed tag:
+4. Land the release-prep change through the protected `main` branch.
+5. Fetch `origin/main` and tags.
+6. Check out local `main` at `origin/main`.
+7. Verify `HEAD` equals `origin/main`.
+8. Verify the release commit is already reachable from origin/main before
+   creating the tag.
+
+### Phase 6: Tag, Delivery, Release, And Monitoring
+
+1. Create exactly one signed tag on the synced `main` commit:
 
 ```bash
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
@@ -234,19 +244,16 @@ For prereleases:
 git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
 ```
 
-5. Verify the tag points at the release commit.
-6. Verify the tag signature.
-7. `ABORT` if verification fails.
-
-### Phase 6: Delivery, Release, And Monitoring
-
-1. Push `main`.
-2. Push the exact release tag.
-3. Let GitHub Actions run the tag-triggered release workflow.
-4. Create or verify the GitHub Release from the versioned changelog notes.
-5. Monitor every workflow triggered by the release commit and tag.
-6. Do not infer success from queued or in-progress jobs.
-7. Verify crates.io directly for every published crate.
+2. Verify the tag points at the synced `main` commit.
+3. Verify the tag signature.
+4. `ABORT` if verification fails.
+5. Run `cargo xtask release-guard --tag vX.Y.Z`.
+6. Push the exact release tag only.
+7. Let GitHub Actions run the tag-triggered release workflow.
+8. Create or verify the GitHub Release from the versioned changelog notes.
+9. Monitor every workflow triggered by the release tag.
+10. Do not infer success from queued or in-progress jobs.
+11. Verify crates.io directly for every published crate.
 
 `ABORT LOUDLY` if any of these fail:
 

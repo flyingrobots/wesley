@@ -1,5 +1,12 @@
 # Wesley v0.0.6 Release Packet
 
+## Status
+
+Superseded by [Wesley v0.1.0](../v0.1.0/release.md). This packet is retained
+as planning context for the compiler-truth lane that was folded into the
+pre-1.0 minor release after the TypeScript decode API break became part of the
+ship scope.
+
 ## Summary
 
 Wesley `0.0.6` is the compiler-truth release. It turns the v0.0.5 clean-house

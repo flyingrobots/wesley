@@ -15,3 +15,29 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "decodeMakeWidget(bytes)" docs/releases/v0.1.0.md
   assert_success
 }
+
+@test "method release runbook syncs protected main before tag guard" {
+  run grep -F "git push origin main vX.Y.Z" docs/method/release-runbook.md
+  assert_failure
+
+  run grep -F "Sync local main to origin/main after the release commit has landed" docs/method/release-runbook.md
+  assert_success
+}
+
+@test "crates.io release procedure tags only synced origin main" {
+  run grep -F 'Push `main`.' docs/CRATES_IO_RELEASE.md
+  assert_failure
+
+  run grep -F "Verify the release commit is already reachable from origin/main before" docs/CRATES_IO_RELEASE.md
+  assert_success
+}
+
+@test "crates.io pre-tag gauntlet includes Rust dependency audit" {
+  run grep -F "cargo audit" docs/CRATES_IO_RELEASE.md
+  assert_success
+}
+
+@test "entrypoints command map lists Rust LE binary emitter" {
+  run grep -F "wesley emit le-binary-rust --schema <path> --out <path>" docs/ENTRYPOINTS.md
+  assert_success
+}

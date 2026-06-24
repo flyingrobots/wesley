@@ -50,8 +50,8 @@ decode API cleanup needed to keep Rust and TypeScript codec emitters aligned:
   required shape at the generated boundary.
 
 This release also carries the accumulated Rust-native compiler hardening,
-strict preflight, and Holmes law-assurance foundation work that had been staged
-under `[Unreleased]`.
+strict preflight, and Holmes law-assurance foundation work that was staged
+before the `0.1.0` release packet was finalized.
 
 For the complete release history, read [CHANGELOG.md](./CHANGELOG.md).
 
@@ -94,19 +94,19 @@ flowchart LR
   IR --> EA[Emitted Artifacts]
 ```
 
-One schema can now drive many outputs simultaneously:
+One schema can now drive multiple outputs without making those outputs peer
+authorities. The current Wesley core ships:
 
-- TypeScript contracts
-- Rust bindings
-- SQL schemas and migrations
-- pgTAP test suites
-- Runtime manifests
-- Codecs
-- Validators
-- Observer plans
-- Transport bindings
+- TypeScript declarations and operation bindings
+- Rust models and operation bindings
+- TypeScript and Rust LE-binary codecs
+- Schema hashes, schema diffs, and operation facts
+- `weslaw/v1` Law IR, hashes, coverage, and bundle metadata
 
-This alignment happens automatically, eliminating hand-maintained drift.
+Target-owned modules can consume the same compiler facts to produce SQL
+schemas, migrations, validators, observer plans, runtime manifests, transport
+bindings, or other domain artifacts. That alignment eliminates hand-maintained
+drift without moving domain ownership into Wesley core.
 
 ---
 
@@ -269,7 +269,7 @@ contract and module seam they consume.
 | :------------ | :-------------------------------- | ----------------------------------------------------- |
 | Postgres      | `wesley-postgres`                 | SQL schemas, migrations, indexes, pgTAP, CRUD helpers |
 | Validation    | external target/module            | Runtime and static validation rules                   |
-| Codec         | external target/module            | Binary and runtime codecs                             |
+| Codec         | Wesley emitter or external target | Binary and runtime codecs                             |
 | TypeScript    | Wesley emitter or external target | Type contracts and client bindings                    |
 | Observer      | external target/module            | Observation plans and projections                     |
 | Echo          | Echo-owned integration            | Runtime law, footprints, observation semantics        |

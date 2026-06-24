@@ -3,7 +3,8 @@
 # Wesley Technical Teardown
 
 This document is an end-to-end technical explanation of the Wesley repository
-as it exists on the `main` branch on June 15, 2026 (post-PR #604).
+as it exists on the `main` branch on June 24, 2026 (post-PR #619, before the
+`v0.1.0` release tag is cut).
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the
@@ -56,9 +57,15 @@ The Rust crates in this checkout declare version `0.1.0`, and the public README
 now carries the matching "What's New in v0.1.0" release note. The changelog's
 dated `0.1.0` section carries the accumulated Rust-native compiler hardening,
 Holmes law evidence gates, release-governance work, and the LE-binary codec-plan
-breaking change. The skipped `v0.0.6` packet remains planning context; the
+breaking change. The skipped `v0.0.6` packet is superseded planning context; the
 public decode-signature change makes this a pre-1.0 minor release instead of a
 patch release.
+
+As of this teardown refresh, `cargo xtask preflight`, `cargo xtask
+release-check`, `cargo xtask package-crates --version 0.1.0`, and
+`cargo xtask release-prep-guard --version 0.1.0` pass locally. The obsolete
+2025 `#60` v0.1.0 umbrella issue has been closed as not planned because it no
+longer represents the current release scope.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion
@@ -123,8 +130,10 @@ mindmap
         emit commands
         operation commands
       Emitters
+        Shared codec plan
         Rust models
         TypeScript declarations
+        Rust LE binary codec
         TypeScript LE binary codec
       xtask
         preflight
@@ -229,19 +238,25 @@ layers are Rust core, native CLI, Rust emitters, Rust Holmes foundation,
 retained non-compiler JavaScript packages, fixtures, schemas, docs, scripts,
 and xtask automation.
 
-PR #600 (merged June 5, 2026) added the Holmes law assurance policy substrate
-and suppression abuse-prevention layer through `HIMP-036`. The campaign stands
-at 36 of 90 implementation slices closed. Concrete adapters, public CLI
-commands, and reporting surfaces are not yet wired (planned in `HIMP-041+` and
-`HIMP-061+`).
+PR #619 merged the `0.1.0` codec-plan release preparation. It added the shared
+`wesley-emit-codec` planning crate, moved Rust and TypeScript LE-binary codec
+emitters onto the same language-neutral plan, made TypeScript public decoders
+return `Result<T>`, and updated the release notes, changelog, and package
+metadata for the pre-1.0 minor release.
+
+The Holmes law assurance foundation remains an unpublished Rust crate. It has
+evidence, ingest, policy, gate, and suppression foundations, but concrete
+public Holmes adapters, public CLI commands, and reporting surfaces are not yet
+wired.
 
 ### Notable Achievements
 
 The project now has native Rust support for schema lowering, normalized SDL,
 schema hashing, structural diffs, root operation catalogs, operation selection
 analysis, directive argument extraction, Rust emission, TypeScript emission,
-little-endian TypeScript codec emission, `weslaw` validation, `weslaw` semantic
-diffs, law coverage, law capabilities, and emit metadata sidecars.
+little-endian Rust and TypeScript codec emission from a shared codec plan,
+`weslaw` validation, `weslaw` semantic diffs, law coverage, law capabilities,
+and emit metadata sidecars.
 
 The assurance side has an unpublished `wesley-holmes` Rust crate with domain
 models, deterministic ports, evidence bundle validation, law diff ingest, law
@@ -258,19 +273,22 @@ intentionally not yet exposed as a public Holmes CLI from Rust.
 
 The README now describes `v0.1.0`, aligned with the `Cargo.toml` crate version
 declared across the workspace. The changelog's dated `0.1.0` section carries
-the Holmes law assurance substrate work (`HIMP-001–036`) plus the LE-binary
-codec-plan and decode-result contract changes.
+the Holmes law assurance substrate work plus the LE-binary codec-plan and
+decode-result contract changes. Release preparation is no longer blocked by
+the stale 2025 `#60` umbrella issue; the current pre-tag guard passes for
+`0.1.0`.
 
 ## Package(s) Overview
 
 ### Rust Workspace As Product Center
 
-The root `Cargo.toml` contains six workspace members:
+The root `Cargo.toml` contains seven workspace members:
 
 ```toml
 [workspace]
 members = [
     "crates/wesley-core",
+    "crates/wesley-emit-codec",
     "crates/wesley-emit-typescript",
     "crates/wesley-emit-rust",
     "crates/wesley-holmes",
@@ -289,9 +307,14 @@ resolver = "2"
 subcommands, writes output files, and converts domain errors into process exit
 codes.
 
+`wesley-emit-codec` is the shared LE-binary codec planner. It consumes L1 IR
+and selected operation facts, then produces language-neutral codec definitions
+used by both LE-binary emitters.
+
 `wesley-emit-rust` and `wesley-emit-typescript` are structured printers. They
 consume L1 IR and root operation facts, build language-specific internal ASTs,
-and then print deterministic source text.
+and then print deterministic source text. Their LE-binary codec paths now share
+the `wesley-emit-codec` plan before rendering Rust or TypeScript syntax.
 
 `wesley-holmes` is the law-assurance foundation. It is not published and has no
 public CLI yet. Its design is hexagonal: pure domain, application services,
@@ -1468,20 +1491,21 @@ for assurance, but they are not compiler semantics.
 
 `xtask` has release-specific guards. Real crates.io publish requires GitHub
 Actions, a tag ref, a clean worktree, matching manifest versions, release
-backlog checks, package file checks, Rust tests, clippy, and release packaging
-checks. It also has a Git identity guard that rejects known fixture identities
-from local config or HEAD metadata.
+issue-tracker checks, package file checks, Rust tests, clippy, and release
+packaging checks. It also has a Git identity guard that rejects known fixture
+identities from local config or HEAD metadata.
 
 ## Test Coverage
 
 ### Rust Workspace Coverage
 
-The Rust workspace registers 279 tests under `cargo test --workspace -- --list`
-as of commit `ca2755ff` (PR #600). The full Rust workspace test run passes:
+The Rust workspace registers 306 tests under `cargo test --workspace -- --list`
+as of the June 24, 2026 `0.1.0` release-candidate state. The full Rust
+workspace test run passes:
 
 ```text
 cargo test --workspace
-279 tests passed
+306 tests passed
 0 failed
 0 ignored
 0 doc tests
@@ -1489,12 +1513,13 @@ cargo test --workspace
 
 The suite covers CLI commands, schema lowering, parser diagnostics, schema
 diffs, operation analysis, resilience policy, runtime optic artifacts, module
-capability registry behavior, Rust emission, TypeScript emission, LE binary
-codec emission, Law IR loading and binding, law diffing, Holmes architecture,
-Holmes evidence validation, law artifact ingest ports, semantic findings, law
-coverage gates, xtask repository guards, law assurance policy parsing and
-normalization, suppression rule matching, and suppression abuse prevention
-(invalid-evidence guard, non-overridable gate guard, expiry guard).
+capability registry behavior, Rust emission, TypeScript emission, shared
+LE-binary codec planning, Rust and TypeScript LE-binary codec emission, Law IR
+loading and binding, law diffing, Holmes architecture, Holmes evidence
+validation, law artifact ingest ports, semantic findings, law coverage gates,
+xtask repository guards, law assurance policy parsing and normalization,
+suppression rule matching, and suppression abuse prevention (invalid-evidence
+guard, non-overridable gate guard, expiry guard).
 
 ### JavaScript Package Coverage
 
@@ -1665,7 +1690,7 @@ Wesley issue runtime authority.
 - Domain-empty L1 IR with deterministic JSON and hashes.
 - Schema diffing with explicit file mode and Git revision mode.
 - Structured Rust and TypeScript emitters.
-- TypeScript little-endian binary codec emission for operation variables.
+- Rust and TypeScript little-endian binary codec emission from a shared plan.
 - `weslaw/v1` loading, binding, hashing, diffing, coverage, and capabilities.
 - Rust Holmes law evidence foundation with deterministic ports and gates.
 - Xtask preflight, docs check, release guard, and package publication guards.
@@ -1708,10 +1733,10 @@ for Rust and JavaScript, then attach those reports to Holmes or CI artifacts.
 
 ### Next Release Narrative
 
-The next crates.io release should decide which remaining Rust-native front-door,
-`weslaw`, Holmes foundation, and release-governance work belongs in a patch
-release versus a later pre-1.0 milestone. Every path must keep README,
-CHANGELOG, tags, and publishable crate manifests aligned.
+After `0.1.0`, the next crates.io release should decide which remaining
+Rust-native front-door, `weslaw`, Holmes foundation, and release-governance work
+belongs in a patch release versus a later pre-1.0 milestone. Every path must
+keep README, CHANGELOG, tags, and publishable crate manifests aligned.
 
 ### Host Package Fate
 
