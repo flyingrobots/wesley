@@ -6,7 +6,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-No unreleased changes.
+### Changed
+
+- **v0.1.0 release evidence**: Recorded the signed tag, GitHub Release,
+  Release Crates workflow, and crates.io publication evidence for the published
+  `v0.1.0` release.
 
 ## [0.1.0] - 2026-06-24
 
