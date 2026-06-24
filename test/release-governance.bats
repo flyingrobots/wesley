@@ -23,3 +23,11 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "Sync local main to origin/main after the release commit has landed" docs/method/release-runbook.md
   assert_success
 }
+
+@test "crates.io release procedure tags only synced origin main" {
+  run grep -F 'Push `main`.' docs/CRATES_IO_RELEASE.md
+  assert_failure
+
+  run grep -F "Verify the release commit is already reachable from origin/main before" docs/CRATES_IO_RELEASE.md
+  assert_success
+}

@@ -205,11 +205,11 @@ Packaging sanity must fail on:
 - unresolved workspace references
 - registry-incompatible dependencies
 
-### Phase 5: Commit And Tagging
+### Phase 5: Commit And Main Sync
 
 1. Summarize the final diff.
 2. Stage all release-prep changes.
-3. Create exactly one release commit:
+3. Create exactly one release-prep commit on a release branch:
 
 ```bash
 git commit -m "chore(release): vX.Y.Z"
@@ -221,7 +221,16 @@ For prereleases:
 git commit -m "chore(release): vX.Y.Z-alpha.1"
 ```
 
-4. Create exactly one signed tag:
+4. Land the release-prep change through the protected `main` branch.
+5. Fetch `origin/main` and tags.
+6. Check out local `main` at `origin/main`.
+7. Verify `HEAD` equals `origin/main`.
+8. Verify the release commit is already reachable from origin/main before
+   creating the tag.
+
+### Phase 6: Tag, Delivery, Release, And Monitoring
+
+1. Create exactly one signed tag on the synced `main` commit:
 
 ```bash
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
@@ -233,19 +242,16 @@ For prereleases:
 git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
 ```
 
-5. Verify the tag points at the release commit.
-6. Verify the tag signature.
-7. `ABORT` if verification fails.
-
-### Phase 6: Delivery, Release, And Monitoring
-
-1. Push `main`.
-2. Push the exact release tag.
-3. Let GitHub Actions run the tag-triggered release workflow.
-4. Create or verify the GitHub Release from the versioned changelog notes.
-5. Monitor every workflow triggered by the release commit and tag.
-6. Do not infer success from queued or in-progress jobs.
-7. Verify crates.io directly for every published crate.
+2. Verify the tag points at the synced `main` commit.
+3. Verify the tag signature.
+4. `ABORT` if verification fails.
+5. Run `cargo xtask release-guard --tag vX.Y.Z`.
+6. Push the exact release tag only.
+7. Let GitHub Actions run the tag-triggered release workflow.
+8. Create or verify the GitHub Release from the versioned changelog notes.
+9. Monitor every workflow triggered by the release tag.
+10. Do not infer success from queued or in-progress jobs.
+11. Verify crates.io directly for every published crate.
 
 `ABORT LOUDLY` if any of these fail:
 
