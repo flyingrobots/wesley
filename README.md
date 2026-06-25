@@ -9,18 +9,20 @@
 
 ## What is Wesley?
 
-**Wesley is a semantic contract compiler.**
+**Wesley is a domain-free GraphQL-to-IR transformation toolchain.**
 
-It takes GraphQL Schema Definition Language (SDL) as its single source of truth,
-constructs a semantic graph, and compiles that graph into domain-specific
-outputs through a system of extensions.
+It takes GraphQL Schema Definition Language (SDL), lowers it into deterministic
+JSON IR, and preserves enough structure, provenance, directives, and weslaw
+extension context for downstream tools to make their own meaning.
+
+> _There is no graph. Only structure and what you make of it._
 
 Wesley is deliberately domain-empty. It claims no ownership over runtime law,
 scheduler semantics, persistence models, replication behavior, storage engines,
 transport protocols, or substrate truth. Those concerns belong entirely to
 extension modules.
 
-**Wesley owns semantic compilation. Domains own law.**
+**Wesley owns the GraphQL-to-IR transformation. Extensions own meaning.**
 
 For the bounded-autonomy direction, read
 [Wesley North Star](./docs/NORTHSTAR.md). For the SDL boundary, read
