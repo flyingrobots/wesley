@@ -2,6 +2,13 @@
 
 # Wesley Technical Teardown
 
+> Status: release-scoped orientation snapshot.
+>
+> This document explains the repository state for a release/readiness review.
+> It is not the authoritative architecture map and must not become a roadmap.
+> Use [ARCHITECTURE.md](./ARCHITECTURE.md) for current structure and
+> [BEARING.md](./BEARING.md) for current direction and active tensions.
+
 This document is an end-to-end technical explanation of the Wesley repository
 as it exists on the `main` branch on June 24, 2026 (post-PR #619, before the
 `v0.1.0` release tag is cut).

@@ -105,9 +105,11 @@ check fails.
 ### Check 9: TECHNICAL_TEARDOWN
 
 `docs/TECHNICAL_TEARDOWN.md` must contain `v{version}` as a whole version
-reference (not as a substring of a longer version string). This document is
-updated each release to describe the current state; a stale reference is a
-sign the document was not updated.
+reference (not as a substring of a longer version string). This document is a
+release-scoped orientation snapshot, not architecture authority. A stale
+version reference is a sign the snapshot was not refreshed for the release; a
+claim that conflicts with `docs/ARCHITECTURE.md` or `docs/BEARING.md` must be
+resolved in the authoritative doc first, then summarized in the teardown.
 
 ### Check 11: Guide File Paths
 
