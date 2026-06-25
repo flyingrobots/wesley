@@ -215,7 +215,7 @@ law artifacts remain the authority.
 | [Contract bundle manifest](#contract-bundle-manifest)     | A JSON manifest linking schema hash, law hash, profile hash, bundle hash, compiler identity, and Law IR codec.                                                               |
 | [Law coverage](#law-capabilities-and-coverage)            | A profile/category report showing which schema subjects have active law coverage.                                                                                            |
 | [Capability report](#law-capabilities-and-coverage)       | A report-only summary of footprint resources read, written, created, or forbidden by operation law.                                                                          |
-| [Runtime optic](#golden-path-6-runtime-optic-artifact)    | A compiled GraphQL operation artifact that describes bounded operation shape, requirements, and law claims without executing anything.                                       |
+| [Operation artifact](#golden-path-6-operation-artifact)   | A compiled GraphQL operation artifact that describes bounded operation shape, requirements, and law claims without executing anything.                                       |
 | [Holmes](#golden-path-7-holmes-assurance-foundation)      | Wesley's assurance family. Rust Holmes ingests law evidence; legacy JS Holmes still supports reports and historical tooling.                                                 |
 | [Port](#external-dependencies-and-borders)                | A trait boundary used by hexagonal architecture so application logic can depend on capabilities without depending on filesystem, GitHub, MCP, or wall-clock implementations. |
 | [Evidence bundle](#evidence-bundle-validation)            | A Holmes envelope that names required law evidence artifacts and their provenance.                                                                                           |
@@ -926,21 +926,20 @@ scalar semantics, variant input law, mutation footprint law, and channel law.
 Profiles `release` and `ci-release` treat categories as required; `local` is a
 lighter posture.
 
-### Golden Path 6: Runtime Optic Artifact
+### Golden Path 6: Operation Artifact
 
-Runtime optics are not the ordinary CLI front door in this checkout, but they
+Operation artifacts are not the ordinary CLI front door in this checkout, but they
 are an important core API. They compile a GraphQL operation into an artifact
 that an external target can inspect, evaluate, reject, witness, or replay.
 
 #### Why The API Exists
 
-The runtime optic API supports the long-term bounded-autonomy direction. An
-agent or application can declare a precise GraphQL operation shape. Wesley
-compiles that declaration into a stable artifact. An external target such as
-Echo owns runtime policy, authority vocabulary, state checks, execution, and
-enforcement.
+The operation artifact API supports downstream targets that need a precise
+GraphQL operation shape. Wesley compiles that declaration into a stable
+artifact. External targets own runtime policy, authority vocabulary, state
+checks, execution, and enforcement.
 
-#### Anatomy Of An Optic Artifact
+#### Anatomy Of An Operation Artifact
 
 ```json
 {
@@ -975,7 +974,7 @@ enforcement.
 
 #### Validation Before Artifact Identity
 
-The runtime optic compiler rejects unsupported executable features before it
+The operation artifact compiler rejects unsupported executable features before it
 computes identities. It rejects multiple top-level fields, unknown selected
 fields, cyclic fragments, impossible fragment type conditions, duplicate
 arguments, invalid input object literals, invalid subselection shapes,
@@ -1446,7 +1445,7 @@ artifact bytes as untrusted until validated.
 
 ### Compiler Evidence Without Authority Issuance
 
-The runtime optic domain model now stops at compiler-owned artifact,
+The operation artifact domain model now stops at compiler-owned artifact,
 requirement, registration descriptor, and law witness evidence. It deliberately
 does not define host-issued handles, grants, invocation presentations, tickets,
 basis budgets, or observer authority classes. Echo, Continuum, or another
@@ -1518,7 +1517,7 @@ cargo test --workspace
 ```
 
 The suite covers CLI commands, schema lowering, parser diagnostics, schema
-diffs, operation analysis, resilience policy, runtime optic artifacts, module
+diffs, operation analysis, resilience policy, operation artifacts, module
 capability registry behavior, Rust emission, TypeScript emission, shared
 LE-binary codec planning, Rust and TypeScript LE-binary codec emission, Law IR
 loading and binding, law diffing, Holmes architecture, Holmes evidence
@@ -1794,7 +1793,7 @@ prove it.
 - `crates/wesley-core/src/domain/ir.rs`
 - `crates/wesley-core/src/domain/law.rs`
 - `crates/wesley-core/src/domain/operation.rs`
-- `crates/wesley-core/src/domain/optic.rs`
+- `crates/wesley-core/src/domain/operation_artifact.rs`
 - `crates/wesley-emit-rust/src/lib.rs`
 - `crates/wesley-emit-typescript/src/lib.rs`
 - `crates/wesley-emit-typescript/src/le_binary.rs`

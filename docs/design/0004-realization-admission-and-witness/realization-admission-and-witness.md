@@ -141,7 +141,7 @@ Downstream consumers may not infer, without additional proof:
 
 ## Non-goals
 
-- Define a full WARP optic theory for Wesley.
+- Define full WARP rewrite semantics inside Wesley.
 - Replace the Continuum packet's proving-lane specifics.
 - Freeze observer-rights or property-certificate policy for every neighboring
   repository.

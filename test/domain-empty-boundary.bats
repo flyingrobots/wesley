@@ -67,12 +67,38 @@ load 'bats-plugins/bats-assert/load'
   assert_failure
 }
 
-@test "wesley-core optic model does not expose host authority vocabulary" {
-  run rg -n "CapabilityGrant|CapabilityPresentation|AdmissionTicket|OpticArtifactHandle|Echo-owned|admission" crates/wesley-core/src/domain/optic.rs crates/wesley-core/src/adapters/apollo.rs
+@test "wesley-core operation artifact model does not expose host authority vocabulary" {
+  run rg -n "CapabilityGrant|CapabilityPresentation|AdmissionTicket|ArtifactHandle|Echo-owned|admission" crates/wesley-core/src/domain/operation_artifact.rs crates/wesley-core/src/adapters/apollo.rs
+  assert_failure
+}
+
+@test "active operation artifact surfaces use generic vocabulary" {
+  run rg -n "\\b[oO]ptic\\b|compile_runtime_optic|OpticArtifact|runtime-optics|domain/optic" README.md docs/NORTHSTAR.md docs/SDL.md docs/VISION.md docs/END_TO_END.md docs/TECHNICAL_TEARDOWN.md docs/design/0010-wesley-graft-mcp-boundary docs/design/0004-realization-admission-and-witness crates/wesley-core/src crates/wesley-core/tests
+  assert_failure
+}
+
+@test "operation artifact claim ids are explicitly operation scoped" {
+  run rg -n "\"shape.valid.v1\"|\"codec.canonical.v1\"|\"footprint.closed.v1\"" docs/NORTHSTAR.md docs/SDL.md crates/wesley-core/src crates/wesley-core/tests
   assert_failure
 }
 
 @test "active SDL docs use contract requirements vocabulary" {
-  run rg -n "OpticAdmissionRequirements|admission truth|admission-facing" docs/SDL.md
+  run rg -n "OpticAdmissionRequirements|admission truth|admission-facing|runtime optic|OpticRequirements" docs/SDL.md
+  assert_failure
+}
+
+@test "Continuum architecture notes are retired extraction context" {
+  run grep -F "This note is retained as historical extraction context only." docs/architecture/continuum-wesley-role.md
+  assert_success
+
+  run grep -F "Generic Wesley has no current Continuum-specific minimum shared contract" docs/architecture/continuum-minimum-shared-contract-surface.md
+  assert_success
+
+  run rg -n '"docs/architecture/continuum-(minimum-shared-contract-surface|wesley-role)\\.md"' docs/truth-manifest.json
+  assert_failure
+}
+
+@test "current architecture does not claim a Wesley-owned Continuum package" {
+  run rg -n "@wesley/continuum|wesley-continuum|Continuum-specific defaults" docs/README.md docs/architecture/wesley-core-vs-toolchain.md
   assert_failure
 }

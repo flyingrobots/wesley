@@ -5,8 +5,8 @@
 This note supports the README. It explains why Wesley starts from GraphQL SDL
 and where the line sits between generic compiler facts and domain-owned law.
 
-For runnable commands, use [ENTRYPOINTS.md](./ENTRYPOINTS.md). For the ultimate
-runtime-optic direction, use [NORTHSTAR.md](./NORTHSTAR.md). For the current
+For runnable commands, use [ENTRYPOINTS.md](./ENTRYPOINTS.md). For the
+domain-free invariant, use [NORTHSTAR.md](./NORTHSTAR.md). For the current
 direction and active tensions, use [BEARING.md](./BEARING.md). For the formal
 semantic-law design, use
 [`weslaw` Semantic Law IR](./design/0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md).
@@ -25,7 +25,7 @@ of:
 - directives attached to known schema coordinates
 
 That makes SDL a good substrate for a compiler. It is not only an API notation;
-it is a compact semantic graph that can be lowered, hashed, diffed, and emitted
+it is compact source structure that can be lowered, hashed, diffed, and emitted
 into multiple derived artifacts.
 
 ## Shape
@@ -82,18 +82,18 @@ The `weslaw` design promotes this preserved law-shaped data into a future
 typed Law IR so semantic laws can be bound, hashed, diffed, and explained
 without making generic Wesley the owner of target runtime meaning.
 
-For runtime optic artifacts, `@wes_footprint` is target-evaluation v0 metadata.
-It is legal only on the selected root field, must declare `reads` and `writes`
+For operation artifacts, `@wes_footprint` is target-evaluation v0 metadata. It
+is legal only on the selected root field, must declare `reads` and `writes`
 arrays, may omit `forbids` to mean an empty forbidden-resource list, and must
 not repeat labels within any single footprint array. Nested, fragment,
 inline-fragment, or operation-level footprints are rejected until Wesley
 intentionally designs scoped footprints.
 
-## Runtime Optic Executable Subset
+## Operation Artifact Executable Subset
 
-`shape.valid.v1` means the selected operation is valid inside Wesley's declared
-runtime-optic executable subset. It does not claim that Wesley has implemented
-the full GraphQL executable-validation spec by hand.
+`operation.shape.valid.v1` means the selected operation is valid inside
+Wesley's declared operation-artifact executable subset. It does not claim that
+Wesley has implemented the full GraphQL executable-validation spec by hand.
 
 The v0 subset supports one selected root field, variables without default
 values, schema-backed field selections, root and selected-field argument
@@ -108,10 +108,10 @@ include `__typename` selections, variable default values, interface
 inheritance, non-root `@wes_footprint`, duplicate executable directive
 arguments, and duplicate footprint labels.
 
-## Canonical Runtime Requirements Artifact
+## Canonical Operation Requirements Artifact
 
-Runtime optic artifacts carry both structured `OpticRequirements` for
-compiler-side inspection and a Wesley-owned `OpticRequirementsArtifact` for
+Operation artifacts carry both structured `OperationRequirements` for
+compiler-side inspection and a Wesley-owned `OperationRequirementsArtifact` for
 target import.
 
 The requirements artifact contains:
@@ -123,7 +123,7 @@ The requirements artifact contains:
 
 Downstream targets may import the bytes, digest, and codec directly. They
 should not serialize Wesley structs with local `serde_json` settings to create
-target-owned truth, because Wesley owns the canonical runtime optic requirement
+target-owned truth, because Wesley owns the canonical operation requirement
 bytes.
 
 ## Extension Interpretation

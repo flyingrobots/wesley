@@ -869,31 +869,26 @@ This is why Wesley's domain-empty boundary matters. A reusable compiler can
 serve many consumers. A compiler that owns every consumer's runtime becomes
 unreviewable and brittle.
 
-## Runtime Optic North Star
+## Operation Artifact Boundary
 
 The long-term direction is bounded, lawful autonomy.
 
-In that target shape, an agent or application declares a GraphQL operation that
-names the reading or rewrite it needs. Wesley compiles the operation into a
-typed, inspectable contract artifact. A host or runtime checks authority,
-support, budget, and law. The runtime admits, obstructs, schedules, witnesses,
-or rejects the request.
+In that target shape, an application declares a GraphQL operation that names
+the structure it needs. Wesley compiles the operation into a typed, inspectable
+contract artifact. A host or runtime may consume that artifact, but authority,
+support, budget, law, admission, scheduling, and witness semantics remain
+target-owned.
 
 ```mermaid
 flowchart TD
     Agent[Agent or application] --> Operation[GraphQL operation]
-    Operation --> Wesley[Wesley compiles optic contract]
-    Wesley --> Artifact[Optic artifact]
-    Wesley --> Requirements[Admission requirements bytes and digest]
-    Artifact --> Host[Host policy]
-    Requirements --> Host
-    Host --> Decision{Admit?}
-    Decision -->|yes| Runtime[Runtime such as Echo]
-    Decision -->|no| Obstruction[Obstruction reason]
-    Runtime --> Instrument[Instrument actual access]
-    Instrument --> Compare[Compare actual access to declared requirements]
-    Compare --> Receipt[Reading, receipt, or law witness]
-    Obstruction --> Receipt
+    Operation --> Wesley[Wesley compiles operation artifact]
+    Wesley --> Artifact[Operation artifact]
+    Wesley --> Requirements[Requirements bytes and digest]
+    Artifact --> Target[External target]
+    Requirements --> Target
+    Target --> Policy[Target-owned policy]
+    Policy --> Evidence[Target-owned evidence]
 ```
 
 Wesley's role in that story is powerful but bounded:

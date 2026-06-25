@@ -1,22 +1,25 @@
 use sha2::{Digest, Sha256};
 use wesley_core::{
-    compile_runtime_optic, compile_runtime_optic_registration, CodecField, DirectiveRecord,
-    EvidenceKind, InMemoryOpticArtifactRegistry, LawVerdict, LawWitness, OperationKind,
-    OpticArtifactResolver, PermissionAction, PermissionRequirement, ReplayHint, ResolveError,
-    OPTIC_REQUIREMENTS_ARTIFACT_CODEC,
+    compile_operation_artifact, compile_operation_artifact_registration, CodecField,
+    DirectiveRecord, EvidenceKind, InMemoryOperationArtifactRegistry, LawVerdict, LawWitness,
+    OperationArtifactResolver, OperationKind, PermissionAction, PermissionRequirement, ReplayHint,
+    ResolveError, OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 
 #[test]
-fn compiles_runtime_operation_into_domain_empty_optic_artifact() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+fn compiles_runtime_operation_into_domain_empty_operation_artifact() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
-    let repeated = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile repeatedly");
-    let registration = compile_runtime_optic_registration(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic registration should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
+    let repeated = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile repeatedly");
+    let registration =
+        compile_operation_artifact_registration(schema, operation, Some("RenameSymbol"))
+            .expect("operation artifact registration should compile");
 
     assert_eq!(artifact.schema_id.len(), 64);
     assert_eq!(artifact.artifact_id.len(), 64);
@@ -116,80 +119,84 @@ fn compiles_runtime_operation_into_domain_empty_optic_artifact() {
     assert_eq!(witness_digest.type_ref.base, "String");
     assert!(witness_digest.required);
 
-    assert_contains_law_claim(&artifact, "shape.valid.v1");
-    assert_contains_law_claim(&artifact, "codec.canonical.v1");
+    assert_contains_law_claim(&artifact, "operation.shape.valid.v1");
+    assert_contains_law_claim(&artifact, "operation.codec.canonical.v1");
     assert_contains_law_claim(&artifact, "bounded.rewrite.v1");
-    assert_contains_law_claim(&artifact, "footprint.closed.v1");
+    assert_contains_law_claim(&artifact, "operation.footprint.closed.v1");
 }
 
 #[test]
 fn resolves_artifact_by_registration_descriptor_and_rejects_tampering() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
     let registration = artifact.registration.clone();
 
-    let mut registry = InMemoryOpticArtifactRegistry::new();
+    let mut registry = InMemoryOperationArtifactRegistry::new();
     assert!(registry.is_empty());
     let stored_registration = registry.insert(artifact.clone());
     assert_eq!(registry.len(), 1);
     assert_eq!(stored_registration, registration);
 
     let resolved = registry
-        .resolve_optic_artifact(&registration)
+        .resolve_operation_artifact(&registration)
         .expect("registration descriptor should resolve");
     assert_eq!(resolved, artifact);
 
     let mut tampered_schema = registration.clone();
     tampered_schema.schema_id = "tampered-schema".to_string();
     assert!(matches!(
-        registry.resolve_optic_artifact(&tampered_schema),
+        registry.resolve_operation_artifact(&tampered_schema),
         Err(ResolveError::SchemaIdMismatch { .. })
     ));
 
     let mut tampered_artifact_hash = registration.clone();
     tampered_artifact_hash.artifact_hash = "tampered-artifact-hash".to_string();
     assert!(matches!(
-        registry.resolve_optic_artifact(&tampered_artifact_hash),
+        registry.resolve_operation_artifact(&tampered_artifact_hash),
         Err(ResolveError::ArtifactHashMismatch { .. })
     ));
 
     let mut tampered_operation = registration.clone();
     tampered_operation.operation_id = "tampered-operation-id".to_string();
     assert!(matches!(
-        registry.resolve_optic_artifact(&tampered_operation),
+        registry.resolve_operation_artifact(&tampered_operation),
         Err(ResolveError::OperationIdMismatch { .. })
     ));
 
     let mut tampered_requirements = registration.clone();
     tampered_requirements.requirements_digest = "tampered-requirements".to_string();
     assert!(matches!(
-        registry.resolve_optic_artifact(&tampered_requirements),
+        registry.resolve_operation_artifact(&tampered_requirements),
         Err(ResolveError::RequirementsDigestMismatch { .. })
     ));
 
     let mut missing = registration;
     missing.artifact_id = "missing-artifact".to_string();
     assert!(matches!(
-        registry.resolve_optic_artifact(&missing),
+        registry.resolve_operation_artifact(&missing),
         Err(ResolveError::ArtifactNotFound { .. })
     ));
 }
 
 #[test]
 fn registry_insert_normalizes_embedded_registration_descriptor() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
-    let mut artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
+    let mut artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
     artifact.registration.schema_id = "tampered-embedded-schema".to_string();
     artifact.registration.requirements_digest = "tampered-embedded-requirements".to_string();
 
-    let mut registry = InMemoryOpticArtifactRegistry::new();
+    let mut registry = InMemoryOperationArtifactRegistry::new();
     let stored_registration = registry.insert(artifact.clone());
     let resolved = registry
-        .resolve_optic_artifact(&stored_registration)
+        .resolve_operation_artifact(&stored_registration)
         .expect("normalized registration should resolve");
 
     assert_eq!(stored_registration.schema_id, artifact.schema_id);
@@ -202,13 +209,15 @@ fn registry_insert_normalizes_embedded_registration_descriptor() {
 
 #[test]
 fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let baseline = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("baseline runtime optic should compile");
-    let repeated = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("repeated runtime optic should compile");
+    let baseline = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("baseline operation artifact should compile");
+    let repeated = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("repeated operation artifact should compile");
 
     assert_eq!(baseline.artifact_hash, repeated.artifact_hash);
     assert_eq!(baseline.requirements_digest, repeated.requirements_digest);
@@ -216,8 +225,9 @@ fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
     let reformatted = operation
         .replace("mutation RenameSymbol", "\nmutation   RenameSymbol")
         .replace("receipt {", "receipt   {");
-    let reformatted_artifact = compile_runtime_optic(schema, &reformatted, Some("RenameSymbol"))
-        .expect("reformatted runtime optic should compile");
+    let reformatted_artifact =
+        compile_operation_artifact(schema, &reformatted, Some("RenameSymbol"))
+            .expect("reformatted operation artifact should compile");
     assert_eq!(baseline.artifact_hash, reformatted_artifact.artifact_hash);
     assert_eq!(
         baseline.requirements_digest,
@@ -226,24 +236,25 @@ fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
 
     let footprint_changed = operation.replace("\"symbol.index\"", "\"diagnostics\"");
     let footprint_artifact =
-        compile_runtime_optic(schema, &footprint_changed, Some("RenameSymbol"))
-            .expect("footprint-changed runtime optic should compile");
+        compile_operation_artifact(schema, &footprint_changed, Some("RenameSymbol"))
+            .expect("footprint-changed operation artifact should compile");
     assert_ne!(
         baseline.requirements_digest, footprint_artifact.requirements_digest,
         "changing declared footprint must change requirements digest"
     );
 
     let law_changed = operation.replace("bounded.rewrite.v1", "bounded.rewrite.audit.v1");
-    let law_artifact = compile_runtime_optic(schema, &law_changed, Some("RenameSymbol"))
-        .expect("law-changed runtime optic should compile");
+    let law_artifact = compile_operation_artifact(schema, &law_changed, Some("RenameSymbol"))
+        .expect("law-changed operation artifact should compile");
     assert_ne!(
         baseline.requirements_digest, law_artifact.requirements_digest,
         "changing law claim directives must change requirements digest"
     );
 
     let payload_changed = operation.replace("      resultRef\n", "");
-    let payload_artifact = compile_runtime_optic(schema, &payload_changed, Some("RenameSymbol"))
-        .expect("payload-changed runtime optic should compile");
+    let payload_artifact =
+        compile_operation_artifact(schema, &payload_changed, Some("RenameSymbol"))
+            .expect("payload-changed operation artifact should compile");
     assert_ne!(
         baseline.artifact_hash, payload_artifact.artifact_hash,
         "changing selected payload shape must change artifact hash"
@@ -252,11 +263,13 @@ fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
 
 #[test]
 fn canonical_requirements_bytes_are_deterministic() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
     let expected = wesley_core::to_canonical_json(&serde_json::json!({
         "declaredFootprint": &artifact.operation.declared_footprint,
         "lawClaims": &artifact.operation.law_claims,
@@ -274,11 +287,13 @@ fn canonical_requirements_bytes_are_deterministic() {
 
 #[test]
 fn canonical_requirements_digest_matches_bytes() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
     let actual_digest = sha256_hex(&artifact.requirements_artifact.bytes);
 
     assert_eq!(artifact.requirements_artifact.digest, actual_digest);
@@ -290,27 +305,31 @@ fn canonical_requirements_digest_matches_bytes() {
 
 #[test]
 fn canonical_requirements_codec_is_explicit() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
 
     assert_eq!(
         artifact.requirements_artifact.codec,
-        OPTIC_REQUIREMENTS_ARTIFACT_CODEC
+        OPERATION_REQUIREMENTS_ARTIFACT_CODEC
     );
 }
 
 #[test]
 fn canonical_requirements_bytes_are_stable_across_repeated_compile() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let first = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
-    let second = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile repeatedly");
+    let first = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
+    let second = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile repeatedly");
 
     assert_eq!(
         first.requirements_artifact.bytes,
@@ -324,14 +343,16 @@ fn canonical_requirements_bytes_are_stable_across_repeated_compile() {
 
 #[test]
 fn canonical_requirements_json_keys_are_ordered_if_json_codec_is_used() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
     assert_eq!(
         artifact.requirements_artifact.codec,
-        OPTIC_REQUIREMENTS_ARTIFACT_CODEC
+        OPERATION_REQUIREMENTS_ARTIFACT_CODEC
     );
 
     let canonical = std::str::from_utf8(&artifact.requirements_artifact.bytes)
@@ -360,12 +381,14 @@ fn canonical_requirements_json_keys_are_ordered_if_json_codec_is_used() {
 }
 
 #[test]
-fn runtime_optic_artifact_exposes_requirements_artifact() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+fn operation_artifact_exposes_requirements_artifact() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
 
     assert_eq!(
         artifact.requirements_artifact.digest,
@@ -373,23 +396,25 @@ fn runtime_optic_artifact_exposes_requirements_artifact() {
     );
     assert_eq!(
         artifact.requirements_artifact.codec,
-        OPTIC_REQUIREMENTS_ARTIFACT_CODEC
+        OPERATION_REQUIREMENTS_ARTIFACT_CODEC
     );
     assert!(!artifact.requirements_artifact.bytes.is_empty());
 }
 
 #[test]
 fn changing_footprint_law_requirements_changes_requirements_digest() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
 
-    let baseline = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("baseline runtime optic should compile");
+    let baseline = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("baseline operation artifact should compile");
 
     let footprint_changed = operation.replace("\"symbol.index\"", "\"diagnostics\"");
     let footprint_artifact =
-        compile_runtime_optic(schema, &footprint_changed, Some("RenameSymbol"))
-            .expect("footprint-changed runtime optic should compile");
+        compile_operation_artifact(schema, &footprint_changed, Some("RenameSymbol"))
+            .expect("footprint-changed operation artifact should compile");
     assert_ne!(
         baseline.requirements_digest, footprint_artifact.requirements_digest,
         "changing footprint requirements must change requirements digest"
@@ -400,8 +425,8 @@ fn changing_footprint_law_requirements_changes_requirements_digest() {
     );
 
     let law_changed = operation.replace("bounded.rewrite.v1", "bounded.rewrite.audit.v1");
-    let law_artifact = compile_runtime_optic(schema, &law_changed, Some("RenameSymbol"))
-        .expect("law-changed runtime optic should compile");
+    let law_artifact = compile_operation_artifact(schema, &law_changed, Some("RenameSymbol"))
+        .expect("law-changed operation artifact should compile");
     assert_ne!(
         baseline.requirements_digest, law_artifact.requirements_digest,
         "changing law requirements must change requirements digest"
@@ -413,8 +438,9 @@ fn changing_footprint_law_requirements_changes_requirements_digest() {
 }
 
 #[test]
-fn runtime_optic_rejects_invalid_root_argument_bindings() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+fn operation_artifact_rejects_invalid_root_argument_bindings() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let missing_required = r#"
         mutation RenameSymbol($input: RenameSymbolInput!) {
           renameSymbol {
@@ -443,17 +469,17 @@ fn runtime_optic_rejects_invalid_root_argument_bindings() {
         }
     "#;
 
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         missing_required,
         Some("RenameSymbol"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         unknown_argument,
         Some("RenameSymbol"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         wrong_variable_type,
         Some("RenameSymbol"),
@@ -461,7 +487,7 @@ fn runtime_optic_rejects_invalid_root_argument_bindings() {
 }
 
 #[test]
-fn runtime_optic_rejects_invalid_input_object_literals() {
+fn operation_artifact_rejects_invalid_input_object_literals() {
     let schema = r#"
         type Mutation {
           configure(input: ConfigureInput!): ConfigureResult!
@@ -549,29 +575,29 @@ fn runtime_optic_rejects_invalid_input_object_literals() {
         }
     "#;
 
-    compile_runtime_optic(schema, valid, Some("Configure"))
+    compile_operation_artifact(schema, valid, Some("Configure"))
         .expect("valid input object literal should compile");
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         missing_required,
         Some("Configure"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         unknown_field,
         Some("Configure"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         wrong_scalar,
         Some("Configure"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         invalid_enum_value,
         Some("Configure"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         enum_for_input_object,
         Some("Configure"),
@@ -579,7 +605,7 @@ fn runtime_optic_rejects_invalid_input_object_literals() {
 }
 
 #[test]
-fn runtime_optic_rejects_invalid_subselection_shapes() {
+fn operation_artifact_rejects_invalid_subselection_shapes() {
     let schema = r#"
         type Query {
           profile: Profile!
@@ -625,21 +651,21 @@ fn runtime_optic_rejects_invalid_subselection_shapes() {
         }
     "#;
 
-    compile_runtime_optic(schema, valid_composite, Some("Profile"))
+    compile_operation_artifact(schema, valid_composite, Some("Profile"))
         .expect("composite field with subselection should compile");
-    compile_runtime_optic(schema, valid_leaf, Some("Version"))
+    compile_operation_artifact(schema, valid_leaf, Some("Version"))
         .expect("leaf field without subselection should compile");
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         composite_without_selection,
         Some("Profile"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         leaf_with_selection,
         Some("Version"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         nested_leaf_with_selection,
         Some("Profile"),
@@ -647,7 +673,7 @@ fn runtime_optic_rejects_invalid_subselection_shapes() {
 }
 
 #[test]
-fn runtime_optic_rejects_conflicting_response_names() {
+fn operation_artifact_rejects_conflicting_response_names() {
     let schema = r#"
         type Query {
           profile: Profile!
@@ -700,19 +726,19 @@ fn runtime_optic_rejects_conflicting_response_names() {
         }
     "#;
 
-    compile_runtime_optic(schema, valid_duplicate, Some("Profile"))
+    compile_operation_artifact(schema, valid_duplicate, Some("Profile"))
         .expect("identical duplicate response names should compile");
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         conflicting_aliases,
         Some("Profile"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         conflicting_arguments,
         Some("Profile"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         conflicting_fragment,
         Some("Profile"),
@@ -720,7 +746,7 @@ fn runtime_optic_rejects_conflicting_response_names() {
 }
 
 #[test]
-fn runtime_optic_rejects_unsupported_executable_features() {
+fn operation_artifact_rejects_unsupported_executable_features() {
     let schema = r#"
         interface Node {
           id: ID!
@@ -779,17 +805,17 @@ fn runtime_optic_rejects_unsupported_executable_features() {
         }
     "#;
 
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         no_interface_inheritance_schema,
         variable_default,
         Some("Profile"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         no_interface_inheritance_schema,
         typename_selection,
         Some("Profile"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         interface_inheritance,
         Some("Resource"),
@@ -797,7 +823,7 @@ fn runtime_optic_rejects_unsupported_executable_features() {
 }
 
 #[test]
-fn runtime_optic_rejects_impossible_fragment_type_conditions() {
+fn operation_artifact_rejects_impossible_fragment_type_conditions() {
     let schema = r#"
         type Query {
           search: SearchResult!
@@ -847,14 +873,14 @@ fn runtime_optic_rejects_impossible_fragment_type_conditions() {
         }
     "#;
 
-    compile_runtime_optic(schema, valid, Some("Search"))
+    compile_operation_artifact(schema, valid, Some("Search"))
         .expect("compatible fragment type condition should compile");
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         impossible_inline_fragment,
         Some("Search"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         impossible_fragment_spread,
         Some("Search"),
@@ -862,7 +888,7 @@ fn runtime_optic_rejects_impossible_fragment_type_conditions() {
 }
 
 #[test]
-fn runtime_optic_rejects_flat_literals_for_nested_list_arguments() {
+fn operation_artifact_rejects_flat_literals_for_nested_list_arguments() {
     let schema = r#"
         type Mutation {
           configure(input: MatrixInput!): ConfigureResult!
@@ -895,9 +921,9 @@ fn runtime_optic_rejects_flat_literals_for_nested_list_arguments() {
         }
     "#;
 
-    compile_runtime_optic(schema, valid, Some("Configure"))
+    compile_operation_artifact(schema, valid, Some("Configure"))
         .expect("nested list literal should compile");
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         flat_matrix,
         Some("Configure"),
@@ -905,7 +931,7 @@ fn runtime_optic_rejects_flat_literals_for_nested_list_arguments() {
 }
 
 #[test]
-fn runtime_optic_rejects_nullable_leaf_nested_list_variables() {
+fn operation_artifact_rejects_nullable_leaf_nested_list_variables() {
     let schema = r#"
         type Mutation {
           configure(matrix: [[Int!]!]!): ConfigureResult!
@@ -930,9 +956,9 @@ fn runtime_optic_rejects_nullable_leaf_nested_list_variables() {
         }
     "#;
 
-    compile_runtime_optic(schema, valid, Some("Configure"))
+    compile_operation_artifact(schema, valid, Some("Configure"))
         .expect("matching nested list variable should compile");
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         nullable_leaf,
         Some("Configure"),
@@ -940,8 +966,9 @@ fn runtime_optic_rejects_nullable_leaf_nested_list_variables() {
 }
 
 #[test]
-fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+fn operation_artifact_requires_reads_and_writes_when_footprint_is_present() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let missing_reads = r#"
         mutation RenameSymbol($input: RenameSymbolInput!) {
           renameSymbol(input: $input)
@@ -976,18 +1003,18 @@ fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
         }
     "#;
 
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         missing_reads,
         Some("RenameSymbol"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         missing_writes,
         Some("RenameSymbol"),
     ));
 
-    let artifact = compile_runtime_optic(schema, without_forbids, Some("RenameSymbol"))
+    let artifact = compile_operation_artifact(schema, without_forbids, Some("RenameSymbol"))
         .expect("footprint without forbids should compile");
     let footprint = artifact
         .operation
@@ -999,8 +1026,9 @@ fn runtime_optic_requires_reads_and_writes_when_footprint_is_present() {
 }
 
 #[test]
-fn runtime_optic_rejects_duplicate_footprint_labels() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+fn operation_artifact_rejects_duplicate_footprint_labels() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let duplicate_reads = r#"
         mutation RenameSymbol($input: RenameSymbolInput!) {
           renameSymbol(input: $input)
@@ -1042,17 +1070,17 @@ fn runtime_optic_rejects_duplicate_footprint_labels() {
         }
     "#;
 
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         duplicate_reads,
         Some("RenameSymbol"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         duplicate_writes,
         Some("RenameSymbol"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         duplicate_forbids,
         Some("RenameSymbol"),
@@ -1060,8 +1088,9 @@ fn runtime_optic_rejects_duplicate_footprint_labels() {
 }
 
 #[test]
-fn runtime_optic_rejects_duplicate_footprint_directive_arguments() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+fn operation_artifact_rejects_duplicate_footprint_directive_arguments() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let duplicate_footprint_argument = r#"
         mutation RenameSymbol($input: RenameSymbolInput!) {
           renameSymbol(input: $input)
@@ -1077,7 +1106,7 @@ fn runtime_optic_rejects_duplicate_footprint_directive_arguments() {
         }
     "#;
 
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         duplicate_footprint_argument,
         Some("RenameSymbol"),
@@ -1085,14 +1114,15 @@ fn runtime_optic_rejects_duplicate_footprint_directive_arguments() {
 }
 
 #[test]
-fn runtime_optic_rejects_duplicate_law_directive_arguments() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+fn operation_artifact_rejects_duplicate_law_directive_arguments() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let duplicate_law_argument = r#"
         mutation RenameSymbol($input: RenameSymbolInput!) {
           renameSymbol(input: $input)
             @wes_law(
               id: "bounded.rewrite.v1"
-              id: "footprint.closed.v1"
+              id: "operation.footprint.closed.v1"
             ) {
             receipt {
               witnessDigest
@@ -1101,7 +1131,7 @@ fn runtime_optic_rejects_duplicate_law_directive_arguments() {
         }
     "#;
 
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         duplicate_law_argument,
         Some("RenameSymbol"),
@@ -1109,8 +1139,9 @@ fn runtime_optic_rejects_duplicate_law_directive_arguments() {
 }
 
 #[test]
-fn runtime_optic_rejects_non_root_footprint_directives() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+fn operation_artifact_rejects_non_root_footprint_directives() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let nested_only = r#"
         mutation RenameSymbol($input: RenameSymbolInput!) {
           renameSymbol(input: $input) {
@@ -1142,12 +1173,12 @@ fn runtime_optic_rejects_non_root_footprint_directives() {
         }
     "#;
 
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         nested_only,
         Some("RenameSymbol"),
     ));
-    assert_operation_lowering_error(compile_runtime_optic(
+    assert_operation_lowering_error(compile_operation_artifact(
         schema,
         root_and_nested,
         Some("RenameSymbol"),
@@ -1188,10 +1219,10 @@ fn root_argument_bindings_are_preserved_and_affect_operation_identity() {
         }
     "#;
 
-    let left_right_artifact = compile_runtime_optic(schema, left_right, Some("Combine"))
-        .expect("left-right runtime optic should compile");
-    let right_left_artifact = compile_runtime_optic(schema, right_left, Some("Combine"))
-        .expect("right-left runtime optic should compile");
+    let left_right_artifact = compile_operation_artifact(schema, left_right, Some("Combine"))
+        .expect("left-right operation artifact should compile");
+    let right_left_artifact = compile_operation_artifact(schema, right_left, Some("Combine"))
+        .expect("right-left operation artifact should compile");
 
     assert_eq!(left_right_artifact.operation.root_arguments.len(), 2);
     assert_eq!(left_right_artifact.operation.root_arguments[0].name, "left");
@@ -1242,10 +1273,10 @@ fn selection_field_arguments_affect_operation_identity() {
         }
     "#;
 
-    let alpha_artifact = compile_runtime_optic(schema, alpha, Some("LibraryItem"))
-        .expect("alpha item runtime optic should compile");
-    let beta_artifact = compile_runtime_optic(schema, beta, Some("LibraryItem"))
-        .expect("beta item runtime optic should compile");
+    let alpha_artifact = compile_operation_artifact(schema, alpha, Some("LibraryItem"))
+        .expect("alpha item operation artifact should compile");
+    let beta_artifact = compile_operation_artifact(schema, beta, Some("LibraryItem"))
+        .expect("beta item operation artifact should compile");
     let argument_binding = alpha_artifact
         .operation
         .selection_arguments
@@ -1271,8 +1302,9 @@ fn selection_field_arguments_affect_operation_identity() {
 }
 
 #[test]
-fn runtime_optic_preserves_operation_nested_and_fragment_directives() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+fn operation_artifact_preserves_operation_nested_and_fragment_directives() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let operation = r#"
         mutation RenameSymbol($input: RenameSymbolInput!)
           @wes_law(id: "operation.audit.v1") {
@@ -1290,8 +1322,8 @@ fn runtime_optic_preserves_operation_nested_and_fragment_directives() {
         }
     "#;
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic with scattered directives should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact with scattered directives should compile");
 
     assert_contains_directive(
         &artifact.operation.directives,
@@ -1325,7 +1357,8 @@ fn runtime_optic_preserves_operation_nested_and_fragment_directives() {
 
 #[test]
 fn payload_shape_uses_response_aliases() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let operation = r#"
         mutation RenameSymbol($input: RenameSymbolInput!) {
           renameSymbol(input: $input) {
@@ -1345,11 +1378,11 @@ fn payload_shape_uses_response_aliases() {
         }
     "#;
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("aliased runtime optic should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("aliased operation artifact should compile");
     let unaliased_artifact =
-        compile_runtime_optic(schema, unaliased_operation, Some("RenameSymbol"))
-            .expect("unaliased runtime optic should compile");
+        compile_operation_artifact(schema, unaliased_operation, Some("RenameSymbol"))
+            .expect("unaliased operation artifact should compile");
 
     let digest = find_codec_field(&artifact.operation.payload_shape.fields, "receipt.digest");
     assert_eq!(digest.type_ref.base, "String");
@@ -1396,8 +1429,8 @@ fn payload_shape_preserves_duplicate_schema_fields_with_distinct_aliases() {
         }
     "#;
 
-    let artifact = compile_runtime_optic(schema, operation, Some("LibraryItems"))
-        .expect("multi-alias runtime optic should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("LibraryItems"))
+        .expect("multi-alias operation artifact should compile");
 
     let alpha_name = find_codec_field(&artifact.operation.payload_shape.fields, "alpha.name");
     let beta_name = find_codec_field(&artifact.operation.payload_shape.fields, "beta.name");
@@ -1447,8 +1480,8 @@ fn nested_payload_requiredness_respects_nullable_ancestors() {
         }
     "#;
 
-    let artifact = compile_runtime_optic(schema, operation, Some("MaybeResult"))
-        .expect("nullable-parent runtime optic should compile");
+    let artifact = compile_operation_artifact(schema, operation, Some("MaybeResult"))
+        .expect("nullable-parent operation artifact should compile");
     let receipt = find_codec_field(&artifact.operation.payload_shape.fields, "receipt");
     let witness_digest = find_codec_field(
         &artifact.operation.payload_shape.fields,
@@ -1466,8 +1499,9 @@ fn nested_payload_requiredness_respects_nullable_ancestors() {
 }
 
 #[test]
-fn runtime_optic_preserves_variable_backed_executable_directives() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
+fn operation_artifact_preserves_variable_backed_executable_directives() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let operation = r#"
         mutation RenameSymbol($input: RenameSymbolInput!, $includeDigest: Boolean!) {
           renameSymbol(input: $input) {
@@ -1478,8 +1512,8 @@ fn runtime_optic_preserves_variable_backed_executable_directives() {
         }
     "#;
 
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should preserve variable-backed executable directive");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should preserve variable-backed executable directive");
 
     assert_contains_directive(
         &artifact.operation.directives,
@@ -1490,13 +1524,15 @@ fn runtime_optic_preserves_variable_backed_executable_directives() {
 }
 
 #[test]
-fn optic_wire_shapes_serialize_with_stable_field_names() {
-    let schema = include_str!("../../../test/fixtures/runtime-optics/workspace_schema.graphql");
-    let operation = include_str!("../../../test/fixtures/runtime-optics/rename_symbol.graphql");
-    let artifact = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
-        .expect("runtime optic should compile");
+fn operation_artifact_wire_shapes_serialize_with_stable_field_names() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
+    let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
     let witness = LawWitness {
-        law_id: "footprint.closed.v1".to_string(),
+        law_id: "operation.footprint.closed.v1".to_string(),
         claim_id: "claim-1".to_string(),
         basis_ref: Some("basis-1".to_string()),
         checker_id: "echo.fixture.v0".to_string(),
@@ -1524,7 +1560,7 @@ fn optic_wire_shapes_serialize_with_stable_field_names() {
     assert_eq!(
         serde_json::to_value(&witness).expect("witness should serialize"),
         serde_json::json!({
-            "lawId": "footprint.closed.v1",
+            "lawId": "operation.footprint.closed.v1",
             "claimId": "claim-1",
             "basisRef": "basis-1",
             "checkerId": "echo.fixture.v0",
@@ -1577,7 +1613,7 @@ fn find_codec_field<'a>(fields: &'a [CodecField], name: &str) -> &'a CodecField 
         .unwrap_or_else(|| panic!("codec field {name} should exist"))
 }
 
-fn assert_contains_law_claim(artifact: &wesley_core::OpticArtifact, law_id: &str) {
+fn assert_contains_law_claim(artifact: &wesley_core::OperationArtifact, law_id: &str) {
     let claim = artifact
         .operation
         .law_claims
@@ -1602,14 +1638,14 @@ fn assert_contains_permission(
 }
 
 fn assert_operation_lowering_error(
-    result: Result<wesley_core::OpticArtifact, wesley_core::WesleyError>,
+    result: Result<wesley_core::OperationArtifact, wesley_core::WesleyError>,
 ) {
     match result {
         Err(wesley_core::WesleyError::LoweringError { area, .. }) => {
             assert_eq!(area, "operation");
         }
         Err(error) => panic!("expected operation lowering error, got {error:?}"),
-        Ok(_) => panic!("runtime optic should reject invalid operation"),
+        Ok(_) => panic!("operation artifact should reject invalid operation"),
     }
 }
 

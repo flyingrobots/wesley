@@ -79,28 +79,23 @@ act.
 
 ## 4. Continuum-Specific Module Policy
 
-`@wesley/continuum` is not the Wesley compiler.
+Continuum-specific behavior is not part of the Wesley compiler.
 
-It is a Wesley-side package that currently holds Continuum-specific defaults
-such as:
+If Continuum needs named scope profiles, publication-boundary defaults,
+consumer projection defaults, judgment profile settings, or product commands,
+those belong in a Continuum-owned module or repository. Wesley may load that
+module as an extension, but the extension owns the Continuum semantics.
 
-- named scope profiles
-- publication-boundary defaults
-- consumer projection defaults
-- judgment profile settings
+That means a Continuum module is better understood as:
 
-That means `@wesley/continuum` is better understood as:
-
-- a product profile
+- a product profile owned outside generic Wesley
 - a module bootstrap package
 - a workflow helper layer
 
 not as part of the compiler's essence.
 
-If a Continuum preset disappears tomorrow, Wesley should still be a compiler.
-
-Long term, the real Continuum module should live in the Continuum repo and be
-loaded by Wesley rather than baked into the Wesley repo.
+If every Continuum preset disappears tomorrow, Wesley should still be a
+compiler.
 
 ## 5. How Continuum Fits
 

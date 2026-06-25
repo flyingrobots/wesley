@@ -1,4 +1,4 @@
-//! Runtime optic artifact models.
+//! Operation artifact models.
 //!
 //! These types are intentionally domain-empty. They describe the GraphQL
 //! operation shape, declared bounds, and law claims that an external target can
@@ -10,13 +10,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
 
-/// Canonical JSON codec for Wesley-owned runtime optic contract requirements.
-pub const OPTIC_REQUIREMENTS_ARTIFACT_CODEC: &str = "wesley.requirements.canonical-json.v0";
+/// Canonical JSON codec for Wesley-owned operation artifact contract requirements.
+pub const OPERATION_REQUIREMENTS_ARTIFACT_CODEC: &str = "wesley.requirements.canonical-json.v0";
 
-/// Compiled contract for one runtime-declared GraphQL optic operation.
+/// Compiled contract for one GraphQL operation.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct OpticArtifact {
+pub struct OperationArtifact {
     /// Stable artifact identity derived from the schema and operation identity.
     pub artifact_id: String,
     /// Stable content hash for the full compiled artifact.
@@ -26,23 +26,23 @@ pub struct OpticArtifact {
     /// Stable digest of contract requirements and law claim templates.
     pub requirements_digest: String,
     /// Wesley-owned canonical byte artifact for contract requirements.
-    pub requirements_artifact: OpticRequirementsArtifact,
+    pub requirements_artifact: OperationRequirementsArtifact,
     /// The selected GraphQL operation compiled into an inspectable contract.
-    pub operation: OpticOperation,
+    pub operation: CompiledOperation,
     /// Compiler-described requirements an external target may evaluate.
-    pub requirements: OpticRequirements,
+    pub requirements: OperationRequirements,
     /// Descriptor an application can present when registering this artifact.
-    pub registration: OpticRegistrationDescriptor,
+    pub registration: OperationRegistrationDescriptor,
 }
 
-/// Wesley-produced descriptor for registering a compiled optic artifact.
+/// Wesley-produced descriptor for registering a compiled operation artifact.
 ///
 /// This is not a runtime handle and it is not an authority grant. It is a small
 /// descriptor an external target can compare with the full artifact before it
 /// stores or imports compiler-produced evidence.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct OpticRegistrationDescriptor {
+pub struct OperationRegistrationDescriptor {
     /// Stable artifact identity this descriptor refers to.
     pub artifact_id: String,
     /// Stable content hash for the full compiled artifact.
@@ -55,13 +55,13 @@ pub struct OpticRegistrationDescriptor {
     pub requirements_digest: String,
 }
 
-/// Contract requirements for an optic artifact.
+/// Contract requirements for an operation artifact.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct OpticRequirements {
+pub struct OperationRequirements {
     /// Identity binding described by the compiler.
     pub identity: IdentityRequirement,
-    /// Permission requirements inferred from the declared optic bounds.
+    /// Permission requirements inferred from the declared operation bounds.
     pub required_permissions: Vec<PermissionRequirement>,
     /// Resource labels that must remain inaccessible to the operation.
     pub forbidden_resources: Vec<String>,
@@ -74,7 +74,7 @@ pub struct OpticRequirements {
 /// target-owned truth.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub struct OpticRequirementsArtifact {
+pub struct OperationRequirementsArtifact {
     /// Stable digest computed from `bytes` exactly.
     pub digest: String,
     /// Explicit codec describing how `bytes` were generated.
@@ -84,32 +84,32 @@ pub struct OpticRequirementsArtifact {
 }
 
 /// Artifact resolver input accepted by Wesley-side registries.
-pub type OpticArtifactRef = OpticRegistrationDescriptor;
+pub type OperationArtifactRef = OperationRegistrationDescriptor;
 
-/// Resolves compiled optic artifacts from registration descriptors.
-pub trait OpticArtifactResolver {
+/// Resolves compiled operation artifacts from registration descriptors.
+pub trait OperationArtifactResolver {
     /// Resolves a registration descriptor to its full compiled artifact and
     /// verifies the descriptor still matches artifact identity and requirements.
-    fn resolve_optic_artifact(
+    fn resolve_operation_artifact(
         &self,
-        registration: &OpticRegistrationDescriptor,
-    ) -> Result<OpticArtifact, ResolveError>;
+        registration: &OperationRegistrationDescriptor,
+    ) -> Result<OperationArtifact, ResolveError>;
 }
 
 /// In-memory artifact registry for tests and single-process hosts.
 #[derive(Debug, Default, Clone)]
-pub struct InMemoryOpticArtifactRegistry {
-    artifacts: BTreeMap<String, OpticArtifact>,
+pub struct InMemoryOperationArtifactRegistry {
+    artifacts: BTreeMap<String, OperationArtifact>,
 }
 
-impl InMemoryOpticArtifactRegistry {
+impl InMemoryOperationArtifactRegistry {
     /// Creates an empty registry.
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Stores an artifact and returns its registration descriptor.
-    pub fn insert(&mut self, mut artifact: OpticArtifact) -> OpticRegistrationDescriptor {
+    pub fn insert(&mut self, mut artifact: OperationArtifact) -> OperationRegistrationDescriptor {
         let registration = registration_descriptor_for_artifact(&artifact);
         artifact.registration = registration.clone();
         self.artifacts
@@ -128,8 +128,10 @@ impl InMemoryOpticArtifactRegistry {
     }
 }
 
-fn registration_descriptor_for_artifact(artifact: &OpticArtifact) -> OpticRegistrationDescriptor {
-    OpticRegistrationDescriptor {
+fn registration_descriptor_for_artifact(
+    artifact: &OperationArtifact,
+) -> OperationRegistrationDescriptor {
+    OperationRegistrationDescriptor {
         artifact_id: artifact.artifact_id.clone(),
         artifact_hash: artifact.artifact_hash.clone(),
         schema_id: artifact.schema_id.clone(),
@@ -138,11 +140,11 @@ fn registration_descriptor_for_artifact(artifact: &OpticArtifact) -> OpticRegist
     }
 }
 
-impl OpticArtifactResolver for InMemoryOpticArtifactRegistry {
-    fn resolve_optic_artifact(
+impl OperationArtifactResolver for InMemoryOperationArtifactRegistry {
+    fn resolve_operation_artifact(
         &self,
-        registration: &OpticRegistrationDescriptor,
-    ) -> Result<OpticArtifact, ResolveError> {
+        registration: &OperationRegistrationDescriptor,
+    ) -> Result<OperationArtifact, ResolveError> {
         let artifact = self
             .artifacts
             .get(&registration.artifact_id)
@@ -155,8 +157,8 @@ impl OpticArtifactResolver for InMemoryOpticArtifactRegistry {
 }
 
 fn verify_registration_matches_artifact(
-    registration: &OpticRegistrationDescriptor,
-    artifact: &OpticArtifact,
+    registration: &OperationRegistrationDescriptor,
+    artifact: &OperationArtifact,
 ) -> Result<(), ResolveError> {
     if registration.artifact_hash != artifact.artifact_hash {
         return Err(ResolveError::ArtifactHashMismatch {
@@ -189,7 +191,7 @@ fn verify_registration_matches_artifact(
     Ok(())
 }
 
-/// Error raised when an optic artifact reference cannot resolve cleanly.
+/// Error raised when an operation artifact reference cannot resolve cleanly.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResolveError {
     /// No artifact exists for the referenced artifact identity.
@@ -231,23 +233,26 @@ impl fmt::Display for ResolveError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ResolveError::ArtifactNotFound { artifact_id } => {
-                write!(formatter, "optic artifact '{artifact_id}' was not found")
+                write!(
+                    formatter,
+                    "operation artifact '{artifact_id}' was not found"
+                )
             }
             ResolveError::ArtifactHashMismatch { expected, actual } => write!(
                 formatter,
-                "optic artifact hash mismatch: expected '{expected}', got '{actual}'"
+                "operation artifact hash mismatch: expected '{expected}', got '{actual}'"
             ),
             ResolveError::SchemaIdMismatch { expected, actual } => write!(
                 formatter,
-                "optic schema id mismatch: expected '{expected}', got '{actual}'"
+                "operation artifact schema id mismatch: expected '{expected}', got '{actual}'"
             ),
             ResolveError::OperationIdMismatch { expected, actual } => write!(
                 formatter,
-                "optic operation id mismatch: expected '{expected}', got '{actual}'"
+                "operation artifact id mismatch: expected '{expected}', got '{actual}'"
             ),
             ResolveError::RequirementsDigestMismatch { expected, actual } => write!(
                 formatter,
-                "optic requirements digest mismatch: expected '{expected}', got '{actual}'"
+                "operation requirements digest mismatch: expected '{expected}', got '{actual}'"
             ),
         }
     }
@@ -265,7 +270,7 @@ pub struct IdentityRequirement {
     pub accepted_principal_kinds: Vec<String>,
 }
 
-/// Permission requirement inferred from an optic declaration.
+/// Permission requirement inferred from an operation declaration.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct PermissionRequirement {
@@ -277,7 +282,7 @@ pub struct PermissionRequirement {
     pub source: String,
 }
 
-/// Permission action required for an optic resource label.
+/// Permission action required for an operation resource label.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PermissionAction {
@@ -290,7 +295,7 @@ pub enum PermissionAction {
 /// Inspectable contract for a selected GraphQL operation.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct OpticOperation {
+pub struct CompiledOperation {
     /// Stable operation identity derived from the selected operation shape.
     pub operation_id: String,
     /// Optional GraphQL operation name.
@@ -318,7 +323,7 @@ pub struct OpticOperation {
     pub law_claims: Vec<LawClaimTemplate>,
 }
 
-/// Canonical binding for one argument supplied to an optic root field.
+/// Canonical binding for one argument supplied to an operation root field.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct RootArgumentBinding {
