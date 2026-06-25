@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Removed
+
+- **External host experiments**: Retired the browser, Bun, and Deno host
+  experiment packages, workflows, smoke scripts, browser contract fixtures, and
+  active docs references from the Wesley release surface. Wesley now treats
+  host-specific execution as downstream extension scope rather than core repo
+  product surface.
+
 ### Changed
 
 - **v0.1.0 release evidence**: Recorded the signed tag, GitHub Release,

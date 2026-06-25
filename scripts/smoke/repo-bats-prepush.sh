@@ -17,9 +17,6 @@ timeout 60s bash scripts/setup-bats-plugins.sh || {
   exit 1
 }
 
-rm -rf test/hosts/bats-plugins 2>/dev/null || true
-ln -sfn "$PWD/test/bats-plugins" test/hosts/bats-plugins
-
 files=(
   test/serve-static-unit.bats
   test/serve-static-relative-unit.bats
@@ -27,10 +24,7 @@ files=(
   test/domain-empty-boundary.bats
   test/ir-fixtures.bats
   test/progress-safety.bats
-  test/ci-browser-smoke.bats
-  test/ci-pkg-host-bun.bats
   test/ci-workflows.bats
-  test/deno-host-webcrypto-guard.bats
 )
 
 for f in "${files[@]}"; do

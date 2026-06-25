@@ -156,10 +156,7 @@ function needsRepoBats(changedFiles) {
       file.startsWith('.github/') ||
       file.startsWith('.githooks/') ||
       file.startsWith('scripts/') ||
-      file.startsWith('test/') ||
-      file.startsWith('packages/wesley-host-browser/') ||
-      file.startsWith('packages/wesley-host-bun/') ||
-      file.startsWith('packages/wesley-host-deno/')
+      file.startsWith('test/')
   );
 }
 

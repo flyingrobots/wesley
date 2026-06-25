@@ -28,7 +28,8 @@ The current product center is the Rust workspace. The core compiler crate is
 `crates/wesley-holmes` crate is an unpublished Rust foundation for law
 assurance. JavaScript packages remain, but the repository docs classify them as
 non-compiler surfaces: Holmes compatibility tooling, website or docs plumbing,
-and browser/Bun/Deno host smoke experiments.
+and repository automation. Browser/Bun/Deno host smoke experiments are retired
+from the Wesley release surface.
 
 ### How It Works
 
@@ -332,9 +333,9 @@ and the website. The retained packages are not compiler authority.
 Holmes, Watson, Moriarty, report, counterfactual, and PR-comment tooling while
 the Rust Holmes foundation grows behind a stronger boundary.
 
-`@wesley/host-browser`, `@wesley/host-bun`, and `@wesley/host-deno` are host
-smoke experiments. Their code intentionally contains small local parser/hash
-adapters and does not depend on the retired JavaScript compiler core.
+The former `@wesley/host-browser`, `@wesley/host-bun`, and
+`@wesley/host-deno` host smoke experiments are deleted. Browser, Bun, and Deno
+execution are not supported Wesley release surfaces.
 
 ### Package Relationship Diagram
 
@@ -1531,14 +1532,6 @@ pnpm --filter @wesley/holmes test
 0 failed
 ```
 
-The retained `@wesley/host-browser` package test run passed:
-
-```text
-pnpm --filter @wesley/host-browser test
-2 test files passed
-26 tests passed
-```
-
 The first sandboxed pnpm attempts failed at package fetch time. After the
 environment allowed normal package resolution, the package tests passed.
 
@@ -1676,10 +1669,9 @@ operators about what Wesley core can prove.
 
 ### Host And Integration Use Cases
 
-The host smoke packages demonstrate browser, Bun, and Deno compatibility
-surfaces. The runtime optic API demonstrates how a future host can admit
-bounded GraphQL operation artifacts under target-owned policy without letting
-Wesley issue runtime authority.
+Browser, Bun, and Deno compatibility probes are no longer retained in Wesley.
+Future host or runtime admission belongs in a downstream extension or sibling
+repo under target-owned policy, without letting Wesley issue runtime authority.
 
 ## Summary Of The System's Key Features And Notable Design Decisions
 
@@ -1740,9 +1732,9 @@ keep README, CHANGELOG, tags, and publishable crate manifests aligned.
 
 ### Host Package Fate
 
-The browser, Bun, and Deno host packages are classified as external host smoke
-experiments pending deletion or externalization. The exact deletion or
-externalization milestone is still a product decision.
+The browser, Bun, and Deno host packages are deleted from the active Wesley
+release surface. Reintroduce host-specific behavior only through an explicit
+downstream owner.
 
 ### Holmes Cutover
 
@@ -1813,7 +1805,6 @@ prove it.
 cargo test --workspace -- --list
 cargo test --workspace
 pnpm --filter @wesley/holmes test
-pnpm --filter @wesley/host-browser test
 ```
 
 ### Third-Party Boundaries
@@ -1822,7 +1813,7 @@ The codebase uses `apollo-parser` for GraphQL parsing, `serde` and
 `serde_json` for serialization, `sha2` and `hex` for hashing, `indexmap` for
 deterministic map behavior, `yaml-rust2` for YAML loading, `ninelives` for
 resilience policy, Node's built-in test runner for JS package tests, and
-Vitest for browser host tests.
+Vitest for retained website tests.
 
 No external web references were used to write this teardown; it is anchored to
 the repository files and local command outputs listed above.

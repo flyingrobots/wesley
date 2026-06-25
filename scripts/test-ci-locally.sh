@@ -39,7 +39,6 @@ export BATS_LIB_PATH=test
 export TERM=xterm
 export BATS_NO_COLOR=1
 bash scripts/setup-bats-plugins.sh
-ln -sfn "$PWD/test/bats-plugins" test/hosts/bats-plugins
 bats -t test/ci-workflows.bats test/domain-empty-boundary.bats test/docs-whitespace.bats
 
 echo ""

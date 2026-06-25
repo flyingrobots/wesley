@@ -27,7 +27,6 @@
     "@tiptap/pm": "^3.20.4",
     "@tiptap/react": "^3.20.4",
     "@tiptap/starter-kit": "^3.20.1",
-    "@wesley/host-browser": "workspace:^",
     "clsx": "^2.1.1",
     "highlight.js": "^11.11.1",
     "lowlight": "^3.3.0",

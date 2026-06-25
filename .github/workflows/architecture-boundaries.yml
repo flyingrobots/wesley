@@ -66,6 +66,9 @@ jobs:
             packages/wesley-cli/package.json
             packages/wesley-host-node/package.json
             packages/wesley-runtime-node/package.json
+            packages/wesley-host-browser/package.json
+            packages/wesley-host-bun/package.json
+            packages/wesley-host-deno/package.json
           )
 
           for package_manifest in "${retired[@]}"; do
@@ -79,7 +82,7 @@ jobs:
         run: |
           set -euo pipefail
           if grep -RIl --include='*.mjs' --include='*.ts' \
-            -E "@wesley/(core|cli|runtime-node)|wesley-host-node|packages/wesley-(core|cli|host-node|runtime-node)" \
+            -E "@wesley/(core|cli|runtime-node|host-browser|host-bun|host-deno)|wesley-host-(node|browser|bun|deno)|packages/wesley-(core|cli|host-node|runtime-node|host-browser|host-bun|host-deno)|host_contracts_(browser|bun|deno)" \
             packages scripts | grep -v '^scripts/preflight.mjs$' | grep .; then
             echo "Retired legacy package import or executable reference found." >&2
             exit 1
@@ -98,7 +101,7 @@ jobs:
           - The product front door is the Rust `wesley` binary.
           - Legacy JS compiler authority packages are retired.
           - Holmes remains a self-contained assurance package, not compiler authority.
-          - Browser, Bun, and Deno packages remain external host experiments without JS core/runtime imports.
+          - Browser, Bun, and Deno host experiment packages and workflows are retired from the Wesley release surface.
 
           ### Retired Package Guard
 
@@ -108,6 +111,9 @@ jobs:
           - `packages/wesley-cli/package.json`
           - `packages/wesley-host-node/package.json`
           - `packages/wesley-runtime-node/package.json`
+          - `packages/wesley-host-browser/package.json`
+          - `packages/wesley-host-bun/package.json`
+          - `packages/wesley-host-deno/package.json`
 
           Generated at: $(date)
           EOF

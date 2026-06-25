@@ -201,7 +201,8 @@ authority.
 1. The **Rust workspace** is the current compiler center. New compiler truth
    belongs in `crates/wesley-core` and the native `wesley` CLI.
 2. The **JavaScript workspace** is explicitly non-compiler: Holmes assurance,
-   website/docs tooling, and small browser/Bun/Deno host smoke experiments.
+   website/docs tooling, and repository automation. Browser/Bun/Deno host
+   experiments are retired from the Wesley release surface.
 
 ```mermaid
 flowchart LR
@@ -215,7 +216,6 @@ flowchart LR
 
     subgraph NonCompilerJS["Non-compiler JavaScript surfaces"]
         Holmes[packages/wesley-holmes]
-        Hosts[packages/wesley-host-browser/bun/deno]
         Website[wesley-website]
         Tooling[scripts]
     end
@@ -920,9 +920,6 @@ If you open the repository today, the important paths are:
 | `crates/wesley-emit-typescript/` | TypeScript projection crate.                                                  |
 | `xtask/`                         | Rust repository automation, docs checks, preflight, release checks.           |
 | `packages/wesley-holmes/`        | Self-contained assurance, evidence, verification, and judgment tooling.       |
-| `packages/wesley-host-browser/`  | Browser host smoke experiment outside compiler authority.                     |
-| `packages/wesley-host-bun/`      | Bun host smoke experiment outside compiler authority.                         |
-| `packages/wesley-host-deno/`     | Deno host smoke experiment outside compiler authority.                        |
 | `docs/`                          | Architecture, method, design packets, release packets, and current direction. |
 | `test/fixtures/`                 | GraphQL fixtures, Rust L1 golden files, and parity inputs.                    |
 | `scripts/`                       | Fixture, docs, CI, and repository support scripts.                            |
@@ -944,9 +941,6 @@ flowchart TB
 
         subgraph JS["Non-compiler JavaScript"]
             Holmes["@wesley/holmes"]
-            HostBrowser["@wesley/host-browser"]
-            HostBun["@wesley/host-bun"]
-            HostDeno["@wesley/host-deno"]
         end
     end
 
@@ -1033,7 +1027,7 @@ Today, Wesley can:
 - emit TypeScript declarations and operation bindings
 - write deterministic native emit metadata sidecars
 - keep JavaScript outside compiler authority except for Holmes assurance,
-  website/docs tooling, and host smoke experiments
+  website/docs tooling, and repository automation
 - model external module targets through Rust capability descriptors, ABI
   compatibility reports, stateless runtime policy, and hermetic fixture checks
 - run docs, lint, package, Rust, fixture, and preflight checks

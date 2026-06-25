@@ -24,12 +24,9 @@ The terminal closeout lives in
 
 ## Package Inventory
 
-| Surface                         | Current role                                                         | Disposition              | Retirement gate                                                                           |
-| ------------------------------- | -------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------- |
-| `packages/wesley-holmes/`       | Self-contained Holmes/Moriarty assurance and counterfactual tooling. | Extract or rebuild later | Assurance tooling has an explicit package/repo boundary separate from compiler authority. |
-| `packages/wesley-host-browser/` | Browser-host smoke experiment.                                       | Delete or externalize    | Browser host evidence stays external to compiler authority.                               |
-| `packages/wesley-host-bun/`     | Bun-host smoke experiment.                                           | Delete or externalize    | Bun host evidence stays external to compiler authority.                                   |
-| `packages/wesley-host-deno/`    | Deno-host smoke experiment.                                          | Delete or externalize    | Deno host evidence stays external to compiler authority.                                  |
+| Surface                   | Current role                                                         | Disposition              | Retirement gate                                                                           |
+| ------------------------- | -------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------- |
+| `packages/wesley-holmes/` | Self-contained Holmes/Moriarty assurance and counterfactual tooling. | Extract or rebuild later | Assurance tooling has an explicit package/repo boundary separate from compiler authority. |
 
 ## Current Deletion Blockers
 
@@ -49,6 +46,9 @@ NR-079, and the closeout is published in `FINAL_CLOSEOUT.md`.
 | `packages/wesley-scaffold-multitenant/` | NR-082 | Deleted | Product scaffolding exits generic Wesley; future scaffolds belong to an owning product repository.                                    |
 | `packages/wesley-test-fixtures/`        | NR-083 | Deleted | Useful fixtures live as plain `test/fixtures` assets or Rust tests, not as a workspace package.                                       |
 | `packages/wesley-tasks/`                | NR-084 | Deleted | Rust `TransmutationRunner` keeps descriptor-only task graph evidence without a JavaScript task runtime.                               |
+| `packages/wesley-host-browser/`         | GH-629 | Deleted | Browser execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner.          |
+| `packages/wesley-host-bun/`             | GH-629 | Deleted | Bun execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner.              |
+| `packages/wesley-host-deno/`            | GH-629 | Deleted | Deno execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner.             |
 
 ## Command Inventory
 

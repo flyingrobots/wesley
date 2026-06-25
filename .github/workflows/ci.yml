@@ -59,8 +59,8 @@ jobs:
           CHANGED=$(git diff --name-only "$RANGE" || true)
           echo "$CHANGED" | sed 's/^/ - /'
           NEED=false
-          # Trigger only on unit/serverless tests; exclude browser-contracts and serve-static e2e
-          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/compute-progress\.mjs|scripts/generate-ir-fixtures\.mjs|test/progress-|test/ir-fixtures\.bats|test/ci-|test/deno-host-webcrypto-guard\.bats)' && NEED=true || true
+          # Trigger only on unit/serverless repository checks.
+          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/compute-progress\.mjs|scripts/generate-ir-fixtures\.mjs|test/progress-|test/ir-fixtures\.bats|test/ci-)' && NEED=true || true
           echo "RUN_BATS=$NEED" >> $GITHUB_ENV
 
       - name: Repo Bats tests (unit/progress/ci checks only)
@@ -73,8 +73,6 @@ jobs:
           # Ensure tests that use `load 'bats-plugins/…'` from the repo-level
           # `test/` directory can resolve plugins.
           timeout 2m bash scripts/setup-bats-plugins.sh
-          rm -rf test/hosts/bats-plugins || true
-          ln -sfn "$PWD/test/bats-plugins" test/hosts/bats-plugins
           set -euo pipefail
           files=(
             test/serve-static-unit.bats
@@ -82,10 +80,7 @@ jobs:
             test/progress-dry-run.bats
             test/ir-fixtures.bats
             test/progress-safety.bats
-            test/ci-browser-smoke.bats
-            test/ci-pkg-host-bun.bats
             test/ci-workflows.bats
-            test/deno-host-webcrypto-guard.bats
           )
           for f in "${files[@]}"; do
             echo "Running Bats: $f"

@@ -23,8 +23,9 @@ New compiler behavior should start there, then grow a native CLI command when it
 needs one.
 
 The retired Node compiler packages are no longer a second Wesley. JavaScript
-remains for Holmes assurance, website/docs tooling, repository scripts, and host
-smoke experiments outside compiler authority. The migration map lives in
+remains for Holmes assurance, website/docs tooling, and repository scripts
+outside compiler authority. Browser/Bun/Deno host experiments are retired from
+the Wesley release surface. The migration map lives in
 [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md).
 
 ## What Lives Where
@@ -38,7 +39,6 @@ smoke experiments outside compiler authority. The migration map lives in
 | Rust TypeScript emitter | `crates/wesley-emit-typescript/`      | Rust projection crate               | Emits TypeScript declarations, root operation request/response bindings, and operation metadata constants from Wesley L1 IR plus `SchemaOperation` data through a structured TypeScript declaration AST and printer.                          |
 | Repo automation         | `xtask/`                              | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the JavaScript package preflight bridge.                                                                                                                                  |
 | Assurance tooling       | `packages/wesley-holmes/`             | Non-compiler package                | Holmes/Moriarty-era evidence, verification, reporting, runtime-run inspection, and counterfactual tooling.                                                                                                                                    |
-| Host smoke experiments  | `packages/wesley-host-*`              | Non-compiler packages               | Browser, Bun, and Deno smoke adapters with local parser/hash behavior.                                                                                                                                                                        |
 | Root Node workspace     | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing                  | Keeps retained JS packages, docs checks, package tests, and website tooling installable. It is not the Wesley product entry point.                                                                                                            |
 
 ## What Rust Wesley Does Today
@@ -103,7 +103,6 @@ It can still run workflows such as:
 
 - package preflight and package tests
 - Holmes/Moriarty evidence tooling
-- browser/Bun/Deno host smoke experiments
 - website and docs-support tooling
 
 Holmes/Moriarty, run-ledger, and package-evidence commands are assurance
@@ -118,6 +117,9 @@ compiler work should not depend on them.
 | `packages/wesley-cli/`           | Deleted  | The Rust CLI owns the product front door.                                                          |
 | `packages/wesley-host-node/`     | Deleted  | No retained workflow shells through the old Node executable wrapper.                               |
 | `packages/wesley-runtime-node/`  | Deleted  | Holmes-local support owns retained ledger and module capability helpers.                           |
+| `packages/wesley-host-browser/`  | Deleted  | Browser execution is not a supported Wesley release surface.                                       |
+| `packages/wesley-host-bun/`      | Deleted  | Bun execution is not a supported Wesley release surface.                                           |
+| `packages/wesley-host-deno/`     | Deleted  | Deno execution is not a supported Wesley release surface.                                          |
 | `packages/wesley-generator-js/`  | Deleted  | Generic TypeScript output belongs in Rust emitters; Zod is CLI-local compatibility debt.           |
 | `packages/wesley-generator-vue/` | Deleted  | Vue projection behavior belongs in an external target module or product owner, not generic Wesley. |
 | JS/Rust parity release authority | Archived | Rust self-consistency and native fixture truth are the product release gate.                       |
@@ -155,8 +157,8 @@ There should be one brain and one body:
 
 - **Brain**: `crates/wesley-core`
 - **Body**: `crates/wesley-cli`
-- **Non-compiler JS surfaces**: `packages/`, kept only for assurance, host
-  smoke experiments, or package-maintenance value
+- **Non-compiler JS surfaces**: `packages/`, kept only for assurance or
+  package-maintenance value
 
 Any document or workflow that presents `pnpm wesley` as Wesley's main command
 surface is stale by default.
@@ -164,9 +166,9 @@ surface is stale by default.
 If an old script still calls `pnpm wesley`, it should be deleted or rewritten.
 Generic schema work should use:
 
-| Legacy call                              | Native path                                                                        |
-| ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| `pnpm wesley diff <old> <new>`           | `wesley schema diff --old <old> --new <new>`                                       |
-| `pnpm wesley doctor`                     | `wesley doctor`                                                                    |
-| `pnpm wesley typescript --schema <path>` | `wesley emit typescript --schema <path> --out <path>`                              |
-| `pnpm wesley generate --schema <path>`   | `wesley emit rust ...`, `wesley emit typescript ...`, or an external target owner  |
+| Legacy call                              | Native path                                                                       |
+| ---------------------------------------- | --------------------------------------------------------------------------------- |
+| `pnpm wesley diff <old> <new>`           | `wesley schema diff --old <old> --new <new>`                                      |
+| `pnpm wesley doctor`                     | `wesley doctor`                                                                   |
+| `pnpm wesley typescript --schema <path>` | `wesley emit typescript --schema <path> --out <path>`                             |
+| `pnpm wesley generate --schema <path>`   | `wesley emit rust ...`, `wesley emit typescript ...`, or an external target owner |

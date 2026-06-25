@@ -9,7 +9,7 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | Script                                                          | Purpose                                                                                                           | Notes                                                                                                                                                                                                                  |
 | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm run build`                                                | Run `build` in every workspace package.                                                                           | Uses `pnpm -r build`. Only packages that define a build script will execute.                                                                                                                                           |
-| `pnpm run test`                                                 | Run the full test suite across the workspace.                                                                     | Invokes `pnpm -r test`. For targeted suites, use retained workspace filters such as `@wesley/holmes` or host experiment packages.                                                                                      |
+| `pnpm run test`                                                 | Run the full test suite across the workspace.                                                                     | Invokes `pnpm -r test`. For targeted suites, use retained workspace filters such as `@wesley/holmes`.                                                                                                                  |
 | `pnpm run test:watch` / `test:coverage`                         | Watch mode / coverage reporting across the workspace.                                                             | Useful during development; some packages may not implement these variants.                                                                                                                                             |
 | `pnpm run lint` / `lint:fix`                                    | Repo-wide ESLint checks.                                                                                          | Defaults to ESLint running on `.js`/`.mjs` in the root workspace.                                                                                                                                                      |
 | `pnpm run format` / `format:check`                              | Prettier formatting helpers.                                                                                      | `format` rewrites Prettier-owned source/docs/config files, `format:check` is read-only. Wesley SDL files, Rust IR goldens, and Rust-emitter TypeScript goldens are excluded because their bytes are compiler evidence. |
@@ -28,13 +28,6 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | `pnpm run setup:bats-plugins` | Download/update vendored Bats plugins for repo-level Bats tests. | Safe to re-run; used during devcontainer bootstrapping. |
 | `pnpm run meta:fix-packages`  | Normalize package metadata.                                      | Wraps `scripts/fix-package-metadata.mjs`.               |
 
-## Test Harnesses
-
-| Helper                               | Purpose                                                                          | Notes                                                                                                                                                                                     |
-| ------------------------------------ | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/host_contracts_runner.mjs`  | Shared runner used by Deno and Bun host-contract entrypoints.                    | Emits a single JSON result and sets exit code (0 when `failed === 0`). Entry scripts (`host_contracts_deno.mjs`, `host_contracts_bun.mjs`) simply `import { runAndReport }` and await it. |
-| `scripts/host_contracts_browser.mjs` | Builds the contracts bundle (Vite), serves it, runs Playwright, and prints JSON. | Honors `OUT_JSON`. When `ONLY_PARSE_OUT_JSON=1`, skips build/serve and only parses the file (useful for debugging). Logs verifyIr diagnostics to stderr when failures occur.              |
-
 ## Progress & Badges
 
 | Helper                         | Purpose                                                                                                  | Notes                                                                                                                                                                                                                                                                                                                                                                   |
@@ -43,9 +36,9 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 
 ## Static Server
 
-| Helper                     | Purpose                                   | Notes                                                                                                                                                                                                                                                                          |
-| -------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `scripts/serve-static.mjs` | Minimal static server for browser smokes. | Exports `contentType(file)` and `isWithinRoot(root, file)`. Path normalization decodes URIs and uses `path.relative` to prevent traversal; returns 403 on attempts to escape the root. Example: `node scripts/serve-static.mjs --dir=test/browser/contracts/dist --port=8787`. |
+| Helper                     | Purpose                                   | Notes                                                                                                                                                                                                                                                     |
+| -------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/serve-static.mjs` | Minimal static server used by unit tests. | Exports `contentType(file)` and `isWithinRoot(root, file)`. Path normalization decodes URIs and uses `path.relative` to prevent traversal; returns 403 on attempts to escape the root. Example: `node scripts/serve-static.mjs --dir=public --port=8787`. |
 
 ## Maintenance
 
@@ -57,10 +50,9 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 
 Some workspaces expose their own scripts via `pnpm --filter <package>`. Common examples:
 
-| Command                                   | Purpose                            | Notes                                          |
-| ----------------------------------------- | ---------------------------------- | ---------------------------------------------- |
-| `pnpm --filter @wesley/holmes test`       | Run Holmes assurance tests.        | Holmes is retained outside compiler authority. |
-| `pnpm --filter @wesley/host-browser test` | Run browser host experiment tests. | Useful after browser smoke adapter changes.    |
+| Command                             | Purpose                     | Notes                                          |
+| ----------------------------------- | --------------------------- | ---------------------------------------------- |
+| `pnpm --filter @wesley/holmes test` | Run Holmes assurance tests. | Holmes is retained outside compiler authority. |
 
 ## Tips
 

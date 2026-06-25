@@ -77,16 +77,6 @@ importers:
         specifier: ^14.0.2
         version: 14.0.2
 
-  packages/wesley-host-browser:
-    devDependencies:
-      vitest:
-        specifier: ^4.1.9
-        version: 4.1.9(jsdom@29.1.1)(vite@8.0.16(sugarss@5.0.1(postcss@8.5.15)))
-
-  packages/wesley-host-bun: {}
-
-  packages/wesley-host-deno: {}
-
   wesley-website:
     dependencies:
       '@electric-sql/pglite':
@@ -131,9 +121,6 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.20.1
         version: 3.20.1
-      '@wesley/host-browser':
-        specifier: workspace:^
-        version: link:../packages/wesley-host-browser
       clsx:
         specifier: ^2.1.1
         version: 2.1.1

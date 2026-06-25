@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Minimal static file server for CI smokes
+// Minimal static file server for repository unit tests.
 import http from 'node:http';
 import { existsSync, statSync } from 'node:fs';
 import { createReadStream } from 'node:fs';
@@ -12,7 +12,7 @@ const args = new Map(
   })
 );
 
-const root = resolve(args.get('dir') || 'test/browser/smoke/dist');
+const root = resolve(args.get('dir') || '.');
 const port = parseInt(args.get('port') || '8787', 10);
 
 export const CONTENT_TYPE_MAP = new Map([

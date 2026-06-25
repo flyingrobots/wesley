@@ -269,9 +269,6 @@ Wesley and HOLMES are separate packages:
 crates/wesley-core       # Rust compiler authority
 crates/wesley-cli        # Native product CLI
 @wesley/holmes           # Sidecar intelligence package
-@wesley/host-browser     # External host experiment
-@wesley/host-bun         # External host experiment
-@wesley/host-deno        # External host experiment
 ```
 
 ## Commands

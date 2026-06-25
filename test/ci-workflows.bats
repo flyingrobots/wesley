@@ -3,57 +3,7 @@
 load 'bats-plugins/bats-support/load'
 load 'bats-plugins/bats-assert/load'
 
-yaml_job_block() {
-  local job_name="$1"
-  local workflow="${2:-.github/workflows/runtime-smokes.yml}"
-  awk -v job="$job_name" '
-    $0 == "  " job ":" { in_block = 1 }
-    in_block && $0 ~ /^  [A-Za-z0-9_-]+:/ && $0 != "  " job ":" { exit }
-    in_block { print }
-  ' "$workflow"
-}
-
-@test "runtime-smokes uses composite action to install bats (no raw apt-get)" {
-  run bash -lc "grep -n 'apt-get install -y bats jq' .github/workflows/runtime-smokes.yml | wc -l || true"
-  assert_success
-  [ "$output" -eq 0 ]
-
-  run bash -lc "grep -F 'uses: ./.github/actions/install-bats' .github/workflows/runtime-smokes.yml | wc -l || true"
-  assert_success
-  # Only the retained Bats-backed Deno runtime smoke should need this setup.
-  [ "$output" -eq 1 ]
-}
-
-@test "runtime-smokes Bun job uses official Bun setup without Bats" {
-  run yaml_job_block bun-smoke
-  assert_success
-  [[ "$output" != *"uses: ./.github/actions/install-bats"* ]]
-  [[ "$output" == *"oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6"* ]]
-  [[ "$output" == *"bun run scripts/host_contracts_bun.mjs"* ]]
-}
-
-@test "workflow job block helper stops before the next job" {
-  tmp_workflow="$(mktemp -t wesley-runtime-smoke-workflow-XXXXXX.yml)"
-  cat >"$tmp_workflow" <<'YAML'
-jobs:
-  bun-smoke:
-    steps:
-      - uses: oven-sh/setup-bun@example
-      - run: bun run scripts/host_contracts_bun.mjs
-  later-bats-job:
-    steps:
-      - uses: ./.github/actions/install-bats
-YAML
-
-  run yaml_job_block bun-smoke "$tmp_workflow"
-  rm -f "$tmp_workflow"
-  assert_success
-  [[ "$output" == *"bun run scripts/host_contracts_bun.mjs"* ]]
-  [[ "$output" != *"later-bats-job"* ]]
-  [[ "$output" != *"uses: ./.github/actions/install-bats"* ]]
-}
-
-@test "CI names distinguish Rust product checks from external host experiments" {
+@test "CI names distinguish Rust product checks from retired host experiments" {
   run bash -lc "grep -F 'name: Rust Product - Native CLI' .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
@@ -62,33 +12,9 @@ YAML
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'name: External Host Experiments - Runtime Smokes' .github/workflows/runtime-smokes.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'External host experiment - Deno smoke' .github/workflows/runtime-smokes.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'External host experiment - Bun smoke' .github/workflows/runtime-smokes.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'Node host smoke' .github/workflows/runtime-smokes.yml | wc -l || true"
+  run bash -lc "find .github/workflows -maxdepth 1 -type f -print | xargs grep -l 'External Host Experiment' | wc -l"
   assert_success
   [ "$output" -eq 0 ]
-
-  run bash -lc "grep -F 'name: External Host Experiment - Browser Smoke' .github/workflows/browser-smoke.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'name: External Host Experiment - pkg-host-bun' .github/workflows/pkg-host-bun.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'name: External Host Experiment - pkg-host-deno' .github/workflows/pkg-host-deno.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
 }
 
 @test "general CI uses native CLI for product schema smoke" {
@@ -174,6 +100,44 @@ YAML
 
   run test ! -e scripts/host_contracts_node.mjs
   assert_success
+}
+
+@test "retired host experiment surfaces do not return" {
+  run test ! -e .github/workflows/browser-smoke.yml
+  assert_success
+
+  run test ! -e .github/workflows/pkg-host-bun.yml
+  assert_success
+
+  run test ! -e .github/workflows/pkg-host-deno.yml
+  assert_success
+
+  run test ! -e .github/workflows/runtime-smokes.yml
+  assert_success
+
+  run test ! -e packages/wesley-host-browser/package.json
+  assert_success
+
+  run test ! -e packages/wesley-host-bun/package.json
+  assert_success
+
+  run test ! -e packages/wesley-host-deno/package.json
+  assert_success
+
+  run test ! -e scripts/host_contracts_browser.mjs
+  assert_success
+
+  run test ! -e scripts/host_contracts_bun.mjs
+  assert_success
+
+  run test ! -e scripts/host_contracts_deno.mjs
+  assert_success
+}
+
+@test "general CI does not call retired host experiment Bats suites" {
+  run bash -lc "grep -E 'ci-browser-smoke|ci-pkg-host-bun|deno-host-webcrypto-guard|browser-contracts' .github/workflows/ci.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
 }
 
 @test "cert-shipme anchors and paginates bot comments" {

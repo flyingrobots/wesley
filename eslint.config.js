@@ -10,12 +10,15 @@ export default [
       'node_modules/**',
       'out/**',
       'dist/**',
+      'target/**',
       'coverage/**',
       '.githooks/**',
       '.obsidian/**',
       'test/fixtures/examples/out/**',
       'test/fixtures/blade/out/**',
-      'test/browser/contracts/dist/**',
+      'test/browser/**',
+      'test/contracts/**',
+      'test/hosts/**',
       'tests/generated/**',
       'packages/wesley-website/**',
       'wesley-website/**'
@@ -119,26 +122,6 @@ export default [
       'no-empty': 'off',
       'promise/catch-or-return': 'off',
       'promise/always-return': 'off'
-    }
-  },
-
-  // Browser test files: allow browser globals
-  {
-    files: ['test/browser/**/*.mjs', 'test/browser/**/*.js'],
-    languageOptions: {
-      globals: {
-        ...globals.browser
-      }
-    }
-  },
-
-  // Host contract tests: allow Deno global
-  {
-    files: ['test/contracts/**/*.mjs'],
-    languageOptions: {
-      globals: {
-        Deno: 'readonly'
-      }
     }
   },
 

@@ -8,8 +8,9 @@ Use the native Rust `wesley` binary for product compiler work.
 - Entrypoint: deleted.
 - Replacement: `cargo install --locked --path crates/wesley-cli`, then
   `wesley --help`.
-- Retained JavaScript surfaces: Holmes assurance tooling and the browser, Bun,
-  and Deno host experiments.
+- Retained JavaScript surfaces: Holmes assurance tooling, docs/website support,
+  and repository automation. Browser, Bun, and Deno host experiments were later
+  retired from the Wesley release surface.
 
 Quick checks
 

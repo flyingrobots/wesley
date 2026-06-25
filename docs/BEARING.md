@@ -39,7 +39,8 @@ Rust L1 fixtures, and `cargo xtask` verification.
 
 Wesley should behave like a normal Rust-native compiler project with JavaScript
 only where it has an explicit non-compiler owner: Holmes assurance, website/docs
-tooling, browser/Bun/Deno host experiments, and small repository automation.
+tooling, and small repository automation. Browser/Bun/Deno host experiments are
+retired from the Wesley release surface.
 
 ### 2. Domain-Empty Core
 

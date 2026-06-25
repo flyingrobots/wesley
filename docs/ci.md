@@ -6,17 +6,15 @@ This repository uses multiple GitHub Actions workflows to keep the codebase heal
 
 - `ci.yml` — Main pipeline. Installs deps, runs unit tests, and executes a small set of repository-level Bats tests (server/progress/CI checks) when relevant.
 - `rust-native.yml` — Rust product preflight for the native compiler kernel and CLI.
-- `runtime-smokes.yml` — External host experiment smoke tests for Deno and Bun host contracts.
-- `browser-smoke.yml` — External host experiment browser host-contracts bundle and Playwright run.
 - `preflight.yml` — Repository hygiene checks (docs links, dependency boundaries, ESLint purity, license audit).
-- Package workflows — e.g., `pkg-host-bun.yml` and `pkg-host-deno.yml` with focused external-host tests.
+- Package workflows — focused checks for retained non-compiler packages such as Holmes.
 
 Workflow names distinguish product checks from compatibility checks:
 
 - `Rust Product ...` checks protect the native Rust product spine.
 - `Repository Hygiene ...` checks protect repo coherence.
-- `External Host Experiment ...` checks keep retained JavaScript host packages
-  honest while they remain outside compiler authority.
+  Browser/Bun/Deno host experiment workflows are retired from the Wesley release
+  surface.
 
 ## Reusable Pieces
 
@@ -37,10 +35,9 @@ In `ci.yml`, we run a concise set of repository-level Bats suites covering:
 
 - Static server behavior (content-type, traversal defenses)
 - Progress script safety (`--dry-run`, marker updates)
-- CI YAML invariants (e.g., Bun pins)
-- Browser-contracts spec greps and diagnostics
+- CI YAML invariants
 
-To keep CI lean, these tests are gated via a simple diff check and only execute when relevant files change (paths matching `scripts/serve-static.mjs`, `scripts/compute-progress.mjs`, `test/serve-static*`, `test/progress-*`, `test/ci-*`, `test/browser-contracts-*`, or `test/deno-host-webcrypto-guard.bats`).
+To keep CI lean, these tests are gated via a simple diff check and only execute when relevant files change (paths matching `scripts/serve-static.mjs`, `scripts/compute-progress.mjs`, `test/serve-static*`, `test/progress-*`, or `test/ci-*`).
 
 Example gating snippet used in `ci.yml`:
 
@@ -54,11 +51,11 @@ Example gating snippet used in `ci.yml`:
     fi
     CHANGED=$(git diff --name-only "$RANGE" || true)
     NEED=false
-    echo "$CHANGED" | grep -E -q '^(scripts/serve-static\\.mjs|test/serve-static|scripts/compute-progress\\.mjs|test/progress-|test/ci-|test/browser-contracts-|test/deno-host-webcrypto-guard\\.bats)' && NEED=true || true
+    echo "$CHANGED" | grep -E -q '^(scripts/serve-static\\.mjs|test/serve-static|scripts/compute-progress\\.mjs|test/progress-|test/ci-)' && NEED=true || true
     echo "RUN_BATS=$NEED" >> $GITHUB_ENV
 - name: Repo Bats tests
   if: ${{ env.RUN_BATS == 'true' }}
-  run: bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats test/deno-host-webcrypto-guard.bats test/browser-contracts-*.bats
+  run: bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats
 ```
 
 ### Run these locally
@@ -66,18 +63,5 @@ Example gating snippet used in `ci.yml`:
 ```bash
 pnpm run setup:bats-plugins
 BATS_LIB_PATH=test \
-  bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats test/browser-contracts-*.bats
+  bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats
 ```
-
-## Playwright Caching & Version Pinning
-
-- Workflows respect `PLAYWRIGHT_VERSION` and set `PLAYWRIGHT_BROWSERS_PATH` to cache browsers under `~/.cache/ms-playwright`.
-- The browser smokes use `pnpm dlx playwright install --with-deps` for deterministic installs.
-
-## Bun Version Pinning
-
-- Runtime smokes and `pkg-host-bun.yml` pin `bun-version: 1.2.20` (no `latest`) to avoid nondeterministic breakages.
-
-## Artifacts
-
-The `browser-smoke.yml` workflow uploads the host-contracts JSON (`OUT_JSON`) for easier debugging when failures occur.

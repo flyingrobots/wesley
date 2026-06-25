@@ -248,12 +248,9 @@ migration docs list replacements for old callers.
 
 <!-- BEGIN:PACKAGE_MATRIX -->
 
-| Package                | Status                   | Stage | Progress    | CI  | Notes                                                                    |
-| ---------------------- | ------------------------ | ----- | ----------- | --- | ------------------------------------------------------------------------ |
-| `@wesley/holmes`       | Assurance                | Alpha | 50% → Beta  | —   | Self-contained assurance tooling outside compiler authority              |
-| `@wesley/host-browser` | External host experiment | MVP   | 40% → Alpha | —   | Browser host smoke adapter with no dependency on retired JS core/runtime |
-| `@wesley/host-deno`    | External host experiment | Alpha | 50% → Beta  | —   | Deno host smoke adapter with no dependency on retired JS core/runtime    |
-| `@wesley/host-bun`     | External host experiment | Alpha | 50% → Beta  | —   | Bun host smoke adapter with no dependency on retired JS core/runtime     |
+| Package          | Status    | Stage | Progress   | CI  | Notes                                                       |
+| ---------------- | --------- | ----- | ---------- | --- | ----------------------------------------------------------- |
+| `@wesley/holmes` | Assurance | Alpha | 50% → Beta | —   | Self-contained assurance tooling outside compiler authority |
 
 <!-- END:PACKAGE_MATRIX -->
 

@@ -590,8 +590,7 @@ packages/
 ```
 
 Those package paths are no longer current. Retained JavaScript packages are
-limited to Holmes assurance tooling and external host experiments; compiler
-authority lives in `crates/`.
+limited to Holmes assurance tooling; compiler authority lives in `crates/`.
 
 ### Historical Proposed Structure
 
