@@ -5,5 +5,3 @@ packages:
   - 'test/fixtures/examples'
   # MkDocs documentation sources (deployed via docs-site workflow)
   - 'docs/site'
-  # Frontend website (Vite/React)
-  - 'wesley-website'

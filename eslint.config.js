@@ -19,9 +19,7 @@ export default [
       'test/browser/**',
       'test/contracts/**',
       'test/hosts/**',
-      'tests/generated/**',
-      'packages/wesley-website/**',
-      'wesley-website/**'
+      'tests/generated/**'
     ]
   },
 

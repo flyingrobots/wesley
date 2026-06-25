@@ -326,8 +326,8 @@ checks, crates.io packaging guards, and legacy JavaScript preflight bridging.
 
 ### Non-Compiler JavaScript Packages
 
-The pnpm workspace still includes `packages/*`, example fixtures, docs site,
-and the website. The retained packages are not compiler authority.
+The pnpm workspace still includes `packages/*`, example fixtures, and the docs
+site. The retained packages are not compiler authority.
 
 `@wesley/holmes` is a legacy compatibility assurance package. It provides
 Holmes, Watson, Moriarty, report, counterfactual, and PR-comment tooling while
@@ -336,6 +336,11 @@ the Rust Holmes foundation grows behind a stronger boundary.
 The former `@wesley/host-browser`, `@wesley/host-bun`, and
 `@wesley/host-deno` host smoke experiments are deleted. Browser, Bun, and Deno
 execution are not supported Wesley release surfaces.
+
+The former `wesley-website` Vite/React product site and playground shell are
+deleted. Wesley documentation remains under `docs/` and `docs/site`; product
+websites and playgrounds must be owned outside this repo unless explicitly
+slated as future Wesley release work.
 
 ### Package Relationship Diagram
 
@@ -1418,9 +1423,9 @@ logic begins where those libraries return structured values or bytes.
 ### JavaScript Dependencies
 
 The root package uses pnpm with Node `>=22.0.0`. Retained JavaScript package
-tests rely on Node's `node --test`, `vitest`, `commander`, and browser tooling.
-These dependencies support assurance, smoke, and docs workflows rather than the
-core compiler authority.
+tests rely on Node's `node --test` and package-local tooling. These
+dependencies support assurance, smoke, and docs workflows rather than the core
+compiler authority.
 
 ### Operating System Borders
 

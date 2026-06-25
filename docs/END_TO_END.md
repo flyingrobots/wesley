@@ -201,8 +201,9 @@ authority.
 1. The **Rust workspace** is the current compiler center. New compiler truth
    belongs in `crates/wesley-core` and the native `wesley` CLI.
 2. The **JavaScript workspace** is explicitly non-compiler: Holmes assurance,
-   website/docs tooling, and repository automation. Browser/Bun/Deno host
-   experiments are retired from the Wesley release surface.
+   docs tooling, and repository automation. The old product website/playground
+   surface and the browser/Bun/Deno host experiments are retired from the
+   Wesley release surface.
 
 ```mermaid
 flowchart LR
@@ -216,7 +217,6 @@ flowchart LR
 
     subgraph NonCompilerJS["Non-compiler JavaScript surfaces"]
         Holmes[packages/wesley-holmes]
-        Website[wesley-website]
         Tooling[scripts]
     end
 
@@ -226,8 +226,6 @@ flowchart LR
     Xtask --> Core
     Xtask --> Cli
     Holmes --> Tooling
-    Hosts --> Tooling
-    Website --> Tooling
 
     NonCompilerJS -. evidence and docs only .-> CurrentCenter
 ```
@@ -1027,7 +1025,7 @@ Today, Wesley can:
 - emit TypeScript declarations and operation bindings
 - write deterministic native emit metadata sidecars
 - keep JavaScript outside compiler authority except for Holmes assurance,
-  website/docs tooling, and repository automation
+  docs tooling, and repository automation
 - model external module targets through Rust capability descriptors, ABI
   compatibility reports, stateless runtime policy, and hermetic fixture checks
 - run docs, lint, package, Rust, fixture, and preflight checks

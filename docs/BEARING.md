@@ -38,9 +38,10 @@ the Rust workspace: `crates/wesley-core`, `crates/wesley-cli`, retained emitters
 Rust L1 fixtures, and `cargo xtask` verification.
 
 Wesley should behave like a normal Rust-native compiler project with JavaScript
-only where it has an explicit non-compiler owner: Holmes assurance, website/docs
-tooling, and small repository automation. Browser/Bun/Deno host experiments are
-retired from the Wesley release surface.
+only where it has an explicit non-compiler owner: Holmes assurance, docs
+tooling, and small repository automation. The old product website/playground
+surface and the browser/Bun/Deno host experiments are retired from the Wesley
+release surface.
 
 ### 2. Domain-Empty Core
 

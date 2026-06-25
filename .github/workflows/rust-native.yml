@@ -19,7 +19,6 @@ on:
       - 'pnpm-workspace.yaml'
       - 'README.md'
       - 'test/fixtures/ir-parity/**'
-      - 'wesley-website/package.json'
       - 'xtask/**'
   push:
     branches:
@@ -38,7 +37,6 @@ on:
       - 'pnpm-workspace.yaml'
       - 'README.md'
       - 'test/fixtures/ir-parity/**'
-      - 'wesley-website/package.json'
       - 'xtask/**'
 
 jobs:

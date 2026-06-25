@@ -151,8 +151,7 @@ or product owner rather than a built-in Wesley package.
   product semantics back into Wesley core.
 - Do not choose N-API, WASM, or another binding strategy from preference alone.
   Use the binding observatory and parity evidence.
-- Do not treat JavaScript docs tooling or website tooling as product runtime
-  authority.
+- Do not treat JavaScript docs tooling as product runtime authority.
 
 ## Drift Checks Needed
 

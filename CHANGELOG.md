@@ -13,6 +13,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   active docs references from the Wesley release surface. Wesley now treats
   host-specific execution as downstream extension scope rather than core repo
   product surface.
+- **Website/playground surface**: Removed the old `wesley-website` Vite/React
+  product site, playground/PGLite leftovers, Pages workflow, preview script,
+  and active James website planning docs. Wesley keeps documentation under
+  `docs/` and `docs/site`; product websites and playgrounds must be owned
+  outside this repo unless a future Wesley release explicitly reslates them.
 
 ### Changed
 

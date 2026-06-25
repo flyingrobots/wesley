@@ -476,16 +476,16 @@ JavaScript package tooling only for retained package or pnpm-workspace changes.
 ## Non-Compiler JavaScript Tooling
 
 The legacy Node compiler packages are gone. JavaScript remains for Holmes-era
-assurance tooling, website/docs tooling, and repository scripts. Browser, Bun,
-and Deno host experiments are retired from the Wesley release surface. These
-support surfaces are not the preferred home for new compiler-kernel truth.
+assurance tooling, docs tooling, and repository scripts. The old product
+website/playground surface and the browser/Bun/Deno host experiments are
+retired from the Wesley release surface. These support surfaces are not the
+preferred home for new compiler-kernel truth.
 
 The retained JS split is:
 
 - `@wesley/holmes`: self-contained assurance, verification, counterfactual, and
   reporting tooling.
-- website/docs/repository scripts: supporting automation, not compiler
-  authority.
+- docs/repository scripts: supporting automation, not compiler authority.
 
 ### Module Capability Model
 

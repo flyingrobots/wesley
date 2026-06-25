@@ -23,9 +23,10 @@ New compiler behavior should start there, then grow a native CLI command when it
 needs one.
 
 The retired Node compiler packages are no longer a second Wesley. JavaScript
-remains for Holmes assurance, website/docs tooling, and repository scripts
-outside compiler authority. Browser/Bun/Deno host experiments are retired from
-the Wesley release surface. The migration map lives in
+remains for Holmes assurance, docs tooling, and repository scripts outside
+compiler authority. The old product website/playground surface and the
+browser/Bun/Deno host experiments are retired from the Wesley release surface.
+The migration map lives in
 [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md).
 
 ## What Lives Where
@@ -39,7 +40,7 @@ the Wesley release surface. The migration map lives in
 | Rust TypeScript emitter | `crates/wesley-emit-typescript/`      | Rust projection crate               | Emits TypeScript declarations, root operation request/response bindings, and operation metadata constants from Wesley L1 IR plus `SchemaOperation` data through a structured TypeScript declaration AST and printer.                          |
 | Repo automation         | `xtask/`                              | Current Rust maintenance front door | Runs docs checks, Rust tests, native preflight, release checks, and the JavaScript package preflight bridge.                                                                                                                                  |
 | Assurance tooling       | `packages/wesley-holmes/`             | Non-compiler package                | Holmes/Moriarty-era evidence, verification, reporting, runtime-run inspection, and counterfactual tooling.                                                                                                                                    |
-| Root Node workspace     | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing                  | Keeps retained JS packages, docs checks, package tests, and website tooling installable. It is not the Wesley product entry point.                                                                                                            |
+| Root Node workspace     | `package.json`, `pnpm-workspace.yaml` | Workspace plumbing                  | Keeps retained JS packages, docs checks, package tests, and docs tooling installable. It is not the Wesley product entry point.                                                                                                               |
 
 ## What Rust Wesley Does Today
 
@@ -103,7 +104,7 @@ It can still run workflows such as:
 
 - package preflight and package tests
 - Holmes/Moriarty evidence tooling
-- website and docs-support tooling
+- docs-support tooling
 
 Holmes/Moriarty, run-ledger, and package-evidence commands are assurance
 surfaces. They are not native compiler-front-door commands, and new Rust

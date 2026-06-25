@@ -102,8 +102,7 @@ Every legacy Node surface gets one disposition:
 4. Reintroduce browser/Bun/Deno behavior only through an explicit downstream
    owner or sibling repo.
 5. Remove root `package.json`, `pnpm-workspace.yaml`, and `pnpm-lock.yaml` only
-   after Holmes, website tooling, and JavaScript docs/test
-   helpers are gone or externalized.
+   after Holmes and JavaScript docs/test helpers are gone or externalized.
 
 ## Non-Goals
 

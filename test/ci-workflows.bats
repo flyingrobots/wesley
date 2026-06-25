@@ -48,10 +48,6 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 2 ]
 
-  run bash -lc "grep -F \"'wesley-website/package.json'\" .github/workflows/rust-native.yml | wc -l"
-  assert_success
-  [ "$output" -eq 2 ]
-
   run bash -lc "grep -F 'pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093' .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
@@ -132,6 +128,25 @@ load 'bats-plugins/bats-assert/load'
 
   run test ! -e scripts/host_contracts_deno.mjs
   assert_success
+}
+
+@test "retired website and playground surfaces do not return" {
+  run test ! -e .github/workflows/wesley-website.yml
+  assert_success
+
+  run test ! -e wesley-website/package.json
+  assert_success
+
+  run test ! -e docs/plans/james-website-integration
+  assert_success
+
+  run bash -lc "grep -F \"'wesley-website/package.json'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -F \"wesley-website\" pnpm-workspace.yaml package.json | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
 }
 
 @test "general CI does not call retired host experiment Bats suites" {

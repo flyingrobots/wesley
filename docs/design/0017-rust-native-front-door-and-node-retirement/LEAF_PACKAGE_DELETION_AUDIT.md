@@ -27,7 +27,7 @@ closeout is recorded in
 
 | Slice  | Decision                                                                                                                                                                   |
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NR-089 | JavaScript remains for repository tooling, docs/site generation, website builds, and legacy compatibility lanes. It is not product compiler authority.                     |
+| NR-089 | JavaScript remains for repository tooling, docs/site generation, and legacy compatibility lanes. It is not product compiler authority.                                      |
 | NR-090 | `@git-stunts/alfred` remains a root dev dependency only for JavaScript tooling seams that run bounded child processes.                                                     |
 | NR-091 | `ninelives` remains the Rust resilience primitive in `crates/wesley-core` and `xtask`; it is the chosen policy library for cooperative Rust compiler and capability seams. |
 
