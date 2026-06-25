@@ -29,7 +29,7 @@ Do not audit the repository by recursively walking the filesystem. Follow the au
 - **`docs/BEARING.md`**: Current execution gravity and active tensions.
 - **`docs/design/README.md`**: Active design packets and structural doctrine.
 - **GitHub Issues**: The active source of truth for pending work. Use
-  `triage:*` labels for unscheduled intake and `lane:vX.Y.Z` labels for work
+  `triage:*` labels for unscheduled intake and `vX.Y.Z` labels for work
   scheduled into a named future release. See
   **`docs/topics/contributing/triage.md`**.
 - **`docs/method/graveyard/github-issue-migration/`**: Historical evidence for the former filesystem backlog migration.
@@ -55,7 +55,7 @@ After altering files:
 
 1. **Verify Truth**: Ensure documentation is updated if behavior or structure changed.
 2. **Log Debt**: Add follow-on work as GitHub Issues with either a `triage:*`
-   intake label or a concrete `lane:vX.Y.Z` release label.
+   intake label or a concrete `vX.Y.Z` release label.
 3. **Commit**: Use focused, conventional commit messages. Propose a draft before executing.
 4. **Validate**: Run `pnpm run preflight`.
 

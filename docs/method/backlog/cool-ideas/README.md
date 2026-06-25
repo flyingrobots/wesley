@@ -13,4 +13,4 @@ Former cards from this lane were archived under
 `docs/method/graveyard/github-issue-migration/cool-ideas/`.
 Do not add new files here. Add or update GitHub Issues instead. Once an idea is
 scheduled, replace `triage:cool-ideas` with a concrete release lane such as
-`lane:v0.3.0`.
+`v0.3.0`.

@@ -3,7 +3,7 @@ description: For larger design changes requiring discussion before implementatio
 title: '[rfc] <short title>'
 labels:
   - rfc
-  - lane:inbox
+  - triage:requests
 assignees: []
 body:
   - type: markdown
@@ -11,7 +11,7 @@ body:
       value: |
         RFCs are for direction-setting changes. Frame them around the product
         hill, not just the mechanism. GitHub Issues are Wesley's live Method
-        tracker; labels are canonical lane, legend, and work metadata.
+        tracker; labels are canonical scheduling, legend, and work metadata.
 
   - type: textarea
     id: requested_classification
@@ -19,7 +19,7 @@ body:
       label: Requested classification
       description: Optional triage request. This does not set canonical labels.
       placeholder: |
-        Suggested lane:
+        Suggested scheduling state:
         Suggested legend:
         Suggested work type:
 

@@ -106,7 +106,7 @@ See `docs/method/legends/` for the standing questions each legend owns.
 ## Default Loop
 
 1. Pull a GitHub Issue with the right goalpost milestone and either a
-   `triage:*` intake label or concrete `lane:vX.Y.Z` release label.
+   `triage:*` intake label or concrete `vX.Y.Z` release label.
 2. Add `work-in-progress` while the slice is active.
 3. If the issue is still under `triage:*`, schedule it into a named release,
    split it, move it, or close it before implementation.

@@ -18,7 +18,7 @@ Live work state belongs in GitHub:
 | Raw intake     | GitHub Issue with a `triage:*` label                                        |
 | Goalpost       | GitHub Milestone named `Goalpost: ...`                                      |
 | Slice          | GitHub Issue assigned to one goalpost milestone                             |
-| Release lane   | GitHub label named `lane:vX.Y.Z`                                            |
+| Release lane   | GitHub label named `vX.Y.Z`                                                 |
 | Release target | GitHub Milestone named `Release: vX.Y.Z`                                    |
 | Release gate   | GitHub Issue assigned to the release milestone                              |
 | Roadmap board  | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) |

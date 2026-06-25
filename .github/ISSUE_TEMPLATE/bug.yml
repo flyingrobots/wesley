@@ -3,7 +3,7 @@ description: Report a reproducible defect in shipped behavior.
 title: '[bug] <short summary>'
 labels:
   - bug
-  - lane:inbox
+  - triage:requests
 assignees: []
 body:
   - type: markdown
@@ -11,7 +11,7 @@ body:
       value: |
         GitHub Issues are Wesley's live Method tracker. Labels are canonical
         tracker metadata; request classification here and maintainers or agents
-        will apply the final lane, legend, and work labels.
+        will apply the final scheduling, legend, and work labels.
 
   - type: textarea
     id: requested_classification
@@ -19,7 +19,7 @@ body:
       label: Requested classification
       description: Optional triage request. This does not set canonical labels.
       placeholder: |
-        Suggested lane:
+        Suggested scheduling state:
         Suggested legend:
         Suggested work type:
 

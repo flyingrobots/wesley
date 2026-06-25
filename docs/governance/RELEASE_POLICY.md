@@ -57,7 +57,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 `cargo xtask release-guard` calls the GitHub CLI to list open issues:
 
 - **Check 1** — Current release lane: open issues labeled with the concrete
-  release lane `lane:vX.Y.Z` block that release. Those issues are scheduled
+  release label `vX.Y.Z` block that release. Those issues are scheduled
   work for the release being cut, so they must be closed, moved to a later
   release lane, split, or explicitly removed from the release before tagging.
 - **Check 2** — Exact-version tracker references: open issues labeled or
@@ -65,7 +65,7 @@ lacks the human sign-off is not a valid release, and vice versa.
   exact tag/version token in issue title or body. Comments and automatic
   cross-reference chatter are not release-lane ownership.
 - **Check 4** — Prior-version issues: open issues from older version lanes
-  (older `lane:v*` labels, SemVer milestones, or exact SemVer labels) that were
+  (older `v*` labels, SemVer milestones, or exact SemVer labels) that were
   never closed.
 
 ### Check 3: Strict Preflight Gate

@@ -3,14 +3,14 @@ description: Maintenance, refactor, docs, CI, or cleanup work.
 title: '[chore] <short summary>'
 labels:
   - chore
-  - lane:inbox
+  - triage:requests
 assignees: []
 body:
   - type: markdown
     attributes:
       value: |
         Chores still need a hill. GitHub Issues are Wesley's live Method
-        tracker; labels are canonical lane, legend, and work metadata.
+        tracker; labels are canonical scheduling, legend, and work metadata.
 
   - type: textarea
     id: requested_classification
@@ -18,7 +18,7 @@ body:
       label: Requested classification
       description: Optional triage request. This does not set canonical labels.
       placeholder: |
-        Suggested lane:
+        Suggested scheduling state:
         Suggested legend:
         Suggested work type:
 
