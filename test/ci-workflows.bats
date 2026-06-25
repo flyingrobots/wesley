@@ -89,6 +89,30 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "workflow pnpm installs are frozen and verify lockfile drift" {
+  run bash -lc "grep -R -n -- '--no-frozen-lockfile' .github/workflows .github/actions || true"
+  assert_success
+  [ -z "$output" ]
+
+  run bash -lc "grep -R -n 'pnpm install' .github/workflows .github/actions | grep -v -- '--frozen-lockfile' || true"
+  assert_success
+  [ -z "$output" ]
+
+  run bash -lc '
+    set -euo pipefail
+    missing=()
+    while IFS= read -r file; do
+      grep -Fq "git diff --exit-code -- pnpm-lock.yaml" "$file" || missing+=("$file")
+    done < <(grep -R -l "pnpm install --frozen-lockfile" .github/workflows .github/actions)
+    if [ "${#missing[@]}" -gt 0 ]; then
+      printf "%s\n" "${missing[@]}"
+      exit 1
+    fi
+  '
+  assert_success
+  [ -z "$output" ]
+}
+
 @test "deleted legacy workflow files do not return" {
   run test ! -e .github/workflows/cli-quick.yml
   assert_success
@@ -210,6 +234,22 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc "grep -F 'actions: read' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F \"github.actor != 'dependabot[bot]'\" .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'github.rest.issues.updateComment' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'github.rest.issues.createComment' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'comment_id: botComment.id' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
 
   run bash -lc "grep -F 'Run HOLMES investigation' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -375,6 +415,17 @@ load 'bats-plugins/bats-assert/load'
   [ -z "$output" ]
 }
 
+@test "pull request template preserves rollback metadata" {
+  run grep -F '## Backout' .github/pull_request_template.md
+  assert_success
+
+  run grep -F 'How to revert safely; follow-up cleanup if rollback happens.' .github/pull_request_template.md
+  assert_success
+
+  run grep -F 'Merge commit only; no rebase.' .github/pull_request_template.md
+  assert_success
+}
+
 @test "release crates workflow checks version milestones and labels" {
   run bash -lc "grep -F -- '--milestone' .github/workflows/release-crates.yml | wc -l"
   assert_success
@@ -443,6 +494,14 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -ge 2 ]
 
   run bash -lc "grep -F '<!-- HOLMES_SUITE_COMMENT -->' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'github.paginate(github.rest.issues.listComments' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'per_page: 100' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 

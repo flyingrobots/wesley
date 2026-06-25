@@ -42,6 +42,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   scores/evidence, runtime, REALM, and SHIPME JSON artifacts against their
   declared schemas, and made Rust product CI watch schema and Weslaw fixture
   changes.
+- **Workflow policy regression guards**: GitHub workflow tests now pin bot
+  comment updater behavior, PR rollback/backout metadata, and frozen pnpm
+  installs with lockfile drift checks across workflow and composite-action
+  setup paths.
 - **Release guard version scheduling**: `cargo xtask release-prep-guard` and
   `cargo xtask release-guard` now block on concrete `vX.Y.Z` release labels for
   the release being cut, recognize older `v*` labels as prior-version blockers,

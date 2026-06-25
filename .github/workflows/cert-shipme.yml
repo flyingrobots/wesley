@@ -35,7 +35,9 @@ jobs:
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with: { node-version: 22, cache: 'pnpm' }
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
 
       - name: Prepare passing SHIPME certificate fixture
         run: node scripts/prepare-shipme-cert-fixture.mjs

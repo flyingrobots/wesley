@@ -35,5 +35,7 @@ jobs:
         run: corepack enable
       - name: Install deps
         run: pnpm install --frozen-lockfile
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
       - name: '@wesley/holmes tests'
         run: pnpm --filter @wesley/holmes test

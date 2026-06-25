@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify lockfile unchanged
+        run: git diff --exit-code -- pnpm-lock.yaml
+
       - name: Check architecture boundaries
         run: |
           echo "Checking package architecture boundaries..."
