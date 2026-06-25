@@ -60,10 +60,10 @@ jobs:
           echo "$CHANGED" | sed 's/^/ - /'
           NEED=false
           # Trigger only on unit/serverless repository checks.
-          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/compute-progress\.mjs|scripts/generate-ir-fixtures\.mjs|test/progress-|test/ir-fixtures\.bats|test/ci-)' && NEED=true || true
+          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/generate-ir-fixtures\.mjs|test/docs-planning-boundary\.bats|test/domain-empty-boundary\.bats|test/ir-fixtures\.bats|test/ci-)' && NEED=true || true
           echo "RUN_BATS=$NEED" >> $GITHUB_ENV
 
-      - name: Repo Bats tests (unit/progress/ci checks only)
+      - name: Repo Bats tests (unit/docs/ci checks only)
         if: ${{ env.RUN_BATS == 'true' }}
         env:
           BATS_LIB_PATH: test
@@ -77,9 +77,9 @@ jobs:
           files=(
             test/serve-static-unit.bats
             test/serve-static-relative-unit.bats
-            test/progress-dry-run.bats
+            test/docs-planning-boundary.bats
+            test/domain-empty-boundary.bats
             test/ir-fixtures.bats
-            test/progress-safety.bats
             test/ci-workflows.bats
           )
           for f in "${files[@]}"; do

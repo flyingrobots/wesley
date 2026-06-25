@@ -53,7 +53,8 @@ Allowed remaining references:
 - Tests that assert deleted package names no longer appear in active workflow
   requirements.
 
-Active-surface search over manifests, workspace config, progress config,
+Active-surface search over manifests, workspace config, then-current progress
+metadata,
 `.github/`, `test/`, `packages/`, `crates/`, `scripts/`,
 `docs/truth-manifest.json`, and active backlog lanes finds no manifest,
 workflow, script, import, dynamic import, or runtime dependency on the deleted

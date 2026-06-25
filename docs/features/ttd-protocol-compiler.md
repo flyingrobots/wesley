@@ -385,5 +385,7 @@ The compiler extracts these into a state machine specification in `contracts.jso
 
 ## Related
 
-- [TTD Protocol Compiler Plan](../plans/ttd-protocol-compiler.md) - Implementation details
+- The detailed repo-local plan was retired with the filesystem planning purge.
+  Recreate future work as GitHub Issues in the owning repository instead of
+  restoring a repo-local plans directory.
 - [Echo Time Travel Debugger](https://github.com/flyingrobots/echo) - Consumer of TTD output

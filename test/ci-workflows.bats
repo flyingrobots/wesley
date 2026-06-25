@@ -237,22 +237,19 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -ge 1 ]
 }
 
-@test "progress workflow keeps GITHUB_TOKEN read-only and uses opt-in PR token" {
-  run bash -lc "grep -F 'contents: read' .github/workflows/progress.yml | wc -l"
+@test "retired progress workflow and README updater do not return" {
+  run test ! -e .github/workflows/progress.yml
   assert_success
-  [ "$output" -ge 1 ]
 
-  run bash -lc "grep -F 'contents: write' .github/workflows/progress.yml | wc -l || true"
+  run test ! -e scripts/compute-progress.mjs
+  assert_success
+
+  run test ! -e meta/progress.config.json
+  assert_success
+
+  run bash -lc "grep -E 'BEGIN:OVERALL_STATUS|BEGIN:PACKAGE_MATRIX' README.md | wc -l"
   assert_success
   [ "$output" -eq 0 ]
-
-  run bash -lc "grep -F 'PROGRESS_PR_TOKEN' .github/workflows/progress.yml | wc -l"
-  assert_success
-  [ "$output" -ge 1 ]
-
-  run bash -lc "grep -F 'if:' .github/workflows/progress.yml | grep -F 'env.PROGRESS_PR_TOKEN' | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
 }
 
 @test "workflows do not reference secrets directly in if conditionals" {

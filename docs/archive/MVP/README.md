@@ -63,9 +63,9 @@ Archived here:
 - [Data Model Spec](DataModelSpec.md)
 - [Test Plan](TestPlan.md)
 
-Still in place:
+Also archived here:
 
-- [Technical Architecture](../../milestones/MVP/TechnicalArchitecture.md)
+- [Technical Architecture](TechnicalArchitecture.md)
 
 Removed (fully executed):
 

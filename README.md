@@ -234,32 +234,10 @@ Historical `pnpm wesley` commands are migration bridges only. Prefer
 work. The historical Node wrapper has been retired; compatibility and
 migration docs list replacements for old callers.
 
----
-
-## Project status
-
-<!-- BEGIN:OVERALL_STATUS -->
-
-| Stage | Progress   |
-| ----- | ---------- |
-| Alpha | 50% → Beta |
-
-<!-- END:OVERALL_STATUS -->
-
-<!-- BEGIN:PACKAGE_MATRIX -->
-
-| Package          | Status    | Stage | Progress   | CI  | Notes                                                       |
-| ---------------- | --------- | ----- | ---------- | --- | ----------------------------------------------------------- |
-| `@wesley/holmes` | Assurance | Alpha | 50% → Beta | —   | Self-contained assurance tooling outside compiler authority |
-
-<!-- END:PACKAGE_MATRIX -->
-
----
-
 ## External module examples
 
 A single schema can be compiled by many extensions simultaneously. Each
-extension walks the semantic graph independently and emits its own artifacts.
+extension walks the Wesley IR independently and emits its own artifacts.
 Extensions do not need to know about one another.
 These are externally owned module families; Wesley preserves the neutral IR
 contract and module seam they consume.

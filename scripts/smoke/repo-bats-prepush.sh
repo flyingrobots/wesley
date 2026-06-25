@@ -20,10 +20,9 @@ timeout 60s bash scripts/setup-bats-plugins.sh || {
 files=(
   test/serve-static-unit.bats
   test/serve-static-relative-unit.bats
-  test/progress-dry-run.bats
+  test/docs-planning-boundary.bats
   test/domain-empty-boundary.bats
   test/ir-fixtures.bats
-  test/progress-safety.bats
   test/ci-workflows.bats
 )
 

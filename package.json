@@ -13,7 +13,6 @@
     "lint:fix": "eslint . --fix",
     "preflight": "cargo xtask preflight",
     "legacy-preflight": "node scripts/preflight.mjs",
-    "lint:docs-whitespace": "node scripts/lint-docs-whitespace.mjs",
     "lint:docs-truth": "node scripts/check-doc-truth.mjs",
     "tasks:update": "node scripts/tasks-update.mjs",
     "prepare": "bash scripts/install-hooks.sh",

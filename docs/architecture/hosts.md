@@ -36,10 +36,8 @@ packages are not part of the Rust-native product spine.
 - Browser/Deno/Bun: no retained host packages or workflows remain.
 - Node: no retained Node host package or workflow remains.
 
-## Progress & Maturity
+## Planning Boundary
 
-The repository tracks per‑package maturity (MVP → Alpha → Beta → v1.0.0) and computes an overall project stage:
-
-- See the root README “Overall Project Status” badge and “Package Matrix” for a live view.
-- Automation lives in `scripts/compute-progress.mjs` and runs nightly via `.github/workflows/progress.yml`.
-- The computation considers: CI pass rate, presence of docs sections, and (in upcoming work) milestone completion, coverage, and budgets.
+Host maturity and release scheduling are not tracked by README progress tables
+or filesystem milestone docs. Use GitHub Issues, Milestones, Projects, and
+version labels for live planning state.

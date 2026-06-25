@@ -135,22 +135,23 @@ This slice:
 
 ## Progress Metadata Slice
 
-The README progress surface is still part of the release gate because pre-push
-validates `scripts/compute-progress.mjs --dry-run`.
+The README progress surface was part of the release gate when this packet
+shipped. v0.1.1 later retired that repo-owned progress machinery because
+GitHub Issues, Milestones, Projects, and labels are the live planning surface.
 
-This slice:
+This historical slice:
 
-- restores the README progress markers required by the progress script
-- regenerates the README package matrix from `meta/progress.config.json`
-- removes the extracted `@wesley/slaps` package from progress metadata
-- removes the product-scaffolding package from active progress metadata because
+- restored the README progress markers required by the retired progress script
+- regenerated the README package matrix from retired progress metadata
+- removed the extracted `@wesley/slaps` package from progress metadata
+- removed the product-scaffolding package from active progress metadata because
   product scaffolding is legacy extraction work, not generic Wesley release
   progress
-- removes the scaffold package from active architecture-boundary required
+- removed the scaffold package from active architecture-boundary required
   package validation and generated boundary reports
-- renders the overall README status as a Markdown table rather than a forced
+- rendered the overall README status as a Markdown table rather than a forced
   line break
-- clarifies the `@wesley/runtime-node` row as shared module loading, GraphQL
+- clarified the `@wesley/runtime-node` row as shared module loading, GraphQL
   parsing, and host utility infrastructure
 
 ## L1 Fixture Generator Slice

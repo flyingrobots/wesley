@@ -28,12 +28,6 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 | `pnpm run setup:bats-plugins` | Download/update vendored Bats plugins for repo-level Bats tests. | Safe to re-run; used during devcontainer bootstrapping. |
 | `pnpm run meta:fix-packages`  | Normalize package metadata.                                      | Wraps `scripts/fix-package-metadata.mjs`.               |
 
-## Progress & Badges
-
-| Helper                         | Purpose                                                                                                  | Notes                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/compute-progress.mjs` | Aggregates package status into `meta/progress.json`, updates README matrix and overall shields endpoint. | On local runs where `GITHUB_REPOSITORY` is unset, CI badge links are disabled and show an em dash (—) in the README table. `--dry-run` prints a summary without writing files. Missing package weights log a warning and default to `0.01` during weighted progress calculation. README markers are updated safely by re-locating indices after the matrix replacement. |
-
 ## Static Server
 
 | Helper                     | Purpose                                   | Notes                                                                                                                                                                                                                                                     |
