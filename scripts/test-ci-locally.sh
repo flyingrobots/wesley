@@ -35,7 +35,7 @@ cargo xtask preflight
 
 echo ""
 echo "🔥 Running repo-level Bats checks..."
-export BATS_LIB_PATH=test
+export BATS_LIB_PATH=test/vendor
 export TERM=xterm
 export BATS_NO_COLOR=1
 bash scripts/setup-bats-plugins.sh

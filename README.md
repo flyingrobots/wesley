@@ -103,6 +103,9 @@ Wesley preserves directives as inspectable structure. It does not decide what
 those directives mean for a database, runtime, product, graph rewrite system,
 transport, scheduler, or application. Extension owners do that work.
 
+The detailed ownership rule lives in
+[Domain-Empty Core Boundary](./docs/design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
+
 ## External Module Examples
 
 A single schema can be compiled by many extensions simultaneously. Each

@@ -25,7 +25,7 @@ Wesley uses `pnpm run <script>` to provide a common set of maintenance, test, an
 
 | Script                        | Purpose                                                          | Notes                                                   |
 | ----------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------- |
-| `pnpm run setup:bats-plugins` | Download/update vendored Bats plugins for repo-level Bats tests. | Safe to re-run; used during devcontainer bootstrapping. |
+| `pnpm run setup:bats-plugins` | Verify vendored Bats plugins for repo-level Bats tests. | Safe to re-run; performs no network access. |
 | `pnpm run meta:fix-packages`  | Normalize package metadata.                                      | Wraps `scripts/fix-package-metadata.mjs`.               |
 
 ## Static Server

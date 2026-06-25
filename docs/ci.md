@@ -59,13 +59,15 @@ Example gating snippet used in `ci.yml`:
     echo "RUN_BATS=$NEED" >> $GITHUB_ENV
 - name: Repo Bats tests
   if: ${{ env.RUN_BATS == 'true' }}
-  run: bats test/serve-static*.bats test/progress-*.bats test/ci-*.bats
+  env:
+    BATS_LIB_PATH: test/vendor
+  run: bats test/serve-static*.bats test/docs-planning-boundary.bats test/domain-empty-boundary.bats test/ir-fixtures.bats test/ci-*.bats
 ```
 
 ### Run these locally
 
 ```bash
 pnpm run setup:bats-plugins
-BATS_LIB_PATH=test \
+BATS_LIB_PATH=test/vendor \
   bats test/serve-static*.bats test/docs-planning-boundary.bats test/domain-empty-boundary.bats test/ir-fixtures.bats test/ci-*.bats
 ```

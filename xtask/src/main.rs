@@ -3603,7 +3603,7 @@ mod tests {
     fn file_path_rejects_shell_commands_with_paths() {
         assert!(looks_like_file_path("test/ci-workflows.bats"));
         assert!(!looks_like_file_path(
-            "BATS_LIB_PATH=test bats -t test/ci-workflows.bats"
+            "BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats"
         ));
     }
 

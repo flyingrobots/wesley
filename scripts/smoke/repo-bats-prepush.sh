@@ -8,12 +8,12 @@ fi
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-export BATS_LIB_PATH=test
+export BATS_LIB_PATH=test/vendor
 export TERM=xterm
 export BATS_NO_COLOR=1
 
 timeout 60s bash scripts/setup-bats-plugins.sh || {
-  echo "[pre-push] Failed to bootstrap Bats plugins (timeout or error)" >&2
+  echo "[pre-push] Vendored Bats plugin verification failed" >&2
   exit 1
 }
 

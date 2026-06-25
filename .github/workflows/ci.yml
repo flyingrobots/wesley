@@ -66,13 +66,10 @@ jobs:
       - name: Repo Bats tests (unit/docs/ci checks only)
         if: ${{ env.RUN_BATS == 'true' }}
         env:
-          BATS_LIB_PATH: test
+          BATS_LIB_PATH: test/vendor
           TERM: xterm
           BATS_NO_COLOR: '1'
         run: |
-          # Ensure tests that use `load 'bats-plugins/…'` from the repo-level
-          # `test/` directory can resolve plugins.
-          timeout 2m bash scripts/setup-bats-plugins.sh
           set -euo pipefail
           files=(
             test/serve-static-unit.bats

@@ -7,9 +7,9 @@ title: Workspace Scripts
 # Workspace Scripts
 
 Wesley exposes Rust-native `cargo xtask` commands for product health checks and
-keeps `pnpm run <script>` commands for workspace, website, and legacy package
-maintenance. This page mirrors the content in `docs/scripts-reference.md` so
-the MkDocs site stays in sync.
+keeps `pnpm run <script>` commands for workspace and retained package
+maintenance. This page mirrors the content in `docs/scripts-reference.md` so the
+MkDocs site stays in sync.
 
 > ℹ️ **Where to run these**: Unless noted, execute all scripts from the repository root.
 
@@ -33,7 +33,7 @@ the MkDocs site stays in sync.
 
 | Script                        | Purpose                                      | Notes                                                                   |
 | ----------------------------- | -------------------------------------------- | ----------------------------------------------------------------------- |
-| `pnpm run setup:bats-plugins` | Download/update vendored Bats plugins.       | Needed for CLI Bats tests (runs automatically inside the devcontainer). |
+| `pnpm run setup:bats-plugins` | Verify vendored Bats plugins.                | Needed for repo-level Bats tests; performs no network access.           |
 | `pnpm run meta:fix-packages`  | Normalize workspace `package.json` metadata. | Wraps `scripts/fix-package-metadata.mjs`.                               |
 
 ## Package-Specific Commands

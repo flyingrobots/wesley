@@ -33,6 +33,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **Vendored Bats helper resolution**: Repo-level Bats tests now resolve
+  `bats-support`, `bats-assert`, and `bats-file` from tracked files under
+  `test/vendor/bats-plugins`; CI no longer clones or downloads those helpers at
+  runtime.
 - **Release guard version scheduling**: `cargo xtask release-prep-guard` and
   `cargo xtask release-guard` now block on concrete `vX.Y.Z` release labels for
   the release being cut, recognize older `v*` labels as prior-version blockers,

@@ -155,6 +155,33 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 0 ]
 }
 
+@test "repo Bats tests use vendored plugins without runtime fetches" {
+  run test -f test/vendor/bats-plugins/bats-support/load.bash
+  assert_success
+
+  run test -f test/vendor/bats-plugins/bats-assert/load.bash
+  assert_success
+
+  run test -f test/vendor/bats-plugins/bats-file/load.bash
+  assert_success
+
+  run bash -lc "grep -F 'BATS_LIB_PATH: test/vendor' .github/workflows/ci.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'scripts/setup-bats-plugins.sh' .github/workflows/ci.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -E 'git clone|curl --proto|https://github.com/bats-core' scripts/setup-bats-plugins.sh scripts/dev/setup-bats-plugins.sh | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -F 'BATS_LIB_PATH=test/vendor' docs/ci.md docs/guides/cli-tests.md test/README.md | wc -l"
+  assert_success
+  [ "$output" -ge 3 ]
+}
+
 @test "cert-shipme anchors and paginates bot comments" {
   run bash -lc "grep -F '<!-- SHIPME_COMMENT -->' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
