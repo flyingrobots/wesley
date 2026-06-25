@@ -46,6 +46,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   comment updater behavior, PR rollback/backout metadata, and frozen pnpm
   installs with lockfile drift checks across workflow and composite-action
   setup paths.
+- **Package manager policy**: Legacy preflight now enforces the
+  `packageManager` pnpm pin and single-root-lockfile policy; CI setup reads the
+  pnpm version from `package.json`, and contributor docs describe Corepack,
+  frozen installs, and the selective pre-commit lockfile refresh hook.
 - **Release guard version scheduling**: `cargo xtask release-prep-guard` and
   `cargo xtask release-guard` now block on concrete `vX.Y.Z` release labels for
   the release being cut, recognize older `v*` labels as prior-version blockers,

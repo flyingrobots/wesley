@@ -26,15 +26,15 @@ MkDocs site stays in sync.
 | `cargo xtask preflight`                         | Rust product health check: docs hygiene, Node-retirement guards, Rust tests, native CLI help smoke. | Ordinary product gate before a PR.                                                                                                       |
 | `cargo xtask legacy-preflight`                  | Historical Node package hygiene checks.                                                             | Use only for legacy packages, pnpm workspace files, or compatibility package metadata.                                                   |
 | `pnpm run preflight`                            | Compatibility alias for `cargo xtask preflight`.                                                    | No longer the Node package preflight.                                                                                                    |
-| `pnpm run legacy-preflight`                     | JavaScript bridge behind `cargo xtask legacy-preflight`.                                            | Runs docs links, dependency boundaries, ESLint core purity, package metadata, and license audit.                                         |
+| `pnpm run legacy-preflight`                     | JavaScript bridge behind `cargo xtask legacy-preflight`.                                            | Runs docs links, dependency boundaries, package-manager policy, package metadata, and license audit.                                     |
 | `pnpm run clean`                                | Remove generated artifacts (`out/`, `.wesley-cache/`, etc.).                                        | See `scripts/clean.mjs` for the full list.                                                                                               |
 
 ## Maintenance & Tooling
 
-| Script                        | Purpose                                      | Notes                                                                   |
-| ----------------------------- | -------------------------------------------- | ----------------------------------------------------------------------- |
-| `pnpm run setup:bats-plugins` | Verify vendored Bats plugins.                | Needed for repo-level Bats tests; performs no network access.           |
-| `pnpm run meta:fix-packages`  | Normalize workspace `package.json` metadata. | Wraps `scripts/fix-package-metadata.mjs`.                               |
+| Script                        | Purpose                                      | Notes                                                         |
+| ----------------------------- | -------------------------------------------- | ------------------------------------------------------------- |
+| `pnpm run setup:bats-plugins` | Verify vendored Bats plugins.                | Needed for repo-level Bats tests; performs no network access. |
+| `pnpm run meta:fix-packages`  | Normalize workspace `package.json` metadata. | Wraps `scripts/fix-package-metadata.mjs`.                     |
 
 ## Package-Specific Commands
 

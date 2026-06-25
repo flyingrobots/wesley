@@ -21,22 +21,38 @@ const gitIdentityChk = spawnSync(process.execPath, ['scripts/check-git-identity.
 });
 if (gitIdentityChk.status !== 0) fail('Git identity guard failed');
 
-// .gitignore contains generated-output ignores.
-try {
-  const gi = readFileSync(resolve('.gitignore'), 'utf8');
-  if (!gi.match(/^\.wesley-cache\//m)) fail('Missing .wesley-cache/ in .gitignore');
-  if (!gi.match(/^test\/fixtures\/examples\/\.wesley-cache\//m))
-    fail('Missing test/fixtures/examples/.wesley-cache/ in .gitignore');
-  if (!gi.match(/^wesley\.holmes-policy\.local\.json$/m))
-    fail('Missing wesley.holmes-policy.local.json in .gitignore');
-  if (!gi.match(/^out\//m)) fail('Missing out/ in .gitignore (covers generated outputs)');
-  if (!gi.match(/^test\/fixtures\/examples\/out\//m))
-    fail('Missing test/fixtures/examples/out/ in .gitignore');
-  if (!gi.match(/^test\/fixtures\/blade\/out\//m))
-    fail('Missing test/fixtures/blade/out/ in .gitignore');
-} catch {
-  fail('Missing .gitignore');
+// .gitignore files contain generated-output ignores.
+function requireIgnorePatterns(path, patterns) {
+  let gi;
+  try {
+    gi = readFileSync(resolve(path), 'utf8');
+  } catch {
+    fail(`Missing ${path}`);
+    return;
+  }
+
+  for (const [pattern, message] of patterns) {
+    if (!gi.match(pattern)) fail(message);
+  }
 }
+
+requireIgnorePatterns('.gitignore', [
+  [/^\.wesley-cache\//m, 'Missing .wesley-cache/ in .gitignore'],
+  [
+    /^test\/fixtures\/examples\/\.wesley-cache\//m,
+    'Missing test/fixtures/examples/.wesley-cache/ in .gitignore'
+  ],
+  [/^wesley\.holmes-policy\.local\.json$/m, 'Missing wesley.holmes-policy.local.json in .gitignore'],
+  [/^out\//m, 'Missing out/ in .gitignore (covers generated outputs)']
+]);
+requireIgnorePatterns('test/fixtures/examples/.gitignore', [
+  [/^\/out\/$/m, 'Missing /out/ in test/fixtures/examples/.gitignore'],
+  [/^\/\.wesley-cache\/$/m, 'Missing /.wesley-cache/ in test/fixtures/examples/.gitignore']
+]);
+requireIgnorePatterns('test/fixtures/blade/.gitignore', [
+  [/^\/out\/$/m, 'Missing /out/ in test/fixtures/blade/.gitignore'],
+  [/^\/\.wesley-cache\/$/m, 'Missing /.wesley-cache/ in test/fixtures/blade/.gitignore']
+]);
 
 // No macOS runners in workflows.
 try {
@@ -80,25 +96,12 @@ const docCliChk = spawnSync(process.execPath, ['scripts/check-doc-cli-commands.m
 });
 if (docCliChk.status !== 0) fail('Docs CLI command check failed');
 
-// pnpm version consistency.
-try {
-  const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
-  const pm = pkg.packageManager || '';
-  const required = pm.startsWith('pnpm@') ? pm.split('@')[1] : '';
-  const res = spawnSync('pnpm', ['--version'], { encoding: 'utf8' });
-  if (res.status !== 0) {
-    fail('pnpm is required for preflight');
-  } else {
-    const have = (res.stdout || '').trim();
-    if (required && have !== required) {
-      fail(
-        `pnpm version mismatch: required ${required} from packageManager, found ${have}. Hint: corepack prepare pnpm@${required} --activate`
-      );
-    }
-  }
-} catch (e) {
-  fail(`pnpm version check failed: ${e?.message || e}`);
-}
+const packageManagerPolicyChk = spawnSync(
+  process.execPath,
+  ['scripts/check-package-manager-policy.mjs'],
+  { stdio: 'inherit' }
+);
+if (packageManagerPolicyChk.status !== 0) fail('Package manager policy check failed');
 
 // Architecture boundaries via dependency-cruiser.
 function runOrFail(cmd, args, msg) {

@@ -23,6 +23,7 @@ files=(
   test/docs-planning-boundary.bats
   test/domain-empty-boundary.bats
   test/ir-fixtures.bats
+  test/ci-package-manager-policy.bats
   test/ci-workflows.bats
 )
 
