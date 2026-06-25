@@ -1,0 +1,5 @@
+/out/
+/.wesley/
+/.wesley-cache/
+/*.generated.*
+/*.metadata.json
