@@ -48,6 +48,14 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 2 ]
 
+  run bash -lc "grep -F \"'schemas/**'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F \"'test/fixtures/weslaw/**'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
   run bash -lc "grep -F 'pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093' .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
@@ -318,7 +326,7 @@ load 'bats-plugins/bats-assert/load'
 
 @test "shipme certificate fixture prepares PASS realm and exact evidence" {
   tmp_dir="$(mktemp -d -t wesley-shipme-fixture-XXXXXX)"
-  run bash -lc "cd '$tmp_dir' && node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
+  run bash -lc "cd '$tmp_dir' && node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"version\": \"2.0.0\"' .wesley-cache/scores.json && grep -F '\"commit\": \"abcdef1234567890abcdef1234567890abcdef12\"' .wesley-cache/scores.json && grep -F '\"metadata\"' .wesley-cache/scores.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
   rm -rf "$tmp_dir"
   assert_success
 }

@@ -18,7 +18,9 @@ on:
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'README.md'
+      - 'schemas/**'
       - 'test/fixtures/ir-parity/**'
+      - 'test/fixtures/weslaw/**'
       - 'xtask/**'
   push:
     branches:
@@ -36,7 +38,9 @@ on:
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'README.md'
+      - 'schemas/**'
       - 'test/fixtures/ir-parity/**'
+      - 'test/fixtures/weslaw/**'
       - 'xtask/**'
 
 jobs:
