@@ -9,4 +9,4 @@ Useful for:
 
 This schema is not wired into CI by default and is not a current-path happy
 path. Do not copy its legacy aliases into user-facing docs without checking
-`docs/DIRECTIVES.md`.
+`docs/reference/directives.md`.

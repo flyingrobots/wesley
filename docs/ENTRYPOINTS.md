@@ -22,6 +22,9 @@ The deeper source of truth is still the Rust library under `crates/wesley-core`.
 New compiler behavior should start there, then grow a native CLI command when it
 needs one.
 
+For command usage and options, read the
+[CLI Reference](./reference/cli.md).
+
 The retired Node compiler packages are no longer a second Wesley. JavaScript
 remains for Holmes assurance, docs tooling, and repository scripts outside
 compiler authority. The old product website/playground surface and the

@@ -5,7 +5,7 @@
 This page describes the directive support Wesley actually ships today.
 
 The repo-wide directive registry in
-[schemas/directives.graphql](../schemas/directives.graphql) is Wesley's generic
+[schemas/directives.graphql](../../schemas/directives.graphql) is Wesley's generic
 registry. Product directive families, including the TTD protocol family, live
 with their owning modules instead of being declared as generic Wesley
 directives. The current compiler hot path is the Rust Apollo lowering adapter in
@@ -15,27 +15,28 @@ directives by what that path truly parses and lowers today.
 ## Support Levels
 
 - `current`: parsed from SDL and used by a shipped command path today.
-- `experimental`: present in fixtures, legacy IR consumers, or downstream generators, but not guaranteed end-to-end on the main SDL hot path.
+- `experimental`: present in fixtures, legacy IR consumers, or downstream
+  generators, but not guaranteed end-to-end on the main SDL hot path.
 - `external`: owned by an external module or product repo, not by generic
   Wesley.
 - `deferred`: declared in the registry or docs, but not yet part of a stable public contract.
 - `dead`: historical syntax that generic Wesley must not present as supported.
 
-## Current On The Main Database Compiler Path
+## Current On The Rust-Native SDL Hot Path
 
 These directives are the stable SDL surface for the current Rust-native schema
 lowering, hashing, diffing, and emitter flows.
 
-| Directive                      | Status    | Current lowering                            | Aliases accepted by current parser | Notes                                                                                                        |
-| ------------------------------ | --------- | ------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `@wes_table`                   | `current` | Marks an object type as a table             | `@wesley_table`, `@table`          | Required to turn an object into a table in the main IR.                                                      |
-| `@wes_pk`                      | `current` | Marks the primary key field                 | `@wesley_pk`, `@pk`, `@primaryKey` | Enforced as at most one per table; field must be non-null.                                                   |
-| `@wes_fk(ref: "Table.column")` | `current` | Lowers to structured foreign-key metadata   | `@wesley_fk`, `@fk`, `@foreignKey` | Main path validates the `Table.column` format and target existence.                                          |
-| `@wes_unique`                  | `current` | Lowers to a field uniqueness flag           | `@wesley_unique`, `@unique`        | Preserved in IR for downstream emitters and external targets.                                                |
-| `@wes_index`                   | `current` | Lowers to a field index flag                | `@wesley_index`, `@index`          | Field-level indexing is current; richer table/composite semantics are still limited.                         |
-| `@wes_tenant(by: "...")`       | `current` | Lowers to tenant metadata on the table      | `@wesley_tenant`, `@tenant`        | The `by` field must exist on the same type.                                                                  |
-| `@wes_default(value: "...")`   | `current` | Lowers to a field default expression/value  | `@wesley_default`, `@default`      | Canonical argument is `value`; the parser still accepts legacy `expr` on the hot path.                       |
-| `@wes_rls`                     | `current` | Presence is lowered into table RLS metadata | `@wesley_rls`, `@rls`              | Treat this as an enable/presence marker today; full option semantics are not yet a stable hot-path contract. |
+| Directive                      | Status    | Current lowering                            | Aliases accepted by current parser | Notes                                                                                                                  |
+| ------------------------------ | --------- | ------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `@wes_table`                   | `current` | Admits an object type to structured IR      | `@wesley_table`, `@table`          | Historical name; downstream modules decide whether that structure becomes SQL, models, validators, or something else. |
+| `@wes_pk`                      | `current` | Marks the primary identity field            | `@wesley_pk`, `@pk`, `@primaryKey` | Current lowering enforces at most one primary identity field and requires it to be non-null.                           |
+| `@wes_fk(ref: "Type.field")`   | `current` | Lowers structured reference metadata        | `@wesley_fk`, `@fk`, `@foreignKey` | Main path validates the `Type.field` format and target existence.                                                      |
+| `@wes_unique`                  | `current` | Lowers a uniqueness marker                  | `@wesley_unique`, `@unique`        | Preserved in IR for downstream emitters and external targets.                                                          |
+| `@wes_index`                   | `current` | Lowers an index marker                      | `@wesley_index`, `@index`          | Field-level indexing metadata is current; target-specific index semantics are downstream-owned.                        |
+| `@wes_tenant(by: "...")`       | `current` | Lowers tenant metadata on the object        | `@wesley_tenant`, `@tenant`        | The `by` field must exist on the same type.                                                                            |
+| `@wes_default(value: "...")`   | `current` | Lowers a default expression/value marker    | `@wesley_default`, `@default`      | Canonical argument is `value`; the parser still accepts legacy `expr` on the hot path.                                 |
+| `@wes_rls`                     | `current` | Preserves an RLS marker                     | `@wesley_rls`, `@rls`              | Treat this as a marker today; full policy semantics belong to downstream modules.                                      |
 
 ### Composition Directives
 
@@ -50,7 +51,9 @@ or future Rust design surface, not as a current generic compiler guarantee.
 
 ## Experimental Or Partial Directive Families
 
-These directives exist in the registry and some downstream code paths, but they are not yet a stable, end-to-end SDL contract on the main database compiler path.
+These directives exist in the registry and some downstream code paths, but they
+are not yet a stable, end-to-end SDL contract on the main Rust-native SDL hot
+path.
 
 | Directive family                                                         | Status         | Reality today                                                                                                                                                                                                                                                           |
 | ------------------------------------------------------------------------ | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -62,14 +65,14 @@ These directives exist in the registry and some downstream code paths, but they 
 
 These directives are real in the Continuum-owned Typed Transition Dynamics
 module, but they are not declared by Wesley's generic directive registry and
-are not part of the main database compiler contract. Generic Wesley no longer
+are not part of the generic compiler contract. Generic Wesley no longer
 ships a public `compile-ttd` command or old core TTD package export.
 
 | Directive family                                                                                     | Status     | Current surface                                                                                                                                    |
 | ---------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@wes_channel`, `@wes_op`, `@wes_rule`, `@wes_invariant`                                             | `external` | Declared in `continuum/wesley/ttd/schemas/ttd-directives.graphql` and parsed by `continuum/wesley/ttd/directives.mjs`, not by generic Wesley core. |
-| `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `external` | Current in the relocated Continuum TTD extraction/manifest path, not in the database compiler hot path.                                            |
-| `@wes_codec`, `@wes_version`                                                                         | `external` | Current for relocated Continuum TTD/type-registry compilation paths and related manifests, not for the main SDL-to-DDL flow.                       |
+| `@wes_emission`, `@wes_footprint`, `@wes_requires`, `@wes_produces`, `@wes_emitsTo`, `@wes_mustEmit` | `external` | Current in the relocated Continuum TTD extraction/manifest path, not in generic Wesley.                                            |
+| `@wes_codec`, `@wes_version`                                                                         | `external` | Current for relocated Continuum TTD/type-registry compilation paths and related manifests, not for generic Wesley.                 |
 
 ## Deferred Or Unstable Surface
 

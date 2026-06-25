@@ -2,6 +2,10 @@
 
 Revision: 2026-03-07 (WES-001–005)
 
+Historical extraction note: this is Echo-specific IR shape evidence. Generic
+Wesley no longer owns an Echo generator, Echo IR schema, or active Echo
+conformance fixture.
+
 Extraction note: generic Wesley no longer carries `@wesley/generator-echo`.
 This spec records the legacy Echo IR shape until a Continuum-owned module or
 package owns the generator and its conformance fixtures.

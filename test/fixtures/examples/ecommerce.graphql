@@ -2,7 +2,7 @@
 #
 # This schema is used by quick-start docs and the example generation script, so
 # it must not rely on experimental directive families. Keep it aligned with
-# docs/DIRECTIVES.md current support.
+# docs/reference/directives.md current support.
 
 scalar UUID
 scalar DateTime

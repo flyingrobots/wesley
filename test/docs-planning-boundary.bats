@@ -51,3 +51,36 @@ load 'bats-plugins/bats-assert/load'
   run test ! -e CODEX.md
   assert_success
 }
+
+@test "reference docs own CLI and directive truth" {
+  run test -e docs/reference/cli.md
+  assert_success
+
+  run test -e docs/reference/directives.md
+  assert_success
+
+  run test ! -e docs/DIRECTIVES.md
+  assert_success
+
+  run rg -n "docs/DIRECTIVES\\.md|DIRECTIVES\\.md|\\]\\((?:\\.\\.?/)*DIRECTIVES\\.md\\)" README.md docs test/fixtures --glob '*.md' --glob '*.graphql' --glob '!docs/method/graveyard/**'
+  assert_failure
+}
+
+@test "stable example fixtures use canonical Wesley directives" {
+  run rg -n "@(table|pk|primaryKey|fk|foreignKey|unique|index|tenant|default|rls|hasOne|hasMany|belongsTo)\\b" test/fixtures/examples/schema.graphql test/fixtures/examples/schema-v2.graphql test/fixtures/examples/ecommerce.graphql
+  assert_failure
+}
+
+@test "Echo directive/spec docs are historical extraction context" {
+  run test ! -e docs/guides/wes-join-directive.md
+  assert_success
+
+  run test ! -e docs/specs/echo-ir-v2.md
+  assert_success
+
+  run test -e docs/method/graveyard/EXTERNAL_wes-join-directive.md
+  assert_success
+
+  run test -e docs/method/graveyard/EXTERNAL_echo-ir-v2.md
+  assert_success
+}

@@ -1,5 +1,10 @@
 # @wes_join Directive
 
+Historical extraction note: this was an Echo-specific merge semantics guide.
+Generic Wesley now treats `@wes_join` as deferred/external directive structure,
+not as a current Rust-native command contract. Keep any active merge semantics
+in the owning Echo/Continuum module or consuming application.
+
 Schema-driven merge semantics for deterministic simulation.
 
 ## Overview

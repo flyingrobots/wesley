@@ -1,0 +1,186 @@
+# Wesley CLI Reference
+
+<!-- docs-truth: status=current owner=@flyingrobots -->
+
+This reference describes the Rust-native `wesley` command shipped by the
+`wesley-cli` crate.
+
+The command help text is the implementation source of truth. Refresh this page
+from `cargo wesley --help` and the nested `--help` commands whenever the CLI
+surface changes.
+
+## Root Command
+
+```text
+wesley <command> [options]
+```
+
+Options:
+
+| Option          | Meaning      |
+| --------------- | ------------ |
+| `-h`, `--help`  | Show help    |
+| `-V`, `--version` | Show version |
+
+Commands:
+
+| Command                         | Purpose                                                        |
+| ------------------------------- | -------------------------------------------------------------- |
+| `normalize-sdl`                 | Print the Rust-core normalized SDL view                        |
+| `doctor`                        | Run Rust-native health checks                                  |
+| `init-law`                      | Scaffold `weslaw/v1` from known SDL law directives             |
+| `schema lower`                  | Lower GraphQL SDL to Wesley L1 IR JSON                         |
+| `schema hash`                   | Print the Wesley L1 registry hash for GraphQL SDL              |
+| `schema operations`             | List Query/Mutation/Subscription root operations               |
+| `schema diff`                   | Compare GraphQL SDL states as Wesley L1 IR                     |
+| `law validate`                  | Validate `weslaw` against active GraphQL SDL                   |
+| `law lint`                      | Validate `weslaw` structure without schema binding             |
+| `law diff`                      | Compare `weslaw` semantic Law IR states                        |
+| `law explain`                   | Explain active laws bound to one subject                       |
+| `law rebind`                    | Re-anchor `weslaw` to an active schema hash                    |
+| `law capabilities`              | Emit report-only footprint capability summaries                |
+| `law coverage`                  | Report profile/category-aware law coverage                     |
+| `emit rust`                     | Emit Rust models and operation bindings from GraphQL SDL       |
+| `emit typescript`               | Emit TypeScript declarations and operation bindings from SDL   |
+| `emit le-binary-typescript`     | Emit TypeScript LE-binary codecs from GraphQL SDL              |
+| `emit le-binary-rust`           | Emit Rust LE-binary codecs from GraphQL SDL                    |
+| `operation selections`          | Resolve selected operation fields                              |
+| `operation directive-args`      | Extract operation directive arguments as JSON                  |
+| `version`                       | Print the native CLI version                                   |
+
+## Normalized SDL
+
+```text
+wesley normalize-sdl --schema <path> [--hash]
+```
+
+Options:
+
+| Option                | Meaning                              |
+| --------------------- | ------------------------------------ |
+| `-s`, `--schema <path>` | GraphQL SDL file                   |
+| `--hash`              | Print the SHA-256 of normalized SDL  |
+
+## Doctor
+
+```text
+wesley doctor [--json]
+wesley doctor [--format text|json]
+```
+
+`doctor` runs Rust-native health checks only. It does not inspect legacy Node,
+pnpm, config modules, or plugin packages.
+
+Options:
+
+| Option                 | Meaning          |
+| ---------------------- | ---------------- |
+| `--json`               | Emit JSON output |
+| `--format text|json`   | Output format    |
+
+## Init Law
+
+```text
+wesley init-law --schema <path> --family <name> [--out <path>]
+```
+
+`init-law` scaffolds `weslaw/v1` from formally known SDL law directives and
+description-derived suggestions. Draft suggestions are not active law.
+
+Options:
+
+| Option                  | Meaning                                      |
+| ----------------------- | -------------------------------------------- |
+| `-s`, `--schema <path>` | GraphQL SDL file                             |
+| `--family <name>`       | Contract family id for the generated law     |
+| `--out <path>`          | Optional output path; stdout when omitted    |
+
+## Schema
+
+```text
+wesley schema lower --schema <path> [--json]
+wesley schema hash --schema <path> [--json]
+wesley schema operations --schema <path> [--json]
+wesley schema diff --old <path> --new <path> [--format text|json|summary] [--breaking-only] [--exit-code]
+wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--breaking-only] [--exit-code]
+```
+
+Options:
+
+| Option                  | Meaning                                      |
+| ----------------------- | -------------------------------------------- |
+| `-s`, `--schema <path>` | GraphQL SDL file                             |
+| `--old <path>`          | Old/base GraphQL SDL file                    |
+| `--new <path>`          | New/target GraphQL SDL file                  |
+| `--against <rev>`       | Git revision that provides old schema state  |
+| `--base <rev>`          | Alias for `--against`                        |
+| `--json`                | Emit JSON output                             |
+
+## Law
+
+```text
+wesley law lint --law <path> [--json]
+wesley law validate --schema <path> --law <path> [--json]
+wesley law diff --old <path> --new <path> [--schema <path>] [--format markdown|json|summary]
+wesley law explain --law <path> <subject> [--json]
+wesley law rebind --schema <path> --law <path> [--accept --out <path>] [--json]
+wesley law capabilities --law <path> [--json]
+wesley law coverage --schema <path> --law <path> [--profile release|ci-release|local] [--json]
+```
+
+Options:
+
+| Option                  | Meaning                                      |
+| ----------------------- | -------------------------------------------- |
+| `-s`, `--schema <path>` | GraphQL SDL file used to validate new law    |
+| `--law <path>`          | `weslaw/v1` authoring file                   |
+| `--old <path>`          | Old/base `weslaw/v1` authoring file for diff |
+| `--new <path>`          | New/target `weslaw/v1` authoring file        |
+| `--accept`              | Write an explicitly accepted rebind output   |
+| `--out <path>`          | Rebind output path                           |
+| `--profile <name>`      | Coverage profile, default: `release`         |
+| `--json`                | Emit JSON output                             |
+| `--format <format>`     | Output format: `markdown`, `json`, `summary` |
+
+## Emit
+
+```text
+wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
+wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
+wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
+wesley emit le-binary-rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
+```
+
+Emit commands write model declarations and root operation bindings when the
+schema declares Query, Mutation, or Subscription fields.
+
+Options:
+
+| Option                    | Meaning                                                     |
+| ------------------------- | ----------------------------------------------------------- |
+| `-s`, `--schema <path>`   | GraphQL SDL file                                            |
+| `--law <path>`            | Optional `weslaw/v1` file for bundle hashes                 |
+| `--out <path>`            | Output file                                                 |
+| `--metadata-out <path>`   | Deterministic metadata JSON sidecar                         |
+| `--codec-import <path>`   | Writer/Reader/CodecError module specifier for LE-binary     |
+
+## Operation
+
+```text
+wesley operation selections --operation <path> [--schema <path>] [--json]
+wesley operation directive-args --operation <path> --directive <name> [--json]
+```
+
+Options:
+
+| Option                       | Meaning                               |
+| ---------------------------- | ------------------------------------- |
+| `-o`, `--operation <path>`   | GraphQL operation file                |
+| `-s`, `--schema <path>`      | Optional GraphQL schema SDL file      |
+| `-d`, `--directive <name>`   | Directive name, without or with `@`   |
+
+## Version
+
+```text
+wesley version
+```

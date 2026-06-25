@@ -14,6 +14,7 @@ Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
 
 - **Inspect native CLI**: `cargo wesley --help`
+- **Read native CLI reference**: [docs/reference/cli.md](./reference/cli.md)
 - **Doctor native CLI**: `cargo wesley doctor`
 - **Install published alpha**: `cargo install wesley-cli --version 0.1.0`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`

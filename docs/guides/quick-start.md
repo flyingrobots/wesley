@@ -59,5 +59,5 @@ cargo wesley schema diff --old schema.graphql --new schema.next.graphql --format
 - Use `cargo xtask docs-check` for documentation-only changes.
 - Use `cargo xtask legacy-preflight` only when changing legacy packages or
   pnpm workspace files.
-- Use [the directive truth table](../DIRECTIVES.md) when you need to know
+- Use [the directive truth table](../reference/directives.md) when you need to know
   whether a directive is current, experimental, or TTD-only.

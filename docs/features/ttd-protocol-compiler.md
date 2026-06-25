@@ -27,8 +27,9 @@ That retired command validated the checked-in schema and reported generated
 artifacts from SDL, not a second authored source surface.
 
 The directive contract for this compiler path is the `@wes_*` TTD family
-documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md). Its SDL declaration and
-implementation moved out of generic Wesley and now live under the
+documented in
+[`docs/reference/directives.md`](../reference/directives.md). Its SDL
+declaration and implementation moved out of generic Wesley and now live under the
 Continuum-owned `continuum/wesley/ttd/` tree. The emitted TTD IR JSON Schema
 and TTD directive SDL now belong beside that module at
 `continuum/wesley/ttd/schemas/ttd-ir.schema.json` and
