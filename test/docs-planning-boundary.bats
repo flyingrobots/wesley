@@ -40,3 +40,14 @@ load 'bats-plugins/bats-assert/load'
   run rg -n "docs/milestones|milestones/MVP|MVP/TechnicalArchitecture\\.md" README.md docs/README.md docs/archive/MVP docs/design docs/architecture docs/guides docs/site
   assert_failure
 }
+
+@test "AGENTS is the only root agent guidance file" {
+  run test -e AGENTS.md
+  assert_success
+
+  run test ! -e CLAUDE.md
+  assert_success
+
+  run test ! -e CODEX.md
+  assert_success
+}
