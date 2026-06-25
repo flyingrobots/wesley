@@ -11,9 +11,9 @@
 
 **Wesley is a domain-free GraphQL-to-IR transformation toolchain.**
 
-It takes GraphQL Schema Definition Language (SDL), lowers it into deterministic
-JSON IR, and preserves enough structure, provenance, directives, and weslaw
-extension context for downstream tools to make their own meaning.
+Wesley extracts the structure described by GraphQL SDL, lowers that structure
+into deterministic JSON IR, and provides hooks for you to give it semantics in
+your own extensions.
 
 > _There is no graph. Only structure and what you make of it._
 
