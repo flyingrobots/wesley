@@ -77,7 +77,7 @@ assert_failure() {
       batslib_print_kv_single_or_multi "$width" \
       'output' "$output"
       if [[ -n "${stderr-}" ]]; then
-      	batslib_print_kv_single_or_multi "$width" 'stderr' "$stderr"
+	batslib_print_kv_single_or_multi "$width" 'stderr' "$stderr"
       fi
     } \
     | batslib_decorate 'command failed as expected, but status differs' \

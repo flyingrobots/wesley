@@ -162,9 +162,9 @@ refute_stderr_line() {
 
 # __check_is_vvalid_regex
 # =======================
-# 
+#
 # Summary: checks if the regex in unexpected is valid, also prints an error message if not.
-# IO: 
+# IO:
 #   STDERR - details, on error
 # Globals:
 #  caller - readonly

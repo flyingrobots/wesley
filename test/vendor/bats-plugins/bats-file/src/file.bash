@@ -298,7 +298,7 @@ _bats_get_file_owner() {
 assert_file_owner() {
   local -r owner="$1"
   local -r file="$2"
-  
+
   local actual_owner
   _bats_get_file_owner actual_owner "$file"
   readonly actual_owner
@@ -479,7 +479,7 @@ assert_symlink_to() {
   else
     local -ra readlink_command=(readlink -f)
   fi
-  
+
   if [ ! -L "$link"   ]; then
     local -r rem="${BATSLIB_FILE_PATH_REM-}"
     local -r add="${BATSLIB_FILE_PATH_ADD-}"
@@ -572,7 +572,7 @@ assert_file_not_contains() {
     batslib_print_kv_single 4 'path' "${file/$rem/$add}" 'regex' "$regex" \
       | batslib_decorate 'file does not exist' \
       | fail
-  
+
   elif grep -q "$regex" "$file"; then
     local -r rem="${BATSLIB_FILE_PATH_REM-}"
     local -r add="${BATSLIB_FILE_PATH_ADD-}"
@@ -1016,14 +1016,14 @@ assert_no_sticky_bit() {
 assert_not_symlink_to() {
   local -r sourcefile="$1"
   local -r link="$2"
-  
-  
+
+
   if [[ $OSTYPE == darwin* ]]; then
     local -ra readlink_command=(_bats_file_readlinkf_macos)
   else
     local -ra readlink_command=(readlink -f)
   fi
-  
+
   if [ -L "$link"   ]; then
     local -r rem="${BATSLIB_FILE_PATH_REM-}"
     local -r add="${BATSLIB_FILE_PATH_ADD-}"
