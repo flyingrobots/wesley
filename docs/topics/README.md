@@ -10,15 +10,44 @@ short path to the authoritative surface.
 
 ## Topic Map
 
-| Task                                                         | Start Here                                  | Authority                                                    |
-| ------------------------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------ |
-| Decide whether a change belongs in Wesley or an extension.   | [Compiler Boundary](./compiler-boundary.md) | `docs/design/0014-domain-empty-core-boundary/`               |
-| Configure schema sets, changed-schema selection, or targets. | [Project Manifests](./project-manifests.md) | `docs/reference/project-manifest.md`                         |
-| Author or review descriptor-only extension fixtures.         | [Compiler Boundary](./compiler-boundary.md) | `docs/guides/module-authoring.md`                            |
-| Choose local checks before a PR or release.                  | [Validation](./validation.md)               | `cargo xtask preflight`, `docs/governance/RELEASE_POLICY.md` |
-| Understand HOLMES CI and evidence artifacts.                 | [HOLMES CI](./holmes-ci.md)                 | `.github/workflows/wesley-holmes.yml`, `docs/architecture/`  |
-| Prepare or judge a release.                                  | [Releases](./releases.md)                   | `docs/method/release-runbook.md`, `docs/governance/`         |
-| Triage issues into release lanes.                            | [Issue Triage](./contributing/triage.md)    | GitHub Issues, Milestones, Projects, and labels              |
+### Compiler Use
+
+| Task                                      | Start Here                                      | Authority                                  |
+| ----------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
+| Run the current product command surface.  | [Native CLI](./native-cli.md)                   | `docs/reference/cli.md`                    |
+| Inspect GraphQL lowering, hashes, or IR.  | [Schema And IR](./schema-ir.md)                 | `docs/reference/cli.md#schema`             |
+| Work with operations and directive args.  | [Operations](./operations.md)                   | `docs/reference/cli.md#operation`          |
+| Use or classify GraphQL directives.       | [Directives](./directives.md)                   | `docs/reference/directives.md`             |
+| Author or validate `weslaw/v1`.           | [Weslaw](./weslaw.md)                           | `docs/design/0019-weslaw-semantic-law-ir/` |
+| Emit Rust, TypeScript, or LE-binary code. | [Emitters](./emitters.md)                       | `docs/reference/cli.md#emit`               |
+| Understand generated files and caches.    | [Artifacts And Cache](./artifacts-and-cache.md) | `docs/build-artifacts.md`                  |
+
+### Boundaries And Extension
+
+| Task                                                         | Start Here                                  | Authority                                      |
+| ------------------------------------------------------------ | ------------------------------------------- | ---------------------------------------------- |
+| Decide whether a change belongs in Wesley or an extension.   | [Compiler Boundary](./compiler-boundary.md) | `docs/design/0014-domain-empty-core-boundary/` |
+| Configure schema sets, changed-schema selection, or targets. | [Project Manifests](./project-manifests.md) | `docs/reference/project-manifest.md`           |
+| Author or review descriptor-only extension fixtures.         | [Extension Modules](./extension-modules.md) | `docs/guides/module-authoring.md`              |
+| Handle old Node, host, or package references.                | [Legacy Node Retirement](./legacy-node.md)  | `docs/LEGACY_NODE_MIGRATION.md`                |
+| Check durable repo properties.                               | [Invariants](./invariants.md)               | `docs/invariants/README.md`                    |
+
+### Assurance, CI, And Release
+
+| Task                                        | Start Here                                    | Authority                                                    |
+| ------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------ |
+| Choose local checks before a PR or release. | [Validation](./validation.md)                 | `cargo xtask preflight`, `docs/governance/RELEASE_POLICY.md` |
+| Interpret GitHub Actions checks.            | [CI Workflows](./ci-workflows.md)             | `docs/ci.md`, `.github/workflows/`                           |
+| Understand HOLMES CI and PR comments.       | [HOLMES CI](./holmes-ci.md)                   | `.github/workflows/wesley-holmes.yml`, `docs/architecture/`  |
+| Work with assurance evidence and policies.  | [Assurance Evidence](./assurance-evidence.md) | `docs/holmes-policy-spec.md`                                 |
+| Prepare or judge a release.                 | [Releases](./releases.md)                     | `docs/method/release-runbook.md`, `docs/governance/`         |
+
+### Contributor Process
+
+| Task                              | Start Here                                | Authority                                       |
+| --------------------------------- | ----------------------------------------- | ----------------------------------------------- |
+| Triage issues into release lanes. | [Issue Triage](./contributing/triage.md)  | GitHub Issues, Milestones, Projects, and labels |
+| Keep docs accurate and covered.   | [Docs Maintenance](./docs-maintenance.md) | `docs/governance/DOCUMENTATION_STANDARD.md`     |
 
 ## Coverage Rule
 
@@ -26,6 +55,10 @@ When a release changes a contributor or operator workflow, `docs/topics/` must
 either cover that workflow directly or link clearly to the current
 authoritative page. Topic pages may summarize, but they must not duplicate live
 roadmap state, issue counts, or release progress.
+
+When a PR adds or materially changes a public capability, command family,
+workflow, invariant, release procedure, or extension boundary, update this topic
+map or state why the existing topic path already covers it.
 
 The release gate for this directory is defined in
 [`docs/governance/RELEASE_POLICY.md`](../governance/RELEASE_POLICY.md) and the

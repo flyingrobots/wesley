@@ -52,3 +52,16 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "wesley emit le-binary-rust --schema <path> --out <path>" docs/ENTRYPOINTS.md
   assert_success
 }
+
+@test "topics index uses exact docs authority paths" {
+  run grep -nE '`docs/[^`]*\*[^`]*`' docs/topics/README.md
+  assert_failure
+}
+
+@test "directives topic frames core directives as compatibility structure" {
+  run grep -F 'Use canonical `@wes_*` directive names for new generic Wesley examples.' docs/topics/directives.md
+  assert_failure
+
+  run grep -F "Existing core directive names are compatibility structure, not domain ownership." docs/topics/directives.md
+  assert_success
+}

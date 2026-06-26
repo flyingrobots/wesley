@@ -127,12 +127,72 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/artifacts-and-cache.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/assurance-evidence.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/ci-workflows.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/topics/compiler-boundary.md",
       "status": "current",
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/directives.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/docs-maintenance.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/emitters.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/extension-modules.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/topics/project-manifests.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/invariants.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/legacy-node.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/native-cli.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/operations.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/schema-ir.md",
       "status": "current",
       "owner": "@flyingrobots"
     },
@@ -148,6 +208,11 @@
     },
     {
       "path": "docs/topics/releases.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/weslaw.md",
       "status": "current",
       "owner": "@flyingrobots"
     },
