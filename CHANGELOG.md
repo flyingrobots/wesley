@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-26
+
 ### Removed
 
 - **External host experiments**: Retired the browser, Bun, and Deno host
@@ -1530,7 +1532,8 @@ kind` instead of being silently accepted via structural duck-typing. All
 
 - Initial public repository layout
 
-[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/flyingrobots/wesley/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/flyingrobots/wesley/compare/v0.0.5...v0.1.0
 [0.0.5]: https://github.com/flyingrobots/wesley/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/flyingrobots/wesley/compare/v0.0.3...v0.0.4
