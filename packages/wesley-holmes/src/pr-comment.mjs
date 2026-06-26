@@ -224,8 +224,17 @@ export function loadHolmesSuiteReports(reportsDir, statuses = {}) {
   };
 }
 
-export function loadHolmesSuiteReportSets(reportsDir, statuses = {}) {
+export function loadHolmesSuiteReportSets(reportsDir, statuses = {}, options = {}) {
   const schemaDirs = findSchemaReportDirs(reportsDir);
+  const expectedSchemaIds = normalizeSchemaSetIds(options.schemaSetIds || []);
+  if (expectedSchemaIds.length > 0) {
+    const dirsByName = new Map(schemaDirs.map((entry) => [entry.name, entry.path]));
+    return expectedSchemaIds.map((id) => ({
+      id,
+      ...loadHolmesSuiteReports(dirsByName.get(id) || path.join(reportsDir, id), statuses)
+    }));
+  }
+
   if (schemaDirs.length === 0) {
     return [
       {
@@ -239,6 +248,18 @@ export function loadHolmesSuiteReportSets(reportsDir, statuses = {}) {
     id: entry.name,
     ...loadHolmesSuiteReports(entry.path, statuses)
   }));
+}
+
+function normalizeSchemaSetIds(values) {
+  const ids = [];
+  const seen = new Set();
+  for (const value of values) {
+    const id = normalizeOptionalString(value);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  return ids;
 }
 
 function findSchemaReportDirs(reportsDir) {

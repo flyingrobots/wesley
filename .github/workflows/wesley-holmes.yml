@@ -538,10 +538,12 @@ jobs:
       - name: '🧾 Build PR Comment'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          SCHEMA_SETS_JSON: ${{ needs.detect-schema-sets.outputs.schema_sets }}
         run: |
           set -euo pipefail
           node packages/wesley-holmes/src/pr-comment-cli.mjs \
             --reports-dir reports \
+            --schema-sets-json "$SCHEMA_SETS_JSON" \
             --pr-number "$PR_NUMBER" \
             --head-sha "$GITHUB_SHA" \
             --holmes-status "$HOLMES_STATUS" \

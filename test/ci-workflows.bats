@@ -563,6 +563,14 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
+  run bash -lc "grep -F 'SCHEMA_SETS_JSON: \${{ needs.detect-schema-sets.outputs.schema_sets }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F -- '--schema-sets-json \"\$SCHEMA_SETS_JSON\"' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
   run bash -lc "grep -F 'reports/pr-comment.md' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -ge 2 ]
