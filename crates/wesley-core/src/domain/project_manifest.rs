@@ -402,7 +402,15 @@ fn schema_bundle_dir(base: &str, schema_id: &str, schema_count: usize) -> String
     if schema_count <= 1 {
         return base;
     }
-    format!("{base}/{schema_id}")
+    join_normalized_path(&base, schema_id)
+}
+
+fn join_normalized_path(base: &str, child: &str) -> String {
+    match base {
+        "." => format!("./{child}"),
+        "/" => format!("/{child}"),
+        _ => format!("{base}/{child}"),
+    }
 }
 
 fn schema_id_is_path_safe(id: &str) -> bool {
@@ -500,13 +508,28 @@ fn slug_from_path(path: &str, index: usize) -> String {
 }
 
 fn normalize_path(path: &str) -> String {
-    path.trim()
-        .trim_start_matches("./")
-        .replace('\\', "/")
+    let path = path.trim().replace('\\', "/");
+    let is_absolute = path.starts_with('/');
+    let is_current = path == "." || path == "./";
+    let normalized = path
         .split('/')
         .filter(|segment| !segment.is_empty() && *segment != ".")
         .collect::<Vec<_>>()
-        .join("/")
+        .join("/");
+
+    if normalized.is_empty() {
+        if is_absolute {
+            "/".to_owned()
+        } else if is_current {
+            ".".to_owned()
+        } else {
+            String::new()
+        }
+    } else if is_absolute {
+        format!("/{normalized}")
+    } else {
+        normalized
+    }
 }
 
 fn glob_matches(pattern: &str, path: &str) -> bool {

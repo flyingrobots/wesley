@@ -133,6 +133,46 @@ fn changed_schema_selection_uses_schema_and_global_globs() {
 }
 
 #[test]
+fn changed_schema_selection_preserves_current_and_absolute_bundle_dirs() {
+    let current_dir_manifest = load_project_manifest(
+        r#"
+{
+  "apiVersion": "wesley.project-manifest/v1",
+  "schemaPaths": [
+    { "id": "core", "path": "schemas/core/schema.graphql" },
+    { "id": "audit", "path": "schemas/audit/schema.graphql" }
+  ],
+  "bundleDir": "."
+}
+"#,
+    )
+    .expect("current-dir bundle manifest should load");
+
+    let selected =
+        select_changed_schema_paths(&current_dir_manifest, ["schemas/core/schema.graphql"]);
+    assert_eq!(selected.len(), 1);
+    assert_eq!(selected[0].bundle_dir, "./core");
+
+    let absolute_manifest = load_project_manifest(
+        r#"
+{
+  "apiVersion": "wesley.project-manifest/v1",
+  "schemaPaths": [
+    { "id": "core", "path": "schemas/core/schema.graphql" },
+    { "id": "audit", "path": "schemas/audit/schema.graphql" }
+  ],
+  "bundleDir": "/tmp/wesley-cache"
+}
+"#,
+    )
+    .expect("absolute bundle manifest should load");
+
+    let selected = select_changed_schema_paths(&absolute_manifest, ["schemas/core/schema.graphql"]);
+    assert_eq!(selected.len(), 1);
+    assert_eq!(selected[0].bundle_dir, "/tmp/wesley-cache/core");
+}
+
+#[test]
 fn project_manifest_rejects_schema_ids_that_are_not_path_safe() {
     let error = load_project_manifest(
         r#"
