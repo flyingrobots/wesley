@@ -439,12 +439,17 @@ fn parse_manifest_value(source: &str) -> Result<JsonValue, ProjectManifestError>
                     "not valid JSON ({json_error}); not valid YAML ({yaml_error})"
                 ))
             })?;
-            let Some(document) = documents.first() else {
+            if documents.is_empty() {
                 return Err(ProjectManifestError::Parse(
                     "YAML source contained no document".to_owned(),
                 ));
-            };
-            yaml_to_json(document)
+            }
+            if documents.len() != 1 {
+                return Err(ProjectManifestError::Parse(
+                    "YAML manifests must contain exactly one document".to_owned(),
+                ));
+            }
+            yaml_to_json(&documents[0])
         }
     }
 }

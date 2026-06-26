@@ -63,6 +63,26 @@ dashboard:
 }
 
 #[test]
+fn project_manifest_rejects_multi_document_yaml() {
+    let error = load_project_manifest(
+        r#"
+apiVersion: wesley.project-manifest/v1
+schemaPaths:
+  - schema.graphql
+---
+apiVersion: wesley.project-manifest/v1
+schemaPaths:
+  - ignored.graphql
+"#,
+    )
+    .expect_err("multi-document YAML should fail validation");
+
+    assert!(error
+        .to_string()
+        .contains("YAML manifests must contain exactly one document"));
+}
+
+#[test]
 fn project_manifest_rejects_mutually_exclusive_targets() {
     let error = load_project_manifest(
         r#"
