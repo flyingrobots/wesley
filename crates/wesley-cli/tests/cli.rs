@@ -77,8 +77,9 @@ fn config_validate_and_changed_schemas_emit_domain_free_manifest_reports() {
     .expect("config should write");
 
     let output = wesley()
+        .current_dir(&dir)
         .args(["config", "validate", "--config"])
-        .arg(&config)
+        .arg("wesley.config.json")
         .arg("--json")
         .output()
         .expect("wesley should run");
@@ -92,8 +93,9 @@ fn config_validate_and_changed_schemas_emit_domain_free_manifest_reports() {
     );
 
     let output = wesley()
+        .current_dir(&dir)
         .args(["config", "changed-schemas", "--config"])
-        .arg(&config)
+        .arg("wesley.config.json")
         .args(["--changed", "schemas/core/types.graphql", "--json"])
         .output()
         .expect("wesley should run");
@@ -110,6 +112,62 @@ fn config_validate_and_changed_schemas_emit_domain_free_manifest_reports() {
         .as_str()
         .unwrap()
         .contains("schemas/core/**"));
+}
+
+#[test]
+fn config_changed_schemas_resolves_manifest_relative_paths_before_selection() {
+    let dir = temp_dir("config-manifest-relative");
+    let project_dir = dir.join("project");
+    std::fs::create_dir_all(project_dir.join("schema")).expect("schema dir should create");
+    std::fs::write(
+        project_dir.join("schema/schema.graphql"),
+        "type Query { nested: String }\n",
+    )
+    .expect("schema should write");
+    let config = project_dir.join("wesley.config.json");
+    std::fs::write(
+        &config,
+        r#"
+        {
+          "apiVersion": "wesley.project-manifest/v1",
+          "schemaPaths": [
+            {
+              "id": "nested",
+              "path": "schema/schema.graphql",
+              "rebuildOnGlobs": ["schema/**"]
+            }
+          ],
+          "bundleDir": ".cache"
+        }
+        "#,
+    )
+    .expect("config should write");
+
+    let output = wesley()
+        .current_dir(&dir)
+        .args(["config", "changed-schemas", "--config"])
+        .arg("project/wesley.config.json")
+        .args(["--changed", "project/schema/types.graphql", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+    assert_eq!(report["selectedSchemaPaths"].as_array().unwrap().len(), 1);
+    assert_eq!(report["selectedSchemaPaths"][0]["id"], "nested");
+    assert_eq!(
+        report["selectedSchemaPaths"][0]["path"],
+        "project/schema/schema.graphql"
+    );
+    assert_eq!(
+        report["selectedSchemaPaths"][0]["bundleDir"],
+        "project/.cache"
+    );
+    assert!(report["selectedSchemaPaths"][0]["reason"]
+        .as_str()
+        .unwrap()
+        .contains("project/schema/**"));
 }
 
 #[test]

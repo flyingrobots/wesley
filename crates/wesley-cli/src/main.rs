@@ -12,9 +12,10 @@ use wesley_core::{
     load_weslaw_yaml, lower_schema_sdl, lower_wes_channel_directives_to_law_ir_v1,
     normalize_schema_sdl, record_law_binding_error_v1, resolve_operation_selections,
     resolve_operation_selections_with_schema, select_changed_schema_paths,
-    ContractBundleManifestV1, FootprintLawV1, LawDiffReportV1, LawEntryBodyV1, LawIrV1,
-    OperationType, ProjectManifest, ProjectManifestError, ResolvedSchemaPath, ScalarSemanticsLawV1,
-    SchemaDelta, SelectedSchemaPath, TypeKind, WeslawError, WesleyError, WesleyIR,
+    ContractBundleManifestV1, DetailedSchemaPathConfig, FootprintLawV1, LawDiffReportV1,
+    LawEntryBodyV1, LawIrV1, OperationType, ProjectManifest, ProjectManifestError,
+    ResolvedSchemaPath, ScalarSemanticsLawV1, SchemaDelta, SchemaPathConfig, SelectedSchemaPath,
+    TypeKind, WeslawError, WesleyError, WesleyIR,
 };
 use wesley_emit_rust::{
     emit_le_binary_rust, emit_rust_with_operations, emit_rust_with_operations_and_law,
@@ -458,7 +459,10 @@ fn run_config_command(args: &[String]) -> Result<u8, CliError> {
             let options = parse_options(&args[1..], "config changed-schemas")?;
             let (manifest_path, manifest) = load_manifest_from_options(&options)?;
             let changed_files = changed_files_from_options(&options)?;
-            let selected_schema_paths = select_changed_schema_paths(&manifest, &changed_files);
+            let selection_manifest =
+                manifest_with_paths_relative_to_cwd(&manifest_path, &manifest)?;
+            let selected_schema_paths =
+                select_changed_schema_paths(&selection_manifest, &changed_files);
             let report = ConfigChangedSchemasReport {
                 manifest_path: manifest_path.display().to_string(),
                 changed_files,
@@ -1318,6 +1322,58 @@ fn resolve_manifest_relative_path(manifest_path: &Path, path: &str) -> PathBuf {
             .unwrap_or_else(|| Path::new(""))
             .join(path)
     }
+}
+
+fn manifest_with_paths_relative_to_cwd(
+    manifest_path: &Path,
+    manifest: &ProjectManifest,
+) -> Result<ProjectManifest, CliError> {
+    let mut projected = manifest.clone();
+    projected.bundle_dir = manifest_path_relative_string(manifest_path, &manifest.bundle_dir)?;
+    projected.rebuild_on_globs = manifest
+        .rebuild_on_globs
+        .iter()
+        .map(|glob| manifest_path_relative_string(manifest_path, glob))
+        .collect::<Result<Vec<_>, _>>()?;
+    projected.schema_paths = manifest
+        .schema_paths
+        .iter()
+        .map(|schema| match schema {
+            SchemaPathConfig::Path(path) => {
+                manifest_path_relative_string(manifest_path, path).map(SchemaPathConfig::Path)
+            }
+            SchemaPathConfig::Detailed(config) => {
+                Ok(SchemaPathConfig::Detailed(DetailedSchemaPathConfig {
+                    id: config.id.clone(),
+                    path: manifest_path_relative_string(manifest_path, &config.path)?,
+                    rebuild_on_globs: config
+                        .rebuild_on_globs
+                        .iter()
+                        .map(|glob| manifest_path_relative_string(manifest_path, glob))
+                        .collect::<Result<Vec<_>, _>>()?,
+                }))
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(projected)
+}
+
+fn manifest_path_relative_string(manifest_path: &Path, path: &str) -> Result<String, CliError> {
+    let resolved = resolve_manifest_relative_path(manifest_path, path);
+    let path = cwd_relative_path(&resolved)?;
+    Ok(path.to_string_lossy().replace('\\', "/"))
+}
+
+fn cwd_relative_path(path: &Path) -> Result<PathBuf, CliError> {
+    if path.is_absolute() {
+        let cwd = env::current_dir().map_err(|source| {
+            CliError::Git(format!("failed to read current directory: {source}"))
+        })?;
+        if let Ok(relative_path) = path.strip_prefix(cwd) {
+            return Ok(relative_path.to_path_buf());
+        }
+    }
+    Ok(path.to_path_buf())
 }
 
 fn changed_files_from_options(options: &ParsedOptions) -> Result<Vec<String>, CliError> {
