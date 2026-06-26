@@ -10,8 +10,7 @@
 > [BEARING.md](./BEARING.md) for current direction and active tensions.
 
 This document is an end-to-end technical explanation of the Wesley repository
-as it exists on the `main` branch on June 26, 2026 (post-PR #642, before the
-`v0.1.1` release tag is cut).
+as prepared for the `v0.2.0` release on June 26, 2026.
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the
@@ -22,11 +21,11 @@ compiler kernel, emitters, semantic law layer, and Holmes assurance foundation.
 
 ### What This Repository Contains
 
-Wesley is a schema-first compiler kernel and assurance toolchain. Its central
-promise is that an authored GraphQL Schema Definition Language document can be
-treated as the source of truth, lowered into deterministic compiler facts, and
-projected into generated artifacts or evidence reports without allowing those
-derived artifacts to become peer authorities.
+Wesley is a domain-free GraphQL-to-IR compiler kernel and assurance toolchain.
+Its central promise is that an authored GraphQL Schema Definition Language
+document can be lowered into deterministic structure and projected into
+generated artifacts or evidence reports without allowing those derived
+artifacts to become peer authorities.
 
 The current product center is the Rust workspace. The core compiler crate is
 `crates/wesley-core`, the user-facing native binary is
@@ -34,16 +33,16 @@ The current product center is the Rust workspace. The core compiler crate is
 `crates/wesley-emit-rust` and `crates/wesley-emit-typescript`. The
 `crates/wesley-holmes` crate is an unpublished Rust foundation for law
 assurance. JavaScript packages remain, but the repository docs classify them as
-non-compiler surfaces: Holmes compatibility tooling, website or docs plumbing,
-and repository automation. Browser/Bun/Deno host smoke experiments are retired
-from the Wesley release surface.
+non-compiler surfaces: Holmes compatibility tooling, docs support, and
+repository automation. Browser/Bun/Deno host smoke experiments are retired from
+the Wesley release surface.
 
 ### How It Works
 
 At runtime, a user normally runs the native command:
 
 ```bash
-cargo wesley --help
+cargo run --bin wesley -- --help
 ```
 
 or, after installation:
@@ -61,20 +60,20 @@ assurance ingestion lives in `wesley-holmes`.
 
 ### Current Version And Next Work
 
-The Rust crates in this checkout declare version `0.1.1`, and the public README
-now carries the matching "What's New in v0.1.1" release note. The changelog's
-dated `0.1.1` section carries the residue purge, roadmap governance cleanup,
-`0.1.x` compatibility aliases, vendored Bats helpers, generated JSON schema
-validation, workflow/package-manager policy guards, release scheduling guards,
-and directive example honesty work. This is a pre-1.0 patch release over the
-published `v0.1.0` codec-plan baseline.
+The Rust crates in this checkout declare version `0.2.0`, and the public README
+now carries the matching "What's New in v0.2.0" release note. The changelog's
+dated `0.2.0` section carries the project manifest and config CLI, manifest-led
+HOLMES schema selection, descriptor-only fixture module zoo, docs/topic coverage
+expansion, release documentation gate, and removal of the old Holmes capability
+alias. This is a pre-1.0 minor release over the published `v0.1.1`
+residue-purge baseline.
 
-As of this teardown refresh, `cargo xtask preflight`, `cargo xtask
-release-check`, `cargo xtask package-crates --version 0.1.1`, and
-`cargo xtask release-prep-guard --version 0.1.1` pass locally. The obsolete
-2025 `#60` v0.1.0 umbrella issue remains closed as not planned because it no
-longer represents current release scope, and the `v0.1.1` release gate has no
-remaining open issue work.
+As of this teardown refresh, the release branch is prepared to run
+`cargo xtask release-prep-guard --version 0.2.0`, `cargo xtask preflight`,
+`cargo xtask release-check`, and `cargo xtask package-crates --version 0.2.0`.
+The `v0.2.0` release gate is the only issue scheduled in the `Release: v0.2.0`
+milestone, and it remains open until the release commit lands on synced `main`
+and the signed tag is cut.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion
@@ -253,13 +252,20 @@ emitters onto the same language-neutral plan, made TypeScript public decoders
 return `Result<T>`, and updated the release notes, changelog, and package
 metadata for the pre-1.0 minor release.
 
-The `0.1.1` release preparation removes old browser, Bun, Deno, website, and
-playground residue from the active Wesley product surface; records the `v0.1.0`
-publication evidence; moves live roadmap state to GitHub Issues, labels,
-projects, and milestones; preserves the `0.1.x` public API alias bridge; vendors
-Bats helper dependencies for deterministic CI; adds generated JSON schema
-validation coverage; and hardens release guards around concrete version
+The `0.1.1` release removed old browser, Bun, Deno, website, and playground
+residue from the active Wesley product surface; recorded the `v0.1.0`
+publication evidence; moved live roadmap state to GitHub Issues, labels,
+projects, and milestones; preserved the `0.1.x` public API alias bridge;
+vendored Bats helper dependencies for deterministic CI; added generated JSON
+schema validation coverage; and hardened release guards around concrete version
 scheduling.
+
+The `0.2.0` release adds a domain-free JSON/YAML project manifest,
+`wesley config validate`, `wesley config inspect`, and
+`wesley config changed-schemas`; lets single-schema manifests supply defaults
+for `schema lower`, `schema hash`, and `schema operations`; drives HOLMES CI
+through manifest-selected schema sets; adds descriptor-only extension fixtures;
+and expands `docs/topics/` into the current operator/contributor routing map.
 
 The Holmes law assurance foundation remains an unpublished Rust crate. It has
 evidence, ingest, policy, gate, and suppression foundations, but concrete
@@ -288,12 +294,11 @@ intentionally not yet exposed as a public Holmes CLI from Rust.
 
 ### Current Tensions
 
-The README now describes `v0.1.1`, aligned with the `Cargo.toml` crate version
-declared across the workspace. The changelog's dated `0.1.1` section carries
-the post-`0.1.0` residue purge and release-governance hardening work. Release
-preparation is no longer blocked by stale current-release issue text, stale
-filesystem backlog signposts, or the old README release headline; the current
-pre-tag guard passes for `0.1.1`.
+The README now describes `v0.2.0`, aligned with the `Cargo.toml` crate version
+declared across the workspace. The changelog's dated `0.2.0` section carries
+the post-`0.1.1` project-manifest, HOLMES schema-selection, and documentation
+coverage work. Release preparation is blocked only on the normal release branch,
+validation, merge-to-main, signed tag, and publish sequence.
 
 ## Package(s) Overview
 
@@ -1520,13 +1525,13 @@ identities from local config or HEAD metadata.
 
 ### Rust Workspace Coverage
 
-The Rust workspace registers 311 tests under `cargo test --workspace -- --list`
-as of the June 26, 2026 `0.1.1` release-candidate state. The full Rust
+The Rust workspace registers 323 tests under `cargo test --workspace -- --list`
+as of the June 26, 2026 `v0.2.0` release-prep state. The full Rust
 workspace test run passes:
 
 ```text
 cargo test --workspace
-311 tests passed
+323 tests passed
 0 failed
 0 ignored
 0 doc tests
@@ -1745,10 +1750,10 @@ for Rust and JavaScript, then attach those reports to Holmes or CI artifacts.
 
 ### Next Release Narrative
 
-After `0.1.1`, the next crates.io release should decide which remaining
+After `v0.2.0`, the next crates.io release should decide which remaining
 Rust-native front-door, `weslaw`, Holmes foundation, and release-governance work
-belongs in the next patch release versus a later pre-1.0 milestone. Every path
-must keep README, CHANGELOG, tags, and publishable crate manifests aligned.
+belongs in `v0.3.0` versus a later pre-1.0 milestone. Every path must keep
+README, CHANGELOG, tags, and publishable crate manifests aligned.
 
 ### Host Package Fate
 
@@ -1832,8 +1837,8 @@ pnpm --filter @wesley/holmes test
 The codebase uses `apollo-parser` for GraphQL parsing, `serde` and
 `serde_json` for serialization, `sha2` and `hex` for hashing, `indexmap` for
 deterministic map behavior, `yaml-rust2` for YAML loading, `ninelives` for
-resilience policy, Node's built-in test runner for JS package tests, and
-Vitest for retained website tests.
+resilience policy, and Node's built-in test runner for retained JS package
+tests.
 
 No external web references were used to write this teardown; it is anchored to
 the repository files and local command outputs listed above.
@@ -1843,31 +1848,31 @@ the repository files and local command outputs listed above.
 ### Appendix A: Command Cheat Sheet
 
 ```bash
-cargo wesley --help
-cargo wesley doctor --json
-cargo wesley normalize-sdl --schema schema.graphql --hash
-cargo wesley schema lower --schema schema.graphql --json
-cargo wesley schema hash --schema schema.graphql
-cargo wesley schema diff \
+cargo run --bin wesley -- --help
+cargo run --bin wesley -- doctor --json
+cargo run --bin wesley -- normalize-sdl --schema schema.graphql --hash
+cargo run --bin wesley -- schema lower --schema schema.graphql --json
+cargo run --bin wesley -- schema hash --schema schema.graphql
+cargo run --bin wesley -- schema diff \
   --old old.graphql \
   --new new.graphql \
   --format summary \
   --exit-code
-cargo wesley schema operations --schema schema.graphql --json
-cargo wesley law lint --law contract.weslaw.yaml --json
-cargo wesley law validate --schema schema.graphql --law contract.weslaw.yaml --json
-cargo wesley law diff --old old.weslaw.yaml --new new.weslaw.yaml --format markdown
-cargo wesley law capabilities --law contract.weslaw.yaml --json
-cargo wesley law coverage \
+cargo run --bin wesley -- schema operations --schema schema.graphql --json
+cargo run --bin wesley -- law lint --law contract.weslaw.yaml --json
+cargo run --bin wesley -- law validate --schema schema.graphql --law contract.weslaw.yaml --json
+cargo run --bin wesley -- law diff --old old.weslaw.yaml --new new.weslaw.yaml --format markdown
+cargo run --bin wesley -- law capabilities --law contract.weslaw.yaml --json
+cargo run --bin wesley -- law coverage \
   --schema schema.graphql \
   --law contract.weslaw.yaml \
   --profile release \
   --json
-cargo wesley emit rust \
+cargo run --bin wesley -- emit rust \
   --schema schema.graphql \
   --out generated.rs \
   --metadata-out generated.metadata.json
-cargo wesley emit typescript \
+cargo run --bin wesley -- emit typescript \
   --schema schema.graphql \
   --out generated.d.ts \
   --metadata-out generated.metadata.json

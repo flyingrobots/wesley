@@ -10,7 +10,7 @@ Use:
 
 ```bash
 gh issue list --label triage:requests
-gh issue list --label v0.2.0
+gh issue list --label vX.Y.Z
 ```
 
 Do not add new files here. Add or update GitHub Issues instead.

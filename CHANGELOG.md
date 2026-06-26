@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-26
+
 ### Added
 
 - **Project manifest and config CLI**: Added the domain-free
@@ -21,6 +23,11 @@ hash`, and `schema operations`.
 - **Contributor onramp**: Added a public near-term roadmap issue and scoped
   `good first issue` starter tasks, and linked the onboarding path from
   `CONTRIBUTING.md`.
+- **Comprehensive topic map**: Expanded `docs/topics/` into a current operator
+  and contributor map covering the native CLI, schema IR, operations,
+  directives, emitters, artifacts, compiler boundaries, project manifests,
+  extension modules, legacy Node retirement, CI, HOLMES, releases, invariants,
+  and docs maintenance.
 
 ### Changed
 
@@ -34,6 +41,10 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
 - **Extension documentation**: Added current project-manifest and module
   authoring references, and clarified that `wesley.config.mjs` and the dynamic
   JavaScript module loader are retired from generic Wesley core.
+- **Release signposts**: Refreshed README, GUIDE, ENTRYPOINTS, ARCHITECTURE,
+  METHOD, CONTRIBUTING, and docs topic routing so the current docs point at the
+  domain-free GraphQL-to-IR platform and the topic map rather than stale
+  backlog or retired command surfaces.
 
 ### Removed
 
@@ -1569,7 +1580,8 @@ kind` instead of being silently accepted via structural duck-typing. All
 
 - Initial public repository layout
 
-[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/flyingrobots/wesley/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/flyingrobots/wesley/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/flyingrobots/wesley/compare/v0.0.5...v0.1.0
 [0.0.5]: https://github.com/flyingrobots/wesley/compare/v0.0.4...v0.0.5

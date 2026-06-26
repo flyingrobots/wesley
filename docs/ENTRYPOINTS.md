@@ -9,10 +9,10 @@ cargo run --bin wesley -- --help
 ```
 
 For published alpha builds, the crates.io package is `wesley-cli` and the
-installed command is `wesley`. The current published alpha is `0.1.1`:
+installed command is `wesley`. The current published alpha is `0.2.0`:
 
 ```bash
-cargo install wesley-cli --version 0.1.1
+cargo install wesley-cli --version 0.2.0
 wesley --help
 ```
 

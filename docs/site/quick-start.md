@@ -22,15 +22,15 @@ pnpm install
 Lower, hash, and list operations through the native Rust CLI:
 
 ```bash
-cargo wesley schema lower --schema test/fixtures/examples/ecommerce.graphql --json
-cargo wesley schema hash --schema test/fixtures/examples/ecommerce.graphql
-cargo wesley schema operations --schema test/fixtures/examples/ecommerce.graphql --json
+cargo run --bin wesley -- schema lower --schema test/fixtures/examples/ecommerce.graphql --json
+cargo run --bin wesley -- schema hash --schema test/fixtures/examples/ecommerce.graphql
+cargo run --bin wesley -- schema operations --schema test/fixtures/examples/ecommerce.graphql --json
 ```
 
 ## 3. Emit TypeScript
 
 ```bash
-cargo wesley emit typescript \
+cargo run --bin wesley -- emit typescript \
   --schema test/fixtures/examples/ecommerce.graphql \
   --out out/examples/ecommerce.d.ts \
   --metadata-out out/examples/ecommerce.metadata.json

@@ -21,6 +21,17 @@ const gitIdentityChk = spawnSync(process.execPath, ['scripts/check-git-identity.
 });
 if (gitIdentityChk.status !== 0) fail('Git identity guard failed');
 
+const scriptUnitTests = readdirSync(resolve('scripts'))
+  .filter((file) => file.endsWith('.test.mjs'))
+  .sort()
+  .map((file) => `scripts/${file}`);
+if (scriptUnitTests.length) {
+  const scriptUnitChk = spawnSync(process.execPath, ['--test', ...scriptUnitTests], {
+    stdio: 'inherit'
+  });
+  if (scriptUnitChk.status !== 0) fail('Script unit tests failed');
+}
+
 // .gitignore files contain generated-output ignores.
 function requireIgnorePatterns(path, patterns) {
   let gi;
@@ -42,7 +53,10 @@ requireIgnorePatterns('.gitignore', [
     /^test\/fixtures\/examples\/\.wesley-cache\//m,
     'Missing test/fixtures/examples/.wesley-cache/ in .gitignore'
   ],
-  [/^wesley\.holmes-policy\.local\.json$/m, 'Missing wesley.holmes-policy.local.json in .gitignore'],
+  [
+    /^wesley\.holmes-policy\.local\.json$/m,
+    'Missing wesley.holmes-policy.local.json in .gitignore'
+  ],
   [/^out\//m, 'Missing out/ in .gitignore (covers generated outputs)']
 ]);
 requireIgnorePatterns('test/fixtures/examples/.gitignore', [

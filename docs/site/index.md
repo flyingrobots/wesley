@@ -6,8 +6,8 @@ title: Wesley Overview
 
 # Wesley
 
-Wesley is the generic GraphQL compiler and assurance kernel. Provide a GraphQL
-SDL input and the tooling owns:
+Wesley is the domain-free GraphQL-to-IR compiler and assurance toolchain.
+Provide a GraphQL SDL input and the tooling owns:
 
 - GraphQL parsing, canonicalization, lowering, and evidence plumbing
 - Generic transmutation and module contracts
@@ -24,10 +24,10 @@ Transform → Plan → Rehearse → Ship fit together.
 
 ## Quick facts
 
-- **Input:** GraphQL SDL with `@wes_*` directives
-- **Outputs:** module-owned artifacts, TypeScript, Zod, evidence bundles
+- **Input:** GraphQL SDL
+- **Outputs:** deterministic IR, generic projections, and evidence artifacts
 - **Runtime:** Native Rust CLI plus retained JavaScript support tooling
-- **License:** MIND‑UCAL v1.0 (see `LICENSE`)
+- **License:** Apache-2.0 (see `LICENSE`)
 - **Source:** [github.com/flyingrobots/wesley](https://github.com/flyingrobots/wesley)
 
 ## Getting started quickly
@@ -35,7 +35,7 @@ Transform → Plan → Rehearse → Ship fit together.
 Install the CLI and run the local Quick Start:
 
 ```bash
-cargo install wesley-cli --version 0.1.0
+cargo install wesley-cli --version 0.2.0
 wesley schema lower --schema schema.graphql --json
 ```
 

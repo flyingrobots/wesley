@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const root = resolve('.');
 const docs = ['README.md', 'docs/GUIDE.md', 'docs/ENTRYPOINTS.md', 'docs/END_TO_END.md'];
@@ -46,16 +47,32 @@ function loadWesleyCommands() {
   return commands;
 }
 
-function documentedCommandFromParts(parts, commands) {
+export function documentedCommandFromParts(parts, commands) {
   if (parts.length > 1 && !parts[1].startsWith('-')) {
     const nested = `${parts[0]} ${parts[1]}`;
     if (commands.has(nested)) return nested;
+    if (commandFamilyExists(parts[0], commands)) return nested;
   }
 
   return parts[0];
 }
 
-function extractDocumentedCommands(content, commands) {
+function commandFamilyExists(command, commands) {
+  for (const knownCommand of commands) {
+    if (knownCommand.startsWith(`${command} `)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function commandOrFamilyExists(command, commands) {
+  if (commands.has(command)) return true;
+  return commandFamilyExists(command, commands);
+}
+
+export function extractDocumentedCommands(content, commands) {
   const documented = [];
   for (const snippet of extractCommandSnippets(content)) {
     if (snippet.includes('pnpm wesley') || snippet.includes('...')) continue;
@@ -69,7 +86,7 @@ function extractDocumentedCommands(content, commands) {
   return documented;
 }
 
-function extractCommandSnippets(content) {
+export function extractCommandSnippets(content) {
   const snippets = [];
   let inFence = false;
   let commandFence = false;
@@ -100,20 +117,26 @@ function extractCommandSnippets(content) {
   return snippets;
 }
 
-const commands = loadWesleyCommands();
-for (const doc of docs) {
-  const content = readFileSync(resolve(root, doc), 'utf8');
-  for (const command of extractDocumentedCommands(content, commands)) {
-    if (!commands.has(command)) {
-      fail(
-        `${doc} documents "wesley ${command}", but the native Wesley CLI does not expose that command`
-      );
+function main() {
+  const commands = loadWesleyCommands();
+  for (const doc of docs) {
+    const content = readFileSync(resolve(root, doc), 'utf8');
+    for (const command of extractDocumentedCommands(content, commands)) {
+      if (!commandOrFamilyExists(command, commands)) {
+        fail(
+          `${doc} documents "wesley ${command}", but the native Wesley CLI does not expose that command`
+        );
+      }
     }
   }
+
+  if (process.exitCode) {
+    process.exit(process.exitCode);
+  }
+
+  console.log('✅ Native front-door Wesley CLI examples match registered commands');
 }
 
-if (process.exitCode) {
-  process.exit(process.exitCode);
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main();
 }
-
-console.log('✅ Native front-door Wesley CLI examples match registered commands');
