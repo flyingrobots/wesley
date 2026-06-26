@@ -2,7 +2,12 @@
 
 import { pathToFileURL } from 'node:url';
 
-import { buildHolmesSuiteComment, loadHolmesSuiteReports } from './pr-comment.mjs';
+import {
+  buildHolmesMultiSchemaComment,
+  buildHolmesSuiteComment,
+  loadHolmesSuiteReportSets,
+  loadHolmesSuiteReports
+} from './pr-comment.mjs';
 
 if (isDirectExecution()) {
   main();
@@ -10,17 +15,27 @@ if (isDirectExecution()) {
 
 function main(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
-  const reports = loadHolmesSuiteReports(options.reportsDir, {
+  const statuses = {
     holmes: options.holmesStatus,
     watson: options.watsonStatus,
     moriarty: options.moriartyStatus
-  });
+  };
+  const reportSets = loadHolmesSuiteReportSets(options.reportsDir, statuses);
+  const reports = loadHolmesSuiteReports(options.reportsDir, statuses);
 
-  const body = buildHolmesSuiteComment({
-    pullRequestNumber: options.prNumber,
-    headSha: options.headSha,
-    ...reports
-  });
+  const body =
+    reportSets.length > 1 || reportSets[0]?.id !== 'default'
+      ? buildHolmesMultiSchemaComment({
+          pullRequestNumber: options.prNumber,
+          headSha: options.headSha,
+          statuses,
+          schemaReports: reportSets
+        })
+      : buildHolmesSuiteComment({
+          pullRequestNumber: options.prNumber,
+          headSha: options.headSha,
+          ...reports
+        });
 
   process.stdout.write(`${body}\n`);
 }
