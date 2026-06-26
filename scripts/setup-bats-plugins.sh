@@ -1,41 +1,42 @@
 #!/usr/bin/env bash
 
-# Bootstrap Bats plugin dependencies for repo-level Bats suites.
-# Downloads pinned releases of bats-support, bats-assert, and bats-file
-# into test/bats-plugins/.
+# Verify vendored Bats plugin dependencies for repo-level Bats suites.
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGET_DIR="$ROOT_DIR/test/bats-plugins"
+TARGET_DIR="$ROOT_DIR/test/vendor/bats-plugins"
 
-declare -A REPOS=(
-  [bats-support]="https://github.com/bats-core/bats-support.git"
-  [bats-assert]="https://github.com/bats-core/bats-assert.git"
-  [bats-file]="https://github.com/bats-core/bats-file.git"
+required_files=(
+  "bats-support/LICENSE"
+  "bats-support/load.bash"
+  "bats-support/src/output.bash"
+  "bats-support/src/error.bash"
+  "bats-support/src/lang.bash"
+  "bats-assert/LICENSE"
+  "bats-assert/load.bash"
+  "bats-assert/src/assert_success.bash"
+  "bats-assert/src/assert_failure.bash"
+  "bats-assert/src/assert_output.bash"
+  "bats-file/LICENSE"
+  "bats-file/load.bash"
+  "bats-file/src/file.bash"
+  "bats-file/src/temp.bash"
 )
 
-declare -A TAGS=(
-  [bats-support]="v0.3.0"
-  [bats-assert]="v2.2.3"
-  [bats-file]="v0.4.0"
-)
+missing=()
 
-echo "📦 Installing Bats plugins into $TARGET_DIR"
-mkdir -p "$TARGET_DIR"
-
-for name in "${!REPOS[@]}"; do
-  repo="${REPOS[$name]}"
-  tag="${TAGS[$name]}"
-  dest="$TARGET_DIR/$name"
-
-  echo "→ Fetching $name ($tag)"
-  rm -rf "$dest"
-  tmp_dir="$(mktemp -d)"
-  git clone --depth 1 --branch "$tag" "$repo" "$tmp_dir"
-  rm -rf "$tmp_dir/.git"
-  mkdir -p "$(dirname "$dest")"
-  mv "$tmp_dir" "$dest"
+for path in "${required_files[@]}"; do
+  if [[ ! -f "$TARGET_DIR/$path" ]]; then
+    missing+=("$path")
+  fi
 done
 
-echo "✅ Bats plugins installed."
+if (( ${#missing[@]} > 0 )); then
+  echo "Missing vendored Bats plugin files under $TARGET_DIR:" >&2
+  printf '  - %s\n' "${missing[@]}" >&2
+  echo "Restore test/vendor/bats-plugins from the repository before running Bats." >&2
+  exit 1
+fi
+
+echo "Vendored Bats plugins verified in $TARGET_DIR."

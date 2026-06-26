@@ -23,7 +23,7 @@ GitHub and can be reviewed with `gh label list`.
 | `status: non-blocking`         | Nice-to-have items that are not release blockers.                                                               |
 | `pkg:*`                        | Ownership hints for the affected package(s).                                                                    |
 | `triage:*`                     | Unscheduled intake classification.                                                                              |
-| `lane:v*`                      | Named future release scheduling.                                                                                |
+| `v*`                           | Named future release scheduling.                                                                                |
 | `legend:*`                     | Wesley legend classification.                                                                                   |
 | `work:*`                       | Product, integrity, or enabler work shape.                                                                      |
 
@@ -37,10 +37,10 @@ flow.
 | `triage:requests`   | Raw requests and incoming asks.                           |
 | `triage:bad-code`   | Debt intake awaiting scheduling, split, move, or closure. |
 | `triage:cool-ideas` | Idea intake awaiting scheduling, split, move, or closure. |
-| `lane:vX.Y.Z`       | Work scheduled for a named future release.                |
+| `vX.Y.Z`            | Work scheduled for a named future release.                |
 
 Every open issue should carry exactly one scheduling-state label: either one
-`triage:*` label or one `lane:vX.Y.Z` label. Do not use generic labels such as
+`triage:*` label or one `vX.Y.Z` label. Do not use generic labels such as
 `lane:asap`, `lane:inbox`, `lane:bad-code`, `lane:cool-ideas`,
 `lane:release`, or `lane:planned` for active work.
 

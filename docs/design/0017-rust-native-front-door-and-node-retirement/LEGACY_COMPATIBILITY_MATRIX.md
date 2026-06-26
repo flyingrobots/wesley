@@ -5,12 +5,9 @@ state after the 96-slice campaign.
 
 ## Retained Non-Compiler Packages
 
-| Package                         | Current lane                     | Boundary                                                                   |
-| ------------------------------- | -------------------------------- | -------------------------------------------------------------------------- |
-| `packages/wesley-holmes/`       | Self-contained assurance tooling | May inspect evidence and publish reports; must not own compiler authority. |
-| `packages/wesley-host-browser/` | External browser host experiment | Smoke parser/hash adapter only; must not import retired JS core/runtime.   |
-| `packages/wesley-host-bun/`     | External Bun host experiment     | Smoke parser/hash adapter only; must not import retired JS core/runtime.   |
-| `packages/wesley-host-deno/`    | External Deno host experiment    | Smoke parser/hash adapter only; must not import retired JS core/runtime.   |
+| Package                   | Current lane                     | Boundary                                                                   |
+| ------------------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| `packages/wesley-holmes/` | Self-contained assurance tooling | May inspect evidence and publish reports; must not own compiler authority. |
 
 All retained rows remain private workspace packages and carry
 `wesley.retirement` metadata so the retirement ledger guard continues to know
@@ -29,6 +26,9 @@ why they are not compiler authority.
 | `packages/wesley-scaffold-multitenant/` | NR-082 | Deleted | Product scaffolding belongs to product repos.                                     |
 | `packages/wesley-test-fixtures/`        | NR-083 | Deleted | Shared fixtures are plain `test/fixtures` and Rust test assets.                   |
 | `packages/wesley-tasks/`                | NR-084 | Deleted | Task execution policy does not live in a generic JavaScript package.              |
+| `packages/wesley-host-browser/`         | GH-629 | Deleted | Browser execution is not a supported Wesley release surface.                      |
+| `packages/wesley-host-bun/`             | GH-629 | Deleted | Bun execution is not a supported Wesley release surface.                          |
+| `packages/wesley-host-deno/`            | GH-629 | Deleted | Deno execution is not a supported Wesley release surface.                         |
 
 ## Current Deletion Blockers
 

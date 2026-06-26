@@ -331,7 +331,11 @@ sequenceDiagram
 
 ### Source Resolution
 
-Each transmutation resolves its `sources` globs independently. If a source file matches multiple transmutations, it is compiled once per transmutation — this is intentional. A schema might transmute into both Postgres DDL and Echo IR.
+Each transmutation resolves its `sources` globs independently. If a source file
+matches multiple transmutations, it is compiled once per transmutation - this
+is intentional. A schema might be consumed by multiple external target modules,
+such as a Postgres owner or Echo owner, without making those target artifacts
+generic Wesley outputs.
 
 Composition directives (`@wes_import`) are resolved relative to the source files, not the project root. Imported files inherit the transmutation context of the file that imports them.
 
@@ -590,8 +594,7 @@ packages/
 ```
 
 Those package paths are no longer current. Retained JavaScript packages are
-limited to Holmes assurance tooling and external host experiments; compiler
-authority lives in `crates/`.
+limited to Holmes assurance tooling; compiler authority lives in `crates/`.
 
 ### Historical Proposed Structure
 
@@ -612,7 +615,7 @@ packages/
 │
 ├── transmute-echo/                # @wesley/transmute-echo
 │   ├── src/
-│   │   ├── generators/            #   Echo IR, Rust codecs, TS codecs
+│   │   ├── generators/            #   Echo-owned IR, Rust codecs, TS codecs
 │   │   ├── evidence/              #   evidence contract + collector
 │   │   └── index.mjs
 │   └── test/

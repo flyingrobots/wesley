@@ -16,7 +16,9 @@ Teams duplicate schema across SQL, ORMs, TS types, validation, and tests, causin
 
 ## User Stories & Acceptance
 
-See docs/milestones/MVP/UserStories.md
+The original user-story packet was fully executed and removed during the
+filesystem planning purge. Keep new work in GitHub Issues and Milestones rather
+than restoring repo-local planning files.
 
 ## Success Metrics / KPIs
 

@@ -4,18 +4,6 @@
     {
       "path": "packages/wesley-holmes",
       "disposition": "extract-or-rebuild-later"
-    },
-    {
-      "path": "packages/wesley-host-browser",
-      "disposition": "delete-or-externalize"
-    },
-    {
-      "path": "packages/wesley-host-bun",
-      "disposition": "delete-or-externalize"
-    },
-    {
-      "path": "packages/wesley-host-deno",
-      "disposition": "delete-or-externalize"
     }
   ],
   "retiredPackages": [
@@ -72,6 +60,24 @@
       "disposition": "deleted",
       "slice": "NR-080",
       "replacement": "Native Rust TypeScript emitters own retained product TypeScript output; Zod remains only as a legacy CLI compatibility projection until extracted or removed with the CLI."
+    },
+    {
+      "path": "packages/wesley-host-browser",
+      "disposition": "deleted",
+      "slice": "GH-629",
+      "replacement": "Browser execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner."
+    },
+    {
+      "path": "packages/wesley-host-bun",
+      "disposition": "deleted",
+      "slice": "GH-629",
+      "replacement": "Bun execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner."
+    },
+    {
+      "path": "packages/wesley-host-deno",
+      "disposition": "deleted",
+      "slice": "GH-629",
+      "replacement": "Deno execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner."
     }
   ],
   "deletionBlockers": [],

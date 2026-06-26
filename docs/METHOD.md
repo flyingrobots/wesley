@@ -36,14 +36,14 @@ The Wesley work doctrine: GitHub Issues, a loop, and honest bookkeeping.
 
 ## Work Hierarchy
 
-| Concept                     | Canonical Surface                                                           | Rule                                                       |
-| :-------------------------- | :-------------------------------------------------------------------------- | :--------------------------------------------------------- |
-| **Goalpost**                | GitHub Milestone named `Goalpost: ...`                                      | Groups implementation slices.                              |
-| **Slice**                   | GitHub Issue                                                                | Assigned to exactly one goalpost milestone.                |
-| **Release**                 | GitHub Milestone named `Release: vX.Y.Z`                                    | Holds release-gate issues, not every implementation slice. |
-| **Release Gate**            | GitHub Issue in a `Release: vX.Y.Z` milestone                               | Links to the goalposts and release-lane issues selected.   |
-| **Roadmap Board**           | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) | Board/view layer over live GitHub Issues.                  |
-| **Triage/Lane/Legend/Type** | GitHub labels                                                               | Intake, release scheduling, and classification metadata.   |
+| Concept                        | Canonical Surface                                                           | Rule                                                       |
+| :----------------------------- | :-------------------------------------------------------------------------- | :--------------------------------------------------------- |
+| **Goalpost**                   | GitHub Milestone named `Goalpost: ...`                                      | Groups implementation slices.                              |
+| **Slice**                      | GitHub Issue                                                                | Assigned to exactly one goalpost milestone.                |
+| **Release**                    | GitHub Milestone named `Release: vX.Y.Z`                                    | Holds release-gate issues, not every implementation slice. |
+| **Release Gate**               | GitHub Issue in a `Release: vX.Y.Z` milestone                               | Links to the goalposts and release-lane issues selected.   |
+| **Roadmap Board**              | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) | Board/view layer over live GitHub Issues.                  |
+| **Triage/Release/Legend/Type** | GitHub labels                                                               | Intake, release scheduling, and classification metadata.   |
 
 GitHub allows only one milestone per issue. Keep implementation issues in their
 goalpost milestones. Put release checklist/gate issues in release milestones and
@@ -55,7 +55,7 @@ Use [Issue Triage](./topics/contributing/triage.md) for the label contract.
 Short version:
 
 - `triage:*` labels are unscheduled intake.
-- `lane:vX.Y.Z` labels are scheduled work for named future releases.
+- `vX.Y.Z` labels are scheduled work for named future releases.
 - Do not use generic `lane:*` labels for active work.
 
 The directory `docs/method/backlog/` is now a compatibility signpost only, not
@@ -70,7 +70,7 @@ Active work should carry `work-in-progress`. Follow-up work belongs in GitHub
 Issues, not in chat, TODO prose, or local-only backlog files.
 
 Every open issue should carry exactly one scheduling-state label: either one
-`triage:*` label or one `lane:vX.Y.Z` label.
+`triage:*` label or one `vX.Y.Z` label.
 
 ## The Cycle Loop
 

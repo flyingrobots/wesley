@@ -6,11 +6,12 @@ use crate::domain::normalized_sdl::{render_normalized_sdl, DirectiveArgumentType
 use crate::domain::operation::{
     OperationArgument, OperationDirectiveArgs, OperationType, SchemaOperation,
 };
-use crate::domain::optic::{
-    CodecField, CodecShape, DirectiveRecord, EvidenceKind, Footprint, IdentityRequirement,
-    LawClaimTemplate, OperationKind, OpticArtifact, OpticOperation, OpticRegistrationDescriptor,
-    OpticRequirements, OpticRequirementsArtifact, PermissionAction, PermissionRequirement,
-    RootArgumentBinding, SelectionArgumentBinding, OPTIC_REQUIREMENTS_ARTIFACT_CODEC,
+use crate::domain::operation_artifact::{
+    CodecField, CodecShape, CompiledOperation, DirectiveRecord, EvidenceKind, Footprint,
+    IdentityRequirement, LawClaimTemplate, OperationArtifact, OperationKind,
+    OperationRegistrationDescriptor, OperationRequirements, OperationRequirementsArtifact,
+    PermissionAction, PermissionRequirement, RootArgumentBinding, SelectionArgumentBinding,
+    OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 use crate::ports::lowering::LoweringPort;
@@ -1120,26 +1121,26 @@ pub fn resolve_operation_selections_with_schema(
     Ok(selections)
 }
 
-/// Compiles runtime-provided SDL plus one GraphQL operation into an optic artifact.
+/// Compiles runtime-provided SDL plus one GraphQL operation into an operation artifact.
 ///
 /// This is a compiler-only entry point. It validates and inspects the declared
 /// operation shape, but it does not execute the operation, grant authority, or
 /// verify runtime law satisfaction.
-pub fn compile_runtime_optic(
+pub fn compile_operation_artifact(
     sdl: &str,
     operation_source: &str,
     selected_operation: Option<&str>,
-) -> Result<OpticArtifact, WesleyError> {
+) -> Result<OperationArtifact, WesleyError> {
     let adapter = ApolloLoweringAdapter::new(0);
     let ir = adapter.parse_and_lower(sdl)?;
     let schema_id = compute_registry_hash(&ir).map_err(|err| {
         lowering_error_value(
-            "runtime optic",
+            "operation artifact",
             format!("Failed to compute schema identity: {err}"),
         )
     })?;
     let schema = SchemaIndex::new(&ir);
-    reject_runtime_optic_unsupported_schema_features(&ir)?;
+    reject_operation_artifact_unsupported_schema_features(&ir)?;
     let root_types = extract_root_types(sdl)?;
     let schema_operations = list_schema_operations_sdl(sdl)?;
 
@@ -1151,9 +1152,9 @@ pub fn compile_runtime_optic(
     let root_field_name = required_name(root_field.name(), "Root field selection missing name")?;
     let schema_operation =
         schema_operation_for_selected_field(&schema_operations, kind, &root_field_name)?;
-    reject_runtime_optic_variable_defaults(op)?;
+    reject_operation_artifact_variable_defaults(op)?;
     let variable_types = variable_definition_types(op)?;
-    validate_runtime_optic_executable_selection(
+    validate_operation_artifact_executable_selection(
         &root_field,
         root_type,
         &schema,
@@ -1193,7 +1194,7 @@ pub fn compile_runtime_optic(
         "payloadShape": payload_shape,
         "directives": directives,
     });
-    let operation_id = stable_json_hash(&identity_seed, "runtime optic operation identity")?;
+    let operation_id = stable_json_hash(&identity_seed, "operation identity")?;
     let law_claims =
         law_claims_for_operation(&operation_id, &directives, declared_footprint.as_ref())?;
     let requirements = requirements_from_footprint(declared_footprint.as_ref());
@@ -1215,10 +1216,10 @@ pub fn compile_runtime_optic(
             "schemaId": &schema_id,
             "variableShape": &variable_shape,
         }),
-        "runtime optic artifact hash",
+        "operation artifact hash",
     )?;
     let artifact_id = artifact_hash.clone();
-    let registration = OpticRegistrationDescriptor {
+    let registration = OperationRegistrationDescriptor {
         artifact_id: artifact_id.clone(),
         artifact_hash: artifact_hash.clone(),
         schema_id: schema_id.clone(),
@@ -1226,13 +1227,13 @@ pub fn compile_runtime_optic(
         requirements_digest: requirements_digest.clone(),
     };
 
-    Ok(OpticArtifact {
+    Ok(OperationArtifact {
         artifact_id,
         artifact_hash,
         schema_id,
         requirements_digest,
         requirements_artifact,
-        operation: OpticOperation {
+        operation: CompiledOperation {
             operation_id,
             name: operation_name,
             kind,
@@ -1254,12 +1255,12 @@ pub fn compile_runtime_optic(
 ///
 /// This returns a descriptor an external target can compare against the full
 /// artifact before storing or importing compiler-produced evidence.
-pub fn compile_runtime_optic_registration(
+pub fn compile_operation_artifact_registration(
     sdl: &str,
     operation_source: &str,
     selected_operation: Option<&str>,
-) -> Result<OpticRegistrationDescriptor, WesleyError> {
-    Ok(compile_runtime_optic(sdl, operation_source, selected_operation)?.registration)
+) -> Result<OperationRegistrationDescriptor, WesleyError> {
+    Ok(compile_operation_artifact(sdl, operation_source, selected_operation)?.registration)
 }
 
 /// Extracts arguments from operation directives with the requested directive name.
@@ -1568,7 +1569,7 @@ fn operation_kind(op: &cst::OperationDefinition) -> Result<OperationKind, Wesley
 
 fn selected_root_field(op: &cst::OperationDefinition) -> Result<cst::Field, WesleyError> {
     let selection_set = op.selection_set().ok_or_else(|| {
-        operation_error_value("Runtime optic operation missing selection set".to_string())
+        operation_error_value("Operation artifact operation missing selection set".to_string())
     })?;
     let mut fields = Vec::new();
 
@@ -1577,17 +1578,18 @@ fn selected_root_field(op: &cst::OperationDefinition) -> Result<cst::Field, Wesl
             cst::Selection::Field(field) => fields.push(field),
             cst::Selection::FragmentSpread(_) | cst::Selection::InlineFragment(_) => {
                 return operation_error(
-                    "Runtime optic v0 requires a concrete top-level field selection".to_string(),
+                    "Operation artifact v0 requires a concrete top-level field selection"
+                        .to_string(),
                 );
             }
         }
     }
 
     match fields.len() {
-        0 => operation_error("Runtime optic operation selects no root field".to_string()),
+        0 => operation_error("Operation artifact operation selects no root field".to_string()),
         1 => Ok(fields.remove(0)),
         count => operation_error(format!(
-            "Runtime optic v0 expects exactly one root field selection, found {count}"
+            "Operation artifact v0 expects exactly one root field selection, found {count}"
         )),
     }
 }
@@ -1610,11 +1612,11 @@ fn schema_operation_for_selected_field<'a>(
         })
 }
 
-fn reject_runtime_optic_unsupported_schema_features(ir: &WesleyIR) -> Result<(), WesleyError> {
+fn reject_operation_artifact_unsupported_schema_features(ir: &WesleyIR) -> Result<(), WesleyError> {
     for type_def in &ir.types {
         if type_def.kind == TypeKind::Interface && !type_def.implements.is_empty() {
             return operation_error(format!(
-                "Runtime optic v0 does not support interface inheritance on '{}'",
+                "Operation artifact v0 does not support interface inheritance on '{}'",
                 type_def.name
             ));
         }
@@ -1623,7 +1625,7 @@ fn reject_runtime_optic_unsupported_schema_features(ir: &WesleyIR) -> Result<(),
     Ok(())
 }
 
-fn reject_runtime_optic_variable_defaults(
+fn reject_operation_artifact_variable_defaults(
     op: &cst::OperationDefinition,
 ) -> Result<(), WesleyError> {
     let Some(variable_definitions) = op.variable_definitions() else {
@@ -1638,7 +1640,7 @@ fn reject_runtime_optic_variable_defaults(
                 .map(|name| name.text().to_string())
                 .unwrap_or_else(|| "<unknown>".to_string());
             return operation_error(format!(
-                "Runtime optic v0 does not support default value for variable '${name}'"
+                "Operation artifact v0 does not support default value for variable '${name}'"
             ));
         }
     }
@@ -1646,13 +1648,13 @@ fn reject_runtime_optic_variable_defaults(
     Ok(())
 }
 
-fn validate_runtime_optic_executable_selection(
+fn validate_operation_artifact_executable_selection(
     root_field: &cst::Field,
     root_type: &str,
     schema: &SchemaIndex<'_>,
     fragments: &BTreeMap<String, cst::FragmentDefinition>,
 ) -> Result<(), WesleyError> {
-    validate_runtime_optic_field_selection(
+    validate_operation_artifact_field_selection(
         root_field,
         root_type,
         schema,
@@ -1661,7 +1663,7 @@ fn validate_runtime_optic_executable_selection(
     )
 }
 
-fn validate_runtime_optic_selection_set(
+fn validate_operation_artifact_selection_set(
     selection_set: &cst::SelectionSet,
     parent_type: &str,
     schema: &SchemaIndex<'_>,
@@ -1669,7 +1671,7 @@ fn validate_runtime_optic_selection_set(
     active_fragments: &mut Vec<String>,
 ) -> Result<(), WesleyError> {
     let mut response_signatures = BTreeMap::new();
-    validate_runtime_optic_selection_set_into(
+    validate_operation_artifact_selection_set_into(
         selection_set,
         parent_type,
         schema,
@@ -1679,30 +1681,30 @@ fn validate_runtime_optic_selection_set(
     )
 }
 
-fn validate_runtime_optic_selection_set_into(
+fn validate_operation_artifact_selection_set_into(
     selection_set: &cst::SelectionSet,
     parent_type: &str,
     schema: &SchemaIndex<'_>,
     fragments: &BTreeMap<String, cst::FragmentDefinition>,
     active_fragments: &mut Vec<String>,
-    response_signatures: &mut BTreeMap<String, RuntimeOpticFieldSignature>,
+    response_signatures: &mut BTreeMap<String, OperationArtifactFieldSignature>,
 ) -> Result<(), WesleyError> {
     for selection in selection_set.selections() {
         match selection {
             cst::Selection::Field(field) => {
                 let (response_name, signature) =
-                    runtime_optic_field_signature(&field, parent_type, schema)?;
+                    operation_artifact_field_signature(&field, parent_type, schema)?;
                 if let Some(existing) = response_signatures.get(&response_name) {
                     if existing != &signature {
                         return operation_error(format!(
-                            "Runtime optic response name '{response_name}' has conflicting field selections"
+                            "Operation artifact response name '{response_name}' has conflicting field selections"
                         ));
                     }
                 } else {
                     response_signatures.insert(response_name, signature);
                 }
 
-                validate_runtime_optic_field_selection(
+                validate_operation_artifact_field_selection(
                     &field,
                     parent_type,
                     schema,
@@ -1733,7 +1735,7 @@ fn validate_runtime_optic_selection_set_into(
 
                 active_fragments.push(name);
                 if let Some(fragment_selection_set) = fragment.selection_set() {
-                    validate_runtime_optic_selection_set_into(
+                    validate_operation_artifact_selection_set_into(
                         &fragment_selection_set,
                         &fragment_parent,
                         schema,
@@ -1753,7 +1755,7 @@ fn validate_runtime_optic_selection_set_into(
                 validate_fragment_type_condition(parent_type, &inline_parent, schema, "inline")?;
 
                 if let Some(inline_selection_set) = fragment.selection_set() {
-                    validate_runtime_optic_selection_set_into(
+                    validate_operation_artifact_selection_set_into(
                         &inline_selection_set,
                         &inline_parent,
                         schema,
@@ -1769,7 +1771,7 @@ fn validate_runtime_optic_selection_set_into(
     Ok(())
 }
 
-fn validate_runtime_optic_field_selection(
+fn validate_operation_artifact_field_selection(
     field: &cst::Field,
     parent_type: &str,
     schema: &SchemaIndex<'_>,
@@ -1777,23 +1779,23 @@ fn validate_runtime_optic_field_selection(
     active_fragments: &mut Vec<String>,
 ) -> Result<(), WesleyError> {
     let field_name = required_name(field.name(), "Field selection missing name")?;
-    reject_runtime_optic_unsupported_field_name(&field_name)?;
+    reject_operation_artifact_unsupported_field_name(&field_name)?;
     let schema_field = schema.field(parent_type, &field_name)?;
     let has_selection_set = field.selection_set().is_some();
     let is_composite = is_composite_output_type(&schema_field.r#type, schema)?;
 
     match (is_composite, has_selection_set) {
         (true, false) => operation_error(format!(
-            "Runtime optic field '{parent_type}.{field_name}' returns composite type '{}' and requires a subselection",
+            "Operation artifact field '{parent_type}.{field_name}' returns composite type '{}' and requires a subselection",
             schema_field.r#type.base
         )),
         (false, true) => operation_error(format!(
-            "Runtime optic field '{parent_type}.{field_name}' returns leaf type '{}' and must not have a subselection",
+            "Operation artifact field '{parent_type}.{field_name}' returns leaf type '{}' and must not have a subselection",
             schema_field.r#type.base
         )),
         _ => {
             if let Some(selection_set) = field.selection_set() {
-                validate_runtime_optic_selection_set(
+                validate_operation_artifact_selection_set(
                     &selection_set,
                     &schema_field.r#type.base,
                     schema,
@@ -1807,26 +1809,26 @@ fn validate_runtime_optic_field_selection(
 }
 
 #[derive(Clone, PartialEq)]
-struct RuntimeOpticFieldSignature {
+struct OperationArtifactFieldSignature {
     parent_type: String,
     field_name: String,
     arguments_canonical_json: String,
     type_ref: TypeReference,
 }
 
-fn runtime_optic_field_signature(
+fn operation_artifact_field_signature(
     field: &cst::Field,
     parent_type: &str,
     schema: &SchemaIndex<'_>,
-) -> Result<(String, RuntimeOpticFieldSignature), WesleyError> {
+) -> Result<(String, OperationArtifactFieldSignature), WesleyError> {
     let field_name = required_name(field.name(), "Field selection missing name")?;
-    reject_runtime_optic_unsupported_field_name(&field_name)?;
+    reject_operation_artifact_unsupported_field_name(&field_name)?;
     let response_name = response_field_name(field)?;
     let schema_field = schema.field(parent_type, &field_name)?;
 
     Ok((
         response_name,
-        RuntimeOpticFieldSignature {
+        OperationArtifactFieldSignature {
             parent_type: parent_type.to_string(),
             field_name,
             arguments_canonical_json: field_arguments_canonical_json(field.arguments())?,
@@ -1845,7 +1847,7 @@ fn field_arguments_canonical_json(
             let name = required_name(argument.name(), "Field argument missing name")?;
             if values.contains_key(&name) {
                 return operation_error(format!(
-                    "Runtime optic field argument '{name}' is declared more than once"
+                    "Operation artifact field argument '{name}' is declared more than once"
                 ));
             }
             let value = argument.value().ok_or_else(|| {
@@ -1855,13 +1857,13 @@ fn field_arguments_canonical_json(
         }
     }
 
-    stable_json_string(&values, "runtime optic field arguments")
+    stable_json_string(&values, "operation artifact field arguments")
 }
 
-fn reject_runtime_optic_unsupported_field_name(field_name: &str) -> Result<(), WesleyError> {
+fn reject_operation_artifact_unsupported_field_name(field_name: &str) -> Result<(), WesleyError> {
     if field_name == "__typename" {
         return operation_error(
-            "Runtime optic v0 does not support __typename selections".to_string(),
+            "Operation artifact v0 does not support __typename selections".to_string(),
         );
     }
 
@@ -1876,12 +1878,12 @@ fn is_composite_output_type(
         Some(TypeKind::Object | TypeKind::Interface | TypeKind::Union) => Ok(true),
         Some(TypeKind::Enum | TypeKind::Scalar) => Ok(false),
         Some(TypeKind::InputObject) => operation_error(format!(
-            "Runtime optic field references input object '{}' as an output type",
+            "Operation artifact field references input object '{}' as an output type",
             type_ref.base
         )),
         None if is_builtin_scalar(&type_ref.base) => Ok(false),
         None => operation_error(format!(
-            "Runtime optic field references unknown output type '{}'",
+            "Operation artifact field references unknown output type '{}'",
             type_ref.base
         )),
     }
@@ -2061,7 +2063,8 @@ fn push_directive_records(
     for directive in directives.directives() {
         let name = required_name(directive.name(), "Directive missing name")?;
         let arguments = extract_executable_directive_arguments(directive.arguments())?;
-        let arguments_canonical_json = stable_json_string(&arguments, "runtime optic directive")?;
+        let arguments_canonical_json =
+            stable_json_string(&arguments, "operation artifact directive")?;
         records.push(DirectiveRecord {
             coordinate: coordinate.to_string(),
             name,
@@ -2111,13 +2114,13 @@ fn footprint_from_directives(
     {
         if directive.coordinate != root_coordinate {
             return operation_error(format!(
-                "Runtime optic @wes_footprint is only supported on selected root field '{root_coordinate}', found on '{}'",
+                "Operation artifact @wes_footprint is only supported on selected root field '{root_coordinate}', found on '{}'",
                 directive.coordinate
             ));
         }
 
         if footprint.is_some() {
-            return operation_error("Runtime optic declares multiple footprints".to_string());
+            return operation_error("Operation artifact declares multiple footprints".to_string());
         }
 
         let arguments: serde_json::Value =
@@ -2231,14 +2234,14 @@ fn root_argument_bindings(
             let name = required_name(argument.name(), "Root field argument missing name")?;
             if !supplied.insert(name.clone()) {
                 return operation_error(format!(
-                    "Runtime optic root field '{}' declares duplicate argument '{name}'",
+                    "Operation artifact root field '{}' declares duplicate argument '{name}'",
                     schema_operation.field_name
                 ));
             }
 
             let expected = expected_arguments.get(name.as_str()).ok_or_else(|| {
                 operation_error_value(format!(
-                    "Runtime optic root field '{}' declares unknown argument '{name}'",
+                    "Operation artifact root field '{}' declares unknown argument '{name}'",
                     schema_operation.field_name
                 ))
             })?;
@@ -2247,8 +2250,10 @@ fn root_argument_bindings(
             })?;
 
             validate_root_argument_value(value.clone(), expected, variable_types, schema)?;
-            let value_canonical_json =
-                stable_json_string(&executable_value_to_json(value)?, "runtime optic argument")?;
+            let value_canonical_json = stable_json_string(
+                &executable_value_to_json(value)?,
+                "operation artifact argument",
+            )?;
             bindings.push(RootArgumentBinding {
                 name,
                 type_ref: expected.r#type.clone(),
@@ -2263,7 +2268,7 @@ fn root_argument_bindings(
             && !supplied.contains(&expected.name)
         {
             return operation_error(format!(
-                "Runtime optic root field '{}' missing required argument '{}'",
+                "Operation artifact root field '{}' missing required argument '{}'",
                 schema_operation.field_name, expected.name
             ));
         }
@@ -2439,13 +2444,13 @@ fn append_field_argument_bindings(
             let name = required_name(argument.name(), "Field argument missing name")?;
             if !supplied.insert(name.clone()) {
                 return operation_error(format!(
-                    "Runtime optic field '{path}' declares duplicate argument '{name}'"
+                    "Operation artifact field '{path}' declares duplicate argument '{name}'"
                 ));
             }
 
             let expected = expected_arguments.get(name.as_str()).ok_or_else(|| {
                 operation_error_value(format!(
-                    "Runtime optic field '{path}' declares unknown argument '{name}'"
+                    "Operation artifact field '{path}' declares unknown argument '{name}'"
                 ))
             })?;
             let value = argument.value().ok_or_else(|| {
@@ -2455,7 +2460,7 @@ fn append_field_argument_bindings(
             validate_field_argument_value(value.clone(), expected, variable_types, schema)?;
             let value_canonical_json = stable_json_string(
                 &executable_value_to_json(value)?,
-                "runtime optic selection argument",
+                "operation artifact selection argument",
             )?;
             field_bindings.push(SelectionArgumentBinding {
                 path: path.to_string(),
@@ -2472,7 +2477,7 @@ fn append_field_argument_bindings(
             && !supplied.contains(&expected.name)
         {
             return operation_error(format!(
-                "Runtime optic field '{path}' missing required argument '{}'",
+                "Operation artifact field '{path}' missing required argument '{}'",
                 expected.name
             ));
         }
@@ -3183,14 +3188,14 @@ fn law_claims_for_operation(
         &mut claims,
         &mut seen,
         operation_id,
-        "shape.valid.v1",
+        "operation.shape.valid.v1",
         vec![EvidenceKind::Compiler],
     );
     push_law_claim(
         &mut claims,
         &mut seen,
         operation_id,
-        "codec.canonical.v1",
+        "operation.codec.canonical.v1",
         vec![EvidenceKind::Compiler, EvidenceKind::Codec],
     );
 
@@ -3209,7 +3214,7 @@ fn law_claims_for_operation(
             &mut claims,
             &mut seen,
             operation_id,
-            "footprint.closed.v1",
+            "operation.footprint.closed.v1",
             vec![EvidenceKind::RuntimeTrace],
         );
     }
@@ -3217,7 +3222,7 @@ fn law_claims_for_operation(
     Ok(claims)
 }
 
-fn requirements_from_footprint(footprint: Option<&Footprint>) -> OpticRequirements {
+fn requirements_from_footprint(footprint: Option<&Footprint>) -> OperationRequirements {
     let mut required_permissions = Vec::new();
     let mut forbidden_resources = Vec::new();
 
@@ -3241,7 +3246,7 @@ fn requirements_from_footprint(footprint: Option<&Footprint>) -> OpticRequiremen
         forbidden_resources = footprint.forbids.clone();
     }
 
-    OpticRequirements {
+    OperationRequirements {
         identity: IdentityRequirement {
             required: true,
             accepted_principal_kinds: Vec::new(),
@@ -3305,14 +3310,14 @@ fn stable_json_hash<T: serde::Serialize>(value: &T, area: &str) -> Result<String
 
 fn canonical_requirements_artifact<T: serde::Serialize>(
     value: &T,
-) -> Result<OpticRequirementsArtifact, WesleyError> {
-    let canonical = stable_json_string(value, "runtime optic requirements artifact")?;
+) -> Result<OperationRequirementsArtifact, WesleyError> {
+    let canonical = stable_json_string(value, "operation artifact requirements artifact")?;
     let bytes = canonical.into_bytes();
     let digest = compute_content_hash_bytes(&bytes);
 
-    Ok(OpticRequirementsArtifact {
+    Ok(OperationRequirementsArtifact {
         digest,
-        codec: OPTIC_REQUIREMENTS_ARTIFACT_CODEC.to_string(),
+        codec: OPERATION_REQUIREMENTS_ARTIFACT_CODEC.to_string(),
         bytes,
     })
 }

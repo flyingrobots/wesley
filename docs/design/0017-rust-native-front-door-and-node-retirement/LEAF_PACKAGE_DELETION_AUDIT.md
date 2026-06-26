@@ -27,7 +27,7 @@ closeout is recorded in
 
 | Slice  | Decision                                                                                                                                                                   |
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NR-089 | JavaScript remains for repository tooling, docs/site generation, website builds, and legacy compatibility lanes. It is not product compiler authority.                     |
+| NR-089 | JavaScript remains for repository tooling, docs/site generation, and legacy compatibility lanes. It is not product compiler authority.                                      |
 | NR-090 | `@git-stunts/alfred` remains a root dev dependency only for JavaScript tooling seams that run bounded child processes.                                                     |
 | NR-091 | `ninelives` remains the Rust resilience primitive in `crates/wesley-core` and `xtask`; it is the chosen policy library for cooperative Rust compiler and capability seams. |
 
@@ -53,7 +53,8 @@ Allowed remaining references:
 - Tests that assert deleted package names no longer appear in active workflow
   requirements.
 
-Active-surface search over manifests, workspace config, progress config,
+Active-surface search over manifests, workspace config, then-current progress
+metadata,
 `.github/`, `test/`, `packages/`, `crates/`, `scripts/`,
 `docs/truth-manifest.json`, and active backlog lanes finds no manifest,
 workflow, script, import, dynamic import, or runtime dependency on the deleted

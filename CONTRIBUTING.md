@@ -106,7 +106,7 @@ See `docs/method/legends/` for the standing questions each legend owns.
 ## Default Loop
 
 1. Pull a GitHub Issue with the right goalpost milestone and either a
-   `triage:*` intake label or concrete `lane:vX.Y.Z` release label.
+   `triage:*` intake label or concrete `vX.Y.Z` release label.
 2. Add `work-in-progress` while the slice is active.
 3. If the issue is still under `triage:*`, schedule it into a named release,
    split it, move it, or close it before implementation.
@@ -135,9 +135,30 @@ labels are the live queue.
 ## Development Setup
 
 ```bash
+corepack enable
+corepack prepare pnpm@9.15.9 --activate
 pnpm install
 pnpm run bootstrap
 ```
+
+## Package Manager And Lockfile Policy
+
+`package.json` is the package-manager source of truth:
+`"packageManager": "pnpm@9.15.9"`. Use Corepack to activate that exact pnpm
+version before installing dependencies.
+
+Wesley has one JavaScript lockfile: the root `pnpm-lock.yaml`. Do not commit
+`package-lock.json`, `yarn.lock`, nested `pnpm-lock.yaml`, `bun.lock`,
+`bun.lockb`, `deno.lock`, or `npm-shrinkwrap.json`. `cargo xtask
+legacy-preflight` runs `scripts/check-package-manager-policy.mjs`, which checks
+the pnpm version and tracked lockfile set before running package hygiene.
+
+GitHub workflows and composite actions must install with
+`pnpm install --frozen-lockfile` and immediately verify
+`git diff --exit-code -- pnpm-lock.yaml`. Local commits use the tracked
+`.githooks/pre-commit` hook: when staged `package.json` or
+`pnpm-workspace.yaml` changes affect dependency resolution, it runs
+`pnpm install --lockfile-only` and stages the updated `pnpm-lock.yaml`.
 
 Useful commands:
 

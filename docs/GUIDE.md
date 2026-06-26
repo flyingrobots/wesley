@@ -14,6 +14,7 @@ Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
 
 - **Inspect native CLI**: `cargo wesley --help`
+- **Read native CLI reference**: [docs/reference/cli.md](./reference/cli.md)
 - **Doctor native CLI**: `cargo wesley doctor`
 - **Install published alpha**: `cargo install wesley-cli --version 0.1.0`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
@@ -161,7 +162,7 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 - [ ] **I am setting up Rust core work**: Run `cargo xtask preflight`.
 - [ ] **I am changing docs only**: Run `cargo xtask docs-check`.
-- [ ] **I am changing retained JS packages or pnpm workspace files**: Run `pnpm install`, `cargo xtask preflight`, and `cargo xtask legacy-preflight`.
+- [ ] **I am changing retained JS packages or pnpm workspace files**: Use the pnpm version in `packageManager`, run `pnpm install --frozen-lockfile`, `cargo xtask preflight`, and `cargo xtask legacy-preflight`.
 - [ ] **I am modifying a schema**: Always start in the `.graphql` file.
 - [ ] **I am adding a generic projection**: Start in `crates/wesley-emit-rust` or `crates/wesley-emit-typescript`.
 - [ ] **I am adding a domain target**: Put it in an owning external repo or design an explicit target protocol before wiring it into Wesley.

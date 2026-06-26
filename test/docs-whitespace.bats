@@ -8,9 +8,3 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 0 ]
 }
-
-@test "browser host README has no trailing spaces on Status line" {
-  run bash -lc "grep -nE '^(Status: .*)  $' packages/wesley-host-browser/README.md | wc -l"
-  assert_success
-  [ "$output" -eq 0 ]
-}

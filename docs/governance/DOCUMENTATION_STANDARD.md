@@ -18,7 +18,7 @@ Live work state belongs in GitHub:
 | Raw intake     | GitHub Issue with a `triage:*` label                                        |
 | Goalpost       | GitHub Milestone named `Goalpost: ...`                                      |
 | Slice          | GitHub Issue assigned to one goalpost milestone                             |
-| Release lane   | GitHub label named `lane:vX.Y.Z`                                            |
+| Release lane   | GitHub label named `vX.Y.Z`                                                 |
 | Release target | GitHub Milestone named `Release: vX.Y.Z`                                    |
 | Release gate   | GitHub Issue assigned to the release milestone                              |
 | Roadmap board  | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) |
@@ -60,8 +60,10 @@ answering "how far along are we?", move that state to GitHub.
 - `docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and
   `docs/releases/` preserve closeout and release evidence after the fact.
 - `CHANGELOG.md` records merged behavior. It is not a planning document.
-- `docs/TECHNICAL_TEARDOWN.md` is a structural audit and risk map. It must not
-  become a second architecture doc or roadmap.
+- `docs/TECHNICAL_TEARDOWN.md` is a release-scoped orientation snapshot,
+  structural audit, and risk map. It must not become a second architecture doc
+  or roadmap. `docs/ARCHITECTURE.md` remains the current structural authority;
+  `docs/BEARING.md` remains the current direction surface.
 - Historical docs may preserve completed context, but any page that reads like
   a current tracker should be collapsed into evidence plus GitHub links.
 

@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Removed
+
+- **External host experiments**: Retired the browser, Bun, and Deno host
+  experiment packages, workflows, smoke scripts, browser contract fixtures, and
+  active docs references from the Wesley release surface. Wesley now treats
+  host-specific execution as downstream extension scope rather than core repo
+  product surface.
+- **Website/playground surface**: Removed the old `wesley-website` Vite/React
+  product site, playground/PGLite leftovers, Pages workflow, preview script,
+  and active James website planning docs. Wesley keeps documentation under
+  `docs/` and `docs/site`; product websites and playgrounds must be owned
+  outside this repo unless a future Wesley release explicitly reslates them.
+
 ### Changed
 
 - **v0.1.0 release evidence**: Recorded the signed tag, GitHub Release,
@@ -20,10 +33,31 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
-- **Release guard lane scheduling**: `cargo xtask release-prep-guard` and
-  `cargo xtask release-guard` now block on concrete `lane:vX.Y.Z` release-lane
-  issues for the release being cut, recognize older `lane:v*` labels as
-  prior-version blockers, and no longer depend on the retired `lane:asap` label.
+- **v0.1 public API compatibility**: `wesley-core` now keeps deprecated
+  `compile_runtime_optic` and `compile_runtime_optic_registration` aliases for
+  the renamed operation artifact compiler entry points, preserving compatible
+  `0.1.x` Cargo updates while the generic vocabulary remains primary.
+- **Vendored Bats helper resolution**: Repo-level Bats tests now resolve
+  `bats-support`, `bats-assert`, and `bats-file` from tracked files under
+  `test/vendor/bats-plugins`; CI no longer clones or downloads those helpers at
+  runtime.
+- **Generated JSON schema validation**: Added integration coverage that checks
+  representative generated IR, Weslaw, law diff, contract manifest, Holmes
+  scores/evidence, runtime, REALM, and SHIPME JSON artifacts against their
+  declared schemas, and made Rust product CI watch schema and Weslaw fixture
+  changes.
+- **Workflow policy regression guards**: GitHub workflow tests now pin bot
+  comment updater behavior, PR rollback/backout metadata, and frozen pnpm
+  installs with lockfile drift checks across workflow and composite-action
+  setup paths.
+- **Package manager policy**: Legacy preflight now enforces the
+  `packageManager` pnpm pin and single-root-lockfile policy; CI setup reads the
+  pnpm version from `package.json`, and contributor docs describe Corepack,
+  frozen installs, and the selective pre-commit lockfile refresh hook.
+- **Release guard version scheduling**: `cargo xtask release-prep-guard` and
+  `cargo xtask release-guard` now block on concrete `vX.Y.Z` release labels for
+  the release being cut, recognize older `v*` labels as prior-version blockers,
+  and no longer depend on the retired generic `lane:*` labels.
 - **Directive example honesty**: Current-path example fixtures now use only
   directive families that the Rust-native SDL hot path actually lowers, while
   broader RLS/RPC/reference fixtures are explicitly marked experimental or

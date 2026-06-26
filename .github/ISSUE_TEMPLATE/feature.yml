@@ -3,7 +3,7 @@ description: Propose a product-facing or capability-creating change.
 title: '[feat] <short summary>'
 labels:
   - feature
-  - lane:inbox
+  - triage:requests
 assignees: []
 body:
   - type: markdown
@@ -19,7 +19,7 @@ body:
       label: Requested classification
       description: Optional triage request. This does not set canonical labels.
       placeholder: |
-        Suggested lane:
+        Suggested scheduling state:
         Suggested legend:
         Suggested work type:
 

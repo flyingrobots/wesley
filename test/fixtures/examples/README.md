@@ -3,14 +3,14 @@
 Canonical schemas used by documentation, HOLMES tests, and CLI walkthroughs.
 
 Directive support truth lives in
-[`docs/DIRECTIVES.md`](../../../docs/DIRECTIVES.md). Fixtures in this directory
+[`docs/reference/directives.md`](../../../docs/reference/directives.md). Fixtures in this directory
 are split by whether they are current-path examples or experimental/historical
 coverage.
 
 ## Stable Current-Path Fixtures
 
 These fixtures must use only directive families marked `current` in
-`docs/DIRECTIVES.md`.
+`docs/reference/directives.md`.
 
 - `schema.graphql` – Minimal schema used by HOLMES smoke tests.
 - `schema-v2.graphql` – Evolution of the minimal schema.

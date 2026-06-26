@@ -27,8 +27,9 @@ That retired command validated the checked-in schema and reported generated
 artifacts from SDL, not a second authored source surface.
 
 The directive contract for this compiler path is the `@wes_*` TTD family
-documented in [`docs/DIRECTIVES.md`](../DIRECTIVES.md). Its SDL declaration and
-implementation moved out of generic Wesley and now live under the
+documented in
+[`docs/reference/directives.md`](../reference/directives.md). Its SDL
+declaration and implementation moved out of generic Wesley and now live under the
 Continuum-owned `continuum/wesley/ttd/` tree. The emitted TTD IR JSON Schema
 and TTD directive SDL now belong beside that module at
 `continuum/wesley/ttd/schemas/ttd-ir.schema.json` and
@@ -385,5 +386,7 @@ The compiler extracts these into a state machine specification in `contracts.jso
 
 ## Related
 
-- [TTD Protocol Compiler Plan](../plans/ttd-protocol-compiler.md) - Implementation details
+- The detailed repo-local plan was retired with the filesystem planning purge.
+  Recreate future work as GitHub Issues in the owning repository instead of
+  restoring a repo-local plans directory.
 - [Echo Time Travel Debugger](https://github.com/flyingrobots/echo) - Consumer of TTD output

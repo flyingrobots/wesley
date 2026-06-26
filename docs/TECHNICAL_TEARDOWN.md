@@ -2,6 +2,13 @@
 
 # Wesley Technical Teardown
 
+> Status: release-scoped orientation snapshot.
+>
+> This document explains the repository state for a release/readiness review.
+> It is not the authoritative architecture map and must not become a roadmap.
+> Use [ARCHITECTURE.md](./ARCHITECTURE.md) for current structure and
+> [BEARING.md](./BEARING.md) for current direction and active tensions.
+
 This document is an end-to-end technical explanation of the Wesley repository
 as it exists on the `main` branch on June 24, 2026 (post-PR #619, before the
 `v0.1.0` release tag is cut).
@@ -28,7 +35,8 @@ The current product center is the Rust workspace. The core compiler crate is
 `crates/wesley-holmes` crate is an unpublished Rust foundation for law
 assurance. JavaScript packages remain, but the repository docs classify them as
 non-compiler surfaces: Holmes compatibility tooling, website or docs plumbing,
-and browser/Bun/Deno host smoke experiments.
+and repository automation. Browser/Bun/Deno host smoke experiments are retired
+from the Wesley release surface.
 
 ### How It Works
 
@@ -214,7 +222,7 @@ law artifacts remain the authority.
 | [Contract bundle manifest](#contract-bundle-manifest)     | A JSON manifest linking schema hash, law hash, profile hash, bundle hash, compiler identity, and Law IR codec.                                                               |
 | [Law coverage](#law-capabilities-and-coverage)            | A profile/category report showing which schema subjects have active law coverage.                                                                                            |
 | [Capability report](#law-capabilities-and-coverage)       | A report-only summary of footprint resources read, written, created, or forbidden by operation law.                                                                          |
-| [Runtime optic](#golden-path-6-runtime-optic-artifact)    | A compiled GraphQL operation artifact that describes bounded operation shape, requirements, and law claims without executing anything.                                       |
+| [Operation artifact](#golden-path-6-operation-artifact)   | A compiled GraphQL operation artifact that describes bounded operation shape, requirements, and law claims without executing anything.                                       |
 | [Holmes](#golden-path-7-holmes-assurance-foundation)      | Wesley's assurance family. Rust Holmes ingests law evidence; legacy JS Holmes still supports reports and historical tooling.                                                 |
 | [Port](#external-dependencies-and-borders)                | A trait boundary used by hexagonal architecture so application logic can depend on capabilities without depending on filesystem, GitHub, MCP, or wall-clock implementations. |
 | [Evidence bundle](#evidence-bundle-validation)            | A Holmes envelope that names required law evidence artifacts and their provenance.                                                                                           |
@@ -325,16 +333,21 @@ checks, crates.io packaging guards, and legacy JavaScript preflight bridging.
 
 ### Non-Compiler JavaScript Packages
 
-The pnpm workspace still includes `packages/*`, example fixtures, docs site,
-and the website. The retained packages are not compiler authority.
+The pnpm workspace still includes `packages/*`, example fixtures, and the docs
+site. The retained packages are not compiler authority.
 
 `@wesley/holmes` is a legacy compatibility assurance package. It provides
 Holmes, Watson, Moriarty, report, counterfactual, and PR-comment tooling while
 the Rust Holmes foundation grows behind a stronger boundary.
 
-`@wesley/host-browser`, `@wesley/host-bun`, and `@wesley/host-deno` are host
-smoke experiments. Their code intentionally contains small local parser/hash
-adapters and does not depend on the retired JavaScript compiler core.
+The former `@wesley/host-browser`, `@wesley/host-bun`, and
+`@wesley/host-deno` host smoke experiments are deleted. Browser, Bun, and Deno
+execution are not supported Wesley release surfaces.
+
+The former `wesley-website` Vite/React product site and playground shell are
+deleted. Wesley documentation remains under `docs/` and `docs/site`; product
+websites and playgrounds must be owned outside this repo unless explicitly
+slated as future Wesley release work.
 
 ### Package Relationship Diagram
 
@@ -920,21 +933,20 @@ scalar semantics, variant input law, mutation footprint law, and channel law.
 Profiles `release` and `ci-release` treat categories as required; `local` is a
 lighter posture.
 
-### Golden Path 6: Runtime Optic Artifact
+### Golden Path 6: Operation Artifact
 
-Runtime optics are not the ordinary CLI front door in this checkout, but they
+Operation artifacts are not the ordinary CLI front door in this checkout, but they
 are an important core API. They compile a GraphQL operation into an artifact
 that an external target can inspect, evaluate, reject, witness, or replay.
 
 #### Why The API Exists
 
-The runtime optic API supports the long-term bounded-autonomy direction. An
-agent or application can declare a precise GraphQL operation shape. Wesley
-compiles that declaration into a stable artifact. An external target such as
-Echo owns runtime policy, authority vocabulary, state checks, execution, and
-enforcement.
+The operation artifact API supports downstream targets that need a precise
+GraphQL operation shape. Wesley compiles that declaration into a stable
+artifact. External targets own runtime policy, authority vocabulary, state
+checks, execution, and enforcement.
 
-#### Anatomy Of An Optic Artifact
+#### Anatomy Of An Operation Artifact
 
 ```json
 {
@@ -969,7 +981,7 @@ enforcement.
 
 #### Validation Before Artifact Identity
 
-The runtime optic compiler rejects unsupported executable features before it
+The operation artifact compiler rejects unsupported executable features before it
 computes identities. It rejects multiple top-level fields, unknown selected
 fields, cyclic fragments, impossible fragment type conditions, duplicate
 arguments, invalid input object literals, invalid subselection shapes,
@@ -1417,9 +1429,9 @@ logic begins where those libraries return structured values or bytes.
 ### JavaScript Dependencies
 
 The root package uses pnpm with Node `>=22.0.0`. Retained JavaScript package
-tests rely on Node's `node --test`, `vitest`, `commander`, and browser tooling.
-These dependencies support assurance, smoke, and docs workflows rather than the
-core compiler authority.
+tests rely on Node's `node --test` and package-local tooling. These
+dependencies support assurance, smoke, and docs workflows rather than the core
+compiler authority.
 
 ### Operating System Borders
 
@@ -1440,7 +1452,7 @@ artifact bytes as untrusted until validated.
 
 ### Compiler Evidence Without Authority Issuance
 
-The runtime optic domain model now stops at compiler-owned artifact,
+The operation artifact domain model now stops at compiler-owned artifact,
 requirement, registration descriptor, and law witness evidence. It deliberately
 does not define host-issued handles, grants, invocation presentations, tickets,
 basis budgets, or observer authority classes. Echo, Continuum, or another
@@ -1512,7 +1524,7 @@ cargo test --workspace
 ```
 
 The suite covers CLI commands, schema lowering, parser diagnostics, schema
-diffs, operation analysis, resilience policy, runtime optic artifacts, module
+diffs, operation analysis, resilience policy, operation artifacts, module
 capability registry behavior, Rust emission, TypeScript emission, shared
 LE-binary codec planning, Rust and TypeScript LE-binary codec emission, Law IR
 loading and binding, law diffing, Holmes architecture, Holmes evidence
@@ -1529,14 +1541,6 @@ The retained `@wesley/holmes` package test run passed:
 pnpm --filter @wesley/holmes test
 80 tests passed
 0 failed
-```
-
-The retained `@wesley/host-browser` package test run passed:
-
-```text
-pnpm --filter @wesley/host-browser test
-2 test files passed
-26 tests passed
 ```
 
 The first sandboxed pnpm attempts failed at package fetch time. After the
@@ -1676,10 +1680,9 @@ operators about what Wesley core can prove.
 
 ### Host And Integration Use Cases
 
-The host smoke packages demonstrate browser, Bun, and Deno compatibility
-surfaces. The runtime optic API demonstrates how a future host can admit
-bounded GraphQL operation artifacts under target-owned policy without letting
-Wesley issue runtime authority.
+Browser, Bun, and Deno compatibility probes are no longer retained in Wesley.
+Future host or runtime admission belongs in a downstream extension or sibling
+repo under target-owned policy, without letting Wesley issue runtime authority.
 
 ## Summary Of The System's Key Features And Notable Design Decisions
 
@@ -1740,9 +1743,9 @@ keep README, CHANGELOG, tags, and publishable crate manifests aligned.
 
 ### Host Package Fate
 
-The browser, Bun, and Deno host packages are classified as external host smoke
-experiments pending deletion or externalization. The exact deletion or
-externalization milestone is still a product decision.
+The browser, Bun, and Deno host packages are deleted from the active Wesley
+release surface. Reintroduce host-specific behavior only through an explicit
+downstream owner.
 
 ### Holmes Cutover
 
@@ -1797,7 +1800,7 @@ prove it.
 - `crates/wesley-core/src/domain/ir.rs`
 - `crates/wesley-core/src/domain/law.rs`
 - `crates/wesley-core/src/domain/operation.rs`
-- `crates/wesley-core/src/domain/optic.rs`
+- `crates/wesley-core/src/domain/operation_artifact.rs`
 - `crates/wesley-emit-rust/src/lib.rs`
 - `crates/wesley-emit-typescript/src/lib.rs`
 - `crates/wesley-emit-typescript/src/le_binary.rs`
@@ -1813,7 +1816,6 @@ prove it.
 cargo test --workspace -- --list
 cargo test --workspace
 pnpm --filter @wesley/holmes test
-pnpm --filter @wesley/host-browser test
 ```
 
 ### Third-Party Boundaries
@@ -1822,7 +1824,7 @@ The codebase uses `apollo-parser` for GraphQL parsing, `serde` and
 `serde_json` for serialization, `sha2` and `hex` for hashing, `indexmap` for
 deterministic map behavior, `yaml-rust2` for YAML loading, `ninelives` for
 resilience policy, Node's built-in test runner for JS package tests, and
-Vitest for browser host tests.
+Vitest for retained website tests.
 
 No external web references were used to write this teardown; it is anchored to
 the repository files and local command outputs listed above.

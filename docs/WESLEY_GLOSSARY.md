@@ -35,7 +35,7 @@ It includes:
 - Holmes and Watson verification and witness tooling
 - Moriarty judgment and prediction tooling
 - BLADE certification and release-readiness orchestration
-- generic CLI, hosts, and shared plumbing
+- generic CLI and shared plumbing
 
 ### 0a. Package Families Inside The Base Platform
 
@@ -61,16 +61,9 @@ or product-specific generators should live with their owning module repos.
 
 #### Hosts
 
-Legacy compatibility packages that provide environment-specific runtime services
-for historical JavaScript Wesley surfaces. They are not the Rust-native product
-front door.
-
-Examples:
-
-- `@wesley/host-node`
-- `@wesley/host-browser`
-- `@wesley/host-deno`
-- `@wesley/host-bun`
+Legacy compatibility packages that provided environment-specific runtime
+services for historical JavaScript Wesley surfaces. They are retired and are not
+the Rust-native product front door.
 
 #### Runtime Support
 
@@ -458,8 +451,7 @@ The environment that runs Wesley or hosts its generated outputs.
 
 Examples:
 
-- the local Node CLI
-- a browser host
+- the local native CLI
 - a repo-local workspace bootstrap flow
 
 ### Product Workspace

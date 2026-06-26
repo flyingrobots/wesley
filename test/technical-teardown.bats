@@ -10,3 +10,17 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "first matching finding" docs/TECHNICAL_TEARDOWN.md
   assert_failure
 }
+
+@test "technical teardown is release-scoped, not architecture authority" {
+  run grep -F "Status: release-scoped orientation snapshot." docs/TECHNICAL_TEARDOWN.md
+  assert_success
+
+  run grep -F "not the authoritative architecture map" docs/TECHNICAL_TEARDOWN.md
+  assert_success
+
+  run grep -F "[ARCHITECTURE.md](./ARCHITECTURE.md)" docs/TECHNICAL_TEARDOWN.md
+  assert_success
+
+  run grep -F "[BEARING.md](./BEARING.md)" docs/TECHNICAL_TEARDOWN.md
+  assert_success
+}

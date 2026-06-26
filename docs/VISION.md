@@ -5,11 +5,9 @@
 Wesley is a schema-first compiler for trustworthy change where contract truth
 and implementation evidence are unified.
 
-The long-term north star is
-[bounded, lawful autonomy](./NORTHSTAR.md): agents and applications declare the
-GraphQL optic they need, Wesley compiles that declaration into a typed and
-inspectable contract artifact, and runtimes such as Echo admit, obstruct,
-schedule, witness, and replay it under explicit law.
+The long-term north star is [domain-free structure](./NORTHSTAR.md): Wesley
+extracts GraphQL structure into deterministic IR and evidence, then external
+extensions decide what that structure means in their domains.
 
 ```mermaid
 mindmap
@@ -25,7 +23,7 @@ mindmap
         Platform Inevitability
             Bit-Exact Codecs
             Cross-Language Envelopes
-            Continuum Alignment
+            Extension Alignment
         Local-First Governance
             Fast Developer Loop
             Governed Judgment
@@ -34,10 +32,10 @@ mindmap
             JSONL Manifests
             Shared Ontology
             Codable Policies
-        Bounded Lawful Autonomy
-            GraphQL Declared Optics
-            Host Policy Admission
-            Law Satisfaction Witnesses
+        Domain-Free Structure
+            GraphQL Declared Operations
+            Extension-Owned Semantics
+            Evidence-Carrying Artifacts
 ```
 
 ## Core Tenets
@@ -57,8 +55,8 @@ lawful before it is committed.
 ### 3. Bit-Exact Inevitability
 
 Cross-language interoperability is an inherent property of the compiler. Wesley
-generates bit-exact codecs and IR envelopes to ensure that Echo, `git-warp`,
-and `warp-ttd` compute the same final state given the same binary contract.
+generates bit-exact codecs and IR envelopes so consumers can share one
+deterministic contract without making any one consumer the core authority.
 
 ### 4. Governed Judgment
 
@@ -72,22 +70,20 @@ The compiler is an industrial instrument for the local workstation. Contract
 verification happens in the developer's inner loop, ensuring that "Trustworthy
 Change" is a first-class citizen of every cycle.
 
-### 6. Bounded Lawful Autonomy
+### 6. Domain-Free Extension
 
-Wesley should empower agents without granting ambient authority. An agent can
-propose a bounded GraphQL operation that names its basis, aperture, footprint,
-variables, result shape, support obligations, and law hooks. Wesley compiles the
-claim; host policy and runtimes decide whether it is admitted, obstructed, or
-left unknown.
+Wesley should empower extensions without granting ambient authority. A consumer
+can provide GraphQL SDL, operation documents, and directives; Wesley compiles
+structure and evidence. External targets decide admission, execution, and
+runtime policy.
 
 ### 7. Law Satisfaction Witnesses
 
-Law is not real just because it is declared. Wesley must preserve and compile
-law claims so a runtime or verifier can emit evidence-bearing witnesses that a
-law was satisfied, obstructed, or unknown under a specific basis and support
-set.
+Law is not real just because it is declared. Wesley preserves and compiles law
+claims so an external runtime or verifier can emit evidence-bearing witnesses
+under its own policy.
 
 ---
 
-**The goal is not more code generation. It is the geometric lawfulness of the
-shared contract as a professional application bedrock.**
+**The goal is not more code generation. It is one deterministic structural
+contract that many domain owners can safely extend.**

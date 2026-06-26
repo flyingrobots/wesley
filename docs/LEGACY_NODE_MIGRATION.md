@@ -67,16 +67,16 @@ Every legacy Node surface gets one disposition:
 
 ## Package Inventory
 
-| Package                         | Final disposition      | Notes                                                                                   |
-| ------------------------------- | ---------------------- | --------------------------------------------------------------------------------------- |
-| `packages/wesley-core/`         | Deleted                | Generic compiler authority now lives in `crates/wesley-core`.                           |
-| `packages/wesley-cli/`          | Deleted                | Native `crates/wesley-cli` is the product body.                                         |
-| `packages/wesley-host-node/`    | Deleted                | The old Node wrapper is gone; product work uses the Rust binary.                        |
-| `packages/wesley-runtime-node/` | Deleted                | Retained ledger/module helpers were copied into Holmes support modules before deletion. |
-| `packages/wesley-holmes/`       | Retained as assurance  | Holmes is not compiler authority and must stay self-contained.                          |
-| `packages/wesley-host-browser/` | Retained as experiment | Browser smoke adapter has no dependency on deleted JS core/runtime packages.            |
-| `packages/wesley-host-bun/`     | Retained as experiment | Bun smoke adapter has no dependency on deleted JS core/runtime packages.                |
-| `packages/wesley-host-deno/`    | Retained as experiment | Deno smoke adapter has no dependency on deleted JS core/runtime packages.               |
+| Package                         | Final disposition     | Notes                                                                                   |
+| ------------------------------- | --------------------- | --------------------------------------------------------------------------------------- |
+| `packages/wesley-core/`         | Deleted               | Generic compiler authority now lives in `crates/wesley-core`.                           |
+| `packages/wesley-cli/`          | Deleted               | Native `crates/wesley-cli` is the product body.                                         |
+| `packages/wesley-host-node/`    | Deleted               | The old Node wrapper is gone; product work uses the Rust binary.                        |
+| `packages/wesley-runtime-node/` | Deleted               | Retained ledger/module helpers were copied into Holmes support modules before deletion. |
+| `packages/wesley-holmes/`       | Retained as assurance | Holmes is not compiler authority and must stay self-contained.                          |
+| `packages/wesley-host-browser/` | Deleted               | Browser execution is not a supported Wesley release surface.                            |
+| `packages/wesley-host-bun/`     | Deleted               | Bun execution is not a supported Wesley release surface.                                |
+| `packages/wesley-host-deno/`    | Deleted               | Deno execution is not a supported Wesley release surface.                               |
 
 ## Retired Package Inventory
 
@@ -99,11 +99,10 @@ Every legacy Node surface gets one disposition:
 2. Keep TypeScript in the Rust projection crate and move any future Zod work to
    an external target boundary.
 3. Keep Holmes self-contained until its Rust redesign is ready.
-4. Keep browser/Bun/Deno packages explicitly labeled as host experiments while
-   they remain useful smoke surfaces.
+4. Reintroduce browser/Bun/Deno behavior only through an explicit downstream
+   owner or sibling repo.
 5. Remove root `package.json`, `pnpm-workspace.yaml`, and `pnpm-lock.yaml` only
-   after Holmes, host experiments, website tooling, and JavaScript docs/test
-   helpers are gone or externalized.
+   after Holmes and JavaScript docs/test helpers are gone or externalized.
 
 ## Non-Goals
 

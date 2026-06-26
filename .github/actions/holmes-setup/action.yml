@@ -35,7 +35,11 @@ runs:
 
     - name: Install workspace
       shell: bash
-      run: pnpm install --no-frozen-lockfile
+      run: pnpm install --frozen-lockfile
+
+    - name: Verify lockfile unchanged
+      shell: bash
+      run: git diff --exit-code -- pnpm-lock.yaml
 
     - name: Ensure bundle directory
       shell: bash

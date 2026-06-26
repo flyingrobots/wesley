@@ -14,16 +14,16 @@ release: future
   surface without letting it invent schema meaning, browse outside its aperture,
   or touch undeclared coordinates.
 - Agent: I can ask for schema truth, footprint truth, and repository aperture
-  truth before I act, then explain exactly why a proposed optic is admissible
-  or rejected.
+  truth before I act, then explain exactly why a proposed operation is
+  admissible or rejected.
 
 ## Hill
 
-An agent connected to a Wesley+Graft MCP server can construct a legal optic:
-Wesley proves what a GraphQL operation means and whether its declared footprint
-matches its actual schema-coordinate selections; Graft proves what repository
-context the agent is allowed to see and touch; the MCP coordinator admits only
-the intersection of those two claims.
+An agent connected to a Wesley+Graft MCP server can construct an admissible
+operation proposal: Wesley proves the GraphQL operation structure and whether
+its declared footprint matches its actual schema-coordinate selections; Graft
+proves what repository context the agent is allowed to see and touch; the MCP
+coordinator admits only the intersection of those two claims.
 
 ## Boundary Rule
 
@@ -37,7 +37,8 @@ Agents own proposals, never authority.
 ```
 
 That split keeps the product goal sharp. The server can help an agent build a
-legal optic, but it cannot make an illegal operation legal by presentation.
+admissible operation proposal, but it cannot make an illegal operation legal by
+presentation.
 
 ## Why This Exists
 
@@ -54,7 +55,7 @@ not merely ask for files and then improvise. It should ask:
 1. What does the schema say?
 2. What does this operation actually touch?
 3. What does the policy aperture allow me to inspect or modify?
-4. Is the proposed optic inside both the declared GraphQL footprint and the
+4. Is the proposed operation inside both the declared GraphQL footprint and the
    allowed repository aperture?
 
 If any answer fails, the server should return a refusal before world state is
@@ -208,7 +209,7 @@ Output:
 The concrete Graft API can differ. Wesley's requirement is that aperture
 answers are explicit, inspectable, and not inferred from agent preference.
 
-### `optic.admit`
+### `operation.admit`
 
 Input:
 
@@ -234,8 +235,8 @@ Output:
 }
 ```
 
-`optic.admit` is the composition point. It is allowed to call Wesley and Graft;
-it is not allowed to replace either.
+`operation.admit` is the composition point. It is allowed to call Wesley and
+Graft; it is not allowed to replace either.
 
 ## Admission Flow
 
@@ -271,7 +272,7 @@ Refusals should be data, not prose-only diagnostics.
 
 ## Evidence Shape
 
-Every admitted optic should carry:
+Every admitted operation proposal should carry:
 
 - Wesley core version
 - MCP server version
@@ -296,7 +297,7 @@ The initial server should be local-first.
 
 - Do not add network fetches to resolve schemas or policy by default.
 - Do not load untrusted module code as part of footprint checking.
-- Do not grant write tools until `optic.admit` returns an admitted verdict.
+- Do not grant write tools until `operation.admit` returns an admitted verdict.
 - Do not let prompts override policy.
 - Do not store hidden state that changes admission outcomes without appearing
   in the evidence.
@@ -312,7 +313,7 @@ and inspectable.
 3. Define a Graft adapter trait in the MCP layer, not in `wesley-core`.
 4. Implement a read-only `wesley.schema.describe` and `wesley.footprint.check`
    server.
-5. Add Graft aperture calls and `optic.admit`.
+5. Add Graft aperture calls and `operation.admit`.
 6. Add write-capable tools only after admission evidence is mandatory.
 7. Add integration fixtures that prove dishonest footprints and denied paths
    are refused before any write tool can run.
@@ -332,7 +333,7 @@ and inspectable.
   or always errors for MCP admission?
 - How should schema sources be referenced when the schema itself is inside a
   Graft aperture?
-- Should `optic.admit` return a reusable capability token, or should every
+- Should `operation.admit` return a reusable capability token, or should every
   write call re-check admission evidence?
 - How much of the MCP protocol should live in a standalone `wesley-mcp` crate
   versus a binary under `crates/wesley-cli`?

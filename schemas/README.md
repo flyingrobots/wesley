@@ -18,6 +18,13 @@ This directory hosts machine-readable schemas that underpin Wesley’s generator
 > [!note]
 > When a schema evolves, update the corresponding validation logic/tests and regenerate fixtures so downstream consumers stay aligned.
 
+Run `cargo test -p wesley-core --test generated_json_artifacts` to validate the
+representative generated JSON artifact families against the schemas in this
+directory. The full `cargo xtask preflight` gate runs those tests through
+`cargo test --workspace`, and the Rust product CI workflow watches `schemas/`,
+`test/fixtures/ir-parity/`, and `test/fixtures/weslaw/` for schema/fixture
+drift.
+
 The `weslaw` and contract bundle schema artifacts are checked in as canonical
 JSON: object keys are lexicographically sorted and the files contain no
 formatting whitespace. That byte form is for deterministic publication and

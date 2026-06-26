@@ -11,14 +11,13 @@ const fixtureSha = process.env.GITHUB_SHA || 'abcdef1234567890abcdef1234567890ab
 const timestamp = '2026-01-01T00:00:00.000Z';
 
 const scores = {
-  version: '1.0.0',
+  version: '2.0.0',
+  commit: fixtureSha,
+  timestamp,
   scores: {
     scs: 0.95,
     tci: 0.9,
     mri: 0.1
-  },
-  readiness: {
-    verdict: 'ELEMENTARY'
   },
   breakdown: {
     scs: {
@@ -31,7 +30,7 @@ const scores = {
       unit_constraints: { score: 1, covered: 1, total: 1 },
       unit_rls: { score: 1, covered: 1, total: 1 },
       integration_relations: { score: 1, covered: 1, total: 1 },
-      e2e_ops: { score: 0.9, covered: 9, total: 10, note: 'fixture' }
+      e2e_ops: { score: 0.9, covered: 9, total: 10 }
     },
     mri: {
       drops: { score: 0, points: 0, count: 0 },
@@ -40,6 +39,18 @@ const scores = {
       non_concurrent_indexes: { score: 0, points: 0, count: 0 },
       totalPoints: 1
     }
+  },
+  readiness: {
+    ready: true,
+    verdict: 'ELEMENTARY',
+    scs: { score: 0.95, threshold: 0.8, pass: true },
+    tci: { score: 0.9, threshold: 0.8, pass: true },
+    mri: { score: 0.1, threshold: 0.2, pass: true }
+  },
+  metadata: {
+    tables: 1,
+    migrationSteps: 1,
+    testsRun: 1
   }
 };
 

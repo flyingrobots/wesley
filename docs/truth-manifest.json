@@ -32,7 +32,12 @@
       "owner": "@flyingrobots"
     },
     {
-      "path": "docs/DIRECTIVES.md",
+      "path": "docs/reference/cli.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/reference/directives.md",
       "status": "current",
       "owner": "@flyingrobots"
     },
@@ -68,16 +73,6 @@
     },
     {
       "path": "docs/architecture/holmes-counterfactuals.md",
-      "status": "current",
-      "owner": "@flyingrobots"
-    },
-    {
-      "path": "docs/architecture/continuum-minimum-shared-contract-surface.md",
-      "status": "current",
-      "owner": "@flyingrobots"
-    },
-    {
-      "path": "docs/architecture/continuum-wesley-role.md",
       "status": "current",
       "owner": "@flyingrobots"
     },

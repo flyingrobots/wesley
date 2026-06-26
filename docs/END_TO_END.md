@@ -201,7 +201,9 @@ authority.
 1. The **Rust workspace** is the current compiler center. New compiler truth
    belongs in `crates/wesley-core` and the native `wesley` CLI.
 2. The **JavaScript workspace** is explicitly non-compiler: Holmes assurance,
-   website/docs tooling, and small browser/Bun/Deno host smoke experiments.
+   docs tooling, and repository automation. The old product website/playground
+   surface and the browser/Bun/Deno host experiments are retired from the
+   Wesley release surface.
 
 ```mermaid
 flowchart LR
@@ -215,8 +217,6 @@ flowchart LR
 
     subgraph NonCompilerJS["Non-compiler JavaScript surfaces"]
         Holmes[packages/wesley-holmes]
-        Hosts[packages/wesley-host-browser/bun/deno]
-        Website[wesley-website]
         Tooling[scripts]
     end
 
@@ -226,8 +226,6 @@ flowchart LR
     Xtask --> Core
     Xtask --> Cli
     Holmes --> Tooling
-    Hosts --> Tooling
-    Website --> Tooling
 
     NonCompilerJS -. evidence and docs only .-> CurrentCenter
 ```
@@ -871,31 +869,26 @@ This is why Wesley's domain-empty boundary matters. A reusable compiler can
 serve many consumers. A compiler that owns every consumer's runtime becomes
 unreviewable and brittle.
 
-## Runtime Optic North Star
+## Operation Artifact Boundary
 
 The long-term direction is bounded, lawful autonomy.
 
-In that target shape, an agent or application declares a GraphQL operation that
-names the reading or rewrite it needs. Wesley compiles the operation into a
-typed, inspectable contract artifact. A host or runtime checks authority,
-support, budget, and law. The runtime admits, obstructs, schedules, witnesses,
-or rejects the request.
+In that target shape, an application declares a GraphQL operation that names
+the structure it needs. Wesley compiles the operation into a typed, inspectable
+contract artifact. A host or runtime may consume that artifact, but authority,
+support, budget, law, admission, scheduling, and witness semantics remain
+target-owned.
 
 ```mermaid
 flowchart TD
     Agent[Agent or application] --> Operation[GraphQL operation]
-    Operation --> Wesley[Wesley compiles optic contract]
-    Wesley --> Artifact[Optic artifact]
-    Wesley --> Requirements[Admission requirements bytes and digest]
-    Artifact --> Host[Host policy]
-    Requirements --> Host
-    Host --> Decision{Admit?}
-    Decision -->|yes| Runtime[Runtime such as Echo]
-    Decision -->|no| Obstruction[Obstruction reason]
-    Runtime --> Instrument[Instrument actual access]
-    Instrument --> Compare[Compare actual access to declared requirements]
-    Compare --> Receipt[Reading, receipt, or law witness]
-    Obstruction --> Receipt
+    Operation --> Wesley[Wesley compiles operation artifact]
+    Wesley --> Artifact[Operation artifact]
+    Wesley --> Requirements[Requirements bytes and digest]
+    Artifact --> Target[External target]
+    Requirements --> Target
+    Target --> Policy[Target-owned policy]
+    Policy --> Evidence[Target-owned evidence]
 ```
 
 Wesley's role in that story is powerful but bounded:
@@ -920,9 +913,6 @@ If you open the repository today, the important paths are:
 | `crates/wesley-emit-typescript/` | TypeScript projection crate.                                                  |
 | `xtask/`                         | Rust repository automation, docs checks, preflight, release checks.           |
 | `packages/wesley-holmes/`        | Self-contained assurance, evidence, verification, and judgment tooling.       |
-| `packages/wesley-host-browser/`  | Browser host smoke experiment outside compiler authority.                     |
-| `packages/wesley-host-bun/`      | Bun host smoke experiment outside compiler authority.                         |
-| `packages/wesley-host-deno/`     | Deno host smoke experiment outside compiler authority.                        |
 | `docs/`                          | Architecture, method, design packets, release packets, and current direction. |
 | `test/fixtures/`                 | GraphQL fixtures, Rust L1 golden files, and parity inputs.                    |
 | `scripts/`                       | Fixture, docs, CI, and repository support scripts.                            |
@@ -944,9 +934,6 @@ flowchart TB
 
         subgraph JS["Non-compiler JavaScript"]
             Holmes["@wesley/holmes"]
-            HostBrowser["@wesley/host-browser"]
-            HostBun["@wesley/host-bun"]
-            HostDeno["@wesley/host-deno"]
         end
     end
 
@@ -1033,7 +1020,7 @@ Today, Wesley can:
 - emit TypeScript declarations and operation bindings
 - write deterministic native emit metadata sidecars
 - keep JavaScript outside compiler authority except for Holmes assurance,
-  website/docs tooling, and host smoke experiments
+  docs tooling, and repository automation
 - model external module targets through Rust capability descriptors, ABI
   compatibility reports, stateless runtime policy, and hermetic fixture checks
 - run docs, lint, package, Rust, fixture, and preflight checks

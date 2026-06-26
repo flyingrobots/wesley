@@ -3,57 +3,7 @@
 load 'bats-plugins/bats-support/load'
 load 'bats-plugins/bats-assert/load'
 
-yaml_job_block() {
-  local job_name="$1"
-  local workflow="${2:-.github/workflows/runtime-smokes.yml}"
-  awk -v job="$job_name" '
-    $0 == "  " job ":" { in_block = 1 }
-    in_block && $0 ~ /^  [A-Za-z0-9_-]+:/ && $0 != "  " job ":" { exit }
-    in_block { print }
-  ' "$workflow"
-}
-
-@test "runtime-smokes uses composite action to install bats (no raw apt-get)" {
-  run bash -lc "grep -n 'apt-get install -y bats jq' .github/workflows/runtime-smokes.yml | wc -l || true"
-  assert_success
-  [ "$output" -eq 0 ]
-
-  run bash -lc "grep -F 'uses: ./.github/actions/install-bats' .github/workflows/runtime-smokes.yml | wc -l || true"
-  assert_success
-  # Only the retained Bats-backed Deno runtime smoke should need this setup.
-  [ "$output" -eq 1 ]
-}
-
-@test "runtime-smokes Bun job uses official Bun setup without Bats" {
-  run yaml_job_block bun-smoke
-  assert_success
-  [[ "$output" != *"uses: ./.github/actions/install-bats"* ]]
-  [[ "$output" == *"oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6"* ]]
-  [[ "$output" == *"bun run scripts/host_contracts_bun.mjs"* ]]
-}
-
-@test "workflow job block helper stops before the next job" {
-  tmp_workflow="$(mktemp -t wesley-runtime-smoke-workflow-XXXXXX.yml)"
-  cat >"$tmp_workflow" <<'YAML'
-jobs:
-  bun-smoke:
-    steps:
-      - uses: oven-sh/setup-bun@example
-      - run: bun run scripts/host_contracts_bun.mjs
-  later-bats-job:
-    steps:
-      - uses: ./.github/actions/install-bats
-YAML
-
-  run yaml_job_block bun-smoke "$tmp_workflow"
-  rm -f "$tmp_workflow"
-  assert_success
-  [[ "$output" == *"bun run scripts/host_contracts_bun.mjs"* ]]
-  [[ "$output" != *"later-bats-job"* ]]
-  [[ "$output" != *"uses: ./.github/actions/install-bats"* ]]
-}
-
-@test "CI names distinguish Rust product checks from external host experiments" {
+@test "CI names distinguish Rust product checks from retired host experiments" {
   run bash -lc "grep -F 'name: Rust Product - Native CLI' .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
@@ -62,33 +12,9 @@ YAML
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'name: External Host Experiments - Runtime Smokes' .github/workflows/runtime-smokes.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'External host experiment - Deno smoke' .github/workflows/runtime-smokes.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'External host experiment - Bun smoke' .github/workflows/runtime-smokes.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'Node host smoke' .github/workflows/runtime-smokes.yml | wc -l || true"
+  run bash -lc "find .github/workflows -maxdepth 1 -type f -print | xargs grep -l 'External Host Experiment' | wc -l"
   assert_success
   [ "$output" -eq 0 ]
-
-  run bash -lc "grep -F 'name: External Host Experiment - Browser Smoke' .github/workflows/browser-smoke.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'name: External Host Experiment - pkg-host-bun' .github/workflows/pkg-host-bun.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'name: External Host Experiment - pkg-host-deno' .github/workflows/pkg-host-deno.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
 }
 
 @test "general CI uses native CLI for product schema smoke" {
@@ -122,7 +48,11 @@ YAML
   assert_success
   [ "$output" -eq 2 ]
 
-  run bash -lc "grep -F \"'wesley-website/package.json'\" .github/workflows/rust-native.yml | wc -l"
+  run bash -lc "grep -F \"'schemas/**'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F \"'test/fixtures/weslaw/**'\" .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 2 ]
 
@@ -159,6 +89,30 @@ YAML
   assert_success
 }
 
+@test "workflow pnpm installs are frozen and verify lockfile drift" {
+  run bash -lc "grep -R -n -- '--no-frozen-lockfile' .github/workflows .github/actions || true"
+  assert_success
+  [ -z "$output" ]
+
+  run bash -lc "grep -R -n 'pnpm install' .github/workflows .github/actions | grep -v -- '--frozen-lockfile' || true"
+  assert_success
+  [ -z "$output" ]
+
+  run bash -lc '
+    set -euo pipefail
+    missing=()
+    while IFS= read -r file; do
+      grep -Fq "git diff --exit-code -- pnpm-lock.yaml" "$file" || missing+=("$file")
+    done < <(grep -R -l "pnpm install --frozen-lockfile" .github/workflows .github/actions)
+    if [ "${#missing[@]}" -gt 0 ]; then
+      printf "%s\n" "${missing[@]}"
+      exit 1
+    fi
+  '
+  assert_success
+  [ -z "$output" ]
+}
+
 @test "deleted legacy workflow files do not return" {
   run test ! -e .github/workflows/cli-quick.yml
   assert_success
@@ -174,6 +128,90 @@ YAML
 
   run test ! -e scripts/host_contracts_node.mjs
   assert_success
+}
+
+@test "retired host experiment surfaces do not return" {
+  run test ! -e .github/workflows/browser-smoke.yml
+  assert_success
+
+  run test ! -e .github/workflows/pkg-host-bun.yml
+  assert_success
+
+  run test ! -e .github/workflows/pkg-host-deno.yml
+  assert_success
+
+  run test ! -e .github/workflows/runtime-smokes.yml
+  assert_success
+
+  run test ! -e packages/wesley-host-browser/package.json
+  assert_success
+
+  run test ! -e packages/wesley-host-bun/package.json
+  assert_success
+
+  run test ! -e packages/wesley-host-deno/package.json
+  assert_success
+
+  run test ! -e scripts/host_contracts_browser.mjs
+  assert_success
+
+  run test ! -e scripts/host_contracts_bun.mjs
+  assert_success
+
+  run test ! -e scripts/host_contracts_deno.mjs
+  assert_success
+}
+
+@test "retired website and playground surfaces do not return" {
+  run test ! -e .github/workflows/wesley-website.yml
+  assert_success
+
+  run test ! -e wesley-website/package.json
+  assert_success
+
+  run test ! -e docs/plans/james-website-integration
+  assert_success
+
+  run bash -lc "grep -F \"'wesley-website/package.json'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -F \"wesley-website\" pnpm-workspace.yaml package.json | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+}
+
+@test "general CI does not call retired host experiment Bats suites" {
+  run bash -lc "grep -E 'ci-browser-smoke|ci-pkg-host-bun|deno-host-webcrypto-guard|browser-contracts' .github/workflows/ci.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+}
+
+@test "repo Bats tests use vendored plugins without runtime fetches" {
+  run test -f test/vendor/bats-plugins/bats-support/load.bash
+  assert_success
+
+  run test -f test/vendor/bats-plugins/bats-assert/load.bash
+  assert_success
+
+  run test -f test/vendor/bats-plugins/bats-file/load.bash
+  assert_success
+
+  run bash -lc "grep -F 'BATS_LIB_PATH: test/vendor' .github/workflows/ci.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'scripts/setup-bats-plugins.sh' .github/workflows/ci.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -E 'git clone|curl --proto|https://github.com/bats-core' scripts/setup-bats-plugins.sh scripts/dev/setup-bats-plugins.sh | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -F 'BATS_LIB_PATH=test/vendor' docs/ci.md docs/guides/cli-tests.md test/README.md | wc -l"
+  assert_success
+  [ "$output" -ge 3 ]
 }
 
 @test "cert-shipme anchors and paginates bot comments" {
@@ -196,6 +234,22 @@ YAML
   run bash -lc "grep -F 'actions: read' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F \"github.actor != 'dependabot[bot]'\" .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'github.rest.issues.updateComment' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'github.rest.issues.createComment' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'comment_id: botComment.id' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
 
   run bash -lc "grep -F 'Run HOLMES investigation' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -258,22 +312,19 @@ YAML
   [ "$output" -ge 1 ]
 }
 
-@test "progress workflow keeps GITHUB_TOKEN read-only and uses opt-in PR token" {
-  run bash -lc "grep -F 'contents: read' .github/workflows/progress.yml | wc -l"
+@test "retired progress workflow and README updater do not return" {
+  run test ! -e .github/workflows/progress.yml
   assert_success
-  [ "$output" -ge 1 ]
 
-  run bash -lc "grep -F 'contents: write' .github/workflows/progress.yml | wc -l || true"
+  run test ! -e scripts/compute-progress.mjs
+  assert_success
+
+  run test ! -e meta/progress.config.json
+  assert_success
+
+  run bash -lc "grep -E 'BEGIN:OVERALL_STATUS|BEGIN:PACKAGE_MATRIX' README.md | wc -l"
   assert_success
   [ "$output" -eq 0 ]
-
-  run bash -lc "grep -F 'PROGRESS_PR_TOKEN' .github/workflows/progress.yml | wc -l"
-  assert_success
-  [ "$output" -ge 1 ]
-
-  run bash -lc "grep -F 'if:' .github/workflows/progress.yml | grep -F 'env.PROGRESS_PR_TOKEN' | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
 }
 
 @test "workflows do not reference secrets directly in if conditionals" {
@@ -315,7 +366,7 @@ YAML
 
 @test "shipme certificate fixture prepares PASS realm and exact evidence" {
   tmp_dir="$(mktemp -d -t wesley-shipme-fixture-XXXXXX)"
-  run bash -lc "cd '$tmp_dir' && node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
+  run bash -lc "cd '$tmp_dir' && node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"version\": \"2.0.0\"' .wesley-cache/scores.json && grep -F '\"commit\": \"abcdef1234567890abcdef1234567890abcdef12\"' .wesley-cache/scores.json && grep -F '\"metadata\"' .wesley-cache/scores.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
   rm -rf "$tmp_dir"
   assert_success
 }
@@ -362,6 +413,17 @@ YAML
   run bash -lc "grep -F 'release-draft-state.txt' .github/workflows/release-crates.yml | grep -v '\${RUNNER_TEMP}'"
   [ "$status" -eq 1 ]
   [ -z "$output" ]
+}
+
+@test "pull request template preserves rollback metadata" {
+  run grep -F '## Backout' .github/pull_request_template.md
+  assert_success
+
+  run grep -F 'How to revert safely; follow-up cleanup if rollback happens.' .github/pull_request_template.md
+  assert_success
+
+  run grep -F 'Merge commit only; no rebase.' .github/pull_request_template.md
+  assert_success
 }
 
 @test "release crates workflow checks version milestones and labels" {
@@ -432,6 +494,14 @@ YAML
   [ "$output" -ge 2 ]
 
   run bash -lc "grep -F '<!-- HOLMES_SUITE_COMMENT -->' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'github.paginate(github.rest.issues.listComments' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'per_page: 100' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 

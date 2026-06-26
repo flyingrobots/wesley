@@ -1510,11 +1510,10 @@ fn release_issue_queries(tag: &str, version: &str, repo: &str) -> Vec<Vec<String
 }
 
 fn release_issue_query_specs(tag: &str, version: &str, _repo: &str) -> Vec<ReleaseIssueQuery> {
-    let release_lane = format!("lane:{tag}");
     vec![
         ReleaseIssueQuery {
-            args: release_issue_selector_query("--label", &release_lane),
-            source: format!("release lane `{release_lane}`"),
+            args: release_issue_selector_query("--label", tag),
+            source: format!("release label `{tag}`"),
             ignore_missing_selector: true,
         },
         ReleaseIssueQuery {
@@ -1785,7 +1784,6 @@ fn version_lane_is_prior(lane: &str, current: &Version) -> bool {
 
 fn version_from_lane_name(lane: &str) -> Option<Version> {
     let lane = lane.trim();
-    let lane = lane.strip_prefix("lane:").unwrap_or(lane);
     let version = lane.strip_prefix('v').unwrap_or(lane);
     let parsed = Version::parse(version).ok()?;
     if parsed.build.is_empty() {
@@ -3011,7 +3009,7 @@ mod tests {
                     "--state",
                     "open",
                     "--label",
-                    "lane:v1.2.3",
+                    "v1.2.3",
                     "--json",
                     "number,title,url",
                 ],
@@ -3229,11 +3227,8 @@ mod tests {
                 "url": "https://github.com/flyingrobots/wesley/issues/1",
                 "labels": [
                     { "name": "triage:bad-code" },
-                    { "name": "lane:v0.0.4" },
                     { "name": "v0.0.4" },
-                    { "name": "lane:v0.0.5" },
                     { "name": "v0.0.5" },
-                    { "name": "lane:v0.0.4+build" },
                     { "name": "v0.0.4+build" }
                 ],
                 "milestone": null
@@ -3260,15 +3255,14 @@ mod tests {
         assert_eq!(matches.len(), 2);
         assert_eq!(
             matches[0].display,
-            "#1 Older label https://github.com/flyingrobots/wesley/issues/1 (prior version label `lane:v0.0.4`, label `v0.0.4`)"
+            "#1 Older label https://github.com/flyingrobots/wesley/issues/1 (prior version label `v0.0.4`)"
         );
         assert_eq!(
             matches[1].display,
             "#2 Older milestone https://github.com/flyingrobots/wesley/issues/2 (prior version milestone `0.0.3`)"
         );
-        assert!(version_from_lane_name("lane:v0.0.4").is_some());
+        assert!(version_from_lane_name("v0.0.4").is_some());
         assert!(version_from_lane_name("triage:bad-code").is_none());
-        assert!(version_from_lane_name("lane:v0.0.4+build").is_none());
         assert!(version_from_lane_name("v0.0.4+build").is_none());
     }
 
@@ -3609,7 +3603,7 @@ mod tests {
     fn file_path_rejects_shell_commands_with_paths() {
         assert!(looks_like_file_path("test/ci-workflows.bats"));
         assert!(!looks_like_file_path(
-            "BATS_LIB_PATH=test bats -t test/ci-workflows.bats"
+            "BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats"
         ));
     }
 

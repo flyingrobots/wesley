@@ -9,7 +9,7 @@ direction, and evidence.
 ## Rules
 
 - The queue lives in GitHub Issues. Unscheduled intake uses `triage:*` labels;
-  scheduled work uses concrete release lanes such as `lane:v0.2.0`.
+  scheduled work uses concrete release labels such as `v0.2.0`.
 - The full triage flow lives in
   [`docs/topics/contributing/triage.md`](../topics/contributing/triage.md).
 - Goalposts live in GitHub Milestones named `Goalpost: ...`.

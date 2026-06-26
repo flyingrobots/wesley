@@ -39,10 +39,10 @@ The repo is now split into three practical layers:
    law-assurance foundation for Holmes evidence, versioning, ports, and future
    reports. It consumes Wesley compiler artifacts and does not expose product
    CLI commands yet.
-4. **Non-compiler JavaScript surfaces**: `packages/` now contains Holmes
-   assurance tooling and browser/Bun/Deno host smoke experiments only. These
-   packages are not release authority, compiler authority, or product
-   entrypoints.
+4. **Non-compiler JavaScript surfaces**: `packages/` now contains the retained
+   Holmes assurance package only. Website/docs tooling and repository scripts
+   remain JavaScript support surfaces; browser/Bun/Deno host experiments are
+   retired from the Wesley release surface.
 
 The most recent boundary cleanup removed root-level footprint checking from
 Wesley. `wesley-core` now exposes generic operation selection and directive
@@ -69,9 +69,6 @@ flowchart LR
 
         subgraph JS["Non-compiler JavaScript"]
             Holmes["@wesley/holmes"]
-            Browser["@wesley/host-browser"]
-            Bun["@wesley/host-bun"]
-            Deno["@wesley/host-deno"]
         end
 
         Docs[docs/]
@@ -119,22 +116,21 @@ semantics.
 
 ## Repo Tour
 
-| Path                                                                     | Role                                                                                                                                                                     |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `crates/wesley-core/`                                                    | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, lists schema root operations, and analyzes operation documents.                 |
-| `crates/wesley-cli/`                                                     | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts.                                                            |
-| `crates/wesley-emit-codec/`                                               | Shared LE-binary codec planning crate consumed by Rust and TypeScript codec emitters.                                                                                    |
-| `crates/wesley-emit-rust/`                                               | Rust projection crate. Builds a Rust item/type AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations.                    |
-| `crates/wesley-emit-typescript/`                                         | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations. |
-| `crates/wesley-holmes/`                                                  | Rust Holmes law-assurance foundation. Defines pure domain models, deterministic ports/fakes, evidence bundle validation, artifact path resolution, and version diagnostics without exposing public CLI commands yet. |
-| `xtask/`                                                                 | Rust repository automation: docs checks, tests, native preflight, release check, and package hygiene bridge.                                                             |
-| `packages/wesley-holmes/`                                                | Existing JavaScript Holmes surface outside compiler authority while the Rust assurance foundation grows behind it.                                                        |
-| `packages/wesley-host-browser/`, `wesley-host-bun/`, `wesley-host-deno/` | External host smoke experiments pending deletion or externalization.                                                                                                     |
-| `schemas/`                                                               | JSON schemas and generic directive/schema assets used by tooling and tests.                                                                                              |
-| `test/fixtures/`                                                         | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas.                                                                                              |
-| `scripts/`                                                               | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts.                                                                                      |
-| `docs/`                                                                  | Operator docs, architecture, design packets, audits, specs, method docs, and archived backlog migration evidence.                                                        |
-| `.github/workflows/`                                                     | CI workflows for Rust, packages, docs, hosts, security, and progress badges.                                                                                             |
+| Path                             | Role                                                                                                                                                                                                                 |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `crates/wesley-core/`            | Rust compiler kernel. Parses/lower SDL to domain-empty L1 IR, diffs L1 schema structure, lists schema root operations, and analyzes operation documents.                                                             |
+| `crates/wesley-cli/`             | Native Rust `wesley` binary for schema deltas, schema hashes, Rust/TypeScript artifacts, and operation facts.                                                                                                        |
+| `crates/wesley-emit-codec/`      | Shared LE-binary codec planning crate consumed by Rust and TypeScript codec emitters.                                                                                                                                |
+| `crates/wesley-emit-rust/`       | Rust projection crate. Builds a Rust item/type AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations.                                                                |
+| `crates/wesley-emit-typescript/` | Rust TypeScript projection crate. Builds a TypeScript declaration AST from L1 IR and `SchemaOperation` data, then prints deterministic model and operation declarations.                                             |
+| `crates/wesley-holmes/`          | Rust Holmes law-assurance foundation. Defines pure domain models, deterministic ports/fakes, evidence bundle validation, artifact path resolution, and version diagnostics without exposing public CLI commands yet. |
+| `xtask/`                         | Rust repository automation: docs checks, tests, native preflight, release check, and package hygiene bridge.                                                                                                         |
+| `packages/wesley-holmes/`        | Existing JavaScript Holmes surface outside compiler authority while the Rust assurance foundation grows behind it.                                                                                                   |
+| `schemas/`                       | JSON schemas and generic directive/schema assets used by tooling and tests.                                                                                                                                          |
+| `test/fixtures/`                 | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas.                                                                                                                                          |
+| `scripts/`                       | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts.                                                                                                                                  |
+| `docs/`                          | Operator docs, architecture, design packets, audits, specs, method docs, and archived backlog migration evidence.                                                                                                    |
+| `.github/workflows/`             | CI workflows for Rust, packages, docs, security, and progress badges.                                                                                                                                                |
 
 Some directories still contain extraction residue. In particular,
 `packages/wesley-generator-echo/` exists on disk but is not an active tracked
@@ -480,18 +476,16 @@ JavaScript package tooling only for retained package or pnpm-workspace changes.
 ## Non-Compiler JavaScript Tooling
 
 The legacy Node compiler packages are gone. JavaScript remains for Holmes-era
-assurance tooling, website/docs tooling, repository scripts, and browser/Bun/Deno
-host smoke experiments. These are not the preferred home for new compiler-kernel
-truth.
+assurance tooling, docs tooling, and repository scripts. The old product
+website/playground surface and the browser/Bun/Deno host experiments are
+retired from the Wesley release surface. These support surfaces are not the
+preferred home for new compiler-kernel truth.
 
 The retained JS split is:
 
 - `@wesley/holmes`: self-contained assurance, verification, counterfactual, and
   reporting tooling.
-- `@wesley/host-browser`, `@wesley/host-bun`, `@wesley/host-deno`: external host
-  smoke experiments with local parser/hash adapters.
-- website/docs/repository scripts: supporting automation, not compiler
-  authority.
+- docs/repository scripts: supporting automation, not compiler authority.
 
 ### Module Capability Model
 
@@ -669,7 +663,7 @@ The durable shape is:
 Rust core: deterministic compiler facts
 Native CLI: small local executable surface
 WASM / bindings: future portable capability boundary
-JavaScript packages: assurance and host experiments outside compiler authority
+JavaScript packages: assurance tooling outside compiler authority
 External modules: target and domain meaning
 Project workspaces: authored schemas, policy, runtime, deployment
 ```

@@ -16,10 +16,12 @@ which signpost is supposed to answer which question.
 | [ENTRYPOINTS.md](./ENTRYPOINTS.md)                                          | Short answer for which Wesley to run or edit: Rust kernel, native CLI, xtask, or legacy Node tooling. |
 | [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md)                      | Deletion map for the historical Node CLI, packages, generators, hosts, and evidence tooling.          |
 | [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)                                  | Fast noun map for the Wesley base platform, modules, and project workspace.                           |
-| [Wesley North Star](./NORTHSTAR.md)                                         | Ultimate doctrine for bounded, lawful autonomy through GraphQL-declared runtime optics.               |
+| [Wesley North Star](./NORTHSTAR.md)                                         | Domain-free doctrine for GraphQL structure, deterministic IR, and extension-owned meaning.            |
 | [SDL, Shape, And Law](./SDL.md)                                             | Why GraphQL SDL is Wesley's contract substrate and where domain law interpretation belongs.           |
 | [BEARING](./BEARING.md)                                                     | Current direction, what is already real in the repo, and the tensions that still matter.              |
 | [Extending Wesley](./guides/extending.md)                                   | How to add Rust compiler behavior, native CLI commands, emitter projections, or external modules.     |
+| [CLI Reference](./reference/cli.md)                                          | Current Rust-native `wesley` command reference.                                                       |
+| [Directive Truth Table](./reference/directives.md)                           | Current directive support levels, aliases, external families, and fixture boundaries.                  |
 | [VISION](./VISION.md)                                                       | Bounded executive synthesis grounded in repo-visible truth.                                           |
 | [Design Packets](./design/README.md)                                        | Active design packets and doctrinal boundary notes.                                                   |
 | [METHOD Process](./method/process.md)                                       | How cycles run, close, and reconcile in this repo.                                                    |
@@ -30,10 +32,14 @@ which signpost is supposed to answer which question.
 
 ## Current Center Of Gravity
 
-The most recent Continuum cycle packet is
-[Continuum Contract Compiler](./design/0003-continuum-contract-compiler/continuum-contract-compiler.md).
-It closed as a `partial` landing in
-[its retro packet](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md).
+Wesley's current center is the domain-free compiler boundary:
+
+```text
+GraphQL SDL -> deterministic Wesley IR -> external modules assign meaning.
+```
+
+The older Continuum-heavy packets are historical extraction context, not the
+current Wesley roadmap.
 
 The v0.0.5 clean-house packet is shipped release context:
 
@@ -56,14 +62,14 @@ The active design direction is now:
 The repo already has the important generic building blocks around that
 direction:
 
-- a module-driven `wesley compile` surface where targets come from loaded
-  external modules
-- a real current-state witness path via
-  the Continuum-owned Wesley module that lives outside this repository
+- Rust-native schema lowering, hashing, operation catalogs, and selection facts
+- deterministic Rust and TypeScript projection surfaces
+- generic operation artifacts whose meaning is assigned by downstream owners
+- HOLMES assurance foundations over explicit evidence bundles
 
-The former repo-local `compile-ttd` and `bundle-echo` commands were retired
-from generic Wesley during the domain-empty extraction. Recreate those surfaces
-only as Continuum-owned module commands or external packages.
+The former repo-local `compile-ttd`, `bundle-echo`, and Continuum witness lanes
+were retired from generic Wesley during the domain-empty extraction. Recreate
+those surfaces only as Continuum-owned module commands or external packages.
 
 It also now has a more explicit METHOD closeout surface under
 `docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and
@@ -80,17 +86,19 @@ It also now has a more explicit METHOD closeout surface under
 - [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md)
 - [Wesley North Star](./NORTHSTAR.md)
 - [SDL, Shape, And Law](./SDL.md)
+- [CLI Reference](./reference/cli.md)
+- [Directive Truth Table](./reference/directives.md)
 - [BEARING](./BEARING.md)
 - [Design Packets](./design/README.md)
 - [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)
 - [Extending Wesley](./guides/extending.md)
 - [Module Contract](./design/wesley-module-contract.md)
 
-### Continuum Orientation
+### Historical Continuum Extraction Context
 
 - [BEARING](./BEARING.md)
-- [Wesley Role In Continuum](./architecture/continuum-wesley-role.md)
-- [Continuum Minimum Shared Contract Surface](./architecture/continuum-minimum-shared-contract-surface.md)
+- [Retired Wesley Role In Continuum](./architecture/continuum-wesley-role.md)
+- [Retired Continuum Minimum Shared Contract Surface](./architecture/continuum-minimum-shared-contract-surface.md)
 - [Continuum Contract Compiler](./design/0003-continuum-contract-compiler/continuum-contract-compiler.md)
 - [0003 Retro](./method/retro/0003-continuum-contract-compiler/continuum-contract-compiler.md)
 
@@ -109,7 +117,8 @@ It also now has a more explicit METHOD closeout surface under
 
 - [Invariants](./invariants/README.md)
 - [Legends](./method/legends/README.md)
-- [Directive Truth Table](./DIRECTIVES.md)
+- [CLI Reference](./reference/cli.md)
+- [Directive Truth Table](./reference/directives.md)
 
 ## Current Honesty Rules
 

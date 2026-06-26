@@ -6,7 +6,7 @@ All automated tests live under `test/`. This guide explains prerequisites, local
 
 - Node.js ≥ 18.17 and `pnpm` (matching the repo’s `packageManager` field).
 - `pnpm install` at the repository root to hydrate workspaces.
-- Repo-level and host-contract suites rely on [Bats](https://github.com/bats-core/bats-core). Install it locally (`brew install bats-core`, `apt install bats`, etc.) or rely on CI. Run `pnpm run setup:bats-plugins` once to vendor the required plugins.
+- Repo-level suites rely on [Bats](https://github.com/bats-core/bats-core). Install it locally (`brew install bats-core`, `apt install bats`, etc.) or rely on CI. Vendored helper plugins live under `test/vendor/bats-plugins`; run `pnpm run setup:bats-plugins` to verify them.
 
 For a full smoke run: `pnpm run bootstrap` (installs, preflight, workspace tests).
 
@@ -35,7 +35,6 @@ Highlights:
 Workspace packages expose their own test commands:
 
 - `pnpm --filter @wesley/holmes test`
-- `pnpm --filter @wesley/host-browser test`
 
 See the package READMEs for additional guidance.
 
@@ -47,29 +46,18 @@ GitHub Actions runs the relevant subsets:
 - `.github/workflows/wesley-holmes.yml` — HOLMES evidence checks.
 - `.github/workflows/preflight.yml` — hygiene checks (docs links, ESLint purity, dependency boundaries).
 
-### Repo-level Bats tests (server/progress/CI checks)
+### Repo-level Bats tests (server/docs/CI checks)
 
 These small suites are gated in CI and only run when relevant files change. To run locally:
 
 ```bash
 pnpm run setup:bats-plugins
-BATS_LIB_PATH=test \
+BATS_LIB_PATH=test/vendor \
   bats test/serve-static*.bats \
-    test/progress-*.bats \
+    test/docs-planning-boundary.bats \
     test/domain-empty-boundary.bats \
     test/ir-fixtures.bats \
-    test/ci-*.bats \
-    test/browser-contracts-*.bats
-```
-
-When debugging browser contracts diagnostics only (no Vite/Playwright):
-
-```bash
-# Capture a JSON from a previous run, then:
-ONLY_PARSE_OUT_JSON=1 OUT_JSON=/path/to/host-contracts.json \
-  node scripts/host_contracts_browser.mjs 2> /tmp/diagnostics.log
-
-cat /tmp/diagnostics.log
+    test/ci-*.bats
 ```
 
 If a suite fails locally but passes in CI (or vice versa), ensure you have the prerequisites above and re-run with `pnpm run bootstrap` before filing an issue.

@@ -94,7 +94,7 @@ fn law_capability_ingest_rejects_missing_posture_fields() {
 }
 
 #[test]
-fn law_capability_ingest_accepts_legacy_capability_report_alias() {
+fn law_capability_ingest_temporarily_accepts_legacy_capability_report_alias() {
     let legacy =
         CAPABILITY_REPORT.replace("wesley.law-capabilities/v1", "wesley.capability-report/v1");
 
