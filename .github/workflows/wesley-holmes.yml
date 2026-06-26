@@ -22,6 +22,7 @@ jobs:
     outputs:
       schema_sets: ${{ steps.detect.outputs.schema_sets }}
       selected_count: ${{ steps.detect.outputs.selected_count }}
+      comment_mode: ${{ steps.detect.outputs.comment_mode }}
 
     steps:
       - name: Harden runner
@@ -65,6 +66,12 @@ jobs:
             cargo run --bin wesley -- config changed-schemas \
               --changed-file "$changed_file" \
               --json > "$RUNNER_TEMP/wesley-selected.json"
+            comment_mode="$(node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/wesley-manifest.json', 'utf8'));
+          process.stdout.write(report.manifest.commentMode || 'update');
+          NODE
+          )"
             node <<'NODE' > "$RUNNER_TEMP/wesley-schema-sets.json"
           const fs = require('fs');
           const report = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/wesley-selected.json', 'utf8'));
@@ -100,6 +107,7 @@ jobs:
             fi
             base_dir="$(dirname "$schema")"
             bundle_dir="$base_dir/.wesley-cache"
+            comment_mode="update"
             SCHEMA="$schema" BUNDLE_DIR="$bundle_dir" \
               node -e 'process.stdout.write(JSON.stringify([{id:"default",schema:process.env.SCHEMA,bundle_dir:process.env.BUNDLE_DIR}]))' \
               > "$RUNNER_TEMP/wesley-schema-sets.json"
@@ -114,6 +122,7 @@ jobs:
             echo
             echo 'JSON'
             echo "selected_count=$selected_count"
+            echo "comment_mode=$comment_mode"
           } >> "$GITHUB_OUTPUT"
 
       - name: '📤 Upload Dashboard Template'
@@ -460,7 +469,7 @@ jobs:
   comment-report:
     name: '📝 Post Investigation Report'
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && needs.detect-schema-sets.outputs.selected_count != '0'
+    if: github.event_name == 'pull_request' && needs.detect-schema-sets.outputs.selected_count != '0' && needs.detect-schema-sets.outputs.comment_mode != 'silent'
     needs: [detect-schema-sets, holmes-investigate, watson-verify, moriarty-predict]
     env:
       HOLMES_STATUS: ${{ needs.holmes-investigate.result }}

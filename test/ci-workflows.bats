@@ -513,6 +513,18 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
+  run bash -lc "grep -F 'comment_mode: \${{ steps.detect.outputs.comment_mode }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'commentMode ||' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"comment_mode != 'silent'\" .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
   run bash -lc "grep -F 'matrix.schema_set.schema' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -ge 4 ]
