@@ -595,12 +595,3 @@ jobs:
                 body
               });
             }
-      - name: '🔄 Ensure history for MORIARTY'
-        shell: bash
-        run: |
-          set -euo pipefail
-          # In case fetch-depth wasn't honored or repo is shallow, try to unshallow
-          if git rev-parse --is-shallow-repository >/dev/null 2>&1; then
-            git fetch --prune --unshallow --tags || true
-          fi
-          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' || true

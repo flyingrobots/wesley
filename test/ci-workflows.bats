@@ -604,4 +604,8 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc 'grep -F -- '\''--head-sha "$GITHUB_SHA"'\'' .github/workflows/wesley-holmes.yml | wc -l'
   assert_success
   [ "$output" -eq 1 ]
+
+  run bash -lc "grep -A140 '^  comment-report:' .github/workflows/wesley-holmes.yml | grep -F 'Ensure history for MORIARTY' | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
 }
