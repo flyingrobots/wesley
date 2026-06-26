@@ -1,10 +1,14 @@
 # Guide — Wesley
 
-This is the developer-level operator guide for Wesley. Use it for orientation, the productive-fast path, and to understand how the contract compiler orchestrates shared truth.
+This is the developer-level operator guide for Wesley. Use it for orientation,
+the productive-fast path, and the domain-free compiler/toolchain split.
 
 For deep-track doctrine, IR model internals, and custom generator development, use [ADVANCED_GUIDE.md](./ADVANCED_GUIDE.md).
 
 If you need the main Wesley nouns and the layer split before reading anything else, start with [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
+
+If you know the task you are trying to perform and need the shortest current
+route, start with [Topics](./topics/README.md).
 
 ## Choose Your Lane
 
@@ -13,16 +17,16 @@ If you need the main Wesley nouns and the layer split before reading anything el
 Compile authored GraphQL into generic or explicitly selected generated
 artifacts.
 
-- **Inspect native CLI**: `cargo wesley --help`
+- **Inspect native CLI**: `cargo run --bin wesley -- --help`
 - **Read native CLI reference**: [docs/reference/cli.md](./reference/cli.md)
-- **Doctor native CLI**: `cargo wesley doctor`
-- **Install published alpha**: `cargo install wesley-cli --version 0.1.0`
+- **Doctor native CLI**: `cargo run --bin wesley -- doctor`
+- **Install published alpha**: `cargo install wesley-cli --version 0.1.1`
 - **Install locally**: `cargo install --locked --path crates/wesley-cli`
 - **Strict preflight**: `cargo xtask preflight`
 - **Explicit alias**: `cargo xtask strict-preflight`
 - **Release check**: `cargo xtask release-check`
-- **Project manifest**: `cargo wesley config validate --json`
-- **Changed schemas**: `cargo wesley config changed-schemas --changed <path> --json`
+- **Project manifest**: `cargo run --bin wesley -- config validate --json`
+- **Changed schemas**: `cargo run --bin wesley -- config changed-schemas --changed <path> --json`
 
 The Rust-native CLI is now the normal front door for Wesley core work. The
 native binary stays small while core behavior moves into the Rust library.
@@ -36,11 +40,12 @@ Use `wesley doctor` when you need a narrow Rust-native health check for the
 native CLI, Rust lowerer, normalized SDL hashing, and Rust emitter crates. It
 does not inspect legacy Node config, plugins, or package state.
 
-Use `cargo install wesley-cli --version 0.1.0` when you want the published
-`0.1.0` alpha `wesley` binary on your PATH. Before the release workflow has
-published that version, use `cargo install --locked --path crates/wesley-cli`
-when working from this checkout. Use `cargo xtask preflight` before opening a
-PR. This is the strict quality gate: it runs `cargo fmt --check`,
+Use `cargo install wesley-cli --version 0.1.1` when you want the latest
+published alpha `wesley` binary on your PATH. Use
+`cargo run --bin wesley -- ...` when working directly from this checkout, or
+`cargo install --locked --path crates/wesley-cli` when you need a local
+installed binary. Use `cargo xtask preflight` before opening a PR. This is the
+strict quality gate: it runs `cargo fmt --check`,
 `cargo clippy --workspace --all-targets -- -D warnings`,
 `pnpm audit --prod=false --json`, docs checks, workspace tests, and a native
 CLI smoke test. Use `cargo xtask release-check` before cutting native release
@@ -91,10 +96,11 @@ validation output.
 
 ### 2. External Module Lane
 
-Bring the `whatever` side of `GraphQL -> whatever` through an owning module,
-package, or sibling repo. The historical Node dynamic module loader and
-`wesley.config.mjs` command-dispatch path are retired; the native Rust CLI does
-not currently load arbitrary JavaScript modules as product commands.
+Bring the domain side of `GraphQL SDL -> deterministic Wesley IR -> your domain`
+through an owning module, package, or sibling repo. The historical Node dynamic
+module loader and `wesley.config.mjs` command-dispatch path are retired; the
+native Rust CLI does not currently load arbitrary JavaScript modules as product
+commands.
 
 External targets still own target semantics, generators, witness scopes,
 release profiles, and runtime conventions. Today that ownership is expressed
@@ -183,7 +189,8 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 
 ## Rule of Thumb
 
-If you need the native command reference, use `cargo wesley --help`.
+If you need the native command reference, use [CLI Reference](./reference/cli.md)
+or `cargo run --bin wesley -- --help`.
 
 If you need to know "what's true right now," use [BEARING.md](./BEARING.md).
 

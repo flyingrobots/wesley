@@ -44,10 +44,11 @@ short path to the authoritative surface.
 
 ### Contributor Process
 
-| Task                              | Start Here                                | Authority                                       |
-| --------------------------------- | ----------------------------------------- | ----------------------------------------------- |
-| Triage issues into release lanes. | [Issue Triage](./contributing/triage.md)  | GitHub Issues, Milestones, Projects, and labels |
-| Keep docs accurate and covered.   | [Docs Maintenance](./docs-maintenance.md) | `docs/governance/DOCUMENTATION_STANDARD.md`     |
+| Task                               | Start Here                                | Authority                                       |
+| ---------------------------------- | ----------------------------------------- | ----------------------------------------------- |
+| Find the right documentation path. | [Docs Orientation](./docs-orientation.md) | `docs/README.md`                                |
+| Triage issues into release lanes.  | [Issue Triage](./contributing/triage.md)  | GitHub Issues, Milestones, Projects, and labels |
+| Keep docs accurate and covered.    | [Docs Maintenance](./docs-maintenance.md) | `docs/governance/DOCUMENTATION_STANDARD.md`     |
 
 ## Coverage Rule
 

@@ -49,15 +49,14 @@ wesley --help
 From a source checkout:
 
 ```bash
-cargo install --locked --path crates/wesley-cli
-cargo wesley --help
+cargo run --bin wesley -- --help
 cargo xtask preflight
 ```
 
 Lower GraphQL SDL into Wesley L1 IR:
 
 ```bash
-cargo wesley schema lower \
+cargo run --bin wesley -- schema lower \
   --schema test/fixtures/ir-parity/small-schema.graphql \
   --json
 ```
@@ -65,12 +64,12 @@ cargo wesley schema lower \
 Generate target-neutral Rust or TypeScript projections:
 
 ```bash
-cargo wesley emit rust \
+cargo run --bin wesley -- emit rust \
   --schema test/fixtures/weslaw/contract-bundle-shape.graphql \
   --out generated/model.rs \
   --metadata-out generated/model.metadata.json
 
-cargo wesley emit typescript \
+cargo run --bin wesley -- emit typescript \
   --schema test/fixtures/weslaw/contract-bundle-shape.graphql \
   --out generated/types.ts \
   --metadata-out generated/types.metadata.json
@@ -85,8 +84,8 @@ cargo xtask preflight
 Validate a project manifest when a repo wants config-driven schema selection:
 
 ```bash
-cargo wesley config validate --config wesley.config.json --json
-cargo wesley config changed-schemas \
+cargo run --bin wesley -- config validate --config wesley.config.json --json
+cargo run --bin wesley -- config changed-schemas \
   --config wesley.config.json \
   --changed test/fixtures/examples/ecommerce.graphql \
   --json
@@ -143,6 +142,7 @@ For complete history, read [CHANGELOG.md](./CHANGELOG.md).
 ## Reference Map
 
 - [Docs entrance](./docs/README.md)
+- [Topics](./docs/topics/README.md)
 - [Guide](./docs/GUIDE.md)
 - [Architecture](./docs/ARCHITECTURE.md)
 - [Wesley North Star](./docs/NORTHSTAR.md)

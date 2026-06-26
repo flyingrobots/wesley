@@ -25,6 +25,7 @@ which signpost is supposed to answer which question.
 | [Project Manifest](./reference/project-manifest.md)                         | Current JSON/YAML manifest schema for schemas, rebuild selection, bundles, and target metadata.       |
 | [Directive Truth Table](./reference/directives.md)                          | Current directive support levels, aliases, external families, and fixture boundaries.                 |
 | [Topics](./topics/README.md)                                                | Operator and contributor task pages that bridge references, governance, and workflows.                |
+| [Docs Orientation](./topics/docs-orientation.md)                            | Task page for choosing the right signpost without turning docs into a backlog mirror.                 |
 | [VISION](./VISION.md)                                                       | Bounded executive synthesis grounded in repo-visible truth.                                           |
 | [Design Packets](./design/README.md)                                        | Active design packets and doctrinal boundary notes.                                                   |
 | [METHOD Process](./method/process.md)                                       | How cycles run, close, and reconcile in this repo.                                                    |
@@ -83,6 +84,8 @@ It also now has a more explicit METHOD closeout surface under
 ### Product Orientation
 
 - [README.md](../README.md)
+- [Topics](./topics/README.md)
+- [Docs Orientation](./topics/docs-orientation.md)
 - [END_TO_END.md](./END_TO_END.md)
 - [ENTRYPOINTS.md](./ENTRYPOINTS.md)
 - [LEGACY_NODE_MIGRATION.md](./LEGACY_NODE_MIGRATION.md)

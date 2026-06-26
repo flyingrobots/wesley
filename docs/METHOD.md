@@ -23,6 +23,7 @@ The Wesley work doctrine: GitHub Issues, a loop, and honest bookkeeping.
 | :-------------------------------------------------- | :------------------------------------------------------------------ |
 | **`README.md`**                                     | Public front door and project identity.                             |
 | **`docs/GUIDE.md`**                                 | Orientation and productive-fast path.                               |
+| **`docs/topics/`**                                  | Task-oriented routes across references, workflows, and boundaries.  |
 | **`BEARING.md`**                                    | Current direction and active tensions.                              |
 | **`VISION.md`**                                     | Core tenets and the "Trustworthy Change" mission.                   |
 | **`docs/ARCHITECTURE.md`**                          | Authoritative system map and pipeline.                              |
@@ -112,6 +113,7 @@ Use [Wesley Documentation Standard](./governance/DOCUMENTATION_STANDARD.md) for
 the repo-specific documentation contract. The short version:
 
 - docs explain stable truth, direction, and evidence
+- `docs/topics/` routes task readers to the current authoritative surface
 - GitHub tracks backlog, progress, release gates, and roadmap state
 - design packets are not live status boards
 - `CHANGELOG.md` records merged behavior, not plans

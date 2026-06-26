@@ -1,8 +1,8 @@
 # Contributing to Wesley
 
-Wesley is a local-first system for planning, rehearsing, certifying, and
-explaining semantic contract changes with durable compiler truth,
-evidence-backed judgment, and explicit extension boundaries.
+Wesley is a local-first, domain-free GraphQL-to-IR compiler and assurance
+toolchain with durable compiler truth, evidence-backed judgment, and explicit
+extension boundaries.
 
 This repo now uses METHOD for workflow. Wesley's product doctrine remains
 Wesley's. METHOD defines how work is queued, pulled, proved, and closed.
@@ -23,7 +23,8 @@ Read these surfaces in order:
 
 ## Repository Doctrine
 
-Wesley exists to make schema-authored semantic change trustworthy.
+Wesley exists to make schema-authored structural change trustworthy while
+letting external owners assign domain semantics.
 
 That means:
 
@@ -39,9 +40,9 @@ That means:
 - local-first operation beats unnecessary network dependence
 
 Wesley is not a database product, runtime, scheduler, or hidden platform for
-product policy. It is the semantic contract compiler and assurance toolchain;
-the `GraphQL -> whatever` side must enter through explicit modules or owning
-repos such as `wesley-postgres`.
+product policy. It extracts GraphQL structure into deterministic IR and
+evidence; the domain side must enter through explicit modules or owning repos
+such as `wesley-postgres`.
 
 ## Repo Queue
 
@@ -183,7 +184,7 @@ cargo xtask preflight
 node scripts/pre-push-sanity.mjs --dry-run --files <changed-file> ...
 cargo test -p wesley-core
 cargo test -p wesley-cli
-cargo wesley --help
+cargo run --bin wesley -- --help
 ```
 
 For autonomous contributors, see [AGENTS.md](AGENTS.md).
