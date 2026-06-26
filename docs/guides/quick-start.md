@@ -44,6 +44,25 @@ Generated compiler artifacts go wherever `--out` points. Metadata sidecars
 record the schema hash, generator identity, generator version, and native
 execution mode.
 
+## Optional project manifest
+
+Create `wesley.config.json` when a project wants repeatable schema discovery or
+multi-schema rebuild selection:
+
+```json
+{
+  "apiVersion": "wesley.project-manifest/v1",
+  "schemaPaths": ["schema.graphql"],
+  "bundleDir": ".wesley-cache"
+}
+```
+
+Validate it:
+
+```bash
+cargo wesley config validate --json
+```
+
 ## Diff a schema change
 
 Copy the file, make a change, and compare the two SDL states:
@@ -56,6 +75,8 @@ cargo wesley schema diff --old schema.graphql --new schema.next.graphql --format
 ## Tips
 
 - Use `cargo wesley --help` for native compiler commands.
+- Use [the project manifest reference](../reference/project-manifest.md) when
+  configuring schema sets, rebuild globs, bundles, or target metadata.
 - Use `cargo xtask docs-check` for documentation-only changes.
 - Use `cargo xtask legacy-preflight` only when changing legacy packages or
   pnpm workspace files.

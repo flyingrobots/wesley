@@ -104,49 +104,41 @@ External modules may bring:
 Wesley should provide the generic compiler facts those modules need. The module
 should decide what those facts mean for its domain.
 
-## Legacy Node Module Notes
+## Project Manifest And Descriptor Notes
 
-The repository still contains historical Node package surfaces while the
-Rust-native front door takes over. If you must touch the legacy module loader,
-use the current module entry shape, not the obsolete top-level `generators`
-shape.
+Use the JSON/YAML project manifest for local schema and target metadata:
 
-Use `wesley.config.mjs` like this:
-
-```mjs
-export default {
-  modules: [
+```json
+{
+  "apiVersion": "wesley.project-manifest/v1",
+  "schemaPaths": ["schema.graphql"],
+  "targets": [
     {
-      specifier: './my-wesley-module.mjs',
-      config: {
-        output: 'generated'
-      }
+      "name": "my-external-target",
+      "module": "my.external.module",
+      "default": true,
+      "outputDir": "generated/my-target"
     }
   ]
-};
+}
 ```
 
-A module advertises capabilities:
+Validate it with:
 
-```mjs
-export default {
-  name: 'my-domain-module',
-  capabilities: {
-    wesley: {
-      targets: [
-        {
-          name: 'my-domain',
-          description: 'Emit my-domain artifacts from Wesley compiler facts'
-        }
-      ]
-    }
-  }
-};
+```bash
+wesley config validate --json
 ```
 
-Treat loaded modules as trusted code. Use `WESLEY_DISABLE_MODULES=1` for a
-no-module diagnostic run, and use `WESLEY_MODULE_ALLOWLIST` in CI when only
-approved module specifiers may load.
+Fixture modules should be descriptor-only JSON under
+`test/fixtures/extensions/`. They may advertise capability metadata for tests
+and docs, but they must not execute code or make Wesley core own target
+semantics.
+
+For the detailed current boundary, see
+[Module Authoring Guide](./module-authoring.md) and
+[Project Manifest](../reference/project-manifest.md). The historical
+`wesley.config.mjs`, `WESLEY_MODULES`, `WESLEY_DISABLE_MODULES`, and
+`WESLEY_MODULE_ALLOWLIST` path is retired from generic Wesley core.
 
 ## Validation Checklist
 

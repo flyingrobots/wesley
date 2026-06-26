@@ -6,11 +6,34 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- **Project manifest and config CLI**: Added the domain-free
+  `wesley.project-manifest/v1` JSON/YAML manifest with schema paths, bundle
+  directories, rebuild globs, comment mode, dashboard settings, and generic
+  target metadata. The native CLI now exposes `wesley config validate`,
+  `wesley config inspect`, and `wesley config changed-schemas`; single-schema
+  manifests can also provide the default schema for `schema lower`, `schema
+hash`, and `schema operations`.
+- **Fixture module zoo**: Added descriptor-only compiler-heavy,
+  evidence-heavy, and BLADE-heavy fixture modules under
+  `test/fixtures/extensions/fixture-zoo`, with domain-empty regression guards.
+- **Contributor onramp**: Added a public near-term roadmap issue and scoped
+  `good first issue` starter tasks, and linked the onboarding path from
+  `CONTRIBUTING.md`.
+
 ### Changed
 
 - **Release documentation gate**: The release runbook, release policy, and
   human sign-off checklist now require a `docs/topics/` accuracy and coverage
   audit before tagging, with minimum 90% accuracy and 90% coverage floors.
+- **HOLMES schema selection**: The HOLMES workflow now reads the Wesley project
+  manifest first, computes changed schema sets with `wesley config
+changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
+  artifacts grouped for one aggregate PR comment.
+- **Extension documentation**: Added current project-manifest and module
+  authoring references, and clarified that `wesley.config.mjs` and the dynamic
+  JavaScript module loader are retired from generic Wesley core.
 
 ### Removed
 

@@ -102,3 +102,25 @@ load 'bats-plugins/bats-assert/load'
   run rg -n "@wesley/continuum|wesley-continuum|Continuum-specific defaults" docs/README.md docs/architecture/wesley-core-vs-toolchain.md
   assert_failure
 }
+
+@test "fixture module zoo remains descriptor-only and domain-empty" {
+  run test -f test/fixtures/extensions/fixture-zoo/compiler-heavy/fixture-extension.json
+  assert_success
+
+  run test -f test/fixtures/extensions/fixture-zoo/evidence-heavy/fixture-extension.json
+  assert_success
+
+  run test -f test/fixtures/extensions/fixture-zoo/blade-heavy/fixture-extension.json
+  assert_success
+
+  run bash -lc "find test/fixtures/extensions/fixture-zoo -type f \\( -name '*.mjs' -o -name '*.js' \\) | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -R '\"descriptorOnly\": true' test/fixtures/extensions/fixture-zoo | wc -l"
+  assert_success
+  [ "$output" -eq 3 ]
+
+  run rg -n "Postgres|Supabase|Continuum|Echo|Vite|Vue|runtime execution.*true" test/fixtures/extensions/fixture-zoo
+  assert_failure
+}

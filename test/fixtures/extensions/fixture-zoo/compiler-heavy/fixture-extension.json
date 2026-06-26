@@ -1,0 +1,37 @@
+{
+  "apiVersion": "wesley.fixture-extension/v1",
+  "name": "fixture-zoo-compiler-heavy",
+  "description": "Descriptor-only fixture module for compiler and emitter capability metadata.",
+  "schemas": ["../../../consumer-models/stack-witness-0001-file-history.graphql"],
+  "capabilities": {
+    "wesley": {
+      "targets": [
+        {
+          "name": "fixture-l1-ir",
+          "executionMode": "rust-native",
+          "runtimeModel": "stateless"
+        },
+        {
+          "name": "fixture-typescript-declarations",
+          "executionMode": "rust-native",
+          "runtimeModel": "stateless"
+        }
+      ],
+      "compilerFacts": [
+        "schema-lowering",
+        "operation-selection-paths",
+        "directive-argument-extraction"
+      ]
+    }
+  },
+  "boundary": {
+    "domainOwnership": "external-fixture",
+    "descriptorOnly": true,
+    "wesleyOwns": [
+      "schema lowering",
+      "operation metadata extraction",
+      "target descriptor validation"
+    ],
+    "wesleyDoesNotOwn": ["runtime execution", "application behavior", "storage behavior"]
+  }
+}

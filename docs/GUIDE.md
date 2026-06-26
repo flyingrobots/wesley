@@ -21,6 +21,8 @@ artifacts.
 - **Strict preflight**: `cargo xtask preflight`
 - **Explicit alias**: `cargo xtask strict-preflight`
 - **Release check**: `cargo xtask release-check`
+- **Project manifest**: `cargo wesley config validate --json`
+- **Changed schemas**: `cargo wesley config changed-schemas --changed <path> --json`
 
 The Rust-native CLI is now the normal front door for Wesley core work. The
 native binary stays small while core behavior moves into the Rust library.
@@ -58,6 +60,9 @@ The historical package CLI is retired. Use the native commands:
 - **Law Rebind**: `wesley law rebind --schema <schema> --law <law> [--accept --out <law>]`
 - **Law Capabilities**: `wesley law capabilities --law <law> [--json]`
 - **Law Coverage**: `wesley law coverage --schema <schema> --law <law> [--profile release] [--json]`
+- **Manifest Validate**: `wesley config validate [--config <manifest>] [--json]`
+- **Manifest Inspect**: `wesley config inspect [--config <manifest>] [--json]`
+- **Changed Schemas**: `wesley config changed-schemas [--config <manifest>] [--changed <path> ...] [--changed-file <path>] [--json]`
 
 - **Rust**: `wesley emit rust --schema <path> --out <path> [--law <path>]`
 - **TypeScript**: `wesley emit typescript --schema <path> --out <path> [--law <path>]`
@@ -93,8 +98,12 @@ not currently load arbitrary JavaScript modules as product commands.
 
 External targets still own target semantics, generators, witness scopes,
 release profiles, and runtime conventions. Today that ownership is expressed
-through explicit Rust emitters, external repos such as `wesley-postgres`, or
-future target protocols. Wesley core does not own those meanings.
+through explicit Rust emitters, descriptor-only fixture modules, external repos
+such as `wesley-postgres`, or future target protocols. Wesley core does not own
+those meanings. Use [Project Manifest](./reference/project-manifest.md) for
+current config-driven schema and target metadata, and
+[Module Authoring Guide](./guides/module-authoring.md) for the current extension
+boundary.
 For the active ownership rule, see
 [design/0014-domain-empty-core-boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
@@ -167,6 +176,7 @@ Wesley is a tiered engine designed to enforce contract integrity across platform
 - [ ] **I am adding a generic projection**: Start in `crates/wesley-emit-rust` or `crates/wesley-emit-typescript`.
 - [ ] **I am adding a domain target**: Put it in an owning external repo or design an explicit target protocol before wiring it into Wesley.
 - [ ] **I am extending Wesley**: Use `docs/guides/extending.md` to pick the Rust core, native CLI, emitter, external module, or `xtask` boundary.
+- [ ] **I am configuring schema sets**: Use `docs/reference/project-manifest.md` and validate with `wesley config validate`.
 - [ ] **I am contributing to Wesley**: Read `METHOD.md` and `BEARING.md`.
 - [ ] **I am touching Continuum behavior**: Work in the Continuum-owned module/repo, not here.
 - [ ] **I am touching PostgreSQL or Supabase behavior**: Work in `wesley-postgres`, not here.

@@ -37,7 +37,17 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/reference/project-manifest.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/reference/directives.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/guides/module-authoring.md",
       "status": "current",
       "owner": "@flyingrobots"
     },
@@ -73,6 +83,11 @@
     },
     {
       "path": "docs/architecture/holmes-counterfactuals.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/architecture/holmes-integration.md",
       "status": "current",
       "owner": "@flyingrobots"
     },

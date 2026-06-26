@@ -1,0 +1,32 @@
+{
+  "apiVersion": "wesley.fixture-extension/v1",
+  "name": "fixture-zoo-evidence-heavy",
+  "description": "Descriptor-only fixture module for evidence and judgment capability metadata.",
+  "schemas": ["../../../consumer-models/stack-witness-0001-file-history.graphql"],
+  "capabilities": {
+    "wesley": {
+      "targets": [
+        {
+          "name": "fixture-evidence-report",
+          "executionMode": "external-process",
+          "runtimeModel": "stateless"
+        }
+      ],
+      "evidenceHooks": ["artifact-citation-report", "coverage-summary", "judgment-summary"]
+    }
+  },
+  "boundary": {
+    "domainOwnership": "external-fixture",
+    "descriptorOnly": true,
+    "wesleyOwns": [
+      "evidence artifact wiring",
+      "report metadata shape",
+      "target descriptor validation"
+    ],
+    "wesleyDoesNotOwn": [
+      "release judgment policy",
+      "runtime observation",
+      "product readiness criteria"
+    ]
+  }
+}
