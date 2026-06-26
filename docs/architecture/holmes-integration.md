@@ -105,6 +105,14 @@ reports/
 The PR comment builder detects that grouped layout and renders one anchored
 comment with separate sections for each schema set.
 
+Manifest `commentMode` controls the final PR comment behavior:
+
+| Mode     | Behavior                                    |
+| -------- | ------------------------------------------- |
+| `update` | Create or update one anchored PR comment.   |
+| `append` | Create a new PR comment for each run.       |
+| `silent` | Run analysis but do not write a PR comment. |
+
 ## Dashboard Artifact
 
 The workflow uploads `docs/holmes-dashboard` as a dashboard template and
@@ -127,11 +135,11 @@ own repo or through an explicitly designed external target boundary.
 Useful focused checks:
 
 ```bash
-cargo wesley config validate --json
-cargo wesley config changed-schemas \
+cargo run --bin wesley -- config validate --json
+cargo run --bin wesley -- config changed-schemas \
   --changed test/fixtures/examples/ecommerce.graphql \
   --json
-bats -t test/ci-workflows.bats
+BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
 node --test packages/wesley-holmes/test/pr-comment.test.mjs
 ```
 

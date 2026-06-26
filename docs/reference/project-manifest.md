@@ -58,6 +58,14 @@ Defaults:
 | `dashboard`   | disabled                     |
 | `targets`     | empty                        |
 
+`commentMode` accepts:
+
+| Value    | Behavior                                                          |
+| -------- | ----------------------------------------------------------------- |
+| `update` | Create or update one anchored automation comment.                 |
+| `append` | Create a new automation comment for each run.                     |
+| `silent` | Run automation and report artifacts without writing a PR comment. |
+
 ## Multi-Schema Manifest
 
 ```json

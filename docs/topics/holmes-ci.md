@@ -26,6 +26,10 @@ inventing work.
 - CodeRabbit and HOLMES are separate review surfaces.
 - HOLMES report artifacts are grouped by schema set.
 - The dashboard artifact is an artifact viewer, not a Wesley website product.
+- `commentMode: silent` suppresses the aggregate PR comment; it does not skip
+  schema-set analysis or report artifacts.
+- Invalid manifests fail the workflow. Legacy fallback is only for the
+  no-manifest case.
 - Missing or invalid report artifacts should be reported as unavailable or
   diagnostic evidence, not hidden behind a passing workflow.
 - Target-specific facts belong in external modules that generate their own
@@ -34,8 +38,8 @@ inventing work.
 ## Local Checks
 
 ```bash
-cargo wesley config validate --json
-cargo wesley config changed-schemas --json
+cargo run --bin wesley -- config validate --json
+cargo run --bin wesley -- config changed-schemas --json
 BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
 node --test packages/wesley-holmes/test/pr-comment.test.mjs
 ```
