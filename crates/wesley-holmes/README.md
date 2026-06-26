@@ -40,14 +40,9 @@ assessment outcomes, bounded finding summaries, typed
 coverage threshold policy, and narrow suppression records. No public Holmes CLI
 command is exposed from Wesley yet.
 
-## Compatibility Lifecycle
+## Law Capability Ingest
 
-Holmes currently accepts the pre-canonical
-`wesley.capability-report/v1` capability artifact name as a temporary v0.1.x
-input alias and normalizes it to `wesley.law-capabilities/v1` internally.
-
-That alias is not a public compatibility contract. It exists only to bridge
-pre-canonical law capability artifacts while the Rust Holmes surface has no
-public CLI/report contract. The scheduled removal is
-[#637](https://github.com/flyingrobots/wesley/issues/637) in the v0.2.0 lane,
-before any public Holmes law capability ingest surface is declared stable.
+Holmes accepts `wesley.law-capabilities/v1` as the only law capability artifact
+API version. Pre-canonical capability-report aliases are rejected before
+assessment so fixtures and future public surfaces cannot depend on a retired
+artifact name.

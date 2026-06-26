@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Removed
+
+- **Rust Holmes law capability alias**: `wesley-holmes` no longer accepts the
+  pre-canonical `wesley.capability-report/v1` input alias. Law capability
+  ingest now accepts only the canonical `wesley.law-capabilities/v1` artifact
+  API version.
+
 ## [0.1.1] - 2026-06-26
 
 ### Removed
@@ -147,8 +154,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - **`weslaw` capability artifact version drift**: The JSON output from
   `wesley law capabilities --json` now emits the PRD-canonical
   `wesley.law-capabilities/v1` API version.
-  Holmes continues to accept the pre-canonical `wesley.capability-report/v1`
-  string as a legacy input alias and normalizes it internally.
+  At `0.1.0`, Holmes also accepted the pre-canonical
+  `wesley.capability-report/v1` string as a legacy input alias and normalized
+  it internally.
 - **Release guard tracker checks**: `cargo xtask release-prep-guard` and
   `cargo xtask release-guard` now query live GitHub Issues for open
   tag/version blockers by owned issue title/body, milestone, or label instead

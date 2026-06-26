@@ -94,20 +94,19 @@ fn law_capability_ingest_rejects_missing_posture_fields() {
 }
 
 #[test]
-fn law_capability_ingest_temporarily_accepts_legacy_capability_report_alias() {
+fn law_capability_ingest_rejects_legacy_capability_report_alias() {
     let legacy =
         CAPABILITY_REPORT.replace("wesley.law-capabilities/v1", "wesley.capability-report/v1");
 
     let result = JsonLawCapabilityIngestPort.ingest_law_capabilities(legacy.as_bytes());
 
-    assert_eq!(result.status, LawCapabilityIngestStatus::Valid);
-    assert_eq!(
-        result
-            .report
-            .expect("legacy alias should normalize")
-            .api_version,
-        "wesley.law-capabilities/v1"
+    assert_eq!(result.status, LawCapabilityIngestStatus::Invalid);
+    assert!(result.report.is_none());
+    assert_diagnostic(
+        &result.diagnostics,
+        HolmesDiagnosticCode::HlawCapabilityUnsupportedVersion,
     );
+    assert_diagnostic_field(&result.diagnostics, "apiVersion");
 }
 
 #[test]
