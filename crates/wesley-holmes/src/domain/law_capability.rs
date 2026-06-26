@@ -5,12 +5,6 @@ use serde::{Deserialize, Serialize};
 /// API version named by the Holmes PRD for law capability summaries.
 pub const WESLEY_LAW_CAPABILITIES_API_VERSION: &str = "wesley.law-capabilities/v1";
 
-/// Temporary v0.1.x compatibility alias for pre-canonical capability artifacts.
-///
-/// This is scheduled for removal in v0.2.0 before any public Holmes law
-/// capability ingest surface is declared stable.
-pub const WESLEY_LEGACY_CAPABILITY_REPORT_API_VERSION: &str = "wesley.capability-report/v1";
-
 /// Machine-readable footprint capability summary emitted by Wesley.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

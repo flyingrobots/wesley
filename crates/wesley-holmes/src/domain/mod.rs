@@ -40,7 +40,6 @@ pub use finding::{
 pub use law_capability::{
     LawCapabilityClosure, LawCapabilityFootprint, LawCapabilityReport, LawCapabilitySlot,
     NormalizedLawCapabilityOperation, WESLEY_LAW_CAPABILITIES_API_VERSION,
-    WESLEY_LEGACY_CAPABILITY_REPORT_API_VERSION,
 };
 pub use law_coverage::{
     percentage, LawCoverageCategory, LawCoverageReport, NormalizedLawCoverageCategory,
