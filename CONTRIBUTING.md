@@ -16,6 +16,7 @@ Read these surfaces in order:
 - [docs/VISION.md](docs/VISION.md) for a bounded executive synthesis
 - [docs/design/README.md](docs/design/README.md) for active design packets and boundary doctrine
 - [docs/METHOD.md](docs/METHOD.md) for the workflow contract
+- [docs/topics/README.md](docs/topics/README.md) for contributor and operator task topics
 - [docs/topics/contributing/triage.md](docs/topics/contributing/triage.md) for issue triage and release-lane scheduling
 - [docs/governance/labels.md](docs/governance/labels.md) for issue and PR label semantics
 - [AGENTS.md](AGENTS.md) for repository-specific automation rules

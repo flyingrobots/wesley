@@ -24,6 +24,7 @@ which signpost is supposed to answer which question.
 | [CLI Reference](./reference/cli.md)                                         | Current Rust-native `wesley` command reference.                                                       |
 | [Project Manifest](./reference/project-manifest.md)                         | Current JSON/YAML manifest schema for schemas, rebuild selection, bundles, and target metadata.       |
 | [Directive Truth Table](./reference/directives.md)                          | Current directive support levels, aliases, external families, and fixture boundaries.                 |
+| [Topics](./topics/README.md)                                                | Operator and contributor task pages that bridge references, governance, and workflows.                |
 | [VISION](./VISION.md)                                                       | Bounded executive synthesis grounded in repo-visible truth.                                           |
 | [Design Packets](./design/README.md)                                        | Active design packets and doctrinal boundary notes.                                                   |
 | [METHOD Process](./method/process.md)                                       | How cycles run, close, and reconcile in this repo.                                                    |
@@ -111,6 +112,7 @@ It also now has a more explicit METHOD closeout surface under
 - [METHOD Process](./method/process.md)
 - [METHOD Guide](./method/guide.md)
 - [Documentation Standard](./governance/DOCUMENTATION_STANDARD.md)
+- [Topics](./topics/README.md)
 - [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
 - [GitHub Milestones](https://github.com/flyingrobots/wesley/milestones)
 - [Legacy Backlog Signpost](./method/backlog/README.md) (historical only)

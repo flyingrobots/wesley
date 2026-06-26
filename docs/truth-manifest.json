@@ -122,6 +122,36 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/README.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/compiler-boundary.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/project-manifests.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/validation.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/holmes-ci.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/releases.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/topics/contributing/triage.md",
       "status": "current",
       "owner": "@flyingrobots"
