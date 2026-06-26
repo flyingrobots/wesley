@@ -84,3 +84,22 @@ load 'bats-plugins/bats-assert/load'
   run test -e docs/method/graveyard/EXTERNAL_echo-ir-v2.md
   assert_success
 }
+
+@test "front-door signposts route task readers through docs topics" {
+  run grep -F "[Topics](./docs/topics/README.md)" README.md
+  assert_success
+
+  run grep -F "[Topics](./topics/README.md)" docs/README.md
+  assert_success
+
+  run grep -F "[Docs Orientation](./topics/docs-orientation.md)" docs/README.md
+  assert_success
+
+  run grep -F "[Docs Orientation](./docs-orientation.md)" docs/topics/README.md
+  assert_success
+}
+
+@test "active signposts do not advertise the retired 0.1.0 install command" {
+  run rg -n "cargo install wesley-cli --version 0\\.1\\.0" README.md docs/GUIDE.md docs/ENTRYPOINTS.md CONTRIBUTING.md
+  assert_failure
+}

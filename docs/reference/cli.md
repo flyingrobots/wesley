@@ -6,7 +6,7 @@ This reference describes the Rust-native `wesley` command shipped by the
 `wesley-cli` crate.
 
 The command help text is the implementation source of truth. Refresh this page
-from `cargo wesley --help` and the nested `--help` commands whenever the CLI
+from `cargo run --bin wesley -- --help` and the nested `--help` commands whenever the CLI
 surface changes.
 
 ## Root Command

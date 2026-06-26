@@ -5,17 +5,19 @@
 Wesley has one intended front door:
 
 ```bash
-cargo wesley --help
+cargo run --bin wesley -- --help
 ```
 
 For published alpha builds, the crates.io package is `wesley-cli` and the
-installed command is `wesley`. The `0.1.0` install command is valid after the
-tag-driven release workflow publishes that version:
+installed command is `wesley`. The current published alpha is `0.1.1`:
 
 ```bash
-cargo install wesley-cli --version 0.1.0
+cargo install wesley-cli --version 0.1.1
 wesley --help
 ```
+
+Use [Topics](./topics/README.md) when you know the task and need the shortest
+current route to the right command, workflow, or boundary document.
 
 The native command is now the first user-facing Rust surface for compiler facts.
 The deeper source of truth is still the Rust library under `crates/wesley-core`.
@@ -51,7 +53,7 @@ Rust Wesley is the emerging compiler kernel.
 
 It can:
 
-- parse and lower GraphQL SDL into the L1 semantic IR
+- parse and lower GraphQL SDL into domain-empty L1 IR
 - consolidate `extend type` blocks before lowering
 - print a normalized SDL view of Rust compiler facts and its SHA-256 evidence
   hash

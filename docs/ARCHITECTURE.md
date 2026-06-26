@@ -18,6 +18,8 @@ The active ownership doctrine is
 If you are trying to figure out where to start, read
 [ENTRYPOINTS.md](./ENTRYPOINTS.md) first. This document is the deeper structural
 map; the entrypoint map is the short answer to "which Wesley do I run or edit?"
+If you already know the task, use [Topics](./topics/README.md) for the shortest
+path to the right command, workflow, or boundary page.
 
 For the noun-by-noun reference, use [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
 For current direction and active tensions, use [BEARING.md](./BEARING.md).
@@ -130,7 +132,7 @@ semantics.
 | `test/fixtures/`                 | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas.                                                                                                                                          |
 | `scripts/`                       | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts.                                                                                                                                  |
 | `docs/`                          | Operator docs, architecture, design packets, audits, specs, method docs, and archived backlog migration evidence.                                                                                                    |
-| `.github/workflows/`             | CI workflows for Rust, packages, docs, security, and progress badges.                                                                                                                                                |
+| `.github/workflows/`             | CI workflows for Rust, packages, docs, security, release, and assurance checks.                                                                                                                                      |
 
 Some directories still contain extraction residue. In particular,
 `packages/wesley-generator-echo/` exists on disk but is not an active tracked
