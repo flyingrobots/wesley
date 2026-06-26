@@ -9,10 +9,11 @@ Directive support is not "everything ever mentioned in old docs." Current
 support is what the Rust-native SDL path actually parses, validates, lowers, or
 preserves for current command paths.
 
-## Stable Current Path
+## Current Compatibility Path
 
-Use canonical `@wes_*` directive names for new generic Wesley examples.
-Common current compiler directives include:
+Existing core directive names are compatibility structure, not domain ownership.
+When current command paths parse names such as the list below, Wesley lowers or
+preserves structural metadata and leaves target meaning to downstream modules.
 
 - `@wes_table`
 - `@wes_pk`
@@ -23,8 +24,11 @@ Common current compiler directives include:
 - `@wes_default`
 - `@wes_rls`
 
-Some historical aliases still parse for compatibility. New docs should prefer
-canonical names.
+Do not present these names as proof that Wesley owns database, tenant, policy,
+runtime, or renderer semantics. For new generic Wesley examples, prefer
+directive examples that demonstrate preservation or law metadata without
+assigning target meaning. When documenting the existing current-path directives,
+use canonical `@wes_*` names and point to the directive truth table.
 
 ## Boundary Rules
 
