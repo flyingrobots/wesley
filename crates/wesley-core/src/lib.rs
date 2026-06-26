@@ -28,6 +28,7 @@ pub use domain::ir::*;
 pub use domain::law::*;
 pub use domain::operation::*;
 pub use domain::operation_artifact::*;
+pub use domain::project_manifest::*;
 pub use domain::schema_delta::*;
 pub use ports::lowering::*;
 pub use resilience::*;

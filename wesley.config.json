@@ -1,0 +1,55 @@
+{
+  "apiVersion": "wesley.project-manifest/v1",
+  "schemaPaths": [
+    {
+      "id": "ecommerce",
+      "path": "test/fixtures/examples/ecommerce.graphql",
+      "rebuildOnGlobs": [
+        "test/fixtures/examples/ecommerce.graphql",
+        "test/fixtures/weslaw/**",
+        "schemas/**"
+      ]
+    },
+    {
+      "id": "reference",
+      "path": "test/fixtures/reference/schema.graphql",
+      "rebuildOnGlobs": ["test/fixtures/reference/**"]
+    }
+  ],
+  "bundleDir": "test/fixtures/examples/.wesley-cache",
+  "rebuildOnGlobs": [
+    "wesley.config.json",
+    ".github/workflows/wesley-holmes.yml",
+    ".github/actions/holmes-setup/action.yml",
+    ".github/actions/run-holmes-command/action.yml",
+    "Cargo.toml",
+    "Cargo.lock",
+    "crates/**",
+    "packages/wesley-holmes/**",
+    "scripts/prepare-shipme-cert-fixture.mjs",
+    "docs/holmes-dashboard/**"
+  ],
+  "commentMode": "update",
+  "dashboard": {
+    "enabled": true,
+    "artifactPath": "docs/holmes-dashboard"
+  },
+  "targets": [
+    {
+      "name": "l1-ir",
+      "module": "wesley.core.lower",
+      "default": true,
+      "outputDir": "generated/l1"
+    },
+    {
+      "name": "rust-models",
+      "module": "wesley.emit.rust",
+      "outputDir": "generated/rust"
+    },
+    {
+      "name": "typescript-declarations",
+      "module": "wesley.emit.typescript",
+      "outputDir": "generated/typescript"
+    }
+  ]
+}
