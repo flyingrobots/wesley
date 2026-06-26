@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- **Release documentation gate**: The release runbook, release policy, and
+  human sign-off checklist now require a `docs/topics/` accuracy and coverage
+  audit before tagging, with minimum 90% accuracy and 90% coverage floors.
+
 ### Removed
 
 - **Rust Holmes law capability alias**: `wesley-holmes` no longer accepts the

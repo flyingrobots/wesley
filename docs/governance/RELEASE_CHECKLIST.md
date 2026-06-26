@@ -10,8 +10,8 @@ Automated checks are not listed here — those run inside
 creating a tag, run `cargo xtask release-check` locally; it runs the same
 strict preflight gate used by `release-guard`, then builds and packages the
 native release artifacts without publishing anything. This checklist covers
-checks 7, 10, 13, and 22 from the enforcement matrix, which require human
-judgment.
+checks 7, 10, 13, 18, 22, and 23 from the enforcement matrix, which require
+human judgment.
 
 See [`RELEASE_POLICY.md`](RELEASE_POLICY.md) for the full enforcement matrix
 and rationale.
@@ -40,6 +40,13 @@ and rationale.
       I spot-checked the guides in `docs/guides/` that are relevant to changes in
       this release. Commands, flags, file paths, and behavioral claims match the
       current codebase. I did not rely solely on the automated path/SHA checks.
+
+- [ ] **`docs/topics/` accuracy and coverage gate is met**
+      I audited every tracked file under `docs/topics/` for release-relevant
+      accuracy and coverage. At least 90% accuracy of audited topic claims and
+      at least 90% coverage of release-relevant contributor/operator topic
+      workflows are met. Any stale topic claim, obsolete instruction, missing
+      topic, or missing authoritative link was corrected before tagging.
 
 - [ ] **No known issues being silently shipped**
       I reviewed the open GitHub Issues for known defects or outstanding decisions
