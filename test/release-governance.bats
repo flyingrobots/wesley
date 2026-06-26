@@ -52,3 +52,8 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "wesley emit le-binary-rust --schema <path> --out <path>" docs/ENTRYPOINTS.md
   assert_success
 }
+
+@test "topics index uses exact docs authority paths" {
+  run grep -nE '`docs/[^`]*\*[^`]*`' docs/topics/README.md
+  assert_failure
+}
