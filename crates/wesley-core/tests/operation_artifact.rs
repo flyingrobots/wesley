@@ -1,9 +1,10 @@
 use sha2::{Digest, Sha256};
 use wesley_core::{
-    compile_operation_artifact, compile_operation_artifact_registration, CodecField,
-    DirectiveRecord, EvidenceKind, InMemoryOperationArtifactRegistry, LawVerdict, LawWitness,
-    OperationArtifactResolver, OperationKind, PermissionAction, PermissionRequirement, ReplayHint,
-    ResolveError, OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
+    compile_operation_artifact, compile_operation_artifact_registration, compile_runtime_optic,
+    compile_runtime_optic_registration, CodecField, DirectiveRecord, EvidenceKind,
+    InMemoryOperationArtifactRegistry, LawVerdict, LawWitness, OperationArtifactResolver,
+    OperationKind, PermissionAction, PermissionRequirement, ReplayHint, ResolveError,
+    OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 
 #[test]
@@ -123,6 +124,29 @@ fn compiles_runtime_operation_into_domain_empty_operation_artifact() {
     assert_contains_law_claim(&artifact, "operation.codec.canonical.v1");
     assert_contains_law_claim(&artifact, "bounded.rewrite.v1");
     assert_contains_law_claim(&artifact, "operation.footprint.closed.v1");
+}
+
+#[test]
+#[allow(deprecated)]
+fn runtime_optic_public_aliases_preserve_v0_1_api() {
+    let schema =
+        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
+    let operation =
+        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
+
+    let renamed = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
+        .expect("operation artifact should compile");
+    let compatibility = compile_runtime_optic(schema, operation, Some("RenameSymbol"))
+        .expect("compatibility alias should compile");
+    let renamed_registration =
+        compile_operation_artifact_registration(schema, operation, Some("RenameSymbol"))
+            .expect("operation artifact registration should compile");
+    let compatibility_registration =
+        compile_runtime_optic_registration(schema, operation, Some("RenameSymbol"))
+            .expect("compatibility registration alias should compile");
+
+    assert_eq!(compatibility, renamed);
+    assert_eq!(compatibility_registration, renamed_registration);
 }
 
 #[test]

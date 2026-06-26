@@ -73,7 +73,7 @@ load 'bats-plugins/bats-assert/load'
 }
 
 @test "active operation artifact surfaces use generic vocabulary" {
-  run rg -n "\\b[oO]ptic\\b|compile_runtime_optic|OpticArtifact|runtime-optics|domain/optic" README.md docs/NORTHSTAR.md docs/SDL.md docs/VISION.md docs/END_TO_END.md docs/TECHNICAL_TEARDOWN.md docs/design/0010-wesley-graft-mcp-boundary docs/design/0004-realization-admission-and-witness crates/wesley-core/src crates/wesley-core/tests
+  run bash -lc "rg -n '\\b[oO]ptic\\b|compile_runtime_optic|OpticArtifact|runtime-optics|domain/optic' README.md docs/NORTHSTAR.md docs/SDL.md docs/VISION.md docs/END_TO_END.md docs/TECHNICAL_TEARDOWN.md docs/design/0010-wesley-graft-mcp-boundary docs/design/0004-realization-admission-and-witness crates/wesley-core/src crates/wesley-core/tests | rg -v 'compile_runtime_optic(_registration)?'"
   assert_failure
 }
 

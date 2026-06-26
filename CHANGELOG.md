@@ -33,6 +33,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- **v0.1 public API compatibility**: `wesley-core` now keeps deprecated
+  `compile_runtime_optic` and `compile_runtime_optic_registration` aliases for
+  the renamed operation artifact compiler entry points, preserving compatible
+  `0.1.x` Cargo updates while the generic vocabulary remains primary.
 - **Vendored Bats helper resolution**: Repo-level Bats tests now resolve
   `bats-support`, `bats-assert`, and `bats-file` from tracked files under
   `test/vendor/bats-plugins`; CI no longer clones or downloads those helpers at
