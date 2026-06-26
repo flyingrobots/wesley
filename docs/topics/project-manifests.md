@@ -47,6 +47,8 @@ wesley config changed-schemas --changed-file changed-files.txt --json
 - Top-level rebuild globs select every schema set.
 - Schema-local rebuild globs select only that schema set.
 - Selected multi-schema bundles are isolated under `bundleDir/<schema-id>`.
+- `commentMode` controls PR comment behavior for automation:
+  `update`, `append`, or `silent`.
 - Target names are metadata. External modules own target behavior.
 
 ## Related Authority
