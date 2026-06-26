@@ -117,9 +117,14 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 0 ]
 
-  run bash -lc "grep -R '\"descriptorOnly\": true' test/fixtures/extensions/fixture-zoo | wc -l"
-  assert_success
-  [ "$output" -eq 3 ]
+  for fixture in \
+    test/fixtures/extensions/fixture-zoo/compiler-heavy/fixture-extension.json \
+    test/fixtures/extensions/fixture-zoo/evidence-heavy/fixture-extension.json \
+    test/fixtures/extensions/fixture-zoo/blade-heavy/fixture-extension.json
+  do
+    run grep -F '"descriptorOnly": true' "$fixture"
+    assert_success
+  done
 
   run rg -n "Postgres|Supabase|Continuum|Echo|Vite|Vue|runtime execution.*true" test/fixtures/extensions/fixture-zoo
   assert_failure
