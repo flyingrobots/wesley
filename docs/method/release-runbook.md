@@ -63,6 +63,8 @@ per-version release log by default.
 
 Run validation strictly in order, using repo-native commands where available:
 
+- audit every tracked file under `docs/topics/` for release-relevant accuracy
+  and coverage
 - release pre-flight script, if the repo already has one
 - `cargo xtask release-prep-guard --version X.Y.Z`, before the tag exists
 - `cargo xtask preflight`
@@ -81,6 +83,20 @@ Run validation strictly in order, using repo-native commands where available:
 The Rust crates are the release authority for the native Wesley product. Do not
 use npm package publication as proof that a Wesley compiler release is ready;
 legacy packages are marked private while they remain in the retirement ledger.
+
+The `docs/topics/` audit is a release documentation gate, not a backlog
+exercise. Score it before continuing:
+
+- **Accuracy**: at least 90% of audited topic claims must match the current
+  codebase, GitHub workflow, issue-triage model, and release policy.
+- **Coverage**: at least 90% of release-relevant contributor/operator topic
+  workflows must be covered by an existing `docs/topics/` page or by a clear
+  link from `docs/topics/` to the authoritative current document.
+
+If either score is below 90%, act before continuing: update stale topic claims,
+remove obsolete instructions, add missing topic coverage, or link to the
+authoritative current surface. Abort only when the release cannot honestly
+reach the 90% accuracy and 90% coverage floors before tagging.
 
 Abort on the first hard failure. Do not claim success from queued or in-progress
 CI state.
@@ -113,4 +129,5 @@ minimum include:
 - tag and commit SHAs
 - GitHub Release URL
 - registry URLs
+- `docs/topics/` accuracy and coverage scores, with links to any corrections
 - any non-blocking warnings

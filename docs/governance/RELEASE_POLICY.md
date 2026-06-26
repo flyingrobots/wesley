@@ -49,6 +49,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 | 20  | `BREAKING CHANGE` commits → major/minor version bump | git log        |          |
 | 21  | `cargo doc --workspace` builds with zero warnings    | cargo doc      |          |
 | 22  | No known issues silently shipped                     |                | reviewer |
+| 23  | `docs/topics/` accuracy and coverage gate            |                | reviewer |
 
 ## Automated Checks — Details
 
@@ -208,6 +209,17 @@ are being knowingly shipped without acknowledgment in the CHANGELOG or a
 documented follow-on issue. Automated issue-tracker checks surface issues by
 version label and milestone; they cannot detect an issue that was never labeled
 but is nonetheless blocking.
+
+### Check 23: `docs/topics/` Accuracy and Coverage Gate
+
+A human reviewer must audit every tracked file under `docs/topics/` before
+tagging. At least 90% of audited topic claims must match the current codebase,
+GitHub workflow, issue-triage model, and release policy, and at least 90% of
+release-relevant contributor/operator topic workflows must be covered by an
+existing `docs/topics/` page or by a clear link from `docs/topics/` to the
+authoritative current document. If either score is below 90%, the reviewer
+must update stale claims, remove obsolete instructions, add missing coverage,
+or link to the authoritative current surface before the release can proceed.
 
 The reviewer must also confirm that repo-resident release evidence is complete
 enough before tagging. Post-publish facts may live in the GitHub Release,

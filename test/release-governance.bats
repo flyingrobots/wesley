@@ -37,6 +37,17 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release checklist includes docs topics accuracy and coverage gate" {
+  run grep -F 'docs/topics/' docs/governance/RELEASE_CHECKLIST.md
+  assert_success
+
+  run grep -F "90% accuracy" docs/governance/RELEASE_CHECKLIST.md
+  assert_success
+
+  run grep -F "90% coverage" docs/governance/RELEASE_CHECKLIST.md
+  assert_success
+}
+
 @test "entrypoints command map lists Rust LE binary emitter" {
   run grep -F "wesley emit le-binary-rust --schema <path> --out <path>" docs/ENTRYPOINTS.md
   assert_success
