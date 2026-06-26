@@ -153,6 +153,7 @@ jobs:
           schema: ${{ matrix.schema_set.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
+          cache-namespace: ${{ matrix.schema_set.id }}
           always-generate: 'true'
 
       - name: '📊 Display Scores'
@@ -206,6 +207,7 @@ jobs:
           schema: ${{ matrix.schema_set.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
+          cache-namespace: ${{ matrix.schema_set.id }}
 
       - name: '🔍 Run Investigation'
         id: holmes
@@ -257,6 +259,7 @@ jobs:
           schema: ${{ matrix.schema_set.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
+          cache-namespace: ${{ matrix.schema_set.id }}
 
       - name: '🩺 Run Verification'
         id: watson
@@ -310,6 +313,7 @@ jobs:
           schema: ${{ matrix.schema_set.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
           artifact-name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
+          cache-namespace: ${{ matrix.schema_set.id }}
           always-generate: 'true'
 
       - name: '🔄 Ensure history for MORIARTY'

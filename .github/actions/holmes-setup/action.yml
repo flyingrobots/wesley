@@ -17,6 +17,10 @@ inputs:
     description: Name of the artifact containing the HOLMES bundle
     required: false
     default: wesley-bundle
+  cache-namespace:
+    description: Namespace used to keep Moriarty history caches isolated
+    required: false
+    default: default
   always-generate:
     description: Force regeneration even if artifacts are available
     required: false
@@ -50,11 +54,11 @@ runs:
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         path: ${{ inputs.bundle-dir }}/history.json
-        key: moriarty-${{ github.sha }}
+        key: moriarty-${{ inputs.cache-namespace }}-${{ github.sha }}
         restore-keys: |
-          moriarty-${{ github.ref }}-
-          moriarty-${{ github.base_ref }}-
-          moriarty-main-
+          moriarty-${{ inputs.cache-namespace }}-${{ github.ref }}-
+          moriarty-${{ inputs.cache-namespace }}-${{ github.base_ref }}-
+          moriarty-${{ inputs.cache-namespace }}-main-
 
     - name: Download bundle artifact
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
@@ -105,4 +109,4 @@ runs:
       uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         path: ${{ inputs.bundle-dir }}/history.json
-        key: moriarty-${{ github.sha }}
+        key: moriarty-${{ inputs.cache-namespace }}-${{ github.sha }}

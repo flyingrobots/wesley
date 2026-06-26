@@ -224,6 +224,18 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 6 ]
 
+  run bash -lc "grep -F 'cache-namespace:' .github/actions/holmes-setup/action.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'moriarty-\${{ inputs.cache-namespace }}-\${{ github.sha }}' .github/actions/holmes-setup/action.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F 'cache-namespace: \${{ matrix.schema_set.id }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 4 ]
+
   run bash -lc "grep -F 'steps.detect.outputs.selected_count' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -ge 1 ]
