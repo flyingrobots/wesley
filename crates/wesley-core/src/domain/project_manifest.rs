@@ -237,7 +237,12 @@ pub fn validate_project_manifest(manifest: &ProjectManifest) -> Result<(), Proje
         if schema.id.trim().is_empty() {
             diagnostics.push("schemaPaths contains a blank id".to_owned());
         }
-        if !schema_id_is_path_safe(&schema.id) {
+        if schema_id_is_dot_only(&schema.id) {
+            diagnostics.push(format!(
+                "schemaPath id '{}' must not be '.', '..', or only dots",
+                schema.id
+            ));
+        } else if !schema_id_is_path_safe(&schema.id) {
             diagnostics.push(format!(
                 "schemaPath id '{}' must contain only ASCII letters, digits, '.', '_', or '-'",
                 schema.id
@@ -403,6 +408,10 @@ fn schema_bundle_dir(base: &str, schema_id: &str, schema_count: usize) -> String
 fn schema_id_is_path_safe(id: &str) -> bool {
     id.chars()
         .all(|character| character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | '-'))
+}
+
+fn schema_id_is_dot_only(id: &str) -> bool {
+    !id.is_empty() && id.chars().all(|character| character == '.')
 }
 
 fn default_api_version() -> String {

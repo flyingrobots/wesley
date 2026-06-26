@@ -152,6 +152,25 @@ fn project_manifest_rejects_schema_ids_that_are_not_path_safe() {
 }
 
 #[test]
+fn project_manifest_rejects_dot_only_schema_ids() {
+    let error = load_project_manifest(
+        r#"
+{
+  "apiVersion": "wesley.project-manifest/v1",
+  "schemaPaths": [
+    { "id": "..", "path": "schema.graphql" }
+  ]
+}
+"#,
+    )
+    .expect_err("dot-only schema ids should fail validation");
+
+    assert!(error
+        .to_string()
+        .contains("schemaPath id '..' must not be '.', '..', or only dots"));
+}
+
+#[test]
 fn project_manifest_rejects_unknown_schema_path_fields() {
     let error = load_project_manifest(
         r#"
