@@ -220,9 +220,17 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 4 ]
 
-  run bash -lc "grep -F 'reports-by-schema/\${{ matrix.schema_set.id }}' .github/workflows/wesley-holmes.yml | wc -l"
+  run bash -lc "grep -F 'mkdir -p \"reports-by-schema/\${{ matrix.schema_set.id }}\"' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
-  [ "$output" -eq 6 ]
+  [ "$output" -eq 3 ]
+
+  run bash -lc "grep -F 'path: reports-by-schema/\${{ matrix.schema_set.id }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 3 ]
+
+  run bash -lc "grep -E '^[[:space:]]+path: reports-by-schema$' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
 
   run bash -lc "grep -F 'cache-namespace:' .github/actions/holmes-setup/action.yml | wc -l"
   assert_success

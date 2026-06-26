@@ -238,7 +238,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: holmes-report-${{ matrix.schema_set.id }}
-          path: reports-by-schema
+          path: reports-by-schema/${{ matrix.schema_set.id }}
           if-no-files-found: error
 
   watson-verify:
@@ -290,7 +290,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: watson-report-${{ matrix.schema_set.id }}
-          path: reports-by-schema
+          path: reports-by-schema/${{ matrix.schema_set.id }}
           if-no-files-found: error
 
   moriarty-predict:
@@ -463,7 +463,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: moriarty-report-${{ matrix.schema_set.id }}
-          path: reports-by-schema
+          path: reports-by-schema/${{ matrix.schema_set.id }}
           if-no-files-found: error
 
   comment-report:
