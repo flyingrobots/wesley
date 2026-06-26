@@ -10,8 +10,8 @@
 > [BEARING.md](./BEARING.md) for current direction and active tensions.
 
 This document is an end-to-end technical explanation of the Wesley repository
-as it exists on the `main` branch on June 24, 2026 (post-PR #619, before the
-`v0.1.0` release tag is cut).
+as it exists on the `main` branch on June 26, 2026 (post-PR #642, before the
+`v0.1.1` release tag is cut).
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the
@@ -61,19 +61,20 @@ assurance ingestion lives in `wesley-holmes`.
 
 ### Current Version And Next Work
 
-The Rust crates in this checkout declare version `0.1.0`, and the public README
-now carries the matching "What's New in v0.1.0" release note. The changelog's
-dated `0.1.0` section carries the accumulated Rust-native compiler hardening,
-Holmes law evidence gates, release-governance work, and the LE-binary codec-plan
-breaking change. The skipped `v0.0.6` packet is superseded planning context; the
-public decode-signature change makes this a pre-1.0 minor release instead of a
-patch release.
+The Rust crates in this checkout declare version `0.1.1`, and the public README
+now carries the matching "What's New in v0.1.1" release note. The changelog's
+dated `0.1.1` section carries the residue purge, roadmap governance cleanup,
+`0.1.x` compatibility aliases, vendored Bats helpers, generated JSON schema
+validation, workflow/package-manager policy guards, release scheduling guards,
+and directive example honesty work. This is a pre-1.0 patch release over the
+published `v0.1.0` codec-plan baseline.
 
 As of this teardown refresh, `cargo xtask preflight`, `cargo xtask
-release-check`, `cargo xtask package-crates --version 0.1.0`, and
-`cargo xtask release-prep-guard --version 0.1.0` pass locally. The obsolete
-2025 `#60` v0.1.0 umbrella issue has been closed as not planned because it no
-longer represents the current release scope.
+release-check`, `cargo xtask package-crates --version 0.1.1`, and
+`cargo xtask release-prep-guard --version 0.1.1` pass locally. The obsolete
+2025 `#60` v0.1.0 umbrella issue remains closed as not planned because it no
+longer represents current release scope, and the `v0.1.1` release gate has no
+remaining open issue work.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion
@@ -252,6 +253,14 @@ emitters onto the same language-neutral plan, made TypeScript public decoders
 return `Result<T>`, and updated the release notes, changelog, and package
 metadata for the pre-1.0 minor release.
 
+The `0.1.1` release preparation removes old browser, Bun, Deno, website, and
+playground residue from the active Wesley product surface; records the `v0.1.0`
+publication evidence; moves live roadmap state to GitHub Issues, labels,
+projects, and milestones; preserves the `0.1.x` public API alias bridge; vendors
+Bats helper dependencies for deterministic CI; adds generated JSON schema
+validation coverage; and hardens release guards around concrete version
+scheduling.
+
 The Holmes law assurance foundation remains an unpublished Rust crate. It has
 evidence, ingest, policy, gate, and suppression foundations, but concrete
 public Holmes adapters, public CLI commands, and reporting surfaces are not yet
@@ -279,12 +288,12 @@ intentionally not yet exposed as a public Holmes CLI from Rust.
 
 ### Current Tensions
 
-The README now describes `v0.1.0`, aligned with the `Cargo.toml` crate version
-declared across the workspace. The changelog's dated `0.1.0` section carries
-the Holmes law assurance substrate work plus the LE-binary codec-plan and
-decode-result contract changes. Release preparation is no longer blocked by
-the stale 2025 `#60` umbrella issue; the current pre-tag guard passes for
-`0.1.0`.
+The README now describes `v0.1.1`, aligned with the `Cargo.toml` crate version
+declared across the workspace. The changelog's dated `0.1.1` section carries
+the post-`0.1.0` residue purge and release-governance hardening work. Release
+preparation is no longer blocked by stale current-release issue text, stale
+filesystem backlog signposts, or the old README release headline; the current
+pre-tag guard passes for `0.1.1`.
 
 ## Package(s) Overview
 
@@ -1511,13 +1520,13 @@ identities from local config or HEAD metadata.
 
 ### Rust Workspace Coverage
 
-The Rust workspace registers 306 tests under `cargo test --workspace -- --list`
-as of the June 24, 2026 `0.1.0` release-candidate state. The full Rust
+The Rust workspace registers 311 tests under `cargo test --workspace -- --list`
+as of the June 26, 2026 `0.1.1` release-candidate state. The full Rust
 workspace test run passes:
 
 ```text
 cargo test --workspace
-306 tests passed
+311 tests passed
 0 failed
 0 ignored
 0 doc tests
@@ -1736,10 +1745,10 @@ for Rust and JavaScript, then attach those reports to Holmes or CI artifacts.
 
 ### Next Release Narrative
 
-After `0.1.0`, the next crates.io release should decide which remaining
+After `0.1.1`, the next crates.io release should decide which remaining
 Rust-native front-door, `weslaw`, Holmes foundation, and release-governance work
-belongs in a patch release versus a later pre-1.0 milestone. Every path must
-keep README, CHANGELOG, tags, and publishable crate manifests aligned.
+belongs in the next patch release versus a later pre-1.0 milestone. Every path
+must keep README, CHANGELOG, tags, and publishable crate manifests aligned.
 
 ### Host Package Fate
 
