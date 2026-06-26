@@ -188,6 +188,8 @@ load 'bats-plugins/bats-assert/load'
 }
 
 @test "HOLMES workflow uses Wesley project manifest for selective schema sets" {
+  # Exact counts below pin the four matrix consumers and three report uploaders.
+  # If a job is added or removed, this contract should be reviewed deliberately.
   run bash -lc "grep -F 'detect-schema-sets:' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
