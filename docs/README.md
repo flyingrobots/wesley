@@ -54,6 +54,13 @@ The completed Rust-native release floor is:
 - [Rust IR Parity Sentinel](./design/0013-rust-ir-parity-sentinel/rust-ir-parity-sentinel.md)
 - [Rust Native Front Door And Node Retirement](./design/0017-rust-native-front-door-and-node-retirement/rust-native-front-door-and-node-retirement.md)
 
+The `v0.2.0` launch surface is now:
+
+- [Wesley v0.2.0 release notes](./releases/v0.2.0.md)
+- [Project Manifest](./reference/project-manifest.md)
+- [Topics](./topics/README.md)
+- [Releases topic](./topics/releases.md)
+
 The old Continuum-heavy `v0.1.0/` lane has been retired to
 [graveyard/v0.1.0](./method/graveyard/v0.1.0/README.md). Treat those notes as
 historical extraction context, not as active Wesley release commitments.
@@ -67,6 +74,8 @@ The repo already has the important generic building blocks around that
 direction:
 
 - Rust-native schema lowering, hashing, operation catalogs, and selection facts
+- JSON/YAML project manifests for schema sets, rebuild selection, bundles,
+  comment mode, dashboards, and generic target metadata
 - deterministic Rust and TypeScript projection surfaces
 - generic operation artifacts whose meaning is assigned by downstream owners
 - HOLMES assurance foundations over explicit evidence bundles

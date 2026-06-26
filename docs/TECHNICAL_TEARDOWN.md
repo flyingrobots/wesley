@@ -68,12 +68,13 @@ expansion, release documentation gate, and removal of the old Holmes capability
 alias. This is a pre-1.0 minor release over the published `v0.1.1`
 residue-purge baseline.
 
-As of this teardown refresh, the release branch is prepared to run
+As of this teardown refresh, release preparation has landed on synced `main`.
+The pre-tag launch pass must still run
 `cargo xtask release-prep-guard --version 0.2.0`, `cargo xtask preflight`,
-`cargo xtask release-check`, and `cargo xtask package-crates --version 0.2.0`.
-The `v0.2.0` release gate is the only issue scheduled in the `Release: v0.2.0`
-milestone, and it remains open until the release commit lands on synced `main`
-and the signed tag is cut.
+`cargo xtask release-check`, and `cargo xtask package-crates --version 0.2.0`
+before the signed tag is cut. The `v0.2.0` release gate is the only issue
+scheduled in the `Release: v0.2.0` milestone, and it remains open until the
+signed tag publishes and publication checks pass.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion

@@ -32,7 +32,8 @@ Transform → Plan → Rehearse → Ship fit together.
 
 ## Getting started quickly
 
-Install the CLI and run the local Quick Start:
+After the `v0.2.0` release publishes, install the CLI and run the local Quick
+Start:
 
 ```bash
 cargo install wesley-cli --version 0.2.0

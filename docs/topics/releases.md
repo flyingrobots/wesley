@@ -40,6 +40,31 @@ That includes:
 The `docs/topics/` gate means this directory must cover release-relevant
 contributor and operator workflows or link clearly to the current authority.
 
+## Pre-Tag Launch Pass
+
+After the release-prep PR lands on `main` but before creating the signed tag,
+run one last docs/signpost audit. The goal is not to create a progress tracker;
+it is to make sure the tagged commit tells the truth without a post-release
+backfill.
+
+Check these durable surfaces at minimum:
+
+- `README.md`
+- `docs/README.md`
+- `docs/GUIDE.md`
+- `docs/ENTRYPOINTS.md`
+- `docs/BEARING.md`
+- `docs/TECHNICAL_TEARDOWN.md`
+- `docs/releases/vX.Y.Z.md`
+- `docs/method/releases/vX.Y.Z/release.md`
+- `docs/method/releases/vX.Y.Z/verification.md`
+- every tracked file under `docs/topics/`
+
+Pre-publication install wording must be honest. It may show the target
+`cargo install wesley-cli --version X.Y.Z` command, but it must not claim the
+version is already published until the signed tag workflow has actually
+published it.
+
 ## Command Sequence
 
 The exact abort-fast sequence lives in

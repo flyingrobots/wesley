@@ -107,8 +107,13 @@ and evidence, not by absorbing sibling runtime semantics.
 
 ### 7. Release Discipline
 
-`v0.1.0` established the Rust-native release floor and the shared LE binary codec
-plan. Future releases must be cut from signed tags on synced `main`; do not merge
+`v0.1.0` established the Rust-native release floor and shared LE binary codec
+plan. `v0.1.1` purged old host, website, playground, backlog, and release
+governance residue. `v0.2.0` is the project-manifest platform launch: schema
+sets, config commands, HOLMES schema selection, descriptor-only extension
+fixtures, and comprehensive `docs/topics/` routing.
+
+Future releases must be cut from signed tags on synced `main`; do not merge
 post-release evidence backfills to `main` after a release boundary.
 
 Versioned release work is tracked by `Release: ...` milestones and release-gate
@@ -152,8 +157,11 @@ Historical closeouts remain useful evidence, but they are not active work queues
 Use the [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
 and GitHub milestones for exact ordering. Product gravity remains:
 
-1. keep the post-`v0.1.0` Rust-native release floor boring and reproducible,
-2. harden evidence truth around Holmes and `weslaw`,
-3. preserve the domain-empty module boundary while external targets consume
+1. tag and publish `v0.2.0` from synced `main` with repo-resident release truth
+   already in place,
+2. keep the Rust-native compiler and project-manifest platform boring and
+   reproducible,
+3. harden evidence truth around Holmes and `weslaw`,
+4. preserve the domain-empty module boundary while external targets consume
    Wesley artifacts, and
-4. cut only from tagged `main` once release-gate issues are satisfied.
+5. cut only from tagged `main` once release-gate issues are satisfied.

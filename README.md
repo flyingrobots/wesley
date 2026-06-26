@@ -39,7 +39,7 @@ as release-scoped until the project declares a stable `1.0` surface.
 
 ## Quick Start
 
-Install the published native CLI:
+After the signed `v0.2.0` tag publishes, install the native CLI:
 
 ```bash
 cargo install wesley-cli --version 0.2.0
