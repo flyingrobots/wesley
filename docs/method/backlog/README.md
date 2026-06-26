@@ -19,7 +19,7 @@ Use:
 gh issue list --label triage:requests
 gh issue list --label triage:bad-code
 gh issue list --label triage:cool-ideas
-gh issue list --label v0.2.0
+gh issue list --label vX.Y.Z
 ```
 
 Do not add new live backlog cards here. Create or update GitHub Issues instead.

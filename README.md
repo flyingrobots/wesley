@@ -42,7 +42,7 @@ as release-scoped until the project declares a stable `1.0` surface.
 Install the published native CLI:
 
 ```bash
-cargo install wesley-cli --version 0.1.1
+cargo install wesley-cli --version 0.2.0
 wesley --help
 ```
 
@@ -129,13 +129,14 @@ extension consumes Wesley IR independently and emits its own artifacts.
 | Echo          | Echo-owned integration            | Runtime law, footprints, observation semantics        |
 | Continuum     | Continuum-owned module/repo       | Deferred protocol generation                          |
 
-## What's New in v0.1.1
+## What's New in v0.2.0
 
-Wesley `0.1.1` is the residue-purge and release-governance hardening release.
-It removes external host experiments and website/playground leftovers from the
-core release surface, keeps `0.1.x` public API compatibility aliases, vendors
-Bats helpers for deterministic CI, adds generated JSON schema validation, and
-hardens workflow, package-manager, and release scheduling guards.
+Wesley `0.2.0` is the domain-free project-manifest platform release. It adds
+the JSON/YAML `wesley.project-manifest/v1` surface, native `wesley config`
+commands, manifest-driven schema selection for HOLMES CI, descriptor-only
+extension fixture modules, and a comprehensive `docs/topics/` operator map.
+The release keeps the boundary explicit: Wesley extracts structure from
+GraphQL, and extensions assign meaning.
 
 For complete history, read [CHANGELOG.md](./CHANGELOG.md).
 

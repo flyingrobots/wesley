@@ -1,6 +1,6 @@
 [package]
 name = "wesley-emit-codec"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "Language-neutral LE-binary codec plan lowered from Wesley L1 IR, shared by the Rust and TypeScript codec emitters."
@@ -12,4 +12,4 @@ keywords = ["graphql", "compiler", "codec", "codegen"]
 categories = ["compilers"]
 
 [dependencies]
-wesley-core = { path = "../wesley-core", version = "0.1.1" }
+wesley-core = { path = "../wesley-core", version = "0.2.0" }

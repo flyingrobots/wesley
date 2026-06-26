@@ -55,6 +55,18 @@ function documentedCommandFromParts(parts, commands) {
   return parts[0];
 }
 
+function commandOrFamilyExists(command, commands) {
+  if (commands.has(command)) return true;
+
+  for (const knownCommand of commands) {
+    if (knownCommand.startsWith(`${command} `)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function extractDocumentedCommands(content, commands) {
   const documented = [];
   for (const snippet of extractCommandSnippets(content)) {
@@ -104,7 +116,7 @@ const commands = loadWesleyCommands();
 for (const doc of docs) {
   const content = readFileSync(resolve(root, doc), 'utf8');
   for (const command of extractDocumentedCommands(content, commands)) {
-    if (!commands.has(command)) {
+    if (!commandOrFamilyExists(command, commands)) {
       fail(
         `${doc} documents "wesley ${command}", but the native Wesley CLI does not expose that command`
       );
