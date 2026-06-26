@@ -42,7 +42,7 @@ as release-scoped until the project declares a stable `1.0` surface.
 Install the published native CLI:
 
 ```bash
-cargo install wesley-cli --version 0.1.0
+cargo install wesley-cli --version 0.1.1
 wesley --help
 ```
 
@@ -120,12 +120,13 @@ extension consumes Wesley IR independently and emits its own artifacts.
 | Echo          | Echo-owned integration            | Runtime law, footprints, observation semantics        |
 | Continuum     | Continuum-owned module/repo       | Deferred protocol generation                          |
 
-## Current Release
+## What's New in v0.1.1
 
-Wesley `0.1.0` is the LE-binary codec-plan release. It ships the shared codec
-plan, TypeScript decode result cleanup, trailing-byte rejection, runtime port
-contracts, and the Rust-native compiler hardening staged before the release
-packet was finalized.
+Wesley `0.1.1` is the residue-purge and release-governance hardening release.
+It removes external host experiments and website/playground leftovers from the
+core release surface, keeps `0.1.x` public API compatibility aliases, vendors
+Bats helpers for deterministic CI, adds generated JSON schema validation, and
+hardens workflow, package-manager, and release scheduling guards.
 
 For complete history, read [CHANGELOG.md](./CHANGELOG.md).
 
