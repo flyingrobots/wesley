@@ -14,6 +14,7 @@ short path to the authoritative surface.
 | ------------------------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------ |
 | Decide whether a change belongs in Wesley or an extension.   | [Compiler Boundary](./compiler-boundary.md) | `docs/design/0014-domain-empty-core-boundary/`               |
 | Configure schema sets, changed-schema selection, or targets. | [Project Manifests](./project-manifests.md) | `docs/reference/project-manifest.md`                         |
+| Author or review descriptor-only extension fixtures.         | [Compiler Boundary](./compiler-boundary.md) | `docs/guides/module-authoring.md`                            |
 | Choose local checks before a PR or release.                  | [Validation](./validation.md)               | `cargo xtask preflight`, `docs/governance/RELEASE_POLICY.md` |
 | Understand HOLMES CI and evidence artifacts.                 | [HOLMES CI](./holmes-ci.md)                 | `.github/workflows/wesley-holmes.yml`, `docs/architecture/`  |
 | Prepare or judge a release.                                  | [Releases](./releases.md)                   | `docs/method/release-runbook.md`, `docs/governance/`         |
