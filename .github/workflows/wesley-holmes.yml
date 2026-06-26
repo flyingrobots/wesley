@@ -58,7 +58,10 @@ jobs:
             git diff --name-only "$BEFORE_SHA" "$HEAD_SHA" > "$changed_file" || true
           fi
 
-          if cargo run --bin wesley -- config inspect --json > "$RUNNER_TEMP/wesley-manifest.json" 2> "$RUNNER_TEMP/wesley-manifest.err"; then
+          manifest_status=0
+          cargo run --bin wesley -- config inspect --json > "$RUNNER_TEMP/wesley-manifest.json" 2> "$RUNNER_TEMP/wesley-manifest.err" || manifest_status=$?
+
+          if [ "$manifest_status" -eq 0 ]; then
             cargo run --bin wesley -- config changed-schemas \
               --changed-file "$changed_file" \
               --json > "$RUNNER_TEMP/wesley-selected.json"
@@ -73,7 +76,12 @@ jobs:
           process.stdout.write(JSON.stringify(sets));
           NODE
           else
-            echo "Manifest discovery failed; falling back to legacy schema detection" >&2
+            if ! grep -Fq "no Wesley manifest found" "$RUNNER_TEMP/wesley-manifest.err"; then
+              echo "Wesley manifest discovery failed; refusing legacy fallback" >&2
+              cat "$RUNNER_TEMP/wesley-manifest.err" >&2 || true
+              exit "$manifest_status"
+            fi
+            echo "No Wesley manifest found; falling back to legacy schema detection" >&2
             cat "$RUNNER_TEMP/wesley-manifest.err" >&2 || true
             if [ -n "${WESLEY_SCHEMA:-}" ] && [ -f "$WESLEY_SCHEMA" ]; then
               schema="$WESLEY_SCHEMA"

@@ -196,6 +196,22 @@ load 'bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 1 ]
 
+  run bash -lc "grep -F 'manifest_status=' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'No Wesley manifest found' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'Wesley manifest discovery failed; refusing legacy fallback' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'exit \"\$manifest_status\"' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
   run bash -lc "grep -F 'cargo run --bin wesley -- config changed-schemas' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
