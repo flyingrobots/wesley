@@ -82,6 +82,16 @@ Run the local release-quality gate before opening a PR:
 cargo xtask preflight
 ```
 
+Validate a project manifest when a repo wants config-driven schema selection:
+
+```bash
+cargo wesley config validate --config wesley.config.json --json
+cargo wesley config changed-schemas \
+  --config wesley.config.json \
+  --changed test/fixtures/examples/ecommerce.graphql \
+  --json
+```
+
 The retained pnpm workspace supports docs, Holmes assurance tooling, and
 workspace checks. Use Node `>=22.12.0` with pnpm `9.15.9` when working from
 this checkout.
@@ -140,7 +150,9 @@ For complete history, read [CHANGELOG.md](./CHANGELOG.md).
 - [End To End](./docs/END_TO_END.md)
 - [Entrypoints](./docs/ENTRYPOINTS.md)
 - [CLI reference](./docs/reference/cli.md)
+- [Project manifest](./docs/reference/project-manifest.md)
 - [Directive truth table](./docs/reference/directives.md)
+- [Module authoring](./docs/guides/module-authoring.md)
 - [Technical teardown](./docs/TECHNICAL_TEARDOWN.md)
 - [Release policy](./docs/governance/RELEASE_POLICY.md)
 - [Contributing](./CONTRIBUTING.md)

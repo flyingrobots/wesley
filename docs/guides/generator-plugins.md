@@ -5,14 +5,21 @@ modules for domain targets. This page documents the retired Node generator
 plugin contract as migration context. The older package surfaces are gone; keep
 new generator work in Rust emitters or external modules.
 
-For new work, start with [Extending Wesley](./extending.md). Add generic
-compiler facts in Rust, and put domain targets in external modules or crates.
+For new work, start with [Extending Wesley](./extending.md),
+[Module Authoring Guide](./module-authoring.md), and
+[Project Manifest](../reference/project-manifest.md). Add generic compiler
+facts in Rust, declare local schema/target metadata in `wesley.config.json` or
+YAML, and put domain targets in external modules or crates.
 
 ---
 
-## Quick Start
+## Historical Quick Start
 
-The smallest possible generator plugin:
+This section is historical. It describes the retired JavaScript generator
+plugin runner so old docs and migration audits remain intelligible. Do not use
+this interface for new Wesley core work.
+
+The smallest retired generator plugin looked like this:
 
 ```mjs
 // my-plugin.mjs
@@ -44,7 +51,8 @@ export class HelloPlugin {
 export default HelloPlugin;
 ```
 
-Expose it from a Wesley module and register that module in `wesley.config.mjs`:
+It was exposed from a Wesley module and registered in the retired
+`wesley.config.mjs` loader:
 
 ```mjs
 // my-wesley-module.mjs

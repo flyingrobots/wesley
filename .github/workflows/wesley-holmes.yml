@@ -16,12 +16,132 @@ permissions:
   contents: read
 
 jobs:
+  detect-schema-sets:
+    name: '🧭 Detect Schema Sets'
+    runs-on: ubuntu-latest
+    outputs:
+      schema_sets: ${{ steps.detect.outputs.schema_sets }}
+      selected_count: ${{ steps.detect.outputs.selected_count }}
+      comment_mode: ${{ steps.detect.outputs.comment_mode }}
+
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411
+        with:
+          egress-policy: audit
+
+      - name: '📦 Checkout Repository'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Verify Rust toolchain
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: '🧭 Detect Schema Sets'
+        id: detect
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          changed_file="$RUNNER_TEMP/wesley-changed-files.txt"
+          : > "$changed_file"
+          if [ "$EVENT_NAME" = "pull_request" ] && [ -n "${BASE_SHA:-}" ]; then
+            git diff --name-only "$BASE_SHA" "$HEAD_SHA" > "$changed_file" || true
+          elif [ -n "${BEFORE_SHA:-}" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git diff --name-only "$BEFORE_SHA" "$HEAD_SHA" > "$changed_file" || true
+          fi
+
+          manifest_status=0
+          cargo run --bin wesley -- config inspect --json > "$RUNNER_TEMP/wesley-manifest.json" 2> "$RUNNER_TEMP/wesley-manifest.err" || manifest_status=$?
+
+          if [ "$manifest_status" -eq 0 ]; then
+            cargo run --bin wesley -- config changed-schemas \
+              --changed-file "$changed_file" \
+              --json > "$RUNNER_TEMP/wesley-selected.json"
+            comment_mode="$(node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/wesley-manifest.json', 'utf8'));
+          process.stdout.write(report.manifest.commentMode || 'update');
+          NODE
+          )"
+            node <<'NODE' > "$RUNNER_TEMP/wesley-schema-sets.json"
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/wesley-selected.json', 'utf8'));
+          const sets = (report.selectedSchemaPaths || []).map((schema) => ({
+            id: schema.id,
+            schema: schema.path,
+            bundle_dir: schema.bundleDir
+          }));
+          process.stdout.write(JSON.stringify(sets));
+          NODE
+          else
+            if ! grep -Fq "no Wesley manifest found" "$RUNNER_TEMP/wesley-manifest.err"; then
+              echo "Wesley manifest discovery failed; refusing legacy fallback" >&2
+              cat "$RUNNER_TEMP/wesley-manifest.err" >&2 || true
+              exit "$manifest_status"
+            fi
+            echo "No Wesley manifest found; falling back to legacy schema detection" >&2
+            cat "$RUNNER_TEMP/wesley-manifest.err" >&2 || true
+            if [ -n "${WESLEY_SCHEMA:-}" ] && [ -f "$WESLEY_SCHEMA" ]; then
+              schema="$WESLEY_SCHEMA"
+            elif [ -n "${HOLMES_SCHEMA:-}" ] && [ -f "$HOLMES_SCHEMA" ]; then
+              schema="$HOLMES_SCHEMA"
+            else
+              mapfile -t files < <(git ls-files "**/*.graphql" 2>/dev/null || true)
+              picked=""
+              if [ ${#files[@]} -gt 0 ]; then
+                for f in "${files[@]}"; do
+                  if [ "${f##*/}" = "schema.graphql" ]; then picked="$f"; break; fi
+                done
+                if [ -z "$picked" ]; then picked="${files[0]}"; fi
+              fi
+              schema="${picked:-$HOLMES_SCHEMA}"
+            fi
+            base_dir="$(dirname "$schema")"
+            bundle_dir="$base_dir/.wesley-cache"
+            comment_mode="update"
+            SCHEMA="$schema" BUNDLE_DIR="$bundle_dir" \
+              node -e 'process.stdout.write(JSON.stringify([{id:"default",schema:process.env.SCHEMA,bundle_dir:process.env.BUNDLE_DIR}]))' \
+              > "$RUNNER_TEMP/wesley-schema-sets.json"
+          fi
+
+          selected_count="$(jq 'length' "$RUNNER_TEMP/wesley-schema-sets.json")"
+          echo "Selected schema sets: $selected_count"
+          jq -r '.[] | " - \(.id): \(.schema) -> \(.bundle_dir)"' "$RUNNER_TEMP/wesley-schema-sets.json"
+          {
+            echo 'schema_sets<<JSON'
+            cat "$RUNNER_TEMP/wesley-schema-sets.json"
+            echo
+            echo 'JSON'
+            echo "selected_count=$selected_count"
+            echo "comment_mode=$comment_mode"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: '📤 Upload Dashboard Template'
+        if: ${{ steps.detect.outputs.selected_count != '0' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dashboard-template
+          path: docs/holmes-dashboard
+          if-no-files-found: error
+
   wesley-generate:
     name: '🚀 Wesley Generation'
     runs-on: ubuntu-latest
-    outputs:
-      schema: ${{ steps.detect.outputs.schema }}
-      bundle_dir: ${{ steps.detect.outputs.bundle_dir }}
+    needs: detect-schema-sets
+    if: ${{ needs.detect-schema-sets.outputs.selected_count != '0' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        schema_set: ${{ fromJson(needs.detect-schema-sets.outputs.schema_sets) }}
 
     steps:
       - name: Harden runner
@@ -35,77 +155,49 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: '🕵️ Detect Schema'
-        id: detect
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -n "${WESLEY_SCHEMA:-}" ] && [ -f "$WESLEY_SCHEMA" ]; then
-            schema="$WESLEY_SCHEMA"
-          elif [ -n "${HOLMES_SCHEMA:-}" ] && [ -f "$HOLMES_SCHEMA" ]; then
-            schema="$HOLMES_SCHEMA"
-          else
-            mapfile -t files < <(git ls-files "**/*.graphql" 2>/dev/null || true)
-            picked=""
-            if [ ${#files[@]} -gt 0 ]; then
-              for f in "${files[@]}"; do
-                if [ "${f##*/}" = "schema.graphql" ]; then picked="$f"; break; fi
-              done
-              if [ -z "$picked" ]; then picked="${files[0]}"; fi
-            fi
-            schema="${picked:-$HOLMES_SCHEMA}"
-          fi
-          base_dir="$(dirname "$schema")"
-          bundle_dir="$base_dir/.wesley-cache"
-          echo "schema=$schema" >> "$GITHUB_OUTPUT"
-          echo "bundle_dir=$bundle_dir" >> "$GITHUB_OUTPUT"
-          echo "Detected schema: $schema"
-          echo "Bundle dir: $bundle_dir"
-
       - name: '🛠️ Setup HOLMES environment'
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ steps.detect.outputs.bundle_dir }}
-          schema: ${{ steps.detect.outputs.schema }}
+          bundle-dir: ${{ matrix.schema_set.bundle_dir }}
+          schema: ${{ matrix.schema_set.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
-          artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
+          cache-namespace: ${{ matrix.schema_set.id }}
           always-generate: 'true'
 
       - name: '📊 Display Scores'
         run: |
           echo "## 📊 Generation Scores"
-          if [ -f "${{ steps.detect.outputs.bundle_dir }}/scores.json" ]; then
-            cat "${{ steps.detect.outputs.bundle_dir }}/scores.json" | jq '.scores'
+          if [ -f "${{ matrix.schema_set.bundle_dir }}/scores.json" ]; then
+            cat "${{ matrix.schema_set.bundle_dir }}/scores.json" | jq '.scores'
           else
             echo "No scores.json found yet"
           fi
 
-      - name: '📤 Upload Dashboard Template'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: dashboard-template
-          path: docs/holmes-dashboard
-          if-no-files-found: error
-
       - name: '📦 Prepare Bundle for Upload'
         run: |
-          ls -la "${{ steps.detect.outputs.bundle_dir }}"
-          test -f "${{ steps.detect.outputs.bundle_dir }}/bundle.json"
+          ls -la "${{ matrix.schema_set.bundle_dir }}"
+          test -f "${{ matrix.schema_set.bundle_dir }}/bundle.json"
 
       - name: '💾 Upload Bundle'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ${{ env.HOLMES_ARTIFACT }}
+          name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
           path: |
-            ${{ steps.detect.outputs.bundle_dir }}/bundle.json
-            ${{ steps.detect.outputs.bundle_dir }}/scores.json
-            ${{ steps.detect.outputs.bundle_dir }}/history.json
+            ${{ matrix.schema_set.bundle_dir }}/bundle.json
+            ${{ matrix.schema_set.bundle_dir }}/scores.json
+            ${{ matrix.schema_set.bundle_dir }}/history.json
           if-no-files-found: error
 
   holmes-investigate:
     name: '🔍 HOLMES Investigation'
     runs-on: ubuntu-latest
-    needs: wesley-generate
+    needs: [detect-schema-sets, wesley-generate]
+    if: ${{ needs.detect-schema-sets.outputs.selected_count != '0' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        schema_set: ${{ fromJson(needs.detect-schema-sets.outputs.schema_sets) }}
 
     steps:
       - name: Harden runner
@@ -120,10 +212,11 @@ jobs:
       - name: '🛠️ Setup HOLMES environment'
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
-          schema: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ matrix.schema_set.bundle_dir }}
+          schema: ${{ matrix.schema_set.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
-          artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
+          cache-namespace: ${{ matrix.schema_set.id }}
 
       - name: '🔍 Run Investigation'
         id: holmes
@@ -131,20 +224,32 @@ jobs:
         with:
           command: investigate
           report-name: holmes
-          schema-path: ${{ needs.wesley-generate.outputs.schema }}
-          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema-path: ${{ matrix.schema_set.schema }}
+          bundle-dir: ${{ matrix.schema_set.bundle_dir }}
+
+      - name: '📚 Scope Report'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "reports-by-schema/${{ matrix.schema_set.id }}"
+          cp -R reports/holmes "reports-by-schema/${{ matrix.schema_set.id }}/"
 
       - name: '💾 Save Report'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: holmes-report
-          path: reports/holmes
+          name: holmes-report-${{ matrix.schema_set.id }}
+          path: reports-by-schema/${{ matrix.schema_set.id }}
           if-no-files-found: error
 
   watson-verify:
     name: '🩺 WATSON Verification'
     runs-on: ubuntu-latest
-    needs: [wesley-generate, holmes-investigate]
+    needs: [detect-schema-sets, wesley-generate, holmes-investigate]
+    if: ${{ needs.detect-schema-sets.outputs.selected_count != '0' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        schema_set: ${{ fromJson(needs.detect-schema-sets.outputs.schema_sets) }}
 
     steps:
       - name: Harden runner
@@ -159,10 +264,11 @@ jobs:
       - name: '🛠️ Setup HOLMES environment'
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
-          schema: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ matrix.schema_set.bundle_dir }}
+          schema: ${{ matrix.schema_set.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
-          artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
+          cache-namespace: ${{ matrix.schema_set.id }}
 
       - name: '🩺 Run Verification'
         id: watson
@@ -170,20 +276,32 @@ jobs:
         with:
           command: verify
           report-name: watson
-          schema-path: ${{ needs.wesley-generate.outputs.schema }}
-          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema-path: ${{ matrix.schema_set.schema }}
+          bundle-dir: ${{ matrix.schema_set.bundle_dir }}
+
+      - name: '📚 Scope Report'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "reports-by-schema/${{ matrix.schema_set.id }}"
+          cp -R reports/watson "reports-by-schema/${{ matrix.schema_set.id }}/"
 
       - name: '💾 Save Report'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: watson-report
-          path: reports/watson
+          name: watson-report-${{ matrix.schema_set.id }}
+          path: reports-by-schema/${{ matrix.schema_set.id }}
           if-no-files-found: error
 
   moriarty-predict:
     name: '🔮 MORIARTY Predictions'
     runs-on: ubuntu-latest
-    needs: [wesley-generate, watson-verify]
+    needs: [detect-schema-sets, wesley-generate, watson-verify]
+    if: ${{ needs.detect-schema-sets.outputs.selected_count != '0' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        schema_set: ${{ fromJson(needs.detect-schema-sets.outputs.schema_sets) }}
 
     steps:
       - name: Harden runner
@@ -200,10 +318,11 @@ jobs:
       - name: '🛠️ Setup HOLMES environment'
         uses: ./.github/actions/holmes-setup
         with:
-          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
-          schema: ${{ needs.wesley-generate.outputs.schema }}
+          bundle-dir: ${{ matrix.schema_set.bundle_dir }}
+          schema: ${{ matrix.schema_set.schema }}
           out-dir: ${{ env.HOLMES_OUT_DIR }}
-          artifact-name: ${{ env.HOLMES_ARTIFACT }}
+          artifact-name: ${{ env.HOLMES_ARTIFACT }}-${{ matrix.schema_set.id }}
+          cache-namespace: ${{ matrix.schema_set.id }}
           always-generate: 'true'
 
       - name: '🔄 Ensure history for MORIARTY'
@@ -219,7 +338,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         continue-on-error: true
         env:
-          BUNDLE_DIR: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          BUNDLE_DIR: ${{ matrix.schema_set.bundle_dir }}
           BASE_REF: ${{ github.base_ref }}
           TIMEFRAME_HOURS: 168
         with:
@@ -323,8 +442,8 @@ jobs:
         with:
           command: predict
           report-name: moriarty
-          schema-path: ${{ needs.wesley-generate.outputs.schema }}
-          bundle-dir: ${{ needs.wesley-generate.outputs.bundle_dir }}
+          schema-path: ${{ matrix.schema_set.schema }}
+          bundle-dir: ${{ matrix.schema_set.bundle_dir }}
         env:
           MORIARTY_BASE_REF: '${{ github.base_ref }}'
           MORIARTY_USE_GIT: '1'
@@ -333,18 +452,25 @@ jobs:
           MORIARTY_ACTIVITY_COMMITS_PER_DAY: '6'
           MORIARTY_ACTIVITY_RELEVANT_PER_DAY: '4'
 
+      - name: '📚 Scope Report'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "reports-by-schema/${{ matrix.schema_set.id }}"
+          cp -R reports/moriarty "reports-by-schema/${{ matrix.schema_set.id }}/"
+
       - name: '💾 Save Report'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: moriarty-report
-          path: reports/moriarty
+          name: moriarty-report-${{ matrix.schema_set.id }}
+          path: reports-by-schema/${{ matrix.schema_set.id }}
           if-no-files-found: error
 
   comment-report:
     name: '📝 Post Investigation Report'
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    needs: [holmes-investigate, watson-verify, moriarty-predict]
+    if: github.event_name == 'pull_request' && needs.detect-schema-sets.outputs.selected_count != '0' && needs.detect-schema-sets.outputs.comment_mode != 'silent'
+    needs: [detect-schema-sets, holmes-investigate, watson-verify, moriarty-predict]
     env:
       HOLMES_STATUS: ${{ needs.holmes-investigate.result }}
       WATSON_STATUS: ${{ needs.watson-verify.result }}
@@ -412,10 +538,12 @@ jobs:
       - name: '🧾 Build PR Comment'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          SCHEMA_SETS_JSON: ${{ needs.detect-schema-sets.outputs.schema_sets }}
         run: |
           set -euo pipefail
           node packages/wesley-holmes/src/pr-comment-cli.mjs \
             --reports-dir reports \
+            --schema-sets-json "$SCHEMA_SETS_JSON" \
             --pr-number "$PR_NUMBER" \
             --head-sha "$GITHUB_SHA" \
             --holmes-status "$HOLMES_STATUS" \
@@ -467,12 +595,3 @@ jobs:
                 body
               });
             }
-      - name: '🔄 Ensure history for MORIARTY'
-        shell: bash
-        run: |
-          set -euo pipefail
-          # In case fetch-depth wasn't honored or repo is shallow, try to unshallow
-          if git rev-parse --is-shallow-repository >/dev/null 2>&1; then
-            git fetch --prune --unshallow --tags || true
-          fi
-          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*' || true

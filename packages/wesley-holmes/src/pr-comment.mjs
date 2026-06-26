@@ -91,6 +91,96 @@ export function buildHolmesSuiteComment({
   return lines.join('\n');
 }
 
+export function buildHolmesMultiSchemaComment({
+  pullRequestNumber,
+  headSha = '',
+  statuses = {},
+  schemaReports = []
+}) {
+  if (schemaReports.length === 0) {
+    return buildHolmesSuiteComment({
+      pullRequestNumber,
+      headSha,
+      statuses
+    });
+  }
+
+  const lines = [
+    HOLMES_SUITE_COMMENT_MARKER,
+    renderCurrentShaMarker(headSha),
+    `# 🔍 The Case of Pull Request #${pullRequestNumber}`,
+    '',
+    '## Schema Sets',
+    '',
+    ...schemaReports.map((entry) => `- \`${entry.id}\``),
+    '',
+    ...schemaReports.flatMap((entry, index) => [
+      index === 0 ? '' : '---',
+      '',
+      `## Schema Set \`${entry.id}\``,
+      '',
+      '### Plain-English Readout',
+      '',
+      ...renderPlainEnglishReadout({
+        holmesReport: entry.holmesReport,
+        watsonReport: entry.watsonReport,
+        moriartyReport: entry.moriartyReport,
+        statuses,
+        reportStates: entry.reportStates
+      }),
+      '',
+      ...renderNextActions({
+        holmesReport: entry.holmesReport,
+        watsonReport: entry.watsonReport,
+        moriartyReport: entry.moriartyReport,
+        statuses,
+        reportStates: entry.reportStates
+      }),
+      '',
+      renderReportSection(
+        `🕵️ SHA-lock HOLMES full report for ${entry.id}`,
+        entry.holmesMarkdown,
+        statuses.holmes,
+        'holmes',
+        'holmes-report.md',
+        entry.markdownStates.holmes
+      ),
+      '',
+      renderReportSection(
+        `🩺 Dr. WATSON full report for ${entry.id}`,
+        entry.watsonMarkdown,
+        statuses.watson,
+        'watson',
+        'watson-report.md',
+        entry.markdownStates.watson
+      ),
+      '',
+      renderReportSection(
+        `🔮 Professor MORIARTY full report for ${entry.id}`,
+        entry.moriartyMarkdown,
+        statuses.moriarty,
+        'moriarty',
+        'moriarty-report.md',
+        entry.markdownStates.moriarty
+      ),
+      ''
+    ]),
+    '---',
+    '',
+    ...renderGlossary(),
+    '',
+    '---',
+    '',
+    '_Machine-readable reports are grouped by schema set in workflow artifacts._',
+    '',
+    '---',
+    '',
+    '*Filed at 221B Repository Street*'
+  ];
+
+  return lines.join('\n');
+}
+
 export function loadHolmesSuiteReports(reportsDir, statuses = {}) {
   const holmesReport = readJsonReport(reportsDir, 'holmes', 'holmes-report.json');
   const watsonReport = readJsonReport(reportsDir, 'watson', 'watson-report.json');
@@ -132,6 +222,60 @@ export function loadHolmesSuiteReports(reportsDir, statuses = {}) {
     watsonMarkdown: watsonMarkdown.value,
     moriartyMarkdown: moriartyMarkdown.value
   };
+}
+
+export function loadHolmesSuiteReportSets(reportsDir, statuses = {}, options = {}) {
+  const schemaDirs = findSchemaReportDirs(reportsDir);
+  const expectedSchemaIds = normalizeSchemaSetIds(options.schemaSetIds || []);
+  if (expectedSchemaIds.length > 0) {
+    const dirsByName = new Map(schemaDirs.map((entry) => [entry.name, entry.path]));
+    return expectedSchemaIds.map((id) => ({
+      id,
+      ...loadHolmesSuiteReports(dirsByName.get(id) || path.join(reportsDir, id), statuses)
+    }));
+  }
+
+  if (schemaDirs.length === 0) {
+    return [
+      {
+        id: 'default',
+        ...loadHolmesSuiteReports(reportsDir, statuses)
+      }
+    ];
+  }
+
+  return schemaDirs.map((entry) => ({
+    id: entry.name,
+    ...loadHolmesSuiteReports(entry.path, statuses)
+  }));
+}
+
+function normalizeSchemaSetIds(values) {
+  const ids = [];
+  const seen = new Set();
+  for (const value of values) {
+    const id = normalizeOptionalString(value);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  return ids;
+}
+
+function findSchemaReportDirs(reportsDir) {
+  if (!existsSync(reportsDir)) return [];
+  return readdirSync(reportsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => ({
+      name: entry.name,
+      path: path.join(reportsDir, entry.name)
+    }))
+    .filter((entry) =>
+      ['holmes', 'watson', 'moriarty'].some((reportName) =>
+        existsSync(path.join(entry.path, reportName))
+      )
+    )
+    .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function renderCurrentShaMarker(headSha) {

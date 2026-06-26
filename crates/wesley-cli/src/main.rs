@@ -8,11 +8,14 @@ use std::process::{Command, ExitCode};
 use wesley_core::{
     build_contract_bundle_manifest_v1, compute_content_hash, compute_law_hash_v1,
     compute_registry_hash, diff_law_ir_v1, diff_schema_sdl, extract_operation_directive_args,
-    format_law_diff_markdown_v1, list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl,
-    lower_wes_channel_directives_to_law_ir_v1, normalize_schema_sdl, record_law_binding_error_v1,
-    resolve_operation_selections, resolve_operation_selections_with_schema,
-    ContractBundleManifestV1, FootprintLawV1, LawDiffReportV1, LawEntryBodyV1, LawIrV1,
-    OperationType, ScalarSemanticsLawV1, SchemaDelta, TypeKind, WeslawError, WesleyError, WesleyIR,
+    format_law_diff_markdown_v1, list_schema_operations_sdl, load_project_manifest,
+    load_weslaw_yaml, lower_schema_sdl, lower_wes_channel_directives_to_law_ir_v1,
+    normalize_schema_sdl, record_law_binding_error_v1, resolve_operation_selections,
+    resolve_operation_selections_with_schema, select_changed_schema_paths,
+    ContractBundleManifestV1, DetailedSchemaPathConfig, FootprintLawV1, LawDiffReportV1,
+    LawEntryBodyV1, LawIrV1, OperationType, ProjectManifest, ProjectManifestError,
+    ResolvedSchemaPath, ScalarSemanticsLawV1, SchemaDelta, SchemaPathConfig, SelectedSchemaPath,
+    TypeKind, WeslawError, WesleyError, WesleyIR,
 };
 use wesley_emit_rust::{
     emit_le_binary_rust, emit_rust_with_operations, emit_rust_with_operations_and_law,
@@ -58,6 +61,7 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
             Ok(EXIT_OK)
         }
         Some("doctor") => run_doctor_command(&args[1..]),
+        Some("config") => run_config_command(&args[1..]),
         Some("init-law") if wants_help(&args[1..]) => {
             print_init_law_help();
             Ok(EXIT_OK)
@@ -392,6 +396,94 @@ fn run_doctor_command(args: &[String]) -> Result<u8, CliError> {
     }
 }
 
+fn run_config_command(args: &[String]) -> Result<u8, CliError> {
+    match args.first().map(String::as_str) {
+        None | Some("--help") | Some("-h") => {
+            print_config_help();
+            Ok(EXIT_OK)
+        }
+        Some("validate") if wants_help(&args[1..]) => {
+            print_config_help();
+            Ok(EXIT_OK)
+        }
+        Some("validate") => {
+            let options = parse_options(&args[1..], "config validate")?;
+            let (manifest_path, manifest) = load_manifest_from_options(&options)?;
+            let report = ConfigInspectReport {
+                valid: true,
+                manifest_path: manifest_path.display().to_string(),
+                resolved_schema_paths: manifest.resolved_schema_paths(),
+                manifest,
+            };
+
+            if options.json {
+                print_json(&report)?;
+            } else {
+                println!("Manifest valid: {}", report.manifest_path);
+            }
+            Ok(EXIT_OK)
+        }
+        Some("inspect") if wants_help(&args[1..]) => {
+            print_config_help();
+            Ok(EXIT_OK)
+        }
+        Some("inspect") => {
+            let options = parse_options(&args[1..], "config inspect")?;
+            let (manifest_path, manifest) = load_manifest_from_options(&options)?;
+            let report = ConfigInspectReport {
+                valid: true,
+                manifest_path: manifest_path.display().to_string(),
+                resolved_schema_paths: manifest.resolved_schema_paths(),
+                manifest,
+            };
+
+            if options.json {
+                print_json(&report)?;
+            } else {
+                println!("Manifest: {}", report.manifest_path);
+                println!("Bundle dir: {}", report.manifest.bundle_dir);
+                for schema in &report.resolved_schema_paths {
+                    println!("Schema {}: {}", schema.id, schema.path);
+                }
+                for target in &report.manifest.targets {
+                    println!("Target: {}", target.name);
+                }
+            }
+            Ok(EXIT_OK)
+        }
+        Some("changed-schemas") if wants_help(&args[1..]) => {
+            print_config_help();
+            Ok(EXIT_OK)
+        }
+        Some("changed-schemas") => {
+            let options = parse_options(&args[1..], "config changed-schemas")?;
+            let (manifest_path, manifest) = load_manifest_from_options(&options)?;
+            let changed_files = changed_files_from_options(&options)?;
+            let selection_manifest =
+                manifest_with_paths_relative_to_cwd(&manifest_path, &manifest)?;
+            let selected_schema_paths =
+                select_changed_schema_paths(&selection_manifest, &changed_files);
+            let report = ConfigChangedSchemasReport {
+                manifest_path: manifest_path.display().to_string(),
+                changed_files,
+                selected_schema_paths,
+            };
+
+            if options.json {
+                print_json(&report)?;
+            } else {
+                for schema in &report.selected_schema_paths {
+                    println!("{} {} ({})", schema.id, schema.path, schema.reason);
+                }
+            }
+            Ok(EXIT_OK)
+        }
+        Some(command) => Err(CliError::usage(format!(
+            "unknown config command '{command}'"
+        ))),
+    }
+}
+
 fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
     match args.first().map(String::as_str) {
         None | Some("--help") | Some("-h") => {
@@ -404,7 +496,7 @@ fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
         }
         Some("lower") => {
             let options = parse_options(&args[1..], "schema lower")?;
-            let schema_path = options.required_schema("schema lower")?;
+            let schema_path = schema_path_or_manifest_default(&options, "schema lower")?;
             let sdl = read_file(&schema_path, "schema")?;
             let ir = lower_schema_sdl(&sdl)?;
             print_json(&ir)?;
@@ -416,7 +508,7 @@ fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
         }
         Some("hash") => {
             let options = parse_options(&args[1..], "schema hash")?;
-            let schema_path = options.required_schema("schema hash")?;
+            let schema_path = schema_path_or_manifest_default(&options, "schema hash")?;
             let sdl = read_file(&schema_path, "schema")?;
             let ir = lower_schema_sdl(&sdl)?;
             let schema_hash = compute_registry_hash(&ir)?;
@@ -435,7 +527,7 @@ fn run_schema_command(args: &[String]) -> Result<u8, CliError> {
         }
         Some("operations") => {
             let options = parse_options(&args[1..], "schema operations")?;
-            let schema_path = options.required_schema("schema operations")?;
+            let schema_path = schema_path_or_manifest_default(&options, "schema operations")?;
             let sdl = read_file(&schema_path, "schema")?;
             let operations = list_schema_operations_sdl(&sdl)?;
 
@@ -824,6 +916,7 @@ fn print_doctor_text(report: &DoctorReport) {
 #[derive(Default)]
 struct ParsedOptions {
     schema: Option<PathBuf>,
+    config: Option<PathBuf>,
     law: Option<PathBuf>,
     old_schema: Option<PathBuf>,
     new_schema: Option<PathBuf>,
@@ -836,6 +929,8 @@ struct ParsedOptions {
     family: Option<String>,
     profile: Option<String>,
     subject: Option<String>,
+    changed: Vec<String>,
+    changed_file: Option<PathBuf>,
     format: Option<String>,
     breaking_only: bool,
     exit_code: bool,
@@ -924,6 +1019,39 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
             "--schema" | "-s" => {
                 index += 1;
                 options.schema = Some(PathBuf::from(required_value(args, index, "--schema")?));
+            }
+            "--config" if command.starts_with("config ") || command.starts_with("schema ") => {
+                index += 1;
+                options.config = Some(PathBuf::from(required_value(args, index, "--config")?));
+            }
+            "--config" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--config' for `{command}`"
+                )));
+            }
+            "--changed" if command == "config changed-schemas" => {
+                index += 1;
+                options
+                    .changed
+                    .push(required_value(args, index, "--changed")?);
+            }
+            "--changed" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--changed' for `{command}`"
+                )));
+            }
+            "--changed-file" if command == "config changed-schemas" => {
+                index += 1;
+                options.changed_file = Some(PathBuf::from(required_value(
+                    args,
+                    index,
+                    "--changed-file",
+                )?));
+            }
+            "--changed-file" => {
+                return Err(CliError::usage(format!(
+                    "unknown option '--changed-file' for `{command}`"
+                )));
             }
             "--old" => {
                 index += 1;
@@ -1122,6 +1250,147 @@ fn write_file(path: &Path, content: &str, label: &str) -> Result<(), CliError> {
     })
 }
 
+fn schema_path_or_manifest_default(
+    options: &ParsedOptions,
+    command: &str,
+) -> Result<PathBuf, CliError> {
+    if let Some(schema) = options.schema.clone() {
+        return Ok(schema);
+    }
+
+    let (manifest_path, manifest) = load_manifest_from_options(options)?;
+    let schemas = manifest.resolved_schema_paths();
+    match schemas.as_slice() {
+        [schema] => Ok(resolve_manifest_relative_path(&manifest_path, &schema.path)),
+        [] => Err(CliError::usage(format!(
+            "missing --schema for `{command}` and manifest has no schemaPaths"
+        ))),
+        _ => Err(CliError::usage(format!(
+            "missing --schema for `{command}` and manifest has multiple schemaPaths; pass --schema explicitly"
+        ))),
+    }
+}
+
+fn load_manifest_from_options(
+    options: &ParsedOptions,
+) -> Result<(PathBuf, ProjectManifest), CliError> {
+    let manifest_path = if let Some(config) = options.config.clone() {
+        config
+    } else {
+        discover_manifest_path()?
+    };
+    let source = read_file(&manifest_path, "project manifest")?;
+    let manifest = load_project_manifest(&source)?;
+    Ok((manifest_path, manifest))
+}
+
+fn discover_manifest_path() -> Result<PathBuf, CliError> {
+    const CANDIDATES: &[&str] = &[
+        "wesley.config.json",
+        "wesley.config.yaml",
+        "wesley.config.yml",
+        ".wesley/config.json",
+    ];
+
+    let mut dir = env::current_dir()
+        .map_err(|source| CliError::Git(format!("failed to read current directory: {source}")))?;
+    loop {
+        for candidate in CANDIDATES {
+            let path = dir.join(candidate);
+            if path.is_file() {
+                return Ok(path);
+            }
+        }
+
+        if !dir.pop() {
+            break;
+        }
+    }
+
+    Err(CliError::usage(
+        "no Wesley manifest found; pass --config or create wesley.config.json",
+    ))
+}
+
+fn resolve_manifest_relative_path(manifest_path: &Path, path: &str) -> PathBuf {
+    let path = PathBuf::from(path);
+    if path.is_absolute() {
+        path
+    } else {
+        manifest_path
+            .parent()
+            .unwrap_or_else(|| Path::new(""))
+            .join(path)
+    }
+}
+
+fn manifest_with_paths_relative_to_cwd(
+    manifest_path: &Path,
+    manifest: &ProjectManifest,
+) -> Result<ProjectManifest, CliError> {
+    let mut projected = manifest.clone();
+    projected.bundle_dir = manifest_path_relative_string(manifest_path, &manifest.bundle_dir)?;
+    projected.rebuild_on_globs = manifest
+        .rebuild_on_globs
+        .iter()
+        .map(|glob| manifest_path_relative_string(manifest_path, glob))
+        .collect::<Result<Vec<_>, _>>()?;
+    projected.schema_paths = manifest
+        .schema_paths
+        .iter()
+        .map(|schema| match schema {
+            SchemaPathConfig::Path(path) => {
+                manifest_path_relative_string(manifest_path, path).map(SchemaPathConfig::Path)
+            }
+            SchemaPathConfig::Detailed(config) => {
+                Ok(SchemaPathConfig::Detailed(DetailedSchemaPathConfig {
+                    id: config.id.clone(),
+                    path: manifest_path_relative_string(manifest_path, &config.path)?,
+                    rebuild_on_globs: config
+                        .rebuild_on_globs
+                        .iter()
+                        .map(|glob| manifest_path_relative_string(manifest_path, glob))
+                        .collect::<Result<Vec<_>, _>>()?,
+                }))
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(projected)
+}
+
+fn manifest_path_relative_string(manifest_path: &Path, path: &str) -> Result<String, CliError> {
+    let resolved = resolve_manifest_relative_path(manifest_path, path);
+    let path = cwd_relative_path(&resolved)?;
+    Ok(path.to_string_lossy().replace('\\', "/"))
+}
+
+fn cwd_relative_path(path: &Path) -> Result<PathBuf, CliError> {
+    if path.is_absolute() {
+        let cwd = env::current_dir().map_err(|source| {
+            CliError::Git(format!("failed to read current directory: {source}"))
+        })?;
+        if let Ok(relative_path) = path.strip_prefix(cwd) {
+            return Ok(relative_path.to_path_buf());
+        }
+    }
+    Ok(path.to_path_buf())
+}
+
+fn changed_files_from_options(options: &ParsedOptions) -> Result<Vec<String>, CliError> {
+    let mut changed = options.changed.clone();
+    if let Some(path) = &options.changed_file {
+        let content = read_file(path, "changed-file list")?;
+        changed.extend(
+            content
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(str::to_owned),
+        );
+    }
+    Ok(changed)
+}
+
 fn write_emit_metadata_if_requested(
     path: Option<&Path>,
     ir: &WesleyIR,
@@ -1295,6 +1564,23 @@ fn print_json(value: &impl serde::Serialize) -> Result<(), CliError> {
     let json = serde_json::to_string_pretty(value)?;
     println!("{json}");
     Ok(())
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ConfigInspectReport {
+    valid: bool,
+    manifest_path: String,
+    resolved_schema_paths: Vec<ResolvedSchemaPath>,
+    manifest: ProjectManifest,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ConfigChangedSchemasReport {
+    manifest_path: String,
+    changed_files: Vec<String>,
+    selected_schema_paths: Vec<SelectedSchemaPath>,
 }
 
 #[derive(Clone, Copy)]
@@ -2039,6 +2325,9 @@ Commands:
   normalize-sdl            Print the Rust-core normalized SDL view
   doctor                   Run Rust-native health checks
   init-law                 Scaffold weslaw/v1 from known SDL law directives
+  config validate          Validate a Wesley project manifest
+  config inspect           Print resolved manifest schema paths and targets
+  config changed-schemas   Select schema sets affected by changed files
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema operations         List Query/Mutation/Subscription root operations
@@ -2097,6 +2386,28 @@ Usage:
 Options:
   --json                 Emit JSON output
   --format text|json     Output format"
+    );
+}
+
+fn print_config_help() {
+    println!(
+        "\
+Wesley project manifest commands
+
+Manifest files are domain-free JSON or YAML documents. The CLI discovers
+wesley.config.json, wesley.config.yaml, or wesley.config.yml by walking upward
+from the current directory when --config is omitted.
+
+Usage:
+  wesley config validate [--config <path>] [--json]
+  wesley config inspect [--config <path>] [--json]
+  wesley config changed-schemas [--config <path>] [--changed <path> ...] [--changed-file <path>] [--json]
+
+Options:
+  --config <path>        Manifest path; defaults to upward discovery
+  --changed <path>       Changed file path; may be passed more than once
+  --changed-file <path>  Newline-delimited changed file list
+  --json                 Emit JSON output"
     );
 }
 
@@ -2212,6 +2523,7 @@ enum CliError {
     },
     Core(WesleyError),
     Law(WeslawError),
+    Config(ProjectManifestError),
     Git(String),
     Json(String),
 }
@@ -2224,9 +2536,12 @@ impl CliError {
     fn exit_code(&self) -> u8 {
         match self {
             Self::Usage(_) => EXIT_USAGE,
-            Self::Io { .. } | Self::Core(_) | Self::Law(_) | Self::Git(_) | Self::Json(_) => {
-                EXIT_FAILURE
-            }
+            Self::Io { .. }
+            | Self::Core(_)
+            | Self::Law(_)
+            | Self::Config(_)
+            | Self::Git(_)
+            | Self::Json(_) => EXIT_FAILURE,
         }
     }
 }
@@ -2255,6 +2570,7 @@ impl std::fmt::Display for CliError {
                 }
                 Ok(())
             }
+            Self::Config(error) => write!(formatter, "{error}"),
             Self::Git(error) => write!(formatter, "git error: {error}"),
             Self::Json(error) => write!(formatter, "failed to serialize JSON output: {error}"),
         }
@@ -2270,6 +2586,12 @@ impl From<WesleyError> for CliError {
 impl From<WeslawError> for CliError {
     fn from(error: WeslawError) -> Self {
         Self::Law(error)
+    }
+}
+
+impl From<ProjectManifestError> for CliError {
+    fn from(error: ProjectManifestError) -> Self {
+        Self::Config(error)
     }
 }
 

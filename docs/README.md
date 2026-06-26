@@ -20,8 +20,11 @@ which signpost is supposed to answer which question.
 | [SDL, Shape, And Law](./SDL.md)                                             | Why GraphQL SDL is Wesley's contract substrate and where domain law interpretation belongs.           |
 | [BEARING](./BEARING.md)                                                     | Current direction, what is already real in the repo, and the tensions that still matter.              |
 | [Extending Wesley](./guides/extending.md)                                   | How to add Rust compiler behavior, native CLI commands, emitter projections, or external modules.     |
-| [CLI Reference](./reference/cli.md)                                          | Current Rust-native `wesley` command reference.                                                       |
-| [Directive Truth Table](./reference/directives.md)                           | Current directive support levels, aliases, external families, and fixture boundaries.                  |
+| [Module Authoring](./guides/module-authoring.md)                            | Current Rust-native extension boundary, descriptor fixtures, and troubleshooting.                     |
+| [CLI Reference](./reference/cli.md)                                         | Current Rust-native `wesley` command reference.                                                       |
+| [Project Manifest](./reference/project-manifest.md)                         | Current JSON/YAML manifest schema for schemas, rebuild selection, bundles, and target metadata.       |
+| [Directive Truth Table](./reference/directives.md)                          | Current directive support levels, aliases, external families, and fixture boundaries.                 |
+| [Topics](./topics/README.md)                                                | Operator and contributor task pages that bridge references, governance, and workflows.                |
 | [VISION](./VISION.md)                                                       | Bounded executive synthesis grounded in repo-visible truth.                                           |
 | [Design Packets](./design/README.md)                                        | Active design packets and doctrinal boundary notes.                                                   |
 | [METHOD Process](./method/process.md)                                       | How cycles run, close, and reconcile in this repo.                                                    |
@@ -87,11 +90,13 @@ It also now has a more explicit METHOD closeout surface under
 - [Wesley North Star](./NORTHSTAR.md)
 - [SDL, Shape, And Law](./SDL.md)
 - [CLI Reference](./reference/cli.md)
+- [Project Manifest](./reference/project-manifest.md)
 - [Directive Truth Table](./reference/directives.md)
 - [BEARING](./BEARING.md)
 - [Design Packets](./design/README.md)
 - [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)
 - [Extending Wesley](./guides/extending.md)
+- [Module Authoring](./guides/module-authoring.md)
 - [Module Contract](./design/wesley-module-contract.md)
 
 ### Historical Continuum Extraction Context
@@ -107,6 +112,7 @@ It also now has a more explicit METHOD closeout surface under
 - [METHOD Process](./method/process.md)
 - [METHOD Guide](./method/guide.md)
 - [Documentation Standard](./governance/DOCUMENTATION_STANDARD.md)
+- [Topics](./topics/README.md)
 - [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
 - [GitHub Milestones](https://github.com/flyingrobots/wesley/milestones)
 - [Legacy Backlog Signpost](./method/backlog/README.md) (historical only)
@@ -118,6 +124,7 @@ It also now has a more explicit METHOD closeout surface under
 - [Invariants](./invariants/README.md)
 - [Legends](./method/legends/README.md)
 - [CLI Reference](./reference/cli.md)
+- [Project Manifest](./reference/project-manifest.md)
 - [Directive Truth Table](./reference/directives.md)
 
 ## Current Honesty Rules

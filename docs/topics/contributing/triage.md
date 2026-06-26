@@ -23,12 +23,15 @@ Current triage labels:
 | `triage:bad-code`   | Debt intake.                    |
 | `triage:cool-ideas` | Exploratory idea intake.        |
 
-Release lane labels are created only for named releases:
+Release lane labels are created only for named releases. Current named release
+labels are:
 
 ```text
 v0.1.1
 v0.2.0
 v0.3.0
+v0.4.0
+v0.5.0
 ```
 
 Do not create generic `lane:*` labels. In particular, do not use
@@ -101,3 +104,12 @@ replace them as follows:
 
 Release checks query concrete `vX.Y.Z` labels. Retired generic lane labels
 are migration residue only; they are not release gates.
+
+## Related Authority
+
+- [`docs/governance/labels.md`](../../governance/labels.md) defines the
+  repository label taxonomy.
+- [`docs/governance/RELEASE_POLICY.md`](../../governance/RELEASE_POLICY.md)
+  defines release gates and version-lane behavior.
+- [`docs/governance/RELEASE_CHECKLIST.md`](../../governance/RELEASE_CHECKLIST.md)
+  defines the human release sign-off items.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -346,6 +346,136 @@ test('pr-comment CLI builds comment output without external argument parser depe
     assert.ok(
       result.stdout.includes(
         'The Holmes report is unavailable because the workflow status is failure.'
+      )
+    );
+  } finally {
+    rmSync(reportsDir, { recursive: true, force: true });
+  }
+});
+
+test('pr-comment CLI aggregates schema-scoped HOLMES report directories', () => {
+  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-schema-sets-'));
+  try {
+    for (const schemaId of ['ecommerce', 'reference']) {
+      for (const reportName of ['holmes', 'watson', 'moriarty']) {
+        mkdirSync(path.join(reportsDir, schemaId, reportName), { recursive: true });
+      }
+      writeFileSync(
+        path.join(reportsDir, schemaId, 'holmes', 'holmes-report.json'),
+        JSON.stringify(sampleHolmesReport())
+      );
+      writeFileSync(
+        path.join(reportsDir, schemaId, 'watson', 'watson-report.json'),
+        JSON.stringify(sampleWatsonReport())
+      );
+      writeFileSync(
+        path.join(reportsDir, schemaId, 'moriarty', 'moriarty-report.json'),
+        JSON.stringify(sampleMoriartyReport())
+      );
+      writeFileSync(
+        path.join(reportsDir, schemaId, 'holmes', 'holmes-report.md'),
+        `### holmes ${schemaId}\n`
+      );
+      writeFileSync(
+        path.join(reportsDir, schemaId, 'watson', 'watson-report.md'),
+        `### watson ${schemaId}\n`
+      );
+      writeFileSync(
+        path.join(reportsDir, schemaId, 'moriarty', 'moriarty-report.md'),
+        `### moriarty ${schemaId}\n`
+      );
+    }
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        prCommentCliPath,
+        '--reports-dir',
+        reportsDir,
+        '--pr-number',
+        '467',
+        '--head-sha',
+        'feedfacedeadbeef',
+        '--holmes-status',
+        'success',
+        '--watson-status',
+        'success',
+        '--moriarty-status',
+        'success'
+      ],
+      {
+        encoding: 'utf8'
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(result.stdout.includes('## Schema Sets'));
+    assert.ok(result.stdout.includes('## Schema Set `ecommerce`'));
+    assert.ok(result.stdout.includes('## Schema Set `reference`'));
+    assert.ok(result.stdout.includes('### holmes ecommerce'));
+    assert.ok(result.stdout.includes('### holmes reference'));
+  } finally {
+    rmSync(reportsDir, { recursive: true, force: true });
+  }
+});
+
+test('pr-comment CLI preserves selected schema sets that failed before uploading reports', () => {
+  const reportsDir = mkdtempSync(path.join(os.tmpdir(), 'holmes-pr-comment-missing-schema-set-'));
+  try {
+    const schemaId = 'ecommerce';
+    for (const reportName of ['holmes', 'watson', 'moriarty']) {
+      mkdirSync(path.join(reportsDir, schemaId, reportName), { recursive: true });
+    }
+    writeFileSync(
+      path.join(reportsDir, schemaId, 'holmes', 'holmes-report.json'),
+      JSON.stringify(sampleHolmesReport())
+    );
+    writeFileSync(
+      path.join(reportsDir, schemaId, 'watson', 'watson-report.json'),
+      JSON.stringify(sampleWatsonReport())
+    );
+    writeFileSync(
+      path.join(reportsDir, schemaId, 'moriarty', 'moriarty-report.json'),
+      JSON.stringify(sampleMoriartyReport())
+    );
+    writeFileSync(path.join(reportsDir, schemaId, 'holmes', 'holmes-report.md'), '### holmes ok\n');
+    writeFileSync(path.join(reportsDir, schemaId, 'watson', 'watson-report.md'), '### watson ok\n');
+    writeFileSync(
+      path.join(reportsDir, schemaId, 'moriarty', 'moriarty-report.md'),
+      '### moriarty ok\n'
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        prCommentCliPath,
+        '--reports-dir',
+        reportsDir,
+        '--schema-sets-json',
+        JSON.stringify([{ id: 'ecommerce' }, { id: 'reference' }]),
+        '--pr-number',
+        '467',
+        '--head-sha',
+        'feedfacedeadbeef',
+        '--holmes-status',
+        'success',
+        '--watson-status',
+        'success',
+        '--moriarty-status',
+        'success'
+      ],
+      {
+        encoding: 'utf8'
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(result.stdout.includes('## Schema Set `ecommerce`'));
+    assert.ok(result.stdout.includes('## Schema Set `reference`'));
+    assert.ok(result.stdout.includes('### holmes ok'));
+    assert.ok(
+      result.stdout.includes(
+        'The Holmes report is unavailable because the workflow finished without a readable holmes-report.json artifact.'
       )
     );
   } finally {

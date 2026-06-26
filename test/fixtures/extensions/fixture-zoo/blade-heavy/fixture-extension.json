@@ -1,0 +1,28 @@
+{
+  "apiVersion": "wesley.fixture-extension/v1",
+  "name": "fixture-zoo-blade-heavy",
+  "description": "Descriptor-only fixture module for BLADE scenario capability metadata.",
+  "schemas": ["../../../consumer-models/stack-witness-0001-file-history.graphql"],
+  "capabilities": {
+    "wesley": {
+      "targets": [
+        {
+          "name": "fixture-blade-scenario",
+          "executionMode": "external-process",
+          "runtimeModel": "resource-handles"
+        }
+      ],
+      "scenarioHooks": ["fixture-key-material", "artifact-admission-check", "scenario-transcript"]
+    }
+  },
+  "boundary": {
+    "domainOwnership": "external-fixture",
+    "descriptorOnly": true,
+    "wesleyOwns": [
+      "scenario descriptor validation",
+      "artifact metadata shape",
+      "target descriptor validation"
+    ],
+    "wesleyDoesNotOwn": ["cryptographic key custody", "runtime admission", "operator policy"]
+  }
+}

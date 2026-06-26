@@ -16,6 +16,7 @@ Read these surfaces in order:
 - [docs/VISION.md](docs/VISION.md) for a bounded executive synthesis
 - [docs/design/README.md](docs/design/README.md) for active design packets and boundary doctrine
 - [docs/METHOD.md](docs/METHOD.md) for the workflow contract
+- [docs/topics/README.md](docs/topics/README.md) for contributor and operator task topics
 - [docs/topics/contributing/triage.md](docs/topics/contributing/triage.md) for issue triage and release-lane scheduling
 - [docs/governance/labels.md](docs/governance/labels.md) for issue and PR label semantics
 - [AGENTS.md](AGENTS.md) for repository-specific automation rules
@@ -55,6 +56,19 @@ GitHub owns live work state:
 Repository files are the evidence ledger. Design packets, witnesses, retros,
 release notes, and signpost docs record stable truth and proof after work is
 done. The Chronicle files in the repo root are historical archive only.
+
+## Contributor Onramp
+
+New contributors should start from scoped GitHub Issues, not from repo-local
+backlog files:
+
+- [Good first issues](https://github.com/flyingrobots/wesley/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22)
+- [Near-term roadmap issue](https://github.com/flyingrobots/wesley/issues/646)
+- [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
+
+Starter issues must already have a goalpost milestone and one scheduling-state
+label such as `v0.3.0`. If an issue still has a `triage:*` label, it is not a
+starter task until a maintainer schedules, splits, moves, or closes it.
 
 ## Design Requirements
 

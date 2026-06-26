@@ -7,4 +7,5 @@ pub mod law;
 pub(crate) mod normalized_sdl;
 pub mod operation;
 pub mod operation_artifact;
+pub mod project_manifest;
 pub mod schema_delta;

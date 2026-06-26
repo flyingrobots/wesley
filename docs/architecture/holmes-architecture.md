@@ -2,7 +2,8 @@
 
 ## Package Overview
 
-`@wesley/holmes` is a sidecar package that inspects the evidence bundle emitted by `wesley generate` and produces three complementary reports:
+`@wesley/holmes` is a sidecar package that inspects Wesley evidence bundles and
+produces three complementary reports:
 
 - **Holmes** performs the core investigation, weighting coverage evidence and surfacing security/test gates.
 - **Watson** re-verifies the bundle contents independently, spot-checking git history, recalculating scores, and flagging inconsistencies.
@@ -20,7 +21,12 @@ The CLI uses Commander to provide subcommands that wrap each investigator and a 
 - `holmes report [--json <file>]`
 - `holmes weights [--file <path>] [--json <file>]`
 
-Each command loads the required generated artifacts (`.wesley-cache/bundle.json`, `.wesley-cache/history.json`) plus visible Holmes config such as `wesley.weights.json`, validates the generated report structure, and optionally writes structured JSON alongside the human-readable Markdown output. Unknown commands automatically fall back to Commander’s help, which still prints the original banner, requirements list, and quote block.
+Each command loads the required generated or restored artifacts
+(`.wesley-cache/bundle.json`, `.wesley-cache/history.json`) plus visible Holmes
+config such as `wesley.weights.json`, validates the generated report structure,
+and optionally writes structured JSON alongside the human-readable Markdown
+output. Unknown commands automatically fall back to Commander’s help, which
+still prints the original banner, requirements list, and quote block.
 
 ## Holmes Investigator
 

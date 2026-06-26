@@ -187,6 +187,70 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 0 ]
 }
 
+@test "HOLMES workflow uses Wesley project manifest for selective schema sets" {
+  # Exact counts below pin the four matrix consumers and three report uploaders.
+  # If a job is added or removed, this contract should be reviewed deliberately.
+  run bash -lc "grep -F 'detect-schema-sets:' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'cargo run --bin wesley -- config inspect --json' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'manifest_status=' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'No Wesley manifest found' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'Wesley manifest discovery failed; refusing legacy fallback' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'exit \"\$manifest_status\"' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'cargo run --bin wesley -- config changed-schemas' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'schema_set: \${{ fromJson(needs.detect-schema-sets.outputs.schema_sets) }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 4 ]
+
+  run bash -lc "grep -F 'mkdir -p \"reports-by-schema/\${{ matrix.schema_set.id }}\"' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 3 ]
+
+  run bash -lc "grep -F 'path: reports-by-schema/\${{ matrix.schema_set.id }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 3 ]
+
+  run bash -lc "grep -E '^[[:space:]]+path: reports-by-schema$' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -F 'cache-namespace:' .github/actions/holmes-setup/action.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'moriarty-\${{ inputs.cache-namespace }}-\${{ github.sha }}' .github/actions/holmes-setup/action.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -F 'cache-namespace: \${{ matrix.schema_set.id }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 4 ]
+
+  run bash -lc "grep -F 'steps.detect.outputs.selected_count' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+}
+
 @test "repo Bats tests use vendored plugins without runtime fetches" {
   run test -f test/vendor/bats-plugins/bats-support/load.bash
   assert_success
@@ -446,32 +510,44 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 2 ]
 }
 
-@test "wesley-holmes workflow propagates detected schema outputs into analysis jobs" {
+@test "wesley-holmes workflow propagates selected schema matrix into analysis jobs" {
   run bash -lc "grep -F 'outputs:' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -ge 1 ]
 
-  run bash -lc "grep -F 'steps.detect.outputs.schema' .github/workflows/wesley-holmes.yml | wc -l"
-  assert_success
-  [ "$output" -ge 2 ]
-
-  run bash -lc "grep -F 'steps.detect.outputs.bundle_dir' .github/workflows/wesley-holmes.yml | wc -l"
-  assert_success
-  [ "$output" -ge 2 ]
-
-  run bash -lc "grep -F 'needs.wesley-generate.outputs.schema' .github/workflows/wesley-holmes.yml | wc -l"
-  assert_success
-  [ "$output" -ge 3 ]
-
-  run bash -lc "grep -F 'needs.wesley-generate.outputs.bundle_dir' .github/workflows/wesley-holmes.yml | wc -l"
-  assert_success
-  [ "$output" -ge 4 ]
-
-  run bash -lc "grep -F 'needs: [wesley-generate, holmes-investigate]' .github/workflows/wesley-holmes.yml | wc -l"
+  run bash -lc "grep -F 'schema_sets: \${{ steps.detect.outputs.schema_sets }}' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'needs: [wesley-generate, watson-verify]' .github/workflows/wesley-holmes.yml | wc -l"
+  run bash -lc "grep -F 'selected_count: \${{ steps.detect.outputs.selected_count }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'comment_mode: \${{ steps.detect.outputs.comment_mode }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'commentMode ||' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F \"comment_mode != 'silent'\" .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'matrix.schema_set.schema' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 4 ]
+
+  run bash -lc "grep -F 'matrix.schema_set.bundle_dir' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -ge 4 ]
+
+  run bash -lc "grep -F 'needs: [detect-schema-sets, wesley-generate, holmes-investigate]' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'needs: [detect-schema-sets, wesley-generate, watson-verify]' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
@@ -486,6 +562,14 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -eq 1 ]
 
   run bash -lc "grep -F 'packages/wesley-holmes/src/pr-comment-cli.mjs' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'SCHEMA_SETS_JSON: \${{ needs.detect-schema-sets.outputs.schema_sets }}' .github/workflows/wesley-holmes.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F -- '--schema-sets-json \"\$SCHEMA_SETS_JSON\"' .github/workflows/wesley-holmes.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
@@ -520,4 +604,8 @@ load 'bats-plugins/bats-assert/load'
   run bash -lc 'grep -F -- '\''--head-sha "$GITHUB_SHA"'\'' .github/workflows/wesley-holmes.yml | wc -l'
   assert_success
   [ "$output" -eq 1 ]
+
+  run bash -lc "grep -A140 '^  comment-report:' .github/workflows/wesley-holmes.yml | grep -F 'Ensure history for MORIARTY' | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
 }
