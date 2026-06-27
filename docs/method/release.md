@@ -210,7 +210,9 @@ Update every signpost whose truth changed since the previous public tag:
 - `docs/ENTRYPOINTS.md`
 - `docs/ARCHITECTURE.md`
 - `docs/TECHNICAL_TEARDOWN.md`
+- `docs/site/`
 - `docs/topics/`
+- `docs/reference/`
 - `docs/releases/vX.Y.Z.md`
 - `docs/method/releases/vX.Y.Z/`
 - `docs/method/release.md`

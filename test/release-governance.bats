@@ -92,6 +92,14 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release doctrine lists profile user-doc signposts" {
+  run grep -F '`docs/site/`' docs/method/release.md
+  assert_success
+
+  run grep -F '`docs/reference/`' docs/method/release.md
+  assert_success
+}
+
 @test "release doctrine requires thesis scope and retrospective evidence" {
   run grep -F "No planned release without a thesis." docs/method/release.md
   assert_success
