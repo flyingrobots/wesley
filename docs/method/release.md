@@ -56,7 +56,7 @@ planned
   -> tagged
   -> published
   -> verified
-  -> retrospectived
+  -> retrospected
   -> closed
 ```
 
@@ -108,9 +108,9 @@ A release is verified when public crates.io visibility is confirmed for every
 published crate, the installed `wesley` CLI launches, the GitHub Release is
 visible, and release evidence is captured.
 
-### retrospectived
+### retrospected
 
-A release is retrospectived when released work, unreleased work,
+A release is retrospected when released work, unreleased work,
 plan-versus-actual scope, repeatable wins, concrete improvements, fallout
 issues, and the next release recommendation are recorded.
 

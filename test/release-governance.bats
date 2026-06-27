@@ -111,6 +111,14 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release lifecycle uses retrospected state name" {
+  run rg -n "retrospectived" docs/method/release.md docs/topics/releases.md
+  assert_failure
+
+  run rg -n "retrospected" docs/method/release.md docs/topics/releases.md
+  assert_success
+}
+
 @test "entrypoints command map lists Rust LE binary emitter" {
   run grep -F "wesley emit le-binary-rust --schema <path> --out <path>" docs/ENTRYPOINTS.md
   assert_success

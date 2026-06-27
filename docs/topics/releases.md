@@ -47,7 +47,7 @@ Wesley uses the lifecycle defined in
 [`docs/method/release.md`](../method/release.md):
 
 ```text
-planned -> active -> release-prep -> merged -> tagged -> published -> verified -> retrospectived -> closed
+planned -> active -> release-prep -> merged -> tagged -> published -> verified -> retrospected -> closed
 ```
 
 The live tracker shape is Wesley-specific: goalpost milestones own
