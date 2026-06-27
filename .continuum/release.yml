@@ -75,6 +75,7 @@ docs:
     - docs/reference/
     - docs/releases/
   operator_docs:
+    - RELEASE.md
     - docs/method/release.md
     - docs/method/release-runbook.md
     - docs/CRATES_IO_RELEASE.md
@@ -83,6 +84,7 @@ docs:
   contributor_docs:
     - AGENTS.md
     - CONTRIBUTING.md
+    - RELEASE.md
     - docs/METHOD.md
     - docs/topics/contributing/triage.md
 

@@ -13,6 +13,25 @@ The repo-local mechanics live in [`.continuum/release.yml`](../../.continuum/rel
 This doctrine defines the standard; the profile defines the boring facts that
 automation and reviewers should enforce.
 
+## Wesley Adaptation
+
+Wesley uses the Continuum spine, but the generic template must be adapted in
+these important ways:
+
+| Generic lifecycle point | Wesley adaptation                                                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Version bucket          | Implementation issues stay in `Goalpost: ...` milestones. Concrete `vX.Y.Z` labels are the scheduling axis.                                        |
+| Release milestone       | `Release: vX.Y.Z` milestones hold release-gate and closeout issues only. They are not queried as pre-tag blockers.                                 |
+| Autotag                 | `.continuum/release.yml` declares `autotag: none`. Maintainers create a signed tag manually after final guards pass from synced `main`.            |
+| Package/channel policy  | crates.io is the public package registry. npm, JSR, and dist-tag policy do not apply to the current Wesley release surface.                        |
+| Publication             | `.github/workflows/release-crates.yml` runs from the tag and must verify tag, metadata, main reachability, package visibility, and GitHub Release. |
+| Public release boundary | The tag must point at the exact reviewed `main` commit. Do not merge post-release fixes into `main` and pretend they are part of the same release. |
+| Domain boundary         | Release scope must not add downstream domain semantics to Wesley core. Extensions and sibling repos own meaning.                                   |
+
+The root [release process](../../RELEASE.md) is a thin maintainer entrance. This
+page remains the doctrine. The command-by-command execution layer remains
+[`docs/method/release-runbook.md`](release-runbook.md).
+
 ## Doctrine
 
 A valid Wesley release has all of the following:
@@ -251,6 +270,155 @@ workflows.
 10. Verify delivery directly.
 11. Record the release witness and retrospective.
 12. Close the release and plan the next thesis.
+
+## Templates
+
+Use these shapes for planned releases and heavier patch releases.
+
+### Release Tracking Issue
+
+```markdown
+# Release gate: vX.Y.Z
+
+## Thesis
+
+This release advances `<capability boundary>` for `<primary user/operator>` by
+`<main outcome>`. It focuses on `<included scope>` and deliberately excludes
+`<not-included scope>`, which remains in `<future release/goalpost/research>`.
+
+## Release type
+
+planned | patch | emergency | security | prerelease | docs-only
+
+## Scope
+
+### Must-ship
+
+- ...
+
+### May-slip
+
+- ...
+
+### Explicitly not included
+
+- ...
+
+## Goalposts
+
+### 1. <name>
+
+Outcome:
+Evidence:
+Issues:
+
+## Release prep
+
+- [ ] Scope reconciled
+- [ ] Version metadata updated
+- [ ] Changelog updated
+- [ ] Signposts updated
+- [ ] Release prep validation passed
+- [ ] Release-prep PR merged to main
+
+## Publication
+
+- [ ] Signed tag created from synced main
+- [ ] Release guard passed against tag
+- [ ] Tag pushed
+- [ ] Release Crates workflow completed
+- [ ] GitHub Release visible
+- [ ] crates.io visibility verified
+
+## Evidence
+
+Tag:
+Commit:
+Release PR:
+Publish workflow:
+GitHub Release:
+Registry evidence:
+Smoke evidence:
+
+## Retrospective
+
+- [ ] Released work recorded
+- [ ] Unreleased work recorded
+- [ ] Plan-versus-actual recorded
+- [ ] Improvements recorded
+- [ ] Fallout issues filed
+- [ ] Next release thesis planned
+```
+
+### Release-Prep PR Body
+
+```markdown
+# release: vX.Y.Z
+
+## Summary
+
+Prepare vX.Y.Z for release.
+
+## Release type
+
+planned | patch | emergency | security | prerelease | docs-only
+
+## Thesis
+
+...
+
+## Previous public tag
+
+vPREVIOUS
+
+## Target tag
+
+vX.Y.Z
+
+## Scope reconciliation
+
+### Shipped
+
+- ...
+
+### Slipped
+
+- ...
+
+### Explicitly not included
+
+- ...
+
+## Version metadata
+
+- [ ] Cargo manifests updated
+- [ ] `package.json` updated
+- [ ] Lockfiles updated, if applicable
+
+## Release signposts
+
+- [ ] CHANGELOG.md
+- [ ] README/front door
+- [ ] Architecture docs
+- [ ] User docs
+- [ ] Operator docs
+- [ ] Contributor/maintainer docs
+- [ ] Migration/security docs, if applicable
+
+## Validation
+
+- [ ] `cargo xtask release-prep-guard --version X.Y.Z`
+- [ ] `cargo xtask preflight`
+- [ ] `cargo xtask release-check`
+- [ ] `cargo xtask package-crates --version X.Y.Z`
+- [ ] docs/topics accuracy and coverage audit
+- [ ] CI green
+
+## Publish notes
+
+Manual publish required: no. Push signed tag `vX.Y.Z`; tag workflow publishes
+crates and the GitHub Release.
+```
 
 ## User-Facing Release Notes
 
