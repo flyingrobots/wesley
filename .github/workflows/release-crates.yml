@@ -224,7 +224,16 @@ jobs:
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
           for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
-            cargo info "${crate}@${version}" >/dev/null
+            for attempt in $(seq 1 30); do
+              if cargo info "${crate}@${version}" >/dev/null 2>&1; then
+                break
+              fi
+              if [ "$attempt" -eq 30 ]; then
+                echo "${crate}@${version} did not become visible on crates.io in time" >&2
+                exit 1
+              fi
+              sleep 10
+            done
           done
 
       - name: Finalize GitHub Release

@@ -61,7 +61,8 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
 
 - **Release crate visibility check**: The tag-triggered Release Crates workflow
   now verifies crates.io visibility for `wesley-emit-codec` along with the rest
-  of the published Rust crate set before finalizing the GitHub Release.
+  of the published Rust crate set, with bounded registry-index retries before
+  finalizing the GitHub Release.
 - **Release version-source enforcement**: `cargo xtask release-prep-guard`,
   `cargo xtask release-guard`, `cargo xtask package-crates`, and
   `cargo xtask publish-crates` now reject root `package.json` and unpublished

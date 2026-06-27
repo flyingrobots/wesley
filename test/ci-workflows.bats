@@ -432,6 +432,17 @@ load 'bats-plugins/bats-assert/load'
   done
 }
 
+@test "release crates workflow retries crates.io visibility checks" {
+  run grep -F "for attempt in \$(seq 1 30)" .github/workflows/release-crates.yml
+  assert_success
+
+  run grep -F "did not become visible on crates.io in time" .github/workflows/release-crates.yml
+  assert_success
+
+  run grep -F "sleep 10" .github/workflows/release-crates.yml
+  assert_success
+}
+
 @test "release crates workflow keeps release scratch files outside repository" {
   run bash -lc "grep -F '\${RUNNER_TEMP}/release-notes.md' .github/workflows/release-crates.yml | wc -l"
   assert_success
