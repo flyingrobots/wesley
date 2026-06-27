@@ -53,7 +53,7 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 
   for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
-    run grep -F "        - $crate" .continuum/release.yml
+    run grep -Eq "^[[:space:]]*-[[:space:]]*$crate$" .continuum/release.yml
     assert_success
 
     run grep -F "name: $crate" .continuum/release.yml
@@ -68,14 +68,26 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "name: wesley-holmes" .continuum/release.yml
   assert_success
 
-  run grep -A5 "path: crates/wesley-holmes/Cargo.toml" .continuum/release.yml
+  run bash -lc "awk '
+    /path: crates\\/wesley-holmes\\/Cargo.toml/ { in_block=1 }
+    in_block && /^[[:space:]]*required:[[:space:]]*true$/ { required=1 }
+    in_block && /^[[:space:]]*published:[[:space:]]*false$/ { published=1 }
+    in_block && /^[[:space:]]*-[[:space:]]*path:/ && \$0 !~ /wesley-holmes/ { in_block=0 }
+    END { exit !(required && published) }
+  ' .continuum/release.yml"
   assert_success
-  assert_output --partial "required: true"
-  assert_output --partial "published: false"
 }
 
 @test "release policy names unpublished Holmes as a version source" {
   run grep -F "crates/wesley-holmes/Cargo.toml" docs/governance/RELEASE_POLICY.md
+  assert_success
+}
+
+@test "release profile assertions are YAML spacing tolerant" {
+  run bash -lc "awk '/@test \"release profile names every published Wesley crate\"/{in_test=1} in_test && /^@test / && !/release profile names every published Wesley crate/{exit} in_test {print}' test/release-governance.bats | grep -F 'grep -Eq'"
+  assert_success
+
+  run bash -lc "awk '/@test \"release profile names unpublished Holmes as a required version source\"/{in_test=1} in_test && /^@test / && !/release profile names unpublished Holmes as a required version source/{exit} in_test {print}' test/release-governance.bats | grep -F 'required=1'"
   assert_success
 }
 
@@ -85,10 +97,10 @@ load 'bats-plugins/bats-assert/load'
 }
 
 @test "release profile includes public site and guide signposts" {
-  run grep -F "    - docs/site/" .continuum/release.yml
+  run grep -Eq "^[[:space:]]*-[[:space:]]*docs/site/$" .continuum/release.yml
   assert_success
 
-  run grep -F "    - docs/GUIDE.md" .continuum/release.yml
+  run grep -Eq "^[[:space:]]*-[[:space:]]*docs/GUIDE.md$" .continuum/release.yml
   assert_success
 }
 
