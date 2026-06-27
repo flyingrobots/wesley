@@ -48,6 +48,30 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release profile names every published Wesley crate" {
+  run test -f .continuum/release.yml
+  assert_success
+
+  for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
+    run grep -F "        - $crate" .continuum/release.yml
+    assert_success
+
+    run grep -F "name: $crate" .continuum/release.yml
+    assert_success
+  done
+}
+
+@test "release doctrine requires thesis scope and retrospective evidence" {
+  run grep -F "No planned release without a thesis." docs/method/release.md
+  assert_success
+
+  run grep -F "must-ship, may-slip, and explicitly-not-included" docs/method/release.md
+  assert_success
+
+  run grep -F "retrospective and fallout issues" docs/method/release.md
+  assert_success
+}
+
 @test "entrypoints command map lists Rust LE binary emitter" {
   run grep -F "wesley emit le-binary-rust --schema <path> --out <path>" docs/ENTRYPOINTS.md
   assert_success

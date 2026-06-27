@@ -31,6 +31,10 @@ hash`, and `schema operations`.
 
 ### Changed
 
+- **Release lifecycle profile**: Added a repo-local `.continuum/release.yml`
+  release profile and expanded the Wesley release doctrine/runbook around
+  thesis, scope, goalposts, immutable tagged-main publication, verification,
+  and retrospective evidence.
 - **Release documentation gate**: The release runbook, release policy, and
   human sign-off checklist now require a `docs/topics/` accuracy and coverage
   audit before tagging, with minimum 90% accuracy and 90% coverage floors.
@@ -52,6 +56,9 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
 
 ### Fixed
 
+- **Release crate visibility check**: The tag-triggered Release Crates workflow
+  now verifies crates.io visibility for `wesley-emit-codec` along with the rest
+  of the published Rust crate set before finalizing the GitHub Release.
 - **Docs CLI checker determinism**: The docs command checker now reads the
   native command list from the Rust CLI source help text instead of invoking
   `cargo run`, so Node-only repository hygiene does not depend on Cargo

@@ -6,6 +6,12 @@ This document is the canonical gate policy for Wesley releases. Every release
 must clear all automated checks and all human sign-offs before a tag is
 considered valid and the publish workflow is permitted to run.
 
+The release doctrine lives in [`docs/method/release.md`](../method/release.md).
+The repo-local release profile lives in
+[`../../.continuum/release.yml`](../../.continuum/release.yml) and declares the
+version sources, publish crate set, signposts, workflows, and verification
+commands this policy protects.
+
 ## Enforcement
 
 Release gates are split between automated machinery and human review. Neither
@@ -50,6 +56,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 | 21  | `cargo doc --workspace` builds with zero warnings    | cargo doc      |          |
 | 22  | No known issues silently shipped                     |                | reviewer |
 | 23  | `docs/topics/` accuracy and coverage gate            |                | reviewer |
+| 24  | Release thesis, scope, and retrospective path exist  |                | reviewer |
 
 ## Automated Checks — Details
 
@@ -225,6 +232,15 @@ The reviewer must also confirm that repo-resident release evidence is complete
 enough before tagging. Post-publish facts may live in the GitHub Release,
 workflow logs, and crates.io registry; they should not require a manual
 post-release merge to make the released commit truthful.
+
+### Check 24: Release Thesis, Scope, And Retrospective Path
+
+A human reviewer must confirm planned releases have a current release thesis,
+must-ship/may-slip/not-included scope, two to five goalposts with acceptance
+evidence, and an explicit retrospective/evidence location under
+`docs/method/releases/vX.Y.Z/`. Patch and emergency releases may use a shorter
+thesis, but they still need a recorded reason, validation evidence,
+post-publication verification, and fallout issue path.
 
 ## Policy Violations
 

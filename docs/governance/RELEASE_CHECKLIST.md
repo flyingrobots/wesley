@@ -10,7 +10,7 @@ Automated checks are not listed here — those run inside
 creating a tag, run `cargo xtask release-check` locally; it runs the same
 strict preflight gate used by `release-guard`, then builds and packages the
 native release artifacts without publishing anything. This checklist covers
-checks 7, 10, 13, 18, 22, and 23 from the enforcement matrix, which require
+checks 7, 10, 13, 18, 22, 23, and 24 from the enforcement matrix, which require
 human judgment.
 
 See [`RELEASE_POLICY.md`](RELEASE_POLICY.md) for the full enforcement matrix
@@ -47,6 +47,12 @@ and rationale.
       at least 90% coverage of release-relevant contributor/operator topic
       workflows are met. Any stale topic claim, obsolete instruction, missing
       topic, or missing authoritative link was corrected before tagging.
+
+- [ ] **Release thesis and scope are honest**
+      I confirmed the release packet records the thesis, must-ship work,
+      may-slip work, explicitly-not-included work, selected goalposts, acceptance
+      evidence, and retrospective/evidence location. Any planned work that did
+      not ship was moved, cut, or acknowledged before tagging.
 
 - [ ] **No known issues being silently shipped**
       I reviewed the open GitHub Issues for known defects or outstanding decisions

@@ -461,6 +461,13 @@ load 'bats-plugins/bats-assert/load'
   [ "$verify_line" -lt "$finalize_line" ]
 }
 
+@test "release crates workflow verifies every published crate" {
+  for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
+    run grep -F "$crate" .github/workflows/release-crates.yml
+    assert_success
+  done
+}
+
 @test "release crates workflow keeps release scratch files outside repository" {
   run bash -lc "grep -F '\${RUNNER_TEMP}/release-notes.md' .github/workflows/release-crates.yml | wc -l"
   assert_success

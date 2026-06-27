@@ -223,7 +223,7 @@ jobs:
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
-          for crate in wesley-core wesley-emit-rust wesley-emit-typescript wesley-cli; do
+          for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
             cargo info "${crate}@${version}" >/dev/null
           done
 

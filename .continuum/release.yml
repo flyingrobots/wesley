@@ -1,0 +1,120 @@
+schema: 1
+repo:
+  name: wesley
+  owner: flyingrobots
+  primary_artifact: rust-crates
+  public_binary: wesley
+  product_boundary: domain-free-graphql-to-ir
+
+versioning:
+  strategy: semver
+  tag_format: 'v{version}'
+  release_branch_format: 'release/v{version}'
+  release_milestone_format: 'Release: v{version}'
+  release_lane_label_format: 'v{version}'
+  goalpost_milestone_format: 'Goalpost: {name}'
+
+version_sources:
+  - path: crates/wesley-core/Cargo.toml
+    name: wesley-core
+    type: cargo-manifest
+    field: package.version
+    required: true
+    published: true
+  - path: crates/wesley-emit-codec/Cargo.toml
+    name: wesley-emit-codec
+    type: cargo-manifest
+    field: package.version
+    required: true
+    published: true
+  - path: crates/wesley-emit-rust/Cargo.toml
+    name: wesley-emit-rust
+    type: cargo-manifest
+    field: package.version
+    required: true
+    published: true
+  - path: crates/wesley-emit-typescript/Cargo.toml
+    name: wesley-emit-typescript
+    type: cargo-manifest
+    field: package.version
+    required: true
+    published: true
+  - path: crates/wesley-cli/Cargo.toml
+    name: wesley-cli
+    type: cargo-manifest
+    field: package.version
+    required: true
+    published: true
+  - path: package.json
+    name: root-private-package
+    type: json
+    field: version
+    required: true
+    published: false
+
+docs:
+  changelog: CHANGELOG.md
+  front_door:
+    - README.md
+    - docs/README.md
+    - docs/GUIDE.md
+    - docs/ENTRYPOINTS.md
+  architecture:
+    - docs/ARCHITECTURE.md
+    - docs/TECHNICAL_TEARDOWN.md
+  user_docs:
+    - docs/topics/
+    - docs/reference/
+    - docs/releases/
+  operator_docs:
+    - docs/method/release.md
+    - docs/method/release-runbook.md
+    - docs/CRATES_IO_RELEASE.md
+    - docs/governance/RELEASE_POLICY.md
+    - docs/governance/RELEASE_CHECKLIST.md
+  contributor_docs:
+    - AGENTS.md
+    - CONTRIBUTING.md
+    - docs/METHOD.md
+    - docs/topics/contributing/triage.md
+
+validation:
+  docs_check: cargo xtask docs-check
+  prep: cargo xtask release-prep-guard --version {version}
+  preflight: cargo xtask preflight
+  release_check: cargo xtask release-check
+  package: cargo xtask package-crates --version {version}
+  tagged_guard: cargo xtask release-guard --tag v{version}
+  legacy_when_needed: cargo xtask legacy-preflight
+
+workflows:
+  publish: .github/workflows/release-crates.yml
+  publish_trigger: tag-push
+  autotag: none
+
+publish:
+  manual_dispatch_required: false
+  github_release: true
+  source_ref: 'v{version}'
+  registries:
+    - name: crates.io
+      packages:
+        - wesley-core
+        - wesley-emit-codec
+        - wesley-emit-rust
+        - wesley-emit-typescript
+        - wesley-cli
+      verify: cargo info {package}@{version}
+
+issue_model:
+  live_tracker: github
+  implementation_bucket: 'Goalpost: ... milestone'
+  release_gate_bucket: 'Release: v{version} milestone'
+  release_scheduling_axis: 'v{version} label'
+  triage_axis: 'triage:* label'
+  required_state_label: 'exactly one of triage:* or v{version}'
+
+release_evidence:
+  internal_packet: docs/method/releases/v{version}/release.md
+  verification: docs/method/releases/v{version}/verification.md
+  user_notes: docs/releases/v{version}.md

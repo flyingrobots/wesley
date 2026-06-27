@@ -227,6 +227,21 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/method/release.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/method/release-runbook.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/CRATES_IO_RELEASE.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/governance/RELEASE_POLICY.md",
       "status": "current",
       "owner": "@flyingrobots"

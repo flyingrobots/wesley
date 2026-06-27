@@ -1,11 +1,15 @@
 # CRATES.IO RELEASE
 
-<!-- docs-truth: status=experimental owner=@flyingrobots -->
+<!-- docs-truth: status=current owner=@flyingrobots -->
 
 This is Wesley's official Rust release procedure.
 
 The distribution target is crates.io. The release authority is GitHub Actions.
 Humans prepare commits and tags; GitHub Actions performs the publish.
+
+The repo-local release profile is [`.continuum/release.yml`](../.continuum/release.yml).
+It declares the publish crate set, version sources, signposts, and verification
+commands that this procedure must match.
 
 ## Non-Negotiable Policy
 

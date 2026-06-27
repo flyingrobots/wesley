@@ -17,6 +17,7 @@ Release state is split intentionally:
 | GitHub milestone `Release: vX.Y.Z`            | Release-gate issue only                        |
 | GitHub goalpost milestones                    | Implementation issues                          |
 | `CHANGELOG.md`                                | Historical ledger of merged behavior           |
+| `.continuum/release.yml`                      | Repo-local release profile and publish facts   |
 | `docs/method/releases/vX.Y.Z/release.md`      | Internal release design and scope              |
 | `docs/method/releases/vX.Y.Z/verification.md` | Release witness after validation and publish   |
 | `docs/releases/vX.Y.Z.md`                     | User-facing release notes                      |
@@ -39,6 +40,20 @@ That includes:
 
 The `docs/topics/` gate means this directory must cover release-relevant
 contributor and operator workflows or link clearly to the current authority.
+
+## Release Lifecycle
+
+Wesley uses the lifecycle defined in
+[`docs/method/release.md`](../method/release.md):
+
+```text
+planned -> active -> release-prep -> merged -> tagged -> published -> verified -> retrospectived -> closed
+```
+
+The live tracker shape is Wesley-specific: goalpost milestones own
+implementation slices, release milestones own release-gate issues, and concrete
+`vX.Y.Z` labels are the version scheduling axis. This is intentional because a
+GitHub issue can carry only one milestone.
 
 ## Pre-Tag Launch Pass
 
@@ -85,6 +100,7 @@ synced `main` release commit.
 
 ## Related Authority
 
+- [`.continuum/release.yml`](../../.continuum/release.yml)
 - [`docs/method/release.md`](../method/release.md)
 - [`docs/method/release-runbook.md`](../method/release-runbook.md)
 - [`docs/governance/RELEASE_POLICY.md`](../governance/RELEASE_POLICY.md)
