@@ -113,6 +113,20 @@ Manifest `commentMode` controls the final PR comment behavior:
 | `append` | Create a new PR comment for each run.       |
 | `silent` | Run analysis but do not write a PR comment. |
 
+## Distribution Boundary
+
+HOLMES should be packaged for external users as a tagged reusable workflow with
+documented workflow templates. That keeps execution inside the consumer
+repository's GitHub Actions environment, where checkout state, permissions,
+artifacts, and logs are inspectable by the repository owner.
+
+A GitHub App is not the first-class delivery mechanism. It remains deferred
+unless HOLMES needs a durable certifying identity, Checks API ownership,
+cross-repo dashboards, or organization-level policy orchestration. If such an
+app exists later, it should consume evidence produced by repository-local
+Actions runs rather than becoming a hidden compiler or source of target
+semantics.
+
 ## Dashboard Artifact
 
 The workflow uploads `docs/holmes-dashboard` as a dashboard template and

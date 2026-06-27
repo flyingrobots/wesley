@@ -42,6 +42,9 @@ hash`, and `schema operations`.
   manifest first, computes changed schema sets with `wesley config
 changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   artifacts grouped for one aggregate PR comment.
+- **HOLMES distribution direction**: Documented tagged reusable GitHub Actions
+  workflows plus copy/paste templates as the user-facing HOLMES install path,
+  with GitHub App delivery deferred to future identity or Checks API needs.
 - **Extension documentation**: Added current project-manifest and module
   authoring references, and clarified that `wesley.config.mjs` and the dynamic
   JavaScript module loader are retired from generic Wesley core.

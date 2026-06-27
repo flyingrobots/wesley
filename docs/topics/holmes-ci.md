@@ -21,6 +21,22 @@ If no changed files are available, every schema set is selected. If no schema
 set matches the changed files, the HOLMES matrix is skipped rather than
 inventing work.
 
+## Distribution Direction
+
+The user-facing HOLMES install path should be a tagged reusable GitHub Actions
+workflow, backed by documented copy/paste workflow templates for repositories
+that need full local ownership. Templates are examples and escape hatches; the
+reusable workflow is the normal distribution surface because HOLMES is a CI
+lane, not a single shell step.
+
+Consumers should pin released tags, not `main`, when they call a shared HOLMES
+workflow or action.
+
+Do not make a GitHub App the first-class HOLMES install path. A future app may
+be justified for dedicated `SHA-lock HOLMES` identity, Checks API ownership,
+cross-repo dashboards, or organization policy orchestration. Until that need is
+active, GitHub Actions should produce the evidence and PR comments directly.
+
 ## Operator Notes
 
 - CodeRabbit and HOLMES are separate review surfaces.
