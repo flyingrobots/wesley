@@ -73,6 +73,9 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
 - **Release signpost profile coverage**: The repo-local release profile now
   includes the public MkDocs source and guide page in user-doc signposts so
   profile-driven audits cover public release wording.
+- **Post-merge SHIPME certification**: `cert-shipme.yml` now runs only on
+  `main` pushes, so SHIPME certificates bind to the landed target-branch SHA
+  instead of racing PR-time HOLMES comments for a temporary merge SHA.
 - **Docs CLI checker determinism**: The docs command checker now reads the
   native command list from the Rust CLI source help text instead of invoking
   `cargo run`, so Node-only repository hygiene does not depend on Cargo

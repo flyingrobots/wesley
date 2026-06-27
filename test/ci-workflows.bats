@@ -278,42 +278,38 @@ load 'bats-plugins/bats-assert/load'
   [ "$output" -ge 3 ]
 }
 
-@test "cert-shipme anchors and paginates bot comments" {
+@test "cert-shipme certifies only landed target-branch commits" {
+  run bash -lc "grep -F 'pull_request:' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -F 'branches: [main]' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -F 'Commit: \${GITHUB_SHA}' .github/workflows/cert-shipme.yml | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
   run bash -lc "grep -F '<!-- SHIPME_COMMENT -->' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -eq 0 ]
 
-  run bash -lc "grep -F \"github-actions[bot]\" .github/workflows/cert-shipme.yml | wc -l"
+  run bash -lc "grep -F 'Wait for HOLMES suite comment' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -ge 1 ]
+  [ "$output" -eq 0 ]
 
-  run bash -lc "grep -F 'per_page: 100' .github/workflows/cert-shipme.yml | wc -l"
+  run bash -lc "grep -F 'HOLMES_SUITE_SHA:' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -ge 1 ]
-
-  run bash -lc "grep -F 'pull-requests: write' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -ge 1 ]
-
-  run bash -lc "grep -F 'actions: read' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -ge 1 ]
-
-  run bash -lc "grep -F \"github.actor != 'dependabot[bot]'\" .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -eq 0 ]
 
   run bash -lc "grep -F 'github.rest.issues.updateComment' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -eq 0 ]
 
   run bash -lc "grep -F 'github.rest.issues.createComment' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'comment_id: botComment.id' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
+  [ "$output" -eq 0 ]
 
   run bash -lc "grep -F 'Run HOLMES investigation' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -333,45 +329,13 @@ load 'bats-plugins/bats-assert/load'
 
   run bash -lc "grep -F \"'scripts/prepare-shipme-cert-fixture.mjs'\" .github/workflows/cert-shipme.yml | wc -l"
   assert_success
-  [ "$output" -eq 2 ]
+  [ "$output" -eq 1 ]
 
   run bash -lc "grep -F 'rehearse --schema test/fixtures/blade/schema-v1.graphql' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -eq 0 ]
 
   run bash -lc "grep -F '.wesley-cache/holmes-report.json' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -ge 1 ]
-
-  run bash -lc "grep -F 'Wait for HOLMES suite comment' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'HOLMES_SUITE_SHA:' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F \"steps.holmes_comment_wait.outputs.ready == 'true'\" .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'actions/workflows/{workflow_id}/runs' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F '2 * 60 * 60 * 1000' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'const maxNoRunFound = 20' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'No wesley-holmes.yml run found for' .github/workflows/cert-shipme.yml | wc -l"
-  assert_success
-  [ "$output" -eq 1 ]
-
-  run bash -lc "grep -F 'core.setFailed(' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
   [ "$output" -ge 1 ]
 }

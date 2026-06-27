@@ -2,13 +2,7 @@ name: SHIPME Certificate
 
 on:
   push:
-    branches: [main, dev, 'feat/*', 'fix/*', 'milestone/*']
-    paths:
-      - 'packages/**'
-      - 'scripts/prepare-shipme-cert-fixture.mjs'
-      - '.github/**'
-      - '.github/workflows/cert-shipme.yml'
-  pull_request:
+    branches: [main]
     paths:
       - 'packages/**'
       - 'scripts/prepare-shipme-cert-fixture.mjs'
@@ -21,11 +15,6 @@ permissions:
 jobs:
   cert:
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      issues: write
-      pull-requests: write
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411
@@ -65,111 +54,3 @@ jobs:
         with:
           name: SHIPME
           path: SHIPME.md
-
-      - name: Post SHIPME badge to PR
-        if: github.event_name == 'pull_request'
-        id: badge
-        run: |
-          echo "BADGE=[SHIPME] PASS · HOLMES fixture · sha ${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-
-      - name: Wait for HOLMES suite comment
-        if: github.event_name == 'pull_request'
-        id: holmes_comment_wait
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
-        with:
-          script: |
-            const marker = `<!-- HOLMES_SUITE_SHA:${context.sha} -->`;
-            const started = Date.now();
-            const workflowId = 'wesley-holmes.yml';
-            const timeoutMs = 2 * 60 * 60 * 1000;
-            const pollIntervalMs = 15 * 1000;
-            const maxNoRunFound = 20;
-            let noRunFoundCount = 0;
-
-            while (Date.now() - started < timeoutMs) {
-              const comments = await github.paginate(github.rest.issues.listComments, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                per_page: 100,
-              });
-
-              const holmesComment = comments.find(
-                (comment) => comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker)
-              );
-
-              if (holmesComment) {
-                core.setOutput('ready', 'true');
-                return;
-              }
-
-              const workflowRunsResponse = await github.request(
-                'GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs',
-                {
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  workflow_id: workflowId,
-                  event: 'pull_request',
-                  head_sha: context.sha,
-                  per_page: 20
-                }
-              );
-
-              const currentRun = workflowRunsResponse.data.workflow_runs
-                .sort((left, right) => new Date(right.created_at) - new Date(left.created_at))[0];
-
-              if (!currentRun) {
-                noRunFoundCount += 1;
-                if (noRunFoundCount > maxNoRunFound) {
-                  core.setOutput('ready', 'false');
-                  core.setFailed(`No wesley-holmes.yml run found for ${context.sha} after ${maxNoRunFound} polls.`);
-                  return;
-                }
-
-                await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-                continue;
-              }
-
-              noRunFoundCount = 0;
-
-              if (currentRun?.status === 'completed') {
-                core.setOutput('ready', 'false');
-                core.setFailed(
-                  `HOLMES suite workflow ${currentRun.id} for ${context.sha} finished with conclusion ${currentRun.conclusion || 'unknown'} before posting the Holmes PR comment.`
-                );
-                return;
-              }
-
-              await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-            }
-
-            core.setOutput('ready', 'false');
-            core.setFailed(`HOLMES suite comment for ${context.sha} did not appear within the 2 hour coordination window.`);
-
-      - name: Create/Update PR Comment
-        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && steps.holmes_comment_wait.outputs.ready == 'true'
-        continue-on-error: true
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
-        with:
-          script: |
-            const badge = process.env.BADGE || '${{ steps.badge.outputs.BADGE }}';
-            const marker = '<!-- SHIPME_COMMENT -->';
-            const body = `${marker}\n### 🚢 SHIPME\n\n${badge}\n`;
-            try {
-              const comments = await github.paginate(github.rest.issues.listComments, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                per_page: 100,
-              });
-              const botComment = comments.find(
-                (c) => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker)
-              );
-              if (botComment) {
-                await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: botComment.id, body });
-              } else {
-                await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
-              }
-            } catch (error) {
-              core.warning(`Could not post SHIPME badge to PR: ${error.message}`);
-            }

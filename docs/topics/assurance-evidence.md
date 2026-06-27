@@ -18,12 +18,15 @@ and it does not create product semantics for GraphQL.
 | `docs/templates/holmes-policy/`       | Policy templates for host contexts.                       |
 | `docs/architecture/holmes-*`          | Architecture and integration notes.                       |
 | `.github/workflows/wesley-holmes.yml` | Pull request assurance workflow.                          |
+| `.github/workflows/cert-shipme.yml`   | Post-merge SHIPME certificate workflow.                   |
 
 ## Rules Of Thumb
 
 - Reports should expose unavailable or invalid evidence honestly.
 - Missing artifacts should not be hidden behind a passing workflow.
 - Policy and report quality are evidence questions, not compiler semantics.
+- PR-time HOLMES evidence and post-merge SHIPME certification are distinct
+  gates. SHIPME records the landed `main` SHA, not the temporary PR merge SHA.
 - Domain-specific target facts should be produced by the owning target module.
 
 ## Useful Checks
