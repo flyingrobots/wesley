@@ -74,6 +74,11 @@ load 'bats-plugins/bats-assert/load'
   assert_output --partial "published: false"
 }
 
+@test "release profile declares Rust advisory audit validation" {
+  run grep -F "rust_advisory_audit: cargo audit" .continuum/release.yml
+  assert_success
+}
+
 @test "release doctrine requires thesis scope and retrospective evidence" {
   run grep -F "No planned release without a thesis." docs/method/release.md
   assert_success

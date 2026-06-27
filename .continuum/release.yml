@@ -88,6 +88,7 @@ validation:
   docs_check: cargo xtask docs-check
   prep: cargo xtask release-prep-guard --version {version}
   preflight: cargo xtask preflight
+  rust_advisory_audit: cargo audit
   release_check: cargo xtask release-check
   package: cargo xtask package-crates --version {version}
   tagged_guard: cargo xtask release-guard --tag v{version}
