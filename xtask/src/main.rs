@@ -1609,6 +1609,7 @@ fn release_issue_queries(tag: &str, version: &str, repo: &str) -> Vec<Vec<String
 }
 
 fn release_issue_query_specs(tag: &str, version: &str, _repo: &str) -> Vec<ReleaseIssueQuery> {
+    let release_milestone = format!("Release: {tag}");
     vec![
         ReleaseIssueQuery {
             args: release_issue_selector_query("--label", tag),
@@ -1623,6 +1624,11 @@ fn release_issue_query_specs(tag: &str, version: &str, _repo: &str) -> Vec<Relea
         ReleaseIssueQuery {
             args: release_issue_selector_query("--milestone", version),
             source: format!("milestone `{version}`"),
+            ignore_missing_selector: true,
+        },
+        ReleaseIssueQuery {
+            args: release_issue_selector_query("--milestone", &release_milestone),
+            source: format!("release milestone `{release_milestone}`"),
             ignore_missing_selector: true,
         },
         ReleaseIssueQuery {
@@ -3135,6 +3141,16 @@ mod tests {
                     "open",
                     "--milestone",
                     "1.2.3",
+                    "--json",
+                    "number,title,url",
+                ],
+                vec![
+                    "issue",
+                    "list",
+                    "--state",
+                    "open",
+                    "--milestone",
+                    "Release: v1.2.3",
                     "--json",
                     "number,title,url",
                 ],

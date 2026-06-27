@@ -64,6 +64,9 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   `cargo xtask publish-crates` now reject root `package.json` and unpublished
   required Cargo manifest version drift in addition to published Rust crate
   manifest drift.
+- **Release milestone gate enforcement**: Release guards now query the declared
+  `Release: vX.Y.Z` milestone bucket so release-gate issues cannot survive
+  tagging merely because they lack a version label or exact title/body token.
 - **Docs CLI checker determinism**: The docs command checker now reads the
   native command list from the Rust CLI source help text instead of invoking
   `cargo run`, so Node-only repository hygiene does not depend on Cargo
