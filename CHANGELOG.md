@@ -68,9 +68,10 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   `cargo xtask publish-crates` now reject root `package.json` and unpublished
   required Cargo manifest version drift in addition to published Rust crate
   manifest drift.
-- **Release milestone gate enforcement**: Release guards now query the declared
-  `Release: vX.Y.Z` milestone bucket so release-gate issues cannot survive
-  tagging merely because they lack a version label or exact title/body token.
+- **Release issue blocker selection**: Release guards now rely on exact-version
+  issue text and `vX.Y.Z` labels for pre-tag blockers while allowing the
+  `Release: vX.Y.Z` gate issue to remain open for post-publication evidence and
+  closeout.
 - **Release advisory-audit profile**: The repo-local release profile now
   declares the Rust advisory audit command alongside the other release
   validation gates.

@@ -22,7 +22,9 @@ A valid Wesley release has all of the following:
 2. **A bucket**: Wesley uses GitHub for live work state. Implementation issues
    stay in `Goalpost: ...` milestones; release-gate issues stay in
    `Release: vX.Y.Z` milestones; concrete `vX.Y.Z` labels are the version
-   scheduling axis because GitHub issues can carry only one milestone.
+   scheduling axis because GitHub issues can carry only one milestone. Release
+   guards query labels and exact-version references for blockers, not the
+   release-gate milestone itself.
 3. **Honest scope**: must-ship, may-slip, and explicitly-not-included work is
    recorded before release prep.
 4. **A reviewed source commit**: the release tag points at the exact `main`

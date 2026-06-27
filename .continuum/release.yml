@@ -118,8 +118,8 @@ publish:
 issue_model:
   live_tracker: github
   implementation_bucket: 'Goalpost: ... milestone'
-  release_gate_bucket: 'Release: v{version} milestone'
-  release_scheduling_axis: 'v{version} label'
+  release_gate_bucket: 'Release: v{version} milestone for gate and closeout issues'
+  release_scheduling_axis: 'v{version} label for pre-tag blockers and scheduled work'
   triage_axis: 'triage:* label'
   required_state_label: 'exactly one of triage:* or v{version}'
 

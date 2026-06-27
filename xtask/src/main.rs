@@ -1609,16 +1609,10 @@ fn release_issue_queries(tag: &str, version: &str, repo: &str) -> Vec<Vec<String
 }
 
 fn release_issue_query_specs(tag: &str, version: &str, _repo: &str) -> Vec<ReleaseIssueQuery> {
-    let release_milestone = format!("Release: {tag}");
     vec![
         ReleaseIssueQuery {
             args: release_issue_selector_query("--label", tag),
             source: format!("release label `{tag}`"),
-            ignore_missing_selector: true,
-        },
-        ReleaseIssueQuery {
-            args: release_issue_selector_query("--milestone", &release_milestone),
-            source: format!("release milestone `{release_milestone}`"),
             ignore_missing_selector: true,
         },
         ReleaseIssueQuery {
@@ -3119,16 +3113,6 @@ mod tests {
                     "list",
                     "--state",
                     "open",
-                    "--milestone",
-                    "Release: v1.2.3",
-                    "--json",
-                    "number,title,url",
-                ],
-                vec![
-                    "issue",
-                    "list",
-                    "--state",
-                    "open",
                     "--label",
                     "v1.2.3",
                     "--json",
@@ -3145,6 +3129,18 @@ mod tests {
                     "number,title,url",
                 ],
             ]
+        );
+    }
+
+    #[test]
+    fn release_guard_does_not_query_release_gate_milestones() {
+        let queries = release_issue_queries("v1.2.3", "1.2.3", "flyingrobots/wesley");
+
+        assert!(
+            queries
+                .iter()
+                .all(|query| !query.iter().any(|arg| arg == "--milestone")),
+            "release-gate milestones may stay open until post-publication closeout"
         );
     }
 
