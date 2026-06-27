@@ -427,7 +427,7 @@ load 'bats-plugins/bats-assert/load'
 
 @test "release crates workflow verifies every published crate" {
   for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
-    run grep -F "$crate" .github/workflows/release-crates.yml
+    run bash -lc "awk '/name: Verify crates.io visibility/{in_step=1} in_step && /^      - name: Finalize GitHub Release/{exit} in_step {print}' .github/workflows/release-crates.yml | grep -F '$crate'"
     assert_success
   done
 }
@@ -440,6 +440,11 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 
   run grep -F "sleep 10" .github/workflows/release-crates.yml
+  assert_success
+}
+
+@test "release crates visibility assertion is scoped to visibility step" {
+  run bash -lc "awk '/@test \"release crates workflow verifies every published crate\"/{in_test=1} in_test && /^@test / && !/release crates workflow verifies every published crate/{exit} in_test {print}' test/ci-workflows.bats | grep -F 'Verify crates.io visibility'"
   assert_success
 }
 
