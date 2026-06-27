@@ -50,6 +50,14 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   topics, and docs-maintenance topics so `v0.2.0` install commands are present
   without claiming publication before the signed tag workflow completes.
 
+### Fixed
+
+- **Docs CLI checker determinism**: The docs command checker now reads the
+  native command list from the Rust CLI source help text instead of invoking
+  `cargo run`, so Node-only repository hygiene does not depend on Cargo
+  registry/network state or cascade help-load failures into false doc command
+  errors.
+
 ### Removed
 
 - **Rust Holmes law capability alias**: `wesley-holmes` no longer accepts the

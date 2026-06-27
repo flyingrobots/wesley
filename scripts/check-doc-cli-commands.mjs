@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve('.');
 const docs = ['README.md', 'docs/GUIDE.md', 'docs/ENTRYPOINTS.md', 'docs/END_TO_END.md'];
+const cliSourcePath = 'crates/wesley-cli/src/main.rs';
 
 function fail(message) {
   console.error(`docs-cli: ${message}`);
@@ -20,20 +20,10 @@ function normalizeCommandToken(token) {
     .trim();
 }
 
-function loadWesleyCommands() {
-  const result = spawnSync('cargo', ['run', '--bin', 'wesley', '--', '--help'], {
-    cwd: root,
-    encoding: 'utf8',
-    env: process.env
-  });
-  if (result.status !== 0) {
-    fail(`failed to read native Wesley CLI help: ${result.stderr || result.stdout}`);
-    return new Set();
-  }
-
+function parseCommandsFromHelpText(helpText) {
   const commands = new Set();
   let inCommands = false;
-  for (const line of result.stdout.split(/\r?\n/)) {
+  for (const line of helpText.split(/\r?\n/)) {
     if (line.trim() === 'Commands:') {
       inCommands = true;
       continue;
@@ -45,6 +35,27 @@ function loadWesleyCommands() {
     }
   }
   return commands;
+}
+
+export function loadWesleyCommandsFromSource(source) {
+  const start = source.indexOf('fn print_help()');
+  if (start === -1) {
+    throw new Error(`${cliSourcePath} is missing fn print_help()`);
+  }
+
+  const nextFunction = source.indexOf('\nfn print_', start + 'fn print_help()'.length);
+  const helpSource = source.slice(start, nextFunction === -1 ? undefined : nextFunction);
+  const commands = parseCommandsFromHelpText(helpSource);
+  if (commands.size === 0) {
+    throw new Error(`${cliSourcePath} print_help() did not expose any command rows`);
+  }
+
+  return commands;
+}
+
+function loadWesleyCommands() {
+  const source = readFileSync(resolve(root, cliSourcePath), 'utf8');
+  return loadWesleyCommandsFromSource(source);
 }
 
 export function documentedCommandFromParts(parts, commands) {
@@ -118,7 +129,14 @@ export function extractCommandSnippets(content) {
 }
 
 function main() {
-  const commands = loadWesleyCommands();
+  let commands;
+  try {
+    commands = loadWesleyCommands();
+  } catch (error) {
+    fail(error?.message || error);
+    process.exit(process.exitCode);
+  }
+
   for (const doc of docs) {
     const content = readFileSync(resolve(root, doc), 'utf8');
     for (const command of extractDocumentedCommands(content, commands)) {
