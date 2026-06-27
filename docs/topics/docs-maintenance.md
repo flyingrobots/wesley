@@ -30,6 +30,25 @@ pnpm exec prettier --check <changed-markdown-files>
 For release prep, also audit `docs/topics/` for accuracy and coverage against
 the actual release diff.
 
+## Pre-Tag Signpost Pass
+
+Before a signed release tag is created, audit the docs that most readers use to
+decide what Wesley is and what is safe to run:
+
+- `README.md`
+- `docs/README.md`
+- `docs/GUIDE.md`
+- `docs/ENTRYPOINTS.md`
+- `docs/BEARING.md`
+- `docs/TECHNICAL_TEARDOWN.md`
+- the versioned release notes and verification packet
+- every tracked page under `docs/topics/`
+
+The pass should distinguish release-target facts from publication facts. A
+release-prep commit may contain the future install command, but it must not
+claim crates.io or GitHub Release publication before the signed tag workflow
+has completed.
+
 ## Topic Coverage Standard
 
 Every public capability should have an obvious path to:

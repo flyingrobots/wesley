@@ -45,6 +45,18 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   METHOD, CONTRIBUTING, and docs topic routing so the current docs point at the
   domain-free GraphQL-to-IR platform and the topic map rather than stale
   backlog or retired command surfaces.
+- **Launch signpost honesty**: Refreshed the pre-tag launch wording across
+  README, GUIDE, ENTRYPOINTS, docs site, BEARING, TECHNICAL_TEARDOWN, release
+  topics, and docs-maintenance topics so `v0.2.0` install commands are present
+  without claiming publication before the signed tag workflow completes.
+
+### Fixed
+
+- **Docs CLI checker determinism**: The docs command checker now reads the
+  native command list from the Rust CLI source help text instead of invoking
+  `cargo run`, so Node-only repository hygiene does not depend on Cargo
+  registry/network state or cascade help-load failures into false doc command
+  errors.
 
 ### Removed
 

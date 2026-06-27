@@ -17,6 +17,8 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 - Previous release tag: `v0.1.1`.
 - Release gate: GitHub issue #625, milestone `Release: v0.2.0`.
 - Release boundary: signed tag from synced `main` only.
+- Release-prep merge: PR #655 merged to `main` at
+  `8bc51a7b86d927ceaefec3630421699d68878242`.
 
 ## Discovery
 
@@ -29,16 +31,17 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 | Node requirement                      | `>=22.12.0` from root `package.json`.                                                               |
 | Latest prior semver tag               | `v0.1.1`.                                                                                           |
 | Main sync state before release branch | Local `main` matched `origin/main` at merge commit `03d527855e740c456f5f71f9c763ab071a5ddd1b`.      |
+| Release-prep merge state              | PR #655 landed the release-prep commit and docs CLI review fix on synced `main` at `8bc51a7b`.      |
 | Open `v0.2.0` issue lane              | Only release gate #625 remained open during prep discovery.                                         |
 
 ## Docs Topics Audit
 
-| Item             | Result                                                                                                                                                                                                                                                                                                                                                             |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Scope            | Every tracked file under `docs/topics/`.                                                                                                                                                                                                                                                                                                                           |
-| Accuracy score   | 100% for release-relevant topic claims audited during prep.                                                                                                                                                                                                                                                                                                        |
-| Coverage score   | 100% for release-relevant contributor/operator workflows changed by this release.                                                                                                                                                                                                                                                                                  |
-| Corrections made | No `docs/topics/` page required content correction after audit. Related stale signposts and command-checker behavior were corrected outside `docs/topics/`: docs site install/quick-start claims, technical teardown command/version claims, release indexes, legacy backlog signpost examples, and `scripts/check-doc-cli-commands.mjs` command-family detection. |
+| Item             | Result                                                                                                                                                                                                                                                                                                                                        |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope            | Every tracked file under `docs/topics/`.                                                                                                                                                                                                                                                                                                      |
+| Accuracy score   | 100% for release-relevant topic claims audited during prep and the final pre-tag launch pass.                                                                                                                                                                                                                                                 |
+| Coverage score   | 100% for release-relevant contributor/operator workflows changed by this release, including the explicit pre-tag signpost pass.                                                                                                                                                                                                               |
+| Corrections made | Added pre-tag launch-pass coverage to `docs/topics/releases.md` and `docs/topics/docs-maintenance.md`; added the route to `docs/topics/README.md`; corrected pre-publication install wording in README, GUIDE, ENTRYPOINTS, docs site, and TECHNICAL_TEARDOWN; refreshed BEARING and docs front-door signposts for the `v0.2.0` launch state. |
 
 ## Local Evidence
 
@@ -59,12 +62,21 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 | `pnpm exec prettier --check ...` on changed docs/scripts/metadata                                 | Passed after formatting the new release packet files.                                                          |
 | `cargo run --bin wesley -- --version`                                                             | Passed, printing `0.2.0`.                                                                                      |
 | `cargo test --workspace -- --list`                                                                | Passed for discovery; current workspace lists 323 Rust tests.                                                  |
+| `cargo xtask docs-check` after launch signpost refresh                                            | Passed.                                                                                                        |
+| `node scripts/check-doc-cli-commands.mjs` after launch signpost refresh                           | Passed.                                                                                                        |
+| `cargo xtask release-prep-guard --version 0.2.0` after launch signpost refresh                    | Passed.                                                                                                        |
+| `BATS_LIB_PATH=test/vendor bats -t test/release-governance.bats test/docs-planning-boundary.bats` | Passed after launch signpost refresh.                                                                          |
+| `BATS_LIB_PATH=test/vendor bats -t test/technical-teardown.bats`                                  | Passed after removing stale pre-merge release blocker wording.                                                 |
+| `node --test scripts/check-doc-cli-commands.test.mjs`                                             | Passed after removing Cargo/network dependency from docs CLI command discovery.                                |
+| `node scripts/check-doc-cli-commands.mjs`                                                         | Passed after source-backed docs CLI command discovery fix.                                                     |
+| `git diff --check` after launch signpost refresh                                                  | Passed.                                                                                                        |
+| `cargo xtask preflight` after launch signpost refresh                                             | Passed.                                                                                                        |
 
 ## Release-Prep Notes
 
-- The release branch updates version-bearing manifests, README, CHANGELOG,
-  technical teardown, release packet docs, release notes, and stale signpost
-  commands before tagging.
+- The release branch and follow-up launch signpost pass update version-bearing
+  manifests, README, CHANGELOG, docs topics, technical teardown, release packet
+  docs, release notes, and stale signpost commands before tagging.
 - The project-manifest surface stays domain-free: schema sets, rebuild globs,
   bundle locations, comment mode, dashboards, and generic target descriptors
   are structure and metadata only.

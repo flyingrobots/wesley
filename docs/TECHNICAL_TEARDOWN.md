@@ -68,12 +68,13 @@ expansion, release documentation gate, and removal of the old Holmes capability
 alias. This is a pre-1.0 minor release over the published `v0.1.1`
 residue-purge baseline.
 
-As of this teardown refresh, the release branch is prepared to run
+As of this teardown refresh, release preparation has landed on synced `main`.
+The remaining pre-tag sequence must rerun
 `cargo xtask release-prep-guard --version 0.2.0`, `cargo xtask preflight`,
-`cargo xtask release-check`, and `cargo xtask package-crates --version 0.2.0`.
-The `v0.2.0` release gate is the only issue scheduled in the `Release: v0.2.0`
-milestone, and it remains open until the release commit lands on synced `main`
-and the signed tag is cut.
+`cargo xtask release-check`, and `cargo xtask package-crates --version 0.2.0`
+on the final synced `main` commit before the signed tag is cut. The `v0.2.0`
+release gate is the only issue scheduled in the `Release: v0.2.0` milestone,
+and it remains open until the signed tag publishes and publication checks pass.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion
@@ -297,8 +298,9 @@ intentionally not yet exposed as a public Holmes CLI from Rust.
 The README now describes `v0.2.0`, aligned with the `Cargo.toml` crate version
 declared across the workspace. The changelog's dated `0.2.0` section carries
 the post-`0.1.1` project-manifest, HOLMES schema-selection, and documentation
-coverage work. Release preparation is blocked only on the normal release branch,
-validation, merge-to-main, signed tag, and publish sequence.
+coverage work. Release preparation has landed on synced `main`; the remaining
+release gate is the final pre-tag validation, signed tag, publish, and
+post-publish verification sequence.
 
 ## Package(s) Overview
 
