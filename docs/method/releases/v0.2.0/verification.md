@@ -66,6 +66,7 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 | `node scripts/check-doc-cli-commands.mjs` after launch signpost refresh                           | Passed.                                                                                                        |
 | `cargo xtask release-prep-guard --version 0.2.0` after launch signpost refresh                    | Passed.                                                                                                        |
 | `BATS_LIB_PATH=test/vendor bats -t test/release-governance.bats test/docs-planning-boundary.bats` | Passed after launch signpost refresh.                                                                          |
+| `BATS_LIB_PATH=test/vendor bats -t test/technical-teardown.bats`                                  | Passed after removing stale pre-merge release blocker wording.                                                 |
 | `git diff --check` after launch signpost refresh                                                  | Passed.                                                                                                        |
 | `cargo xtask preflight` after launch signpost refresh                                             | Passed.                                                                                                        |
 

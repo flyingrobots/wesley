@@ -24,3 +24,11 @@ load 'bats-plugins/bats-assert/load'
   run grep -F "[BEARING.md](./BEARING.md)" docs/TECHNICAL_TEARDOWN.md
   assert_success
 }
+
+@test "technical teardown does not carry stale pre-merge release blockers" {
+  run grep -F "Release preparation is blocked only on the normal release branch" docs/TECHNICAL_TEARDOWN.md
+  assert_failure
+
+  run grep -F "release preparation has landed on synced \`main\`" docs/TECHNICAL_TEARDOWN.md
+  assert_success
+}
