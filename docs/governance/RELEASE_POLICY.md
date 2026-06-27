@@ -37,7 +37,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 | 2   | Zero open exact-version tracker references           | `xtask` + `gh` |          |
 | 3   | Strict preflight gate                                | `xtask`        |          |
 | 4   | Zero open issues from prior-version lanes            | `gh`           |          |
-| 5   | Version lockstep across all `Cargo.toml` manifests   | parse          |          |
+| 5   | Version lockstep across release version sources      | parse          |          |
 | 6   | `CHANGELOG.md` has a dated entry for this version    | parse          |          |
 | 7   | `CHANGELOG.md` reflects actual diff vs. prior tag    |                | reviewer |
 | 8   | `README.md` version headline matches tag             | grep           |          |
@@ -95,8 +95,10 @@ artifacts.
 
 ### Check 5: Version Lockstep
 
-All `Cargo.toml` manifests for published crates must declare the same version
-as the release tag. Workspace members are not permitted to drift independently.
+All release version sources declared in `.continuum/release.yml` must declare
+the same version as the release tag. Today that means every published crate
+`Cargo.toml` manifest plus the private root `package.json`. Workspace members
+are not permitted to drift independently.
 
 ### Check 6: Changelog
 

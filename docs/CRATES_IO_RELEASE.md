@@ -90,6 +90,7 @@ The `release-gauntlet` job must verify:
 - tag commit is reachable from `origin/main`
 - every published `Cargo.toml` version matches the tag
 - every internal Wesley dependency version matches the tag
+- root `package.json` version matches the tag
 - every publishable crate has the minimum package file set
 - root `README.md` exists
 - root `CHANGELOG.md` contains release notes for the exact version
