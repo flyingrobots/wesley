@@ -69,6 +69,8 @@ docs:
     - docs/ARCHITECTURE.md
     - docs/TECHNICAL_TEARDOWN.md
   user_docs:
+    - docs/GUIDE.md
+    - docs/site/
     - docs/topics/
     - docs/reference/
     - docs/releases/

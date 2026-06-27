@@ -79,6 +79,14 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release profile includes public site and guide signposts" {
+  run grep -F "    - docs/site/" .continuum/release.yml
+  assert_success
+
+  run grep -F "    - docs/GUIDE.md" .continuum/release.yml
+  assert_success
+}
+
 @test "release doctrine requires thesis scope and retrospective evidence" {
   run grep -F "No planned release without a thesis." docs/method/release.md
   assert_success
