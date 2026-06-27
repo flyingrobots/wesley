@@ -74,6 +74,11 @@ load 'bats-plugins/bats-assert/load'
   assert_output --partial "published: false"
 }
 
+@test "release policy names unpublished Holmes as a version source" {
+  run grep -F "crates/wesley-holmes/Cargo.toml" docs/governance/RELEASE_POLICY.md
+  assert_success
+}
+
 @test "release profile declares Rust advisory audit validation" {
   run grep -F "rust_advisory_audit: cargo audit" .continuum/release.yml
   assert_success
