@@ -18,6 +18,7 @@ diff or running focused checks before a PR.
 | CodeQL / analysis            | Static analysis for supported languages.           |
 | Dependency review            | Dependency risk in PRs.                            |
 | HOLMES workflow              | Schema-selected assurance reports and PR comments. |
+| SHIPME certificate           | Post-merge evidence for the landed `main` SHA.     |
 
 ## Local Mirrors
 
@@ -43,6 +44,8 @@ BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
 ## Rules Of Thumb
 
 - A skipped HOLMES matrix can be correct when no schema set is selected.
+- SHIPME certification is post-merge only. PR checks evaluate the proposed
+  integration; SHIPME certifies the commit that actually lands on `main`.
 - Browser, Bun, and Deno host experiment workflows are retired from Wesley.
 - Required checks should name the Rust product or repository hygiene surface
   they protect.

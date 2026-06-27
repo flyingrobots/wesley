@@ -103,3 +103,17 @@ load 'bats-plugins/bats-assert/load'
   run rg -n "cargo install wesley-cli --version 0\\.1\\.0" README.md docs/GUIDE.md docs/ENTRYPOINTS.md CONTRIBUTING.md
   assert_failure
 }
+
+@test "HOLMES distribution favors tagged workflows over a GitHub App install path" {
+  run grep -F "tagged reusable GitHub Actions" docs/topics/holmes-ci.md
+  assert_success
+
+  run grep -F "GitHub App the first-class HOLMES install path" docs/topics/holmes-ci.md
+  assert_success
+
+  run grep -F "GitHub App is not the first-class delivery mechanism" docs/architecture/holmes-integration.md
+  assert_success
+
+  run grep -F "Consumers should pin released tags, not \`main\`" docs/topics/holmes-ci.md
+  assert_success
+}

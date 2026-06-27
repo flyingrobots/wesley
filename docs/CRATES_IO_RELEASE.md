@@ -1,11 +1,15 @@
 # CRATES.IO RELEASE
 
-<!-- docs-truth: status=experimental owner=@flyingrobots -->
+<!-- docs-truth: status=current owner=@flyingrobots -->
 
 This is Wesley's official Rust release procedure.
 
 The distribution target is crates.io. The release authority is GitHub Actions.
 Humans prepare commits and tags; GitHub Actions performs the publish.
+
+The repo-local release profile is [`.continuum/release.yml`](../.continuum/release.yml).
+It declares the publish crate set, version sources, signposts, and verification
+commands that this procedure must match.
 
 ## Non-Negotiable Policy
 
@@ -86,6 +90,7 @@ The `release-gauntlet` job must verify:
 - tag commit is reachable from `origin/main`
 - every published `Cargo.toml` version matches the tag
 - every internal Wesley dependency version matches the tag
+- root `package.json` version matches the tag
 - every publishable crate has the minimum package file set
 - root `README.md` exists
 - root `CHANGELOG.md` contains release notes for the exact version

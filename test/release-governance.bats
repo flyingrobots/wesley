@@ -48,6 +48,89 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release profile names every published Wesley crate" {
+  run test -f .continuum/release.yml
+  assert_success
+
+  for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
+    run grep -Eq "^[[:space:]]*-[[:space:]]*$crate$" .continuum/release.yml
+    assert_success
+
+    run grep -F "name: $crate" .continuum/release.yml
+    assert_success
+  done
+}
+
+@test "release profile names unpublished Holmes as a required version source" {
+  run grep -F "path: crates/wesley-holmes/Cargo.toml" .continuum/release.yml
+  assert_success
+
+  run grep -F "name: wesley-holmes" .continuum/release.yml
+  assert_success
+
+  run bash -lc "awk '
+    /path: crates\\/wesley-holmes\\/Cargo.toml/ { in_block=1 }
+    in_block && /^[[:space:]]*required:[[:space:]]*true$/ { required=1 }
+    in_block && /^[[:space:]]*published:[[:space:]]*false$/ { published=1 }
+    in_block && /^[[:space:]]*-[[:space:]]*path:/ && \$0 !~ /wesley-holmes/ { in_block=0 }
+    END { exit !(required && published) }
+  ' .continuum/release.yml"
+  assert_success
+}
+
+@test "release policy names unpublished Holmes as a version source" {
+  run grep -F "crates/wesley-holmes/Cargo.toml" docs/governance/RELEASE_POLICY.md
+  assert_success
+}
+
+@test "release profile assertions are YAML spacing tolerant" {
+  run bash -lc "awk '/@test \"release profile names every published Wesley crate\"/{in_test=1} in_test && /^@test / && !/release profile names every published Wesley crate/{exit} in_test {print}' test/release-governance.bats | grep -F 'grep -Eq'"
+  assert_success
+
+  run bash -lc "awk '/@test \"release profile names unpublished Holmes as a required version source\"/{in_test=1} in_test && /^@test / && !/release profile names unpublished Holmes as a required version source/{exit} in_test {print}' test/release-governance.bats | grep -F 'required=1'"
+  assert_success
+}
+
+@test "release profile declares Rust advisory audit validation" {
+  run grep -F "rust_advisory_audit: cargo audit" .continuum/release.yml
+  assert_success
+}
+
+@test "release profile includes public site and guide signposts" {
+  run grep -Eq "^[[:space:]]*-[[:space:]]*docs/site/$" .continuum/release.yml
+  assert_success
+
+  run grep -Eq "^[[:space:]]*-[[:space:]]*docs/GUIDE.md$" .continuum/release.yml
+  assert_success
+}
+
+@test "release doctrine lists profile user-doc signposts" {
+  run grep -F '`docs/site/`' docs/method/release.md
+  assert_success
+
+  run grep -F '`docs/reference/`' docs/method/release.md
+  assert_success
+}
+
+@test "release doctrine requires thesis scope and retrospective evidence" {
+  run grep -F "No planned release without a thesis." docs/method/release.md
+  assert_success
+
+  run grep -F "must-ship, may-slip, and explicitly-not-included" docs/method/release.md
+  assert_success
+
+  run grep -F "retrospective and fallout issues" docs/method/release.md
+  assert_success
+}
+
+@test "release lifecycle uses retrospected state name" {
+  run rg -n "retrospectived" docs/method/release.md docs/topics/releases.md
+  assert_failure
+
+  run rg -n "retrospected" docs/method/release.md docs/topics/releases.md
+  assert_success
+}
+
 @test "entrypoints command map lists Rust LE binary emitter" {
   run grep -F "wesley emit le-binary-rust --schema <path> --out <path>" docs/ENTRYPOINTS.md
   assert_success

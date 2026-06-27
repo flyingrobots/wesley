@@ -31,6 +31,10 @@ hash`, and `schema operations`.
 
 ### Changed
 
+- **Release lifecycle profile**: Added a repo-local `.continuum/release.yml`
+  release profile and expanded the Wesley release doctrine/runbook around
+  thesis, scope, goalposts, immutable tagged-main publication, verification,
+  and retrospective evidence.
 - **Release documentation gate**: The release runbook, release policy, and
   human sign-off checklist now require a `docs/topics/` accuracy and coverage
   audit before tagging, with minimum 90% accuracy and 90% coverage floors.
@@ -38,6 +42,9 @@ hash`, and `schema operations`.
   manifest first, computes changed schema sets with `wesley config
 changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   artifacts grouped for one aggregate PR comment.
+- **HOLMES distribution direction**: Documented tagged reusable GitHub Actions
+  workflows plus copy/paste templates as the user-facing HOLMES install path,
+  with GitHub App delivery deferred to future identity or Checks API needs.
 - **Extension documentation**: Added current project-manifest and module
   authoring references, and clarified that `wesley.config.mjs` and the dynamic
   JavaScript module loader are retired from generic Wesley core.
@@ -52,6 +59,28 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
 
 ### Fixed
 
+- **Release crate visibility check**: The tag-triggered Release Crates workflow
+  now verifies crates.io visibility for `wesley-emit-codec` along with the rest
+  of the published Rust crate set, with bounded registry-index retries before
+  finalizing the GitHub Release.
+- **Release version-source enforcement**: `cargo xtask release-prep-guard`,
+  `cargo xtask release-guard`, `cargo xtask package-crates`, and
+  `cargo xtask publish-crates` now reject root `package.json` and unpublished
+  required Cargo manifest version drift in addition to published Rust crate
+  manifest drift.
+- **Release issue blocker selection**: Release guards now rely on exact-version
+  issue text and `vX.Y.Z` labels for pre-tag blockers while allowing the
+  `Release: vX.Y.Z` gate issue to remain open for post-publication evidence and
+  closeout.
+- **Release advisory-audit profile**: The repo-local release profile now
+  declares the Rust advisory audit command alongside the other release
+  validation gates.
+- **Release signpost profile coverage**: The repo-local release profile now
+  includes the public MkDocs source and guide page in user-doc signposts so
+  profile-driven audits cover public release wording.
+- **Post-merge SHIPME certification**: `cert-shipme.yml` now runs only on
+  `main` pushes, so SHIPME certificates bind to the landed target-branch SHA
+  instead of racing PR-time HOLMES comments for a temporary merge SHA.
 - **Docs CLI checker determinism**: The docs command checker now reads the
   native command list from the Rust CLI source help text instead of invoking
   `cargo run`, so Node-only repository hygiene does not depend on Cargo

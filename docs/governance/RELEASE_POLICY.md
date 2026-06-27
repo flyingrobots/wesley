@@ -6,6 +6,12 @@ This document is the canonical gate policy for Wesley releases. Every release
 must clear all automated checks and all human sign-offs before a tag is
 considered valid and the publish workflow is permitted to run.
 
+The release doctrine lives in [`docs/method/release.md`](../method/release.md).
+The repo-local release profile lives in
+[`../../.continuum/release.yml`](../../.continuum/release.yml) and declares the
+version sources, publish crate set, signposts, workflows, and verification
+commands this policy protects.
+
 ## Enforcement
 
 Release gates are split between automated machinery and human review. Neither
@@ -31,7 +37,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 | 2   | Zero open exact-version tracker references           | `xtask` + `gh` |          |
 | 3   | Strict preflight gate                                | `xtask`        |          |
 | 4   | Zero open issues from prior-version lanes            | `gh`           |          |
-| 5   | Version lockstep across all `Cargo.toml` manifests   | parse          |          |
+| 5   | Version lockstep across release version sources      | parse          |          |
 | 6   | `CHANGELOG.md` has a dated entry for this version    | parse          |          |
 | 7   | `CHANGELOG.md` reflects actual diff vs. prior tag    |                | reviewer |
 | 8   | `README.md` version headline matches tag             | grep           |          |
@@ -50,6 +56,7 @@ lacks the human sign-off is not a valid release, and vice versa.
 | 21  | `cargo doc --workspace` builds with zero warnings    | cargo doc      |          |
 | 22  | No known issues silently shipped                     |                | reviewer |
 | 23  | `docs/topics/` accuracy and coverage gate            |                | reviewer |
+| 24  | Release thesis, scope, and retrospective path exist  |                | reviewer |
 
 ## Automated Checks — Details
 
@@ -88,8 +95,11 @@ artifacts.
 
 ### Check 5: Version Lockstep
 
-All `Cargo.toml` manifests for published crates must declare the same version
-as the release tag. Workspace members are not permitted to drift independently.
+All release version sources declared in `.continuum/release.yml` must declare
+the same version as the release tag. Today that means every published crate
+`Cargo.toml` manifest, the unpublished `crates/wesley-holmes/Cargo.toml`
+manifest, and the private root `package.json`. Workspace members are not
+permitted to drift independently.
 
 ### Check 6: Changelog
 
@@ -225,6 +235,15 @@ The reviewer must also confirm that repo-resident release evidence is complete
 enough before tagging. Post-publish facts may live in the GitHub Release,
 workflow logs, and crates.io registry; they should not require a manual
 post-release merge to make the released commit truthful.
+
+### Check 24: Release Thesis, Scope, And Retrospective Path
+
+A human reviewer must confirm planned releases have a current release thesis,
+must-ship/may-slip/not-included scope, two to five goalposts with acceptance
+evidence, and an explicit retrospective/evidence location under
+`docs/method/releases/vX.Y.Z/`. Patch and emergency releases may use a shorter
+thesis, but they still need a recorded reason, validation evidence,
+post-publication verification, and fallout issue path.
 
 ## Policy Violations
 

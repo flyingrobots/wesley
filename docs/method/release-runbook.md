@@ -1,10 +1,16 @@
 # Release Runbook
 
+<!-- docs-truth: status=current owner=@flyingrobots -->
+
 Use this runbook when a release has already been shaped in
 `docs/method/releases/vX.Y.Z/release.md` and is ready for pre-flight.
 
 This is intentionally the execution layer, not the doctrine layer. The release
 doctrine lives in `docs/method/release.md`.
+
+The repo-local release profile lives in [`.continuum/release.yml`](../../.continuum/release.yml).
+Use it as the source for version sources, publish crates, signposts, workflow
+names, and verification commands.
 
 ## Abort Conditions
 
@@ -26,6 +32,7 @@ Before changing anything, determine and record:
 - package manager and lockfile authority
 - all version-bearing manifests
 - all publishable units
+- release profile presence and obvious agreement with the current repo
 - latest reachable semver tag matching `v*`
 - current branch
 - exact sync state versus `origin/main`
@@ -114,9 +121,26 @@ CI state.
 8. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally.
 9. Push the exact release tag only, for example: `git push origin vX.Y.Z`.
 10. Create the GitHub Release or equivalent forge release using the versioned
-   release notes.
+    release notes.
 11. Monitor triggered workflows to completion.
 12. Verify registries directly before claiming publication succeeded.
+13. Record release evidence and retrospective before starting the next planned
+    release train.
+
+## Phase 5: Retrospective And Closeout
+
+After the tag workflow publishes and public verification passes:
+
+1. Update `docs/method/releases/vX.Y.Z/verification.md` with tag, commit,
+   workflow, GitHub Release, registry, smoke, and warning evidence.
+2. Record plan-versus-actual scope: shipped, slipped, cut, expanded, and why.
+3. Identify repeatable wins and concrete process improvements.
+4. File fallout issues with a definition of done and exactly one scheduling
+   state label.
+5. Close or move every scoped issue.
+6. Close the release milestone after release-gate work is complete.
+7. Write or refresh the next release thesis before making the next planned
+   train active.
 
 ## Evidence
 
@@ -131,3 +155,4 @@ minimum include:
 - registry URLs
 - `docs/topics/` accuracy and coverage scores, with links to any corrections
 - any non-blocking warnings
+- retrospective summary and fallout issue links

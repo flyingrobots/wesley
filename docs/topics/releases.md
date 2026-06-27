@@ -11,18 +11,22 @@ prepare release facts, but the tag must point at the merged `main` commit.
 
 Release state is split intentionally:
 
-| Surface                                       | Purpose                                        |
-| --------------------------------------------- | ---------------------------------------------- |
-| GitHub label `vX.Y.Z`                         | Scheduled implementation and release-gate work |
-| GitHub milestone `Release: vX.Y.Z`            | Release-gate issue only                        |
-| GitHub goalpost milestones                    | Implementation issues                          |
-| `CHANGELOG.md`                                | Historical ledger of merged behavior           |
-| `docs/method/releases/vX.Y.Z/release.md`      | Internal release design and scope              |
-| `docs/method/releases/vX.Y.Z/verification.md` | Release witness after validation and publish   |
-| `docs/releases/vX.Y.Z.md`                     | User-facing release notes                      |
+| Surface                                       | Purpose                                      |
+| --------------------------------------------- | -------------------------------------------- |
+| GitHub label `vX.Y.Z`                         | Scheduled work and pre-tag blockers          |
+| GitHub milestone `Release: vX.Y.Z`            | Release-gate and closeout issue only         |
+| GitHub goalpost milestones                    | Implementation issues                        |
+| `CHANGELOG.md`                                | Historical ledger of merged behavior         |
+| `.continuum/release.yml`                      | Repo-local release profile and publish facts |
+| `docs/method/releases/vX.Y.Z/release.md`      | Internal release design and scope            |
+| `docs/method/releases/vX.Y.Z/verification.md` | Release witness after validation and publish |
+| `docs/releases/vX.Y.Z.md`                     | User-facing release notes                    |
 
 Implementation issues stay in goalpost milestones. Release-gate issues link to
-the selected goalposts and release-lane queries.
+the selected goalposts and release-lane queries. The executable release guards
+query version labels and exact-version references for blockers; they do not
+block merely because the `Release: vX.Y.Z` gate issue remains open for
+post-publication evidence.
 
 ## Required Human Checks
 
@@ -39,6 +43,20 @@ That includes:
 
 The `docs/topics/` gate means this directory must cover release-relevant
 contributor and operator workflows or link clearly to the current authority.
+
+## Release Lifecycle
+
+Wesley uses the lifecycle defined in
+[`docs/method/release.md`](../method/release.md):
+
+```text
+planned -> active -> release-prep -> merged -> tagged -> published -> verified -> retrospected -> closed
+```
+
+The live tracker shape is Wesley-specific: goalpost milestones own
+implementation slices, release milestones own release-gate issues, and concrete
+`vX.Y.Z` labels are the version scheduling axis. This is intentional because a
+GitHub issue can carry only one milestone.
 
 ## Pre-Tag Launch Pass
 
@@ -85,6 +103,7 @@ synced `main` release commit.
 
 ## Related Authority
 
+- [`.continuum/release.yml`](../../.continuum/release.yml)
 - [`docs/method/release.md`](../method/release.md)
 - [`docs/method/release-runbook.md`](../method/release-runbook.md)
 - [`docs/governance/RELEASE_POLICY.md`](../governance/RELEASE_POLICY.md)
