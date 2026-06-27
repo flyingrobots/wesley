@@ -53,6 +53,11 @@ const PUBLISH_CRATES: &[PublishCrate] = &[
         dependencies: &["wesley-core", "wesley-emit-rust", "wesley-emit-typescript"],
     },
 ];
+const UNPUBLISHED_CARGO_VERSION_SOURCES: &[CargoVersionSource] = &[CargoVersionSource {
+    name: "wesley-holmes",
+    path: "crates/wesley-holmes",
+    publish: false,
+}];
 
 fn main() -> ExitCode {
     match run(env::args_os().skip(1).collect()) {
@@ -673,6 +678,10 @@ fn check_publish_manifest_versions_at(root: &Path, version: &str) -> Result<(), 
 
     check_root_package_version(root, version, &mut failures);
 
+    for source in UNPUBLISHED_CARGO_VERSION_SOURCES {
+        check_cargo_version_source(root, source, version, &mut failures);
+    }
+
     for publish_crate in PUBLISH_CRATES {
         let manifest_path = root.join(publish_crate.path).join("Cargo.toml");
         let manifest = match read_toml_manifest(&manifest_path) {
@@ -728,6 +737,61 @@ fn check_publish_manifest_versions_at(root: &Path, version: &str) -> Result<(), 
     }
 
     finish_check("release manifest versions", failures)
+}
+
+fn check_cargo_version_source(
+    root: &Path,
+    source: &CargoVersionSource,
+    version: &str,
+    failures: &mut Vec<String>,
+) {
+    let manifest_path = root.join(source.path).join("Cargo.toml");
+    let manifest = match read_toml_manifest(&manifest_path) {
+        Ok(manifest) => manifest,
+        Err(failure) => {
+            failures.push(failure);
+            return;
+        }
+    };
+
+    let Some(package) = manifest.get("package").and_then(toml::Value::as_table) else {
+        failures.push(format!("{} is missing [package]", source.path));
+        return;
+    };
+
+    let name = package
+        .get("name")
+        .and_then(toml::Value::as_str)
+        .unwrap_or_default();
+    if name != source.name {
+        failures.push(format!(
+            "{} package.name is `{name}`, expected `{}`",
+            source.path, source.name
+        ));
+    }
+
+    let manifest_version = package
+        .get("version")
+        .and_then(toml::Value::as_str)
+        .unwrap_or_default();
+    if manifest_version != version {
+        failures.push(format!(
+            "{} version is `{manifest_version}`, expected `{version}`",
+            source.path
+        ));
+    }
+
+    let publish = package.get("publish").and_then(toml::Value::as_bool);
+    if publish != Some(source.publish) {
+        failures.push(format!(
+            "{} publish is `{}`, expected `{}`",
+            source.path,
+            publish
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "unset".to_string()),
+            source.publish
+        ));
+    }
 }
 
 fn check_root_package_version(root: &Path, version: &str, failures: &mut Vec<String>) {
@@ -2768,6 +2832,12 @@ struct PublishCrate {
     dependencies: &'static [&'static str],
 }
 
+struct CargoVersionSource {
+    name: &'static str,
+    path: &'static str,
+    publish: bool,
+}
+
 #[derive(Default)]
 struct PublishOptions {
     execute: bool,
@@ -3651,6 +3721,14 @@ mod tests {
             .expect("crate manifest should be written");
         }
 
+        let holmes_root = root.join("crates/wesley-holmes");
+        fs::create_dir_all(holmes_root.join("src")).expect("holmes src should be created");
+        fs::write(
+            holmes_root.join("Cargo.toml"),
+            "[package]\nname = \"wesley-holmes\"\nversion = \"1.2.3\"\nedition = \"2021\"\npublish = false\n",
+        )
+        .expect("holmes manifest should be written");
+
         let result = check_publish_manifest_versions_at(&root, "1.2.3");
 
         match result {
@@ -3662,6 +3740,74 @@ mod tests {
                 );
             }
             other => panic!("expected root package version failure, got {other:?}"),
+        }
+
+        fs::remove_dir_all(root).expect("temp root should be removed");
+    }
+
+    #[test]
+    fn unpublished_holmes_version_mismatch_blocks_release_manifest_check() {
+        let root = env::temp_dir().join(format!(
+            "wesley-xtask-release-holmes-version-{}",
+            std::process::id()
+        ));
+        if root.exists() {
+            fs::remove_dir_all(&root).expect("stale temp root should be removed");
+        }
+        fs::create_dir_all(&root).expect("temp root should be created");
+        fs::write(
+            root.join("package.json"),
+            serde_json::json!({
+                "name": "wesley",
+                "version": "1.2.3",
+                "private": true
+            })
+            .to_string(),
+        )
+        .expect("root package json should be written");
+
+        for publish_crate in PUBLISH_CRATES {
+            let crate_root = root.join(publish_crate.path);
+            fs::create_dir_all(crate_root.join("src")).expect("crate src should be created");
+            fs::write(crate_root.join("README.md"), "# Test crate\n")
+                .expect("crate readme should be written");
+            fs::write(crate_root.join("src/lib.rs"), "").expect("crate source should be written");
+
+            let mut dependency_lines = String::new();
+            for dependency in publish_crate.dependencies {
+                dependency_lines.push_str(&format!(
+                    "{dependency} = {{ path = \"../{dependency}\", version = \"1.2.3\" }}\n"
+                ));
+            }
+            fs::write(
+                crate_root.join("Cargo.toml"),
+                format!(
+                    "[package]\nname = \"{}\"\nversion = \"1.2.3\"\nedition = \"2021\"\nreadme = \"README.md\"\n\n[dependencies]\n{}",
+                    publish_crate.name, dependency_lines
+                ),
+            )
+            .expect("crate manifest should be written");
+        }
+
+        let holmes_root = root.join("crates/wesley-holmes");
+        fs::create_dir_all(holmes_root.join("src")).expect("holmes src should be created");
+        fs::write(
+            holmes_root.join("Cargo.toml"),
+            "[package]\nname = \"wesley-holmes\"\nversion = \"9.9.9\"\nedition = \"2021\"\npublish = false\n",
+        )
+        .expect("holmes manifest should be written");
+
+        let result = check_publish_manifest_versions_at(&root, "1.2.3");
+
+        match result {
+            Err(Error::CheckFailed { check, failures }) => {
+                assert_eq!(check, "release manifest versions");
+                assert_eq!(
+                    failures,
+                    vec!["crates/wesley-holmes version is `9.9.9`, expected `1.2.3`"]
+                );
+            }
+            other => panic!("expected Holmes package version failure, got {other:?}"),
         }
 
         fs::remove_dir_all(root).expect("temp root should be removed");

@@ -61,6 +61,19 @@ load 'bats-plugins/bats-assert/load'
   done
 }
 
+@test "release profile names unpublished Holmes as a required version source" {
+  run grep -F "path: crates/wesley-holmes/Cargo.toml" .continuum/release.yml
+  assert_success
+
+  run grep -F "name: wesley-holmes" .continuum/release.yml
+  assert_success
+
+  run grep -A5 "path: crates/wesley-holmes/Cargo.toml" .continuum/release.yml
+  assert_success
+  assert_output --partial "required: true"
+  assert_output --partial "published: false"
+}
+
 @test "release doctrine requires thesis scope and retrospective evidence" {
   run grep -F "No planned release without a thesis." docs/method/release.md
   assert_success

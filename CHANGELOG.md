@@ -61,8 +61,9 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   of the published Rust crate set before finalizing the GitHub Release.
 - **Release version-source enforcement**: `cargo xtask release-prep-guard`,
   `cargo xtask release-guard`, `cargo xtask package-crates`, and
-  `cargo xtask publish-crates` now reject root `package.json` version drift in
-  addition to Rust crate manifest drift.
+  `cargo xtask publish-crates` now reject root `package.json` and unpublished
+  required Cargo manifest version drift in addition to published Rust crate
+  manifest drift.
 - **Docs CLI checker determinism**: The docs command checker now reads the
   native command list from the Rust CLI source help text instead of invoking
   `cargo run`, so Node-only repository hygiene does not depend on Cargo
