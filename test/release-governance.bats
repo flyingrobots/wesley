@@ -161,6 +161,17 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release gate issue template avoids exact version blocker tokens" {
+  run grep -F "# Release gate: vX.Y.Z" docs/method/release.md
+  assert_failure
+
+  run grep -F "# Release gate: current planned release" docs/method/release.md
+  assert_success
+
+  run grep -F "Keep the open gate issue title/body free of the target tag/version literal" docs/method/release.md
+  assert_success
+}
+
 @test "release lifecycle uses retrospected state name" {
   run rg -n "retrospectived" docs/method/release.md docs/topics/releases.md
   assert_failure

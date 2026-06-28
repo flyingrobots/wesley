@@ -277,8 +277,13 @@ Use these shapes for planned releases and heavier patch releases.
 
 ### Release Tracking Issue
 
+Keep the open gate issue title/body free of the target tag/version literal while
+it remains open. Record the concrete version in the release packet path, release
+label, PR, and tagged source, and link issue queries instead of spelling the
+target tag in the gate issue.
+
 ```markdown
-# Release gate: vX.Y.Z
+# Release gate: current planned release
 
 ## Thesis
 
