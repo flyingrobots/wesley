@@ -150,6 +150,17 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release runbook does not rerun immutable tag for workflow source fixes" {
+  run grep -F "workflow source checked into the tag is wrong" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "Same-tag reruns are for credentials, permissions" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "GitHub Release/API problems" docs/method/release-runbook.md
+  assert_success
+}
+
 @test "release lifecycle uses retrospected state name" {
   run rg -n "retrospectived" docs/method/release.md docs/topics/releases.md
   assert_failure
