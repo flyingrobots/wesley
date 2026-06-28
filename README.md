@@ -155,6 +155,7 @@ For complete history, read [CHANGELOG.md](./CHANGELOG.md).
 - [Directive truth table](./docs/reference/directives.md)
 - [Module authoring](./docs/guides/module-authoring.md)
 - [Technical teardown](./docs/TECHNICAL_TEARDOWN.md)
+- [Release process](./RELEASE.md)
 - [Release policy](./docs/governance/RELEASE_POLICY.md)
 - [Contributing](./CONTRIBUTING.md)
 - [Support](./SUPPORT.md)

@@ -104,6 +104,25 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release profile includes root release process signpost" {
+  run grep -Eq "^[[:space:]]*-[[:space:]]*RELEASE.md$" .continuum/release.yml
+  assert_success
+
+  run grep -F "[Release process](./RELEASE.md)" README.md
+  assert_success
+}
+
+@test "root release process documents Wesley-specific lifecycle deviations" {
+  run grep -F "Autotag is not enabled" RELEASE.md
+  assert_success
+
+  run grep -F "Release: vX.Y.Z" RELEASE.md
+  assert_success
+
+  run grep -F "crates.io is the public package registry" RELEASE.md
+  assert_success
+}
+
 @test "release doctrine lists profile user-doc signposts" {
   run grep -F '`docs/site/`' docs/method/release.md
   assert_success
@@ -120,6 +139,36 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 
   run grep -F "retrospective and fallout issues" docs/method/release.md
+  assert_success
+}
+
+@test "release runbook requires patch-forward failure handling" {
+  run grep -F "The public tag is immutable. Do not move it." docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "Cut a new patch release from \`main\`" docs/method/release-runbook.md
+  assert_success
+}
+
+@test "release runbook does not rerun immutable tag for workflow source fixes" {
+  run grep -F "workflow source checked into the tag is wrong" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "Same-tag reruns are for credentials, permissions" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "GitHub Release/API problems" docs/method/release-runbook.md
+  assert_success
+}
+
+@test "release gate issue template avoids exact version blocker tokens" {
+  run grep -F "# Release gate: vX.Y.Z" docs/method/release.md
+  assert_failure
+
+  run grep -F "# Release gate: current planned release" docs/method/release.md
+  assert_success
+
+  run grep -F "Keep the open gate issue title/body free of the target tag/version literal" docs/method/release.md
   assert_success
 }
 

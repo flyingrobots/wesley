@@ -35,6 +35,10 @@ hash`, and `schema operations`.
   release profile and expanded the Wesley release doctrine/runbook around
   thesis, scope, goalposts, immutable tagged-main publication, verification,
   and retrospective evidence.
+- **Release process front door**: Added a thin root `RELEASE.md` and clarified
+  how Wesley adapts the Continuum release lifecycle around goalpost milestones,
+  version labels, manual signed tags, crates.io publication, and patch-forward
+  failure handling.
 - **Release documentation gate**: The release runbook, release policy, and
   human sign-off checklist now require a `docs/topics/` accuracy and coverage
   audit before tagging, with minimum 90% accuracy and 90% coverage floors.

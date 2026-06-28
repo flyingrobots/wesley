@@ -127,6 +127,50 @@ CI state.
 13. Record release evidence and retrospective before starting the next planned
     release train.
 
+## Idempotency And Failure Handling
+
+The public tag is immutable. Do not move it.
+
+If the tag exists but publication did not complete:
+
+1. Keep the tag fixed.
+2. Determine whether the failure is in release inputs or release machinery.
+3. Same-tag reruns are for credentials, permissions, transient registry, or
+   GitHub Release/API problems.
+4. If the workflow source checked into the tag is wrong, do not rerun the
+   immutable tag expecting a later workflow fix to apply.
+5. For workflow-source failures, patch forward from `main`, or use an explicit
+   maintainer-approved manual recovery only when no public artifact escaped and
+   the recovery still verifies the same tagged source.
+6. Record both the failure and the successful rerun or patch-forward release in
+   release evidence.
+
+If one crate publishes and another fails:
+
+1. Keep the tag fixed.
+2. Confirm the already-published crate versions match the tag source.
+3. Fix the failing crate path.
+4. Rerun the workflow so it verifies existing crates and publishes only missing
+   artifacts where crates.io allows that path.
+
+If the GitHub Release fails:
+
+1. Keep the tag fixed.
+2. Recreate or update the GitHub Release for the same tag.
+3. Verify the release notes match the tag source.
+
+If a published artifact is bad:
+
+1. Do not move the tag.
+2. Cut a new patch release from `main`.
+3. Deprecate or warn on the bad version only when the registry policy and user
+   impact make that the right move.
+4. File fallout issues and record the patch-forward decision.
+
+Manual tagging is not an emergency bypass in Wesley. It is the normal mechanism
+because the release profile declares `autotag: none`. It still must happen only
+after final guards pass from clean, fetched, synced `main`.
+
 ## Phase 5: Retrospective And Closeout
 
 After the tag workflow publishes and public verification passes:
