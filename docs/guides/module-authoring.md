@@ -135,17 +135,17 @@ claiming that Wesley owns those domains.
 
 ## Troubleshooting
 
-| Symptom                                                               | Likely Cause                                                                 | Fix                                                      |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `no Wesley manifest found`                                            | No discovered `wesley.config.json`, YAML manifest, or `.wesley/config.json`. | Pass `--config` or add a manifest.                       |
-| `manifest parse error`                                                | Invalid JSON/YAML or unsupported YAML construct.                             | Use JSON or simple YAML with string keys and no aliases. |
-| `unsupported manifest apiVersion`                                     | The manifest targets another API version.                                    | Use `wesley.project-manifest/v1`.                        |
-| `duplicate target`                                                    | Two selected descriptors use the same target name.                           | Rename or remove one target.                             |
-| `multiple default targets selected`                                   | More than one target has `"default": true`.                                  | Pick one default.                                        |
-| `exclusive group ... selects multiple targets`                        | Two selected targets declare the same `exclusiveGroup`.                      | Split into separate configs or select one target.        |
-| `target ... conflicts with selected target`                           | `conflictsWith` names another selected target.                               | Remove one side of the conflict.                         |
-| Missing schema when running `schema hash`                             | Multi-schema manifest cannot infer one schema.                               | Pass `--schema` explicitly.                              |
-| Target needs Postgres, Echo, Continuum, renderer, or runtime behavior | The work is outside Wesley core.                                             | Move it to the owning repo or target module.             |
+| Symptom                                                               | Likely Cause                                            | Fix                                                      |
+| --------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------- |
+| `no Wesley manifest found`                                            | No discovered project manifest.                         | Pass `--config` or add a manifest.                       |
+| `manifest parse error`                                                | Invalid JSON/YAML or unsupported YAML construct.        | Use JSON or simple YAML with string keys and no aliases. |
+| `unsupported manifest apiVersion`                                     | The manifest targets another API version.               | Use `wesley.project-manifest/v1`.                        |
+| `duplicate target`                                                    | Two selected descriptors use the same target name.      | Rename or remove one target.                             |
+| `multiple default targets selected`                                   | More than one target has `"default": true`.             | Pick one default.                                        |
+| `exclusive group ... selects multiple targets`                        | Two selected targets declare the same `exclusiveGroup`. | Split into separate configs or select one target.        |
+| `target ... conflicts with selected target`                           | `conflictsWith` names another selected target.          | Remove one side of the conflict.                         |
+| Missing schema when running `schema hash`                             | Multi-schema manifest cannot infer one schema.          | Pass `--schema` explicitly.                              |
+| Target needs Postgres, Echo, Continuum, renderer, or runtime behavior | The work is outside Wesley core.                        | Move it to the owning repo or target module.             |
 
 Environment variables from the retired JavaScript loader, including
 `WESLEY_CONFIG`, `WESLEY_MODULES`, `WESLEY_DISABLE_MODULES`, and
