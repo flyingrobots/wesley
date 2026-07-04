@@ -24,6 +24,7 @@ which signpost is supposed to answer which question.
 | [CLI Reference](./reference/cli.md)                                         | Current Rust-native `wesley` command reference.                                                       |
 | [Project Manifest](./reference/project-manifest.md)                         | Current JSON/YAML manifest schema for schemas, rebuild selection, bundles, and target metadata.       |
 | [Directive Truth Table](./reference/directives.md)                          | Current directive support levels, aliases, external families, and fixture boundaries.                 |
+| [Assurance Capability Matrix](./reference/assurance-capability-matrix.md)   | Shipped, transitional, foundation, and concept-only assurance surface status.                         |
 | [Plain Wesley](./topics/plain-wesley.md)                                    | First-hour compiler path using standard GraphQL and generated-artifact language.                      |
 | [Topics](./topics/README.md)                                                | Operator and contributor task pages that bridge references, governance, and workflows.                |
 | [Docs Orientation](./topics/docs-orientation.md)                            | Task page for choosing the right signpost without turning docs into a backlog mirror.                 |
@@ -106,6 +107,7 @@ It also now has a more explicit METHOD closeout surface under
 - [CLI Reference](./reference/cli.md)
 - [Project Manifest](./reference/project-manifest.md)
 - [Directive Truth Table](./reference/directives.md)
+- [Assurance Capability Matrix](./reference/assurance-capability-matrix.md)
 - [BEARING](./BEARING.md)
 - [Design Packets](./design/README.md)
 - [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)

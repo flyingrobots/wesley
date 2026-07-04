@@ -11,6 +11,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Added a Plain Wesley first-hour docs path with a beginner compiler tutorial,
   GraphQL-to-Wesley term map, contributor tutorial, and public-vocabulary rule
   for new docs terminology.
+- Added an assurance capability matrix that separates shipped native CLI
+  evidence commands, transitional JavaScript tooling, Rust foundation code, and
+  concept-only assurance vocabulary.
 
 ### Fixed
 

@@ -47,6 +47,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/reference/assurance-capability-matrix.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/guides/module-authoring.md",
       "status": "current",
       "owner": "@flyingrobots"

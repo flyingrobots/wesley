@@ -40,7 +40,7 @@ short path to the authoritative surface.
 | Choose local checks before a PR or release. | [Validation](./validation.md)                 | `cargo xtask preflight`, `docs/governance/RELEASE_POLICY.md`                       |
 | Interpret GitHub Actions checks.            | [CI Workflows](./ci-workflows.md)             | `docs/ci.md`, `.github/workflows/`                                                 |
 | Understand HOLMES CI and PR comments.       | [HOLMES CI](./holmes-ci.md)                   | `.github/workflows/wesley-holmes.yml`, `docs/architecture/`                        |
-| Work with assurance evidence and policies.  | [Assurance Evidence](./assurance-evidence.md) | `docs/holmes-policy-spec.md`                                                       |
+| Work with assurance evidence and policies.  | [Assurance Evidence](./assurance-evidence.md) | `docs/reference/assurance-capability-matrix.md`, `docs/holmes-policy-spec.md`      |
 | Prepare or judge a release.                 | [Releases](./releases.md)                     | `.continuum/release.yml`, `docs/method/release.md`, `docs/governance/`             |
 | Refresh docs before a release tag.          | [Docs Maintenance](./docs-maintenance.md)     | `docs/governance/RELEASE_POLICY.md#check-23-docstopics-accuracy-and-coverage-gate` |
 
