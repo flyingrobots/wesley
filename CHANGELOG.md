@@ -21,6 +21,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   summaries, and can write JSON release evidence.
 - Added a first-PR contributor path with docs-only, fixture-only, emitter-test,
   and CLI bug fast lanes plus maintainer starter-issue checks.
+- Added a security-tooling posture topic that records Wesley's current scanner
+  baseline, rejects DAST for the current compiler-only surface, and gates future
+  Semgrep or `cargo-deny` adoption on low-noise repo-owned policies.
 
 ### Fixed
 
