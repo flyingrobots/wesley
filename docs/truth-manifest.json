@@ -147,6 +147,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/plain-wesley.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/topics/directives.md",
       "status": "current",
       "owner": "@flyingrobots"

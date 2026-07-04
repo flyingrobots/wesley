@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- Added a Plain Wesley first-hour docs path with a beginner compiler tutorial,
+  GraphQL-to-Wesley term map, contributor tutorial, and public-vocabulary rule
+  for new docs terminology.
+
 ### Fixed
 
 - Escaped law-backed Rust validator error messages before emission so hostile

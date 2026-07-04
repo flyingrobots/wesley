@@ -14,6 +14,7 @@ short path to the authoritative surface.
 
 | Task                                      | Start Here                                      | Authority                                  |
 | ----------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
+| Complete the first-hour compiler path.    | [Plain Wesley](./plain-wesley.md)               | `docs/reference/cli.md`                    |
 | Run the current product command surface.  | [Native CLI](./native-cli.md)                   | `docs/reference/cli.md`                    |
 | Inspect GraphQL lowering, hashes, or IR.  | [Schema And IR](./schema-ir.md)                 | `docs/reference/cli.md#schema`             |
 | Work with operations and directive args.  | [Operations](./operations.md)                   | `docs/reference/cli.md#operation`          |
@@ -45,11 +46,12 @@ short path to the authoritative surface.
 
 ### Contributor Process
 
-| Task                               | Start Here                                | Authority                                       |
-| ---------------------------------- | ----------------------------------------- | ----------------------------------------------- |
-| Find the right documentation path. | [Docs Orientation](./docs-orientation.md) | `docs/README.md`                                |
-| Triage issues into release lanes.  | [Issue Triage](./contributing/triage.md)  | GitHub Issues, Milestones, Projects, and labels |
-| Keep docs accurate and covered.    | [Docs Maintenance](./docs-maintenance.md) | `docs/governance/DOCUMENTATION_STANDARD.md`     |
+| Task                               | Start Here                                             | Authority                                       |
+| ---------------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
+| Make a first generic compiler PR.  | [Plain Wesley](./plain-wesley.md#contributor-tutorial) | `docs/guides/extending.md`                      |
+| Find the right documentation path. | [Docs Orientation](./docs-orientation.md)              | `docs/README.md`                                |
+| Triage issues into release lanes.  | [Issue Triage](./contributing/triage.md)               | GitHub Issues, Milestones, Projects, and labels |
+| Keep docs accurate and covered.    | [Docs Maintenance](./docs-maintenance.md)              | `docs/governance/DOCUMENTATION_STANDARD.md`     |
 
 ## Coverage Rule
 

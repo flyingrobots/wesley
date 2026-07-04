@@ -24,6 +24,7 @@ which signpost is supposed to answer which question.
 | [CLI Reference](./reference/cli.md)                                         | Current Rust-native `wesley` command reference.                                                       |
 | [Project Manifest](./reference/project-manifest.md)                         | Current JSON/YAML manifest schema for schemas, rebuild selection, bundles, and target metadata.       |
 | [Directive Truth Table](./reference/directives.md)                          | Current directive support levels, aliases, external families, and fixture boundaries.                 |
+| [Plain Wesley](./topics/plain-wesley.md)                                    | First-hour compiler path using standard GraphQL and generated-artifact language.                      |
 | [Topics](./topics/README.md)                                                | Operator and contributor task pages that bridge references, governance, and workflows.                |
 | [Docs Orientation](./topics/docs-orientation.md)                            | Task page for choosing the right signpost without turning docs into a backlog mirror.                 |
 | [VISION](./VISION.md)                                                       | Bounded executive synthesis grounded in repo-visible truth.                                           |
@@ -93,6 +94,7 @@ It also now has a more explicit METHOD closeout surface under
 ### Product Orientation
 
 - [README.md](../README.md)
+- [Plain Wesley](./topics/plain-wesley.md)
 - [Topics](./topics/README.md)
 - [Docs Orientation](./topics/docs-orientation.md)
 - [END_TO_END.md](./END_TO_END.md)

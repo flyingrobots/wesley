@@ -17,6 +17,8 @@ backlog, status board, or progress counter.
   governance signposts that should be checked.
 - Update `docs/topics/` when a release changes contributor or operator
   workflows.
+- Give every new public noun a plain-English alias, or mark it
+  internal/experimental near its first use.
 - Do not leave TODOs or hidden backlog state in prose.
 
 ## Local Checks
