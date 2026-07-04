@@ -25,13 +25,13 @@ short path to the authoritative surface.
 
 ### Boundaries And Extension
 
-| Task                                                         | Start Here                                  | Authority                                      |
-| ------------------------------------------------------------ | ------------------------------------------- | ---------------------------------------------- |
-| Decide whether a change belongs in Wesley or an extension.   | [Compiler Boundary](./compiler-boundary.md) | `docs/design/0014-domain-empty-core-boundary/` |
-| Configure schema sets, changed-schema selection, or targets. | [Project Manifests](./project-manifests.md) | `docs/reference/project-manifest.md`           |
-| Author or review descriptor-only extension fixtures.         | [Extension Modules](./extension-modules.md) | `docs/guides/module-authoring.md`              |
-| Handle old Node, host, or package references.                | [Legacy Node Retirement](./legacy-node.md)  | `docs/LEGACY_NODE_MIGRATION.md`                |
-| Check durable repo properties.                               | [Invariants](./invariants.md)               | `docs/invariants/README.md`                    |
+| Task                                                         | Start Here                                  | Authority                                                                       |
+| ------------------------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------- |
+| Decide whether a change belongs in Wesley or an extension.   | [Compiler Boundary](./compiler-boundary.md) | `docs/design/0014-domain-empty-core-boundary/`                                  |
+| Configure schema sets, changed-schema selection, or targets. | [Project Manifests](./project-manifests.md) | `docs/reference/project-manifest.md`                                            |
+| Author or review descriptor-only extension fixtures.         | [Extension Modules](./extension-modules.md) | `docs/guides/module-authoring.md`, `docs/reference/external-target-protocol.md` |
+| Handle old Node, host, or package references.                | [Legacy Node Retirement](./legacy-node.md)  | `docs/LEGACY_NODE_MIGRATION.md`                                                 |
+| Check durable repo properties.                               | [Invariants](./invariants.md)               | `docs/invariants/README.md`                                                     |
 
 ### Assurance, CI, And Release
 

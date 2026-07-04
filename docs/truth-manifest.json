@@ -42,6 +42,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/reference/external-target-protocol.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/reference/directives.md",
       "status": "current",
       "owner": "@flyingrobots"

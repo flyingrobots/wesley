@@ -14,6 +14,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Added an assurance capability matrix that separates shipped native CLI
   evidence commands, transitional JavaScript tooling, Rust foundation code, and
   concept-only assurance vocabulary.
+- Added an external target protocol MVP specification for future
+  descriptor-verified external-process target execution.
 
 ### Fixed
 

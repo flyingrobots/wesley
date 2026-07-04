@@ -23,6 +23,7 @@ which signpost is supposed to answer which question.
 | [Module Authoring](./guides/module-authoring.md)                            | Current Rust-native extension boundary, descriptor fixtures, and troubleshooting.                     |
 | [CLI Reference](./reference/cli.md)                                         | Current Rust-native `wesley` command reference.                                                       |
 | [Project Manifest](./reference/project-manifest.md)                         | Current JSON/YAML manifest schema for schemas, rebuild selection, bundles, and target metadata.       |
+| [External Target Protocol](./reference/external-target-protocol.md)         | MVP specification for future descriptor-verified external-process targets.                            |
 | [Directive Truth Table](./reference/directives.md)                          | Current directive support levels, aliases, external families, and fixture boundaries.                 |
 | [Assurance Capability Matrix](./reference/assurance-capability-matrix.md)   | Shipped, transitional, foundation, and concept-only assurance surface status.                         |
 | [Plain Wesley](./topics/plain-wesley.md)                                    | First-hour compiler path using standard GraphQL and generated-artifact language.                      |
@@ -106,6 +107,7 @@ It also now has a more explicit METHOD closeout surface under
 - [SDL, Shape, And Law](./SDL.md)
 - [CLI Reference](./reference/cli.md)
 - [Project Manifest](./reference/project-manifest.md)
+- [External Target Protocol](./reference/external-target-protocol.md)
 - [Directive Truth Table](./reference/directives.md)
 - [Assurance Capability Matrix](./reference/assurance-capability-matrix.md)
 - [BEARING](./BEARING.md)

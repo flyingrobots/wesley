@@ -32,6 +32,11 @@ Future executable target loading should go through an explicit Rust-native
 registry, WASM capability boundary, or external-process protocol. Do not rebuild
 the old dynamic JavaScript command-dispatch path in Wesley core.
 
+The conservative MVP direction is the
+[External Target Protocol](../reference/external-target-protocol.md): Wesley
+validates a descriptor first, then a future runner can pass compiler facts to an
+external process and validate the returned artifact manifest.
+
 ## Descriptor Shape
 
 A descriptor-only fixture module should be plain data:
