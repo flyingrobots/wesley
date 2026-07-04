@@ -1071,6 +1071,20 @@ struct PlaybackModeInput {{
     }
 
     #[test]
+    fn variant_validator_printer_does_not_directly_interpolate_case_values() {
+        let source = include_str!("lib.rs");
+        for pattern in [
+            concat!("Err(", "\\", "\"", "{} requires"),
+            concat!("Err(", "\\", "\"", "{} forbids"),
+        ] {
+            assert!(
+                !source.contains(pattern),
+                "variant validator printer must route case values through the Rust string literal printer"
+            );
+        }
+    }
+
+    #[test]
     fn emits_stack_witness_0001_fixture_operation_bindings() {
         let sdl = include_str!(
             "../../../test/fixtures/consumer-models/stack-witness-0001-file-history.graphql"
