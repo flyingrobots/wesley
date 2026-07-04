@@ -16,6 +16,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   concept-only assurance vocabulary.
 - Added an external target protocol MVP specification for future
   descriptor-verified external-process target execution.
+- Added `cargo xtask bench-ir`, an advisory Rust-native IR lowering benchmark
+  that generates scale fixtures, reports structural counters and timing
+  summaries, and can write JSON release evidence.
 
 ### Fixed
 
