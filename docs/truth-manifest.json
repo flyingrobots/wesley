@@ -242,6 +242,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/contributing/first-pr.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/method/release.md",
       "status": "current",
       "owner": "@flyingrobots"

@@ -48,6 +48,7 @@ short path to the authoritative surface.
 
 | Task                               | Start Here                                             | Authority                                       |
 | ---------------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
+| Make a first small PR.             | [First PR](./contributing/first-pr.md)                 | `CONTRIBUTING.md`, GitHub Issues                |
 | Make a first generic compiler PR.  | [Plain Wesley](./plain-wesley.md#contributor-tutorial) | `docs/guides/extending.md`                      |
 | Find the right documentation path. | [Docs Orientation](./docs-orientation.md)              | `docs/README.md`                                |
 | Triage issues into release lanes.  | [Issue Triage](./contributing/triage.md)               | GitHub Issues, Milestones, Projects, and labels |

@@ -9,7 +9,11 @@ Wesley's. METHOD defines how work is queued, pulled, proved, and closed.
 
 ## Start Here
 
-Read these surfaces in order:
+For a first small PR, start with
+[First PR](docs/topics/contributing/first-pr.md). It gives the shortest path
+from a scoped GitHub issue to a local validation command and PR body.
+
+For broader orientation, read these surfaces in order:
 
 - [README.md](README.md) for doctrine and repo shape
 - [docs/BEARING.md](docs/BEARING.md) for current direction and tensions
@@ -63,13 +67,20 @@ done. The Chronicle files in the repo root are historical archive only.
 New contributors should start from scoped GitHub Issues, not from repo-local
 backlog files:
 
+- [First PR path](docs/topics/contributing/first-pr.md)
 - [Good first issues](https://github.com/flyingrobots/wesley/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22)
 - [Near-term roadmap issue](https://github.com/flyingrobots/wesley/issues/646)
 - [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
 
-Starter issues must already have a goalpost milestone and one scheduling-state
-label such as `v0.3.0`. If an issue still has a `triage:*` label, it is not a
-starter task until a maintainer schedules, splits, moves, or closes it.
+Starter issues must have one scheduling-state label such as `v0.3.0`, one
+primary file or tiny file set, and one local validation command. If an issue
+still has a `triage:*` label, it is not a starter task until a maintainer
+schedules, splits, moves, or closes it.
+
+The normal first-contribution lanes are docs-only PRs, fixture-only PRs,
+emitter-test PRs, and CLI bug PRs. Advanced architecture, assurance, and
+release docs are background for these lanes, not required reading unless the
+issue says otherwise.
 
 ## Design Requirements
 

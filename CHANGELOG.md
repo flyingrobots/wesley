@@ -19,6 +19,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Added `cargo xtask bench-ir`, an advisory Rust-native IR lowering benchmark
   that generates scale fixtures, reports structural counters and timing
   summaries, and can write JSON release evidence.
+- Added a first-PR contributor path with docs-only, fixture-only, emitter-test,
+  and CLI bug fast lanes plus maintainer starter-issue checks.
 
 ### Fixed
 
