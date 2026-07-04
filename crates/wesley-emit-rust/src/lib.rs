@@ -524,20 +524,16 @@ fn print_variant_validator(out: &mut String, validator: &RustVariantValidator) {
         )
         .expect("writing to string should not fail");
         for field in &case.requires {
-            writeln!(
-                out,
-                "            if value.{field}.is_none() {{ return Err(\"{} requires {field}\"); }}",
-                case.case_value
-            )
-            .expect("writing to string should not fail");
+            write!(out, "            if value.{field}.is_none() {{ return Err(")
+                .expect("writing to string should not fail");
+            print_rust_string_literal(out, &format!("{} requires {field}", case.case_value));
+            out.push_str("); }\n");
         }
         for field in &case.forbids {
-            writeln!(
-                out,
-                "            if value.{field}.is_some() {{ return Err(\"{} forbids {field}\"); }}",
-                case.case_value
-            )
-            .expect("writing to string should not fail");
+            write!(out, "            if value.{field}.is_some() {{ return Err(")
+                .expect("writing to string should not fail");
+            print_rust_string_literal(out, &format!("{} forbids {field}", case.case_value));
+            out.push_str("); }\n");
         }
         out.push_str("        }\n");
     }
@@ -878,6 +874,11 @@ fn print_rust_string_literal(out: &mut String, value: &str) {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use std::{
+        fs,
+        process::Command,
+        time::{SystemTime, UNIX_EPOCH},
+    };
     use wesley_core::{list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl};
 
     #[test]
@@ -1034,6 +1035,42 @@ pub struct UserFilter {
     }
 
     #[test]
+    fn escapes_law_variant_case_values_in_validator_messages() {
+        let actual = hostile_variant_validator_source();
+
+        syn::parse_file(&actual).expect("generated Rust validator should parse");
+        assert!(actual.contains(
+            "return Err(\"CASE \\\"quote\\\" \\\\slash\\nline\\rreturn\\t tab requires target\");"
+        ));
+        assert!(actual.contains(
+            "return Err(\"CASE \\\"quote\\\" \\\\slash\\nline\\rreturn\\t tab forbids then\");"
+        ));
+    }
+
+    #[test]
+    fn escaped_law_variant_validator_compiles() {
+        let source = format!(
+            r#"
+#[derive(Clone)]
+enum PlaybackModeKind {{
+    Seek,
+}}
+
+struct PlaybackModeInput {{
+    kind: PlaybackModeKind,
+    target: Option<u8>,
+    then: Option<u8>,
+}}
+
+{validator}
+"#,
+            validator = hostile_variant_validator_source()
+        );
+
+        compile_rust_source("escaped_law_variant_validator", &source);
+    }
+
+    #[test]
     fn emits_stack_witness_0001_fixture_operation_bindings() {
         let sdl = include_str!(
             "../../../test/fixtures/consumer-models/stack-witness-0001-file-history.graphql"
@@ -1177,5 +1214,55 @@ pub struct UserFilter {
             .expect("operation impl block should close")
             + "\n}\n".len();
         &tail[..end]
+    }
+
+    fn hostile_variant_validator_source() -> String {
+        let validator = RustVariantValidator {
+            function_name: "validate_playback_mode_input_variant".to_string(),
+            input_type: "PlaybackModeInput".to_string(),
+            discriminator_field: "kind".to_string(),
+            enum_type: "PlaybackModeKind".to_string(),
+            cases: vec![RustVariantValidatorCase {
+                enum_variant: "Seek".to_string(),
+                case_value: "CASE \"quote\" \\slash\nline\rreturn\t tab".to_string(),
+                requires: vec!["target".to_string()],
+                forbids: vec!["then".to_string()],
+            }],
+        };
+        let mut actual = String::new();
+        print_variant_validator(&mut actual, &validator);
+        actual
+    }
+
+    fn compile_rust_source(test_name: &str, source: &str) {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after Unix epoch")
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "wesley-emit-rust-{test_name}-{}-{unique}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).expect("temporary compile directory should create");
+        let source_path = dir.join("lib.rs");
+        fs::write(&source_path, source).expect("temporary Rust source should write");
+
+        let output = Command::new("rustc")
+            .arg("--edition=2021")
+            .arg("--crate-type=lib")
+            .arg(&source_path)
+            .arg("--out-dir")
+            .arg(&dir)
+            .output()
+            .expect("rustc should run");
+
+        let _ = fs::remove_dir_all(&dir);
+
+        assert!(
+            output.status.success(),
+            "generated Rust should compile\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }

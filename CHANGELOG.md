@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- Escaped law-backed Rust validator error messages before emission so hostile
+  case values containing quotes, backslashes, or control characters cannot break
+  generated Rust source.
+
 ## [0.2.0] - 2026-06-26
 
 ### Added
