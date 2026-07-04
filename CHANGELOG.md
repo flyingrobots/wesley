@@ -24,6 +24,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Rejected duplicate non-repeatable custom directives during SDL lowering,
+  including duplicates split across type definitions and extensions, while
+  preserving ordered arrays for directives declared `repeatable`.
 - Escaped law-backed Rust validator error messages before emission so hostile
   case values containing quotes, backslashes, or control characters cannot break
   generated Rust source.
