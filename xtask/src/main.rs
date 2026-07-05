@@ -3134,11 +3134,15 @@ fn run_command(program: &str, args: &[&str]) -> Result<(), Error> {
     let label = command_label(program, args);
     println!("xtask: {label}");
 
-    run_command_no_label(program, args)
+    run_command_with_label(program, args, label)
 }
 
 fn run_command_no_label(program: &str, args: &[&str]) -> Result<(), Error> {
     let label = command_label(program, args);
+    run_command_with_label(program, args, label)
+}
+
+fn run_command_with_label(program: &str, args: &[&str], label: String) -> Result<(), Error> {
     let status = Command::new(program)
         .args(args)
         .status()
