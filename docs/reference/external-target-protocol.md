@@ -9,10 +9,11 @@ Wesley target authors:
 Wesley compiler facts -> external process -> artifact manifest and diagnostics
 ```
 
-Status: protocol MVP specification. The current `v0.2.0` native CLI does not
-ship `wesley target verify` or `wesley target run` yet. Until those commands
-exist with tests and release evidence, project manifests and fixture descriptors
-remain metadata surfaces.
+Status: protocol MVP specification. The native CLI ships
+`wesley target verify` for descriptor validation without execution. It does not
+ship `wesley target run` yet. Until `target run` exists with tests and release
+evidence, project manifests and fixture descriptors remain metadata surfaces
+for execution.
 
 ## Goals
 
@@ -84,16 +85,24 @@ The descriptor is plain JSON. It is safe to validate without execution.
 Descriptor rules:
 
 - `apiVersion` must be exactly `wesley.target-descriptor/v1` for this MVP.
-- `name` must be stable, non-empty, and path-safe.
+- `name` must be stable, non-empty, and path-safe: no `.`, `..`, slashes,
+  backslashes, colons, or traversal-like `..` substrings.
 - `protocol.kind` must be `external-process`.
+- `protocol.version` must be exactly `wesley.target-process/v1`.
 - `command.program` must be a descriptor-relative executable path, not a shell
   string, bare program name, or `PATH` lookup. It must not be absolute or
-  contain `..`, and the host must reject symlink or canonicalization escapes
-  before launch. A future package or digest-backed binary reference may be added
-  only if it preserves deterministic resolution.
+  contain `..`, a Windows drive-like `:` prefix, or backslashes, and the host
+  must reject symlink or canonicalization escapes before launch. A future
+  package or digest-backed binary reference may be added only if it preserves
+  deterministic resolution.
 - `command.args` must be argv elements, not a shell command.
 - `execution.timeoutMs` must be finite and bounded by the host maximum.
-- output directories must be workspace-relative.
+- target capabilities must request `wesley.l1-ir/v1` input and
+  `wesley.target-artifact-manifest/v1` output.
+- network and ambient filesystem capability requests are denied by the MVP
+  verifier.
+- output directories must be workspace-relative and must not contain `..`,
+  Windows drive-like `:` prefixes, or backslashes.
 - descriptors must not contain product semantics; examples should use names
   like `hello`, `model`, or `artifact`.
 

@@ -34,6 +34,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Added CLI integration coverage for YAML project manifests in changed-schema
   selection.
 - Added a quick-start walkthrough for descriptor-only extension fixture groups.
+- Added `wesley target verify` for external target descriptor validation without
+  executing target code.
 
 ### Changed
 
