@@ -244,7 +244,9 @@ Artifact manifest rules:
   colon characters such as Windows drive prefixes, backslashes, or absolute
   path prefixes. A path of `.` alone is not valid.
 - Artifact order must be deterministic.
-- Repeated paths are invalid.
+- Repeated paths are invalid. The JSON Schema rejects exact duplicate artifact
+  objects; `target run` must additionally reject the same path with different
+  metadata before artifact copy-out.
 
 ## Host Enforcement Rules
 

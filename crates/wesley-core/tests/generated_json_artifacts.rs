@@ -551,6 +551,58 @@ fn external_target_protocol_artifacts_satisfy_declared_schemas() {
         &artifact_manifest,
     );
 
+    let duplicate_artifact_manifest = json!({
+        "apiVersion": "wesley.target-artifact-manifest/v1",
+        "items": [
+            {
+                "path": "generated/hello/model.txt",
+                "kind": "text",
+                "sha256": artifact_hash
+            },
+            {
+                "path": "generated/hello/model.txt",
+                "kind": "text",
+                "sha256": artifact_hash
+            }
+        ]
+    });
+    assert_schema_invalid(
+        "schemas/wesley-target-artifact-manifest-v1.schema.json",
+        "exact duplicate artifact manifest entries",
+        &duplicate_artifact_manifest,
+    );
+
+    let duplicate_path_distinct_artifact_manifest = json!({
+        "apiVersion": "wesley.target-artifact-manifest/v1",
+        "items": [
+            {
+                "path": "generated/hello/model.txt",
+                "kind": "text",
+                "sha256": artifact_hash
+            },
+            {
+                "path": "generated/hello/model.txt",
+                "kind": "binary",
+                "sha256": "sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+            }
+        ]
+    });
+    assert_schema_valid(
+        "schemas/wesley-target-artifact-manifest-v1.schema.json",
+        "duplicate artifact paths with distinct metadata require host validation",
+        &duplicate_path_distinct_artifact_manifest,
+    );
+
+    let external_target_protocol_reference =
+        include_str!("../../../docs/reference/external-target-protocol.md")
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
+    assert!(
+        external_target_protocol_reference.contains("same path with different metadata"),
+        "external target protocol docs must spell out duplicate path validation beyond JSON Schema"
+    );
+
     let dot_only_artifact_manifest = json!({
         "apiVersion": "wesley.target-artifact-manifest/v1",
         "items": [
