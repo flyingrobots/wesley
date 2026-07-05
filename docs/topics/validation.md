@@ -28,6 +28,7 @@ workspace tests, and a native CLI smoke test.
 | Domain-empty boundary                 | `BATS_LIB_PATH=test/vendor bats -t test/domain-empty-boundary.bats`                               |
 | HOLMES PR comments or reports         | `node --test packages/wesley-holmes/test/pr-comment.test.mjs`                                     |
 | JavaScript package or lockfile policy | `cargo xtask legacy-preflight`, `pnpm lint`                                                       |
+| Security-tooling policy or docs       | `cargo xtask docs-check`, `git diff --check`                                                      |
 
 The pre-push hook may select relevant checks, but do not use the hook as the
 only plan for a risky change. Choose checks deliberately and record the
@@ -43,4 +44,5 @@ Release validation is stricter than PR validation. Use
 
 - [`docs/governance/RELEASE_POLICY.md`](../governance/RELEASE_POLICY.md)
 - [`docs/governance/DOCUMENTATION_STANDARD.md`](../governance/DOCUMENTATION_STANDARD.md)
+- [`docs/topics/security-tooling.md`](./security-tooling.md)
 - [`docs/reference/cli.md`](../reference/cli.md)

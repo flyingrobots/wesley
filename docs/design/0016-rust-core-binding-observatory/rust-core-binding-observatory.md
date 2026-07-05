@@ -62,6 +62,13 @@ It may also be emitted through:
 pnpm perf:ir -- --observatory --json
 ```
 
+Those commands are historical surfaces from before legacy Node retirement.
+Current Rust-native lowering evidence is emitted by:
+
+```bash
+cargo xtask bench-ir --output out/rust-ir-performance-baseline.json
+```
+
 The v0 contract records:
 
 - `tool: "rust-core-binding-observatory.v0"`
@@ -130,7 +137,8 @@ A future non-Rust host binding decision must combine:
 
 1. Does `pnpm perf:bindings -- --json` emit a report with named adapter
    statuses?
-2. Does the report preserve the same explicit fixture corpus as `pnpm perf:ir`?
+2. Does the report preserve the same explicit fixture corpus as the then-current
+   performance command?
 3. Does Rust CLI evidence remain separate from Node binding overhead?
 4. Does legacy JS evidence include heap-delta samples without claiming peak RSS?
 5. Are Node binding and WASM binding marked as `not-implemented` rather than

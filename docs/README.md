@@ -23,7 +23,10 @@ which signpost is supposed to answer which question.
 | [Module Authoring](./guides/module-authoring.md)                            | Current Rust-native extension boundary, descriptor fixtures, and troubleshooting.                     |
 | [CLI Reference](./reference/cli.md)                                         | Current Rust-native `wesley` command reference.                                                       |
 | [Project Manifest](./reference/project-manifest.md)                         | Current JSON/YAML manifest schema for schemas, rebuild selection, bundles, and target metadata.       |
+| [External Target Protocol](./reference/external-target-protocol.md)         | MVP specification for future descriptor-verified external-process targets.                            |
 | [Directive Truth Table](./reference/directives.md)                          | Current directive support levels, aliases, external families, and fixture boundaries.                 |
+| [Assurance Capability Matrix](./reference/assurance-capability-matrix.md)   | Shipped, transitional, foundation, and concept-only assurance surface status.                         |
+| [Plain Wesley](./topics/plain-wesley.md)                                    | First-hour compiler path using standard GraphQL and generated-artifact language.                      |
 | [Topics](./topics/README.md)                                                | Operator and contributor task pages that bridge references, governance, and workflows.                |
 | [Docs Orientation](./topics/docs-orientation.md)                            | Task page for choosing the right signpost without turning docs into a backlog mirror.                 |
 | [VISION](./VISION.md)                                                       | Bounded executive synthesis grounded in repo-visible truth.                                           |
@@ -93,6 +96,7 @@ It also now has a more explicit METHOD closeout surface under
 ### Product Orientation
 
 - [README.md](../README.md)
+- [Plain Wesley](./topics/plain-wesley.md)
 - [Topics](./topics/README.md)
 - [Docs Orientation](./topics/docs-orientation.md)
 - [END_TO_END.md](./END_TO_END.md)
@@ -103,7 +107,9 @@ It also now has a more explicit METHOD closeout surface under
 - [SDL, Shape, And Law](./SDL.md)
 - [CLI Reference](./reference/cli.md)
 - [Project Manifest](./reference/project-manifest.md)
+- [External Target Protocol](./reference/external-target-protocol.md)
 - [Directive Truth Table](./reference/directives.md)
+- [Assurance Capability Matrix](./reference/assurance-capability-matrix.md)
 - [BEARING](./BEARING.md)
 - [Design Packets](./design/README.md)
 - [Wesley Core Versus Toolchain](./architecture/wesley-core-vs-toolchain.md)
