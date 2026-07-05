@@ -37,6 +37,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- Aligned Dependabot GitHub Actions update PR labels with existing repository
+  labels.
 - Required PR bodies to reference at least one GitHub Issue and to use GitHub
   closing keywords for every fully resolved issue.
 

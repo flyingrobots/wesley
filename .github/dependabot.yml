@@ -47,7 +47,7 @@ updates:
       include: 'scope'
     labels:
       - 'dependencies'
-      - 'github-actions'
+      - 'ci'
     groups:
       github-actions:
         patterns:
