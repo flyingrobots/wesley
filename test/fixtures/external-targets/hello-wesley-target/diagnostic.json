@@ -1,0 +1,6 @@
+{
+  "severity": "info",
+  "code": "target.fixture.ready",
+  "message": "hello external target fixture is ready for conformance validation",
+  "subject": "hello-wesley-target"
+}

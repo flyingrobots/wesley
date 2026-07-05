@@ -38,6 +38,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   executing target code.
 - Added JSON Schemas for the external target descriptor, request, response,
   diagnostic, and artifact manifest protocol envelopes.
+- Added a `hello-wesley-target` external target conformance fixture with
+  descriptor, request, diagnostic, response, artifact manifest, and artifact
+  hash validation.
 
 ### Changed
 

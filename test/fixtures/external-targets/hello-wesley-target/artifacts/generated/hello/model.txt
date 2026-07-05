@@ -1,0 +1,4 @@
+hello-wesley-target artifact
+
+schema: hello
+output: generated/hello/model.txt

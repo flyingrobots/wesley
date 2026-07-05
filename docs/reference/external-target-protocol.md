@@ -285,18 +285,25 @@ argv values.
 
 ## `hello-wesley-target` Template
 
-The first SDK template should contain:
+The repo-local conformance template lives at
+[`test/fixtures/external-targets/hello-wesley-target`](../../test/fixtures/external-targets/hello-wesley-target).
+It contains:
 
-- `schema.graphql`: a minimal GraphQL schema using `User` and `Query`.
-- `target-descriptor.json`: the descriptor envelope above.
-- `fixtures/request.json`: a request envelope generated from the schema.
-- `expected/model.txt`: one deterministic emitted artifact.
-- `expected/artifacts.json`: the artifact manifest.
-- one conformance test that runs the target process and compares the response
-  and artifact bytes.
+- `schema.graphql`: a minimal GraphQL schema with one generic `Query` field.
+- `target-descriptor.json`: a descriptor envelope that validates without
+  execution.
+- `request.json`: a request envelope generated from the schema's L1 IR and
+  schema operation metadata.
+- `diagnostic.json`: one standalone machine-readable diagnostic example.
+- `artifact-manifest.json`: the artifact manifest with a checked SHA-256
+  digest.
+- `response.json`: an `ok` response envelope carrying the artifact manifest.
+- `artifacts/generated/hello/model.txt`: one deterministic emitted artifact.
 
-The template must not mention Postgres, Echo, Continuum, auth, routing,
-deployment, or product runtime behavior.
+The template is not executable target loading and does not add `wesley target
+run`. Its conformance test validates the descriptor, request, diagnostic,
+response, artifact manifest, and artifact hash. It must not mention Postgres,
+Echo, Continuum, auth, routing, deployment, or product runtime behavior.
 
 ## Required Conformance Fixtures
 
