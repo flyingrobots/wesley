@@ -203,6 +203,28 @@ fn schema_commands_discover_single_schema_manifest_when_schema_flag_is_omitted()
 }
 
 #[test]
+fn schema_lower_reports_missing_schema_path() {
+    let dir = temp_dir("missing-schema-path");
+    let missing_schema = dir.join("missing-schema.graphql");
+
+    let output = wesley()
+        .args(["schema", "lower", "--schema"])
+        .arg(&missing_schema)
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    assert!(stdout.is_empty());
+    assert!(stderr.contains("failed to access schema"));
+    assert!(stderr.contains("missing-schema.graphql"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
 fn removed_footprint_checker_is_not_a_wesley_command() {
     let output = wesley()
         .arg("check-footprint")
