@@ -5,7 +5,12 @@ the productive-fast path, and the domain-free compiler/toolchain split.
 
 For deep-track doctrine, IR model internals, and custom generator development, use [ADVANCED_GUIDE.md](./ADVANCED_GUIDE.md).
 
-If you need the main Wesley nouns and the layer split before reading anything else, start with [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
+If this is your first hour with Wesley, start with
+[Plain Wesley](./topics/plain-wesley.md): GraphQL in, deterministic JSON IR out,
+optional generic emitters, and external targets own runtime meaning.
+
+Use [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md) after that when you need the full
+Wesley noun map and advanced toolchain vocabulary.
 
 If you know the task you are trying to perform and need the shortest current
 route, start with [Topics](./topics/README.md).
@@ -88,7 +93,9 @@ The direct replacements are `wesley schema lower`, `wesley schema hash`,
 Zod and certificate commands are no longer generic compiler-front-door work.
 Holmes-family commands still live under `@wesley/holmes`; the Rust foundation
 for future Holmes law-assurance ingestion lives in `crates/wesley-holmes` and
-does not expose public CLI commands yet.
+does not expose public CLI commands yet. Use the
+[Assurance Capability Matrix](./reference/assurance-capability-matrix.md) for
+the shipped/transitional/foundation/concept status of each assurance surface.
 
 Zod output is no longer treated as core Wesley retirement work. Reintroduce it
 through an external target module or package when a consumer needs JavaScript
@@ -124,6 +131,11 @@ Audit proposed changes, emit HOLMES reports, and inspect the static dashboard
 artifact assembled by CI.
 These are assurance/tooling surfaces outside compiler authority.
 
+Wesley emits deterministic evidence inputs and ships experimental assurance
+tooling around them; an assurance capability is shipped only when the
+[Assurance Capability Matrix](./reference/assurance-capability-matrix.md) lists
+an executable command or workflow.
+
 - **HOLMES report**: `pnpm --filter @wesley/holmes exec node src/cli.mjs report --help`
 - **Dashboard artifact**: open `docs/holmes-dashboard/index.html` with the
   HOLMES workflow JSON artifacts. See
@@ -154,7 +166,10 @@ This repo also ships surrounding toolchain surfaces:
 - HOLMES / Watson / Moriarty / BLADE
 
 Those surfaces operate on compiler inputs and outputs. They are useful, but
-they are not the same thing as the core compile act.
+they are not the same thing as the core compile act. They are advanced
+assurance/toolchain vocabulary, not prerequisites for the first compiler path.
+Watson, Moriarty, and BLADE remain concept/design vocabulary unless the
+Assurance Capability Matrix marks the surface shipped.
 
 For the exact boundary, see
 [architecture/wesley-core-vs-toolchain.md](./architecture/wesley-core-vs-toolchain.md).
@@ -164,7 +179,7 @@ For practical extension rules, see [guides/extending.md](./guides/extending.md).
 For the noun-by-noun version of that split, see
 [WESLEY_GLOSSARY.md](./WESLEY_GLOSSARY.md).
 
-## Big Picture: System Orchestration
+## Advanced: System Orchestration
 
 Wesley is a tiered engine designed to enforce contract integrity across platforms:
 

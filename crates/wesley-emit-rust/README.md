@@ -15,6 +15,11 @@ Semantic lowering must not interleave source string assembly with schema
 walking. Raw `String` writes belong at the printer boundary only, where escaping,
 identifier handling, attributes, and formatting are centralized.
 
+The printer is deterministic and test-gated; it is not a third-party Rust parser
+or token-stream pretty-printer. Emitter changes should keep hostile-value parse
+and compile coverage in place for any source text that incorporates schema,
+operation, or law-authored strings.
+
 See the repository
 [README](https://github.com/flyingrobots/wesley#readme) and
 [architecture guide](https://github.com/flyingrobots/wesley/blob/main/docs/ARCHITECTURE.md)

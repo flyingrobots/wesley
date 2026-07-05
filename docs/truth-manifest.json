@@ -42,7 +42,17 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/reference/external-target-protocol.md",
+      "status": "experimental",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/reference/directives.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/reference/assurance-capability-matrix.md",
       "status": "current",
       "owner": "@flyingrobots"
     },
@@ -147,6 +157,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/plain-wesley.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/topics/directives.md",
       "status": "current",
       "owner": "@flyingrobots"
@@ -202,6 +217,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/security-tooling.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/topics/validation.md",
       "status": "current",
       "owner": "@flyingrobots"
@@ -223,6 +243,11 @@
     },
     {
       "path": "docs/topics/contributing/triage.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/contributing/first-pr.md",
       "status": "current",
       "owner": "@flyingrobots"
     },

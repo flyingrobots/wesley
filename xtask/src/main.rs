@@ -8,7 +8,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
@@ -93,6 +93,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
             Ok(())
         }
         "test" => run_command("cargo", &["test", "--workspace"]),
+        "bench-ir" => run_bench_ir(&args[1..]),
         "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
         "package-crates" => run_package_crates(&args[1..]),
@@ -129,6 +130,379 @@ fn run_preflight() -> Result<(), Error> {
     run_docs_check()?;
     run_command("cargo", &["test", "--workspace"])?;
     run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
+}
+
+fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {
+    let options = BenchIrOptions::parse(args)?;
+
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let wesley_bin = build_wesley_for_bench(&root, options.json)?;
+    let bench_root = env::temp_dir().join(format!(
+        "wesley-bench-ir-{}-{}",
+        std::process::id(),
+        git_output(&["rev-parse", "--short", "HEAD"]).unwrap_or_else(|_| "unknown".to_string())
+    ));
+    if bench_root.exists() {
+        fs::remove_dir_all(&bench_root).map_err(|source| {
+            Error::Usage(format!(
+                "failed to remove stale benchmark dir `{}`: {source}",
+                bench_root.display()
+            ))
+        })?;
+    }
+    fs::create_dir_all(&bench_root).map_err(|source| {
+        Error::Usage(format!(
+            "failed to create benchmark dir `{}`: {source}",
+            bench_root.display()
+        ))
+    })?;
+
+    let mut fixture_reports = Vec::new();
+    for fixture in bench_ir_fixtures() {
+        let schema_path = bench_root.join(format!("{}.graphql", fixture.name));
+        fs::write(&schema_path, &fixture.schema).map_err(|source| {
+            Error::Usage(format!(
+                "failed to write benchmark fixture `{}`: {source}",
+                schema_path.display()
+            ))
+        })?;
+
+        for _ in 0..options.warmups {
+            run_wesley_schema_lower(&wesley_bin, &schema_path)?;
+        }
+
+        let mut output_bytes = 0usize;
+        let mut counts = IrMetricCounts::default();
+        let mut samples_ms = Vec::new();
+        for _ in 0..options.iterations {
+            let start = Instant::now();
+            let output = run_wesley_schema_lower(&wesley_bin, &schema_path)?;
+            let elapsed = start.elapsed();
+            output_bytes = output.len();
+            let ir: serde_json::Value = serde_json::from_slice(&output).map_err(|source| {
+                Error::Usage(format!(
+                    "benchmark output for `{}` is not valid JSON: {source}",
+                    fixture.name
+                ))
+            })?;
+            counts = ir_metric_counts(&ir);
+            samples_ms.push(duration_ms(elapsed));
+        }
+
+        let summary = sample_summary(&samples_ms);
+        fixture_reports.push(serde_json::json!({
+            "name": fixture.name,
+            "schemaBytes": fixture.schema.len(),
+            "outputBytes": output_bytes,
+            "typeCount": counts.type_count,
+            "fieldCount": counts.field_count,
+            "directiveCount": counts.directive_count,
+            "operationCount": counts.operation_count,
+            "samplesMs": samples_ms,
+            "minMs": summary.min,
+            "medianMs": summary.median,
+            "meanMs": summary.mean,
+            "maxMs": summary.max
+        }));
+    }
+
+    let _ = fs::remove_dir_all(&bench_root);
+
+    let report = serde_json::json!({
+        "apiVersion": "wesley.ir-benchmark/v1",
+        "advisory": true,
+        "gitHead": git_output(&["rev-parse", "HEAD"]).unwrap_or_else(|_| "unknown".to_string()),
+        "command": "cargo xtask bench-ir",
+        "lowerer": display_path(&root, &wesley_bin),
+        "warmups": options.warmups,
+        "iterations": options.iterations,
+        "memory": {
+            "peakRss": "not-captured"
+        },
+        "fixtures": fixture_reports
+    });
+
+    if let Some(output_path) = &options.output {
+        if let Some(parent) = output_path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
+            fs::create_dir_all(parent).map_err(|source| {
+                Error::Usage(format!(
+                    "failed to create benchmark output dir `{}`: {source}",
+                    parent.display()
+                ))
+            })?;
+        }
+        fs::write(output_path, serde_json::to_vec_pretty(&report).unwrap()).map_err(|source| {
+            Error::Usage(format!(
+                "failed to write benchmark report `{}`: {source}",
+                output_path.display()
+            ))
+        })?;
+    }
+
+    if options.json {
+        println!("{}", serde_json::to_string_pretty(&report).unwrap());
+    } else {
+        print_bench_ir_summary(&report);
+        if let Some(output_path) = &options.output {
+            println!("report: {}", output_path.display());
+        }
+    }
+
+    Ok(())
+}
+
+fn build_wesley_for_bench(root: &Path, json_output: bool) -> Result<PathBuf, Error> {
+    if json_output {
+        run_command_no_label("cargo", &["build", "--quiet", "--bin", "wesley"])?;
+    } else {
+        run_command("cargo", &["build", "--bin", "wesley"])?;
+    }
+
+    Ok(bench_wesley_binary_path(
+        root,
+        env::var_os("CARGO_TARGET_DIR"),
+    ))
+}
+
+fn bench_wesley_binary_path(root: &Path, cargo_target_dir: Option<OsString>) -> PathBuf {
+    let target_dir = cargo_target_dir
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.join("target"));
+
+    target_dir
+        .join("debug")
+        .join(format!("wesley{}", env::consts::EXE_SUFFIX))
+}
+
+fn run_wesley_schema_lower(wesley_bin: &Path, schema_path: &Path) -> Result<Vec<u8>, Error> {
+    let output = Command::new(wesley_bin)
+        .args(["schema", "lower", "--schema"])
+        .arg(schema_path)
+        .arg("--json")
+        .output()
+        .map_err(|source| {
+            Error::Usage(format!(
+                "failed to spawn `{}` schema lower: {source}",
+                wesley_bin.display()
+            ))
+        })?;
+
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        Err(Error::Usage(format!(
+            "benchmark lower failed for `{}`\nstderr:\n{}",
+            schema_path.display(),
+            String::from_utf8_lossy(&output.stderr)
+        )))
+    }
+}
+
+fn print_bench_ir_summary(report: &serde_json::Value) {
+    println!("Wesley IR benchmark advisory report");
+    println!(
+        "apiVersion: {}",
+        report["apiVersion"].as_str().unwrap_or("")
+    );
+    println!("memory.peakRss: not-captured");
+    println!();
+    println!(
+        "{:<28} {:>7} {:>7} {:>7} {:>7} {:>9} {:>9}",
+        "fixture", "types", "fields", "dirs", "ops", "median", "output"
+    );
+    for fixture in report["fixtures"].as_array().into_iter().flatten() {
+        println!(
+            "{:<28} {:>7} {:>7} {:>7} {:>7} {:>8.3}ms {:>9}",
+            fixture["name"].as_str().unwrap_or(""),
+            fixture["typeCount"].as_u64().unwrap_or(0),
+            fixture["fieldCount"].as_u64().unwrap_or(0),
+            fixture["directiveCount"].as_u64().unwrap_or(0),
+            fixture["operationCount"].as_u64().unwrap_or(0),
+            fixture["medianMs"].as_f64().unwrap_or(0.0),
+            fixture["outputBytes"].as_u64().unwrap_or(0)
+        );
+    }
+}
+
+fn duration_ms(duration: Duration) -> f64 {
+    duration.as_secs_f64() * 1000.0
+}
+
+fn sample_summary(samples: &[f64]) -> SampleSummary {
+    let mut sorted = samples.to_vec();
+    sorted.sort_by(|left, right| left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal));
+    let sum: f64 = sorted.iter().sum();
+    let median = match sorted.len() {
+        0 => 0.0,
+        len if len % 2 == 1 => sorted[len / 2],
+        len => (sorted[(len / 2) - 1] + sorted[len / 2]) / 2.0,
+    };
+    SampleSummary {
+        min: sorted.first().copied().unwrap_or(0.0),
+        median,
+        mean: if sorted.is_empty() {
+            0.0
+        } else {
+            sum / sorted.len() as f64
+        },
+        max: sorted.last().copied().unwrap_or(0.0),
+    }
+}
+
+fn ir_metric_counts(ir: &serde_json::Value) -> IrMetricCounts {
+    let mut counts = IrMetricCounts::default();
+    let Some(types) = ir.get("types").and_then(serde_json::Value::as_array) else {
+        return counts;
+    };
+
+    counts.type_count = types.len();
+    for type_def in types {
+        counts.directive_count += directive_count(type_def);
+        let fields = type_def
+            .get("fields")
+            .and_then(serde_json::Value::as_array)
+            .map(Vec::as_slice)
+            .unwrap_or(&[]);
+        counts.field_count += fields.len();
+
+        let type_name = type_def
+            .get("name")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        if matches!(type_name, "Query" | "Mutation" | "Subscription") {
+            counts.operation_count += fields.len();
+        }
+
+        for field in fields {
+            counts.directive_count += directive_count(field);
+            for argument in field
+                .get("arguments")
+                .and_then(serde_json::Value::as_array)
+                .map(Vec::as_slice)
+                .unwrap_or(&[])
+            {
+                counts.directive_count += directive_count(argument);
+            }
+        }
+    }
+
+    counts
+}
+
+fn directive_count(value: &serde_json::Value) -> usize {
+    value
+        .get("directives")
+        .and_then(serde_json::Value::as_object)
+        .map(|directives| {
+            directives
+                .values()
+                .map(|directive| directive.as_array().map(Vec::len).unwrap_or(1))
+                .sum()
+        })
+        .unwrap_or(0)
+}
+
+fn bench_ir_fixtures() -> Vec<BenchIrFixture> {
+    vec![
+        BenchIrFixture {
+            name: "wide-schema",
+            schema: wide_schema_fixture(),
+        },
+        BenchIrFixture {
+            name: "deep-input-schema",
+            schema: deep_input_schema_fixture(),
+        },
+        BenchIrFixture {
+            name: "directive-heavy-schema",
+            schema: directive_heavy_schema_fixture(),
+        },
+        BenchIrFixture {
+            name: "operation-heavy-schema",
+            schema: operation_heavy_schema_fixture(),
+        },
+        BenchIrFixture {
+            name: "extension-folding-schema",
+            schema: extension_folding_schema_fixture(),
+        },
+    ]
+}
+
+fn wide_schema_fixture() -> String {
+    let mut sdl = String::new();
+    sdl.push_str("type Query {\n");
+    for index in 0..75 {
+        sdl.push_str(&format!("  item{index}(id: ID!): Item{index}\n"));
+    }
+    sdl.push_str("}\n\n");
+    for index in 0..75 {
+        sdl.push_str(&format!("type Item{index} {{\n"));
+        sdl.push_str("  id: ID!\n");
+        for field in 0..8 {
+            sdl.push_str(&format!("  field{field}: String\n"));
+        }
+        sdl.push_str("}\n\n");
+    }
+    sdl
+}
+
+fn deep_input_schema_fixture() -> String {
+    let mut sdl = String::from("type Query {\n  search(input: Input0): String\n}\n\n");
+    for index in 0..32 {
+        sdl.push_str(&format!("input Input{index} {{\n"));
+        sdl.push_str("  value: String\n");
+        if index < 31 {
+            sdl.push_str(&format!("  next: Input{}\n", index + 1));
+        }
+        sdl.push_str("}\n\n");
+    }
+    sdl
+}
+
+fn directive_heavy_schema_fixture() -> String {
+    let mut sdl = String::from(
+        "directive @tag(value: String) repeatable on OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION\n\n",
+    );
+    sdl.push_str("type Query @tag(value: \"root\") {\n");
+    for index in 0..120 {
+        sdl.push_str(&format!(
+            "  field{index}(arg: String @tag(value: \"arg{index}\")): String @tag(value: \"field{index}\")\n"
+        ));
+    }
+    sdl.push_str("}\n");
+    sdl
+}
+
+fn operation_heavy_schema_fixture() -> String {
+    let mut sdl = String::from("type Query {\n");
+    for index in 0..160 {
+        sdl.push_str(&format!(
+            "  queryOp{index}(id: ID!, filter: String): String\n"
+        ));
+    }
+    sdl.push_str("}\n\n");
+    sdl.push_str("type Mutation {\n");
+    for index in 0..80 {
+        sdl.push_str(&format!("  mutationOp{index}(input: String!): Boolean!\n"));
+    }
+    sdl.push_str("}\n");
+    sdl
+}
+
+fn extension_folding_schema_fixture() -> String {
+    let mut sdl =
+        String::from("directive @tag(value: String) repeatable on OBJECT | FIELD_DEFINITION\n\n");
+    sdl.push_str("type Query {\n  thing: Thing\n}\n\n");
+    sdl.push_str("type Thing @tag(value: \"base\") {\n  id: ID!\n}\n\n");
+    for index in 0..90 {
+        sdl.push_str(&format!(
+            "extend type Thing {{\n  extField{index}: String @tag(value: \"ext{index}\")\n}}\n\n"
+        ));
+    }
+    sdl
 }
 
 fn run_release_artifact_check() -> Result<(), Error> {
@@ -2760,6 +3134,15 @@ fn run_command(program: &str, args: &[&str]) -> Result<(), Error> {
     let label = command_label(program, args);
     println!("xtask: {label}");
 
+    run_command_with_label(program, args, label)
+}
+
+fn run_command_no_label(program: &str, args: &[&str]) -> Result<(), Error> {
+    let label = command_label(program, args);
+    run_command_with_label(program, args, label)
+}
+
+fn run_command_with_label(program: &str, args: &[&str], label: String) -> Result<(), Error> {
     let status = Command::new(program)
         .args(args)
         .status()
@@ -2792,6 +3175,7 @@ Usage:
 
 Commands:
   test              Run Rust workspace tests
+  bench-ir          Run advisory Rust-native IR lowering benchmarks
   docs-check        Run Rust-native documentation hygiene checks
   preflight         Run the strict pre-PR/release quality gate
   strict-preflight  Alias for preflight
@@ -2809,6 +3193,8 @@ Publish options:
   cargo xtask publish-alpha --execute          CI tag-only compatibility publish path
   cargo xtask package-crates --tag vX.Y.Z      Check release package file sets
   cargo xtask package-crates --version X.Y.Z   Check pre-tag release package file sets
+  cargo xtask bench-ir --iterations 5 --warmups 1 --json
+  cargo xtask bench-ir --output out/ir-benchmark.json
   cargo xtask publish-crates --tag vX.Y.Z      Print tag-derived plan and run safe dry-runs
   cargo xtask publish-crates --tag vX.Y.Z --execute  Publish in GitHub Actions only
   cargo xtask release-prep-guard --version X.Y.Z
@@ -2826,6 +3212,122 @@ struct CargoVersionSource {
     name: &'static str,
     path: &'static str,
     publish: bool,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct BenchIrOptions {
+    iterations: usize,
+    warmups: usize,
+    json: bool,
+    output: Option<PathBuf>,
+}
+
+impl BenchIrOptions {
+    fn parse(args: &[OsString]) -> Result<Self, Error> {
+        let mut options = Self {
+            iterations: 5,
+            warmups: 1,
+            json: false,
+            output: None,
+        };
+
+        let mut index = 0;
+        while index < args.len() {
+            let Some(arg) = args[index].to_str() else {
+                return Err(Error::Usage("bench-ir options must be UTF-8".to_string()));
+            };
+
+            match arg {
+                "--json" => options.json = true,
+                "--iterations" => {
+                    index += 1;
+                    let value = args
+                        .get(index)
+                        .and_then(|arg| arg.to_str())
+                        .ok_or_else(|| {
+                            Error::Usage("bench-ir --iterations requires a UTF-8 value".to_string())
+                        })?;
+                    options.iterations = parse_positive_usize("bench-ir --iterations", value)?;
+                }
+                value if value.starts_with("--iterations=") => {
+                    let value = value.trim_start_matches("--iterations=");
+                    options.iterations = parse_positive_usize("bench-ir --iterations", value)?;
+                }
+                "--warmups" => {
+                    index += 1;
+                    let value = args
+                        .get(index)
+                        .and_then(|arg| arg.to_str())
+                        .ok_or_else(|| {
+                            Error::Usage("bench-ir --warmups requires a UTF-8 value".to_string())
+                        })?;
+                    options.warmups = parse_usize("bench-ir --warmups", value)?;
+                }
+                value if value.starts_with("--warmups=") => {
+                    let value = value.trim_start_matches("--warmups=");
+                    options.warmups = parse_usize("bench-ir --warmups", value)?;
+                }
+                "--output" => {
+                    index += 1;
+                    let value = args.get(index).ok_or_else(|| {
+                        Error::Usage("bench-ir --output requires a path value".to_string())
+                    })?;
+                    options.output = Some(PathBuf::from(value));
+                }
+                value if value.starts_with("--output=") => {
+                    options.output = Some(PathBuf::from(value.trim_start_matches("--output=")));
+                }
+                "--help" | "-h" => {
+                    print_help();
+                    return Err(Error::Usage(
+                        "bench-ir help requested; see usage above".to_string(),
+                    ));
+                }
+                other => {
+                    return Err(Error::Usage(format!("unknown bench-ir option `{other}`")));
+                }
+            }
+
+            index += 1;
+        }
+
+        Ok(options)
+    }
+}
+
+struct BenchIrFixture {
+    name: &'static str,
+    schema: String,
+}
+
+#[derive(Default)]
+struct IrMetricCounts {
+    type_count: usize,
+    field_count: usize,
+    directive_count: usize,
+    operation_count: usize,
+}
+
+struct SampleSummary {
+    min: f64,
+    median: f64,
+    mean: f64,
+    max: f64,
+}
+
+fn parse_positive_usize(label: &str, value: &str) -> Result<usize, Error> {
+    let parsed = parse_usize(label, value)?;
+    if parsed == 0 {
+        Err(Error::Usage(format!("{label} must be greater than zero")))
+    } else {
+        Ok(parsed)
+    }
+}
+
+fn parse_usize(label: &str, value: &str) -> Result<usize, Error> {
+    value
+        .parse::<usize>()
+        .map_err(|source| Error::Usage(format!("{label} must be an integer: {source}")))
 }
 
 #[derive(Default)]
@@ -3054,6 +3556,144 @@ enum Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn os_args(args: &[&str]) -> Vec<OsString> {
+        args.iter().map(OsString::from).collect()
+    }
+
+    #[test]
+    fn bench_ir_options_use_advisory_defaults() {
+        assert_eq!(
+            BenchIrOptions::parse(&[]).unwrap(),
+            BenchIrOptions {
+                iterations: 5,
+                warmups: 1,
+                json: false,
+                output: None
+            }
+        );
+    }
+
+    #[test]
+    fn bench_ir_options_parse_report_flags() {
+        let args = os_args(&[
+            "--json",
+            "--iterations=7",
+            "--warmups",
+            "0",
+            "--output",
+            "out/bench.json",
+        ]);
+
+        assert_eq!(
+            BenchIrOptions::parse(&args).unwrap(),
+            BenchIrOptions {
+                iterations: 7,
+                warmups: 0,
+                json: true,
+                output: Some(PathBuf::from("out/bench.json"))
+            }
+        );
+    }
+
+    #[test]
+    fn bench_ir_options_reject_zero_iterations() {
+        let args = os_args(&["--iterations", "0"]);
+
+        assert!(matches!(
+            BenchIrOptions::parse(&args),
+            Err(Error::Usage(message)) if message == "bench-ir --iterations must be greater than zero"
+        ));
+    }
+
+    #[test]
+    fn bench_ir_binary_path_honors_cargo_target_dir() {
+        let root = Path::new("/workspace/wesley");
+        let expected_binary = format!("wesley{}", env::consts::EXE_SUFFIX);
+
+        assert_eq!(
+            bench_wesley_binary_path(root, Some(OsString::from("/tmp/wesley-target"))),
+            PathBuf::from("/tmp/wesley-target")
+                .join("debug")
+                .join(&expected_binary)
+        );
+        assert_eq!(
+            bench_wesley_binary_path(root, None),
+            root.join("target").join("debug").join(expected_binary)
+        );
+    }
+
+    #[test]
+    fn bench_ir_fixture_corpus_covers_scale_shapes() {
+        let fixtures = bench_ir_fixtures();
+        let names = fixtures
+            .iter()
+            .map(|fixture| fixture.name)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            names,
+            vec![
+                "wide-schema",
+                "deep-input-schema",
+                "directive-heavy-schema",
+                "operation-heavy-schema",
+                "extension-folding-schema"
+            ]
+        );
+        assert!(fixtures
+            .iter()
+            .any(|fixture| fixture.schema.contains("extend type Thing")));
+        assert!(fixtures
+            .iter()
+            .any(|fixture| fixture.schema.contains("directive @tag")));
+    }
+
+    #[test]
+    fn ir_metric_counts_include_fields_directives_and_operations() {
+        let ir = serde_json::json!({
+            "types": [
+                {
+                    "name": "Query",
+                    "directives": { "tag": {} },
+                    "fields": [
+                        {
+                            "name": "user",
+                            "directives": { "cache": {} },
+                            "arguments": [
+                                { "name": "id", "directives": { "arg": {} } }
+                            ]
+                        },
+                        { "name": "search" }
+                    ]
+                },
+                {
+                    "name": "User",
+                    "directives": { "tag": [{}, {}] },
+                    "fields": [
+                        { "name": "id", "directives": { "id": {} } }
+                    ]
+                }
+            ]
+        });
+
+        let counts = ir_metric_counts(&ir);
+
+        assert_eq!(counts.type_count, 2);
+        assert_eq!(counts.field_count, 3);
+        assert_eq!(counts.directive_count, 6);
+        assert_eq!(counts.operation_count, 2);
+    }
+
+    #[test]
+    fn sample_summary_uses_true_even_sample_median() {
+        let summary = sample_summary(&[12.0, 2.0, 6.0, 4.0]);
+
+        assert_eq!(summary.min, 2.0);
+        assert_eq!(summary.median, 5.0);
+        assert_eq!(summary.mean, 6.0);
+        assert_eq!(summary.max, 12.0);
+    }
 
     #[test]
     fn official_dry_run_reports_missing_internal_dependency_as_failure() {
