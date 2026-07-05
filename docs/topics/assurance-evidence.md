@@ -33,8 +33,8 @@ Rust foundation code, and concept/design-only vocabulary.
 - PR-time HOLMES evidence and post-merge SHIPME certification are distinct
   gates. SHIPME records the landed `main` SHA, not the temporary PR merge SHA.
 - Domain-specific target facts should be produced by the owning target module.
-- Watson, Moriarty, and BLADE are concept/design-only unless a page cites a
-  concrete shipped command, workflow, test, and release artifact.
+- Watson, Moriarty, and BLADE follow the Assurance Capability Matrix. Treat a
+  surface as shipped only when the matrix marks it shipped.
 
 ## Useful Checks
 

@@ -168,8 +168,8 @@ This repo also ships surrounding toolchain surfaces:
 Those surfaces operate on compiler inputs and outputs. They are useful, but
 they are not the same thing as the core compile act. They are advanced
 assurance/toolchain vocabulary, not prerequisites for the first compiler path.
-Watson, Moriarty, and BLADE remain concept/design vocabulary unless a page cites
-a shipped command or workflow.
+Watson, Moriarty, and BLADE remain concept/design vocabulary unless the
+Assurance Capability Matrix marks the surface shipped.
 
 For the exact boundary, see
 [architecture/wesley-core-vs-toolchain.md](./architecture/wesley-core-vs-toolchain.md).
