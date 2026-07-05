@@ -15,6 +15,7 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("schema diff"));
     assert!(stdout.contains("config validate"));
     assert!(stdout.contains("config changed-schemas"));
+    assert!(stdout.contains("target verify"));
     assert!(stdout.contains("law validate"));
     assert!(stdout.contains("law lint"));
     assert!(stdout.contains("law diff"));
@@ -28,6 +29,169 @@ fn help_exits_zero_without_footprint_command() {
     assert!(stdout.contains("emit le-binary-typescript"));
     assert!(stdout.contains("operation selections"));
     assert!(!stdout.contains("check-footprint"));
+}
+
+#[test]
+fn target_verify_accepts_descriptor_without_execution() {
+    let dir = temp_dir("target-verify-valid");
+    let descriptor = dir.join("target-descriptor.json");
+    std::fs::write(
+        &descriptor,
+        valid_target_descriptor_json("./bin/hello-wesley-target"),
+    )
+    .expect("descriptor should write");
+
+    let output = wesley()
+        .current_dir(&dir)
+        .args(["target", "verify"])
+        .arg("target-descriptor.json")
+        .arg("--json")
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+    assert_eq!(report["valid"], true);
+    assert_eq!(report["descriptor"]["name"], "hello-wesley-target");
+    assert_eq!(
+        report["descriptor"]["apiVersion"],
+        "wesley.target-descriptor/v1"
+    );
+    assert_eq!(report["diagnostics"].as_array().unwrap().len(), 0);
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn target_verify_does_not_execute_descriptor_program() {
+    let dir = temp_dir("target-verify-no-exec");
+    let bin_dir = dir.join("bin");
+    std::fs::create_dir_all(&bin_dir).expect("bin dir should create");
+    let marker = dir.join("should-not-exist");
+    let program = bin_dir.join("hello-wesley-target");
+    std::fs::write(&program, format!("#!/bin/sh\ntouch {}\n", marker.display()))
+        .expect("program should write");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+
+        let mut permissions = std::fs::metadata(&program)
+            .expect("program metadata should read")
+            .permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(&program, permissions).expect("program mode should update");
+    }
+    let descriptor = dir.join("target-descriptor.json");
+    std::fs::write(
+        &descriptor,
+        valid_target_descriptor_json("./bin/hello-wesley-target"),
+    )
+    .expect("descriptor should write");
+
+    let output = wesley()
+        .current_dir(&dir)
+        .args(["target", "verify", "target-descriptor.json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_success(&output);
+    assert!(
+        !marker.exists(),
+        "target verify must not execute descriptor command programs"
+    );
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn target_verify_reports_deterministic_diagnostics_for_unsafe_descriptor() {
+    let dir = temp_dir("target-verify-unsafe");
+    let descriptor = dir.join("target-descriptor.json");
+    std::fs::write(
+        &descriptor,
+        r#"
+{
+  "apiVersion": "wesley.target-descriptor/v1",
+  "name": "../not-safe",
+  "protocol": {
+    "kind": "shell",
+    "version": "wesley.target-process/v2"
+  },
+  "command": {
+    "program": "hello-wesley-target",
+    "args": ["--request-stdin"]
+  },
+  "execution": {
+    "timeoutMs": 0
+  },
+  "capabilities": {
+    "inputs": [],
+    "outputs": [],
+    "requiresNetwork": true,
+    "requiresAmbientFilesystem": true
+  },
+  "outputs": {
+    "defaultOutDir": "../generated"
+  }
+}
+"#,
+    )
+    .expect("descriptor should write");
+
+    let output = wesley()
+        .current_dir(&dir)
+        .args(["target", "verify", "target-descriptor.json", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+    assert_eq!(report["valid"], false);
+    let codes = report["diagnostics"]
+        .as_array()
+        .expect("diagnostics should be an array")
+        .iter()
+        .map(|diagnostic| diagnostic["code"].as_str().unwrap())
+        .collect::<Vec<_>>();
+    assert!(codes.contains(&"target.name.path_unsafe"));
+    assert!(codes.contains(&"target.protocol.kind_unsupported"));
+    assert!(codes.contains(&"target.protocol.version_unsupported"));
+    assert!(codes.contains(&"target.command.program_bare"));
+    assert!(codes.contains(&"target.execution.timeout_out_of_range"));
+    assert!(codes.contains(&"target.capability.input_missing"));
+    assert!(codes.contains(&"target.capability.output_missing"));
+    assert!(codes.contains(&"target.capability.network_denied"));
+    assert!(codes.contains(&"target.capability.ambient_filesystem_denied"));
+    assert!(codes.contains(&"target.output.default_dir_unsafe"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn target_verify_reports_descriptor_parse_errors() {
+    let dir = temp_dir("target-verify-malformed");
+    let descriptor = dir.join("target-descriptor.json");
+    std::fs::write(&descriptor, "{").expect("descriptor should write");
+
+    let output = wesley()
+        .current_dir(&dir)
+        .args(["target", "verify", "target-descriptor.json", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        output.stdout.is_empty(),
+        "malformed descriptor input must not emit a validation report"
+    );
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be utf8");
+    assert!(stderr.contains("failed to parse target descriptor"));
+    assert!(stderr.contains("target-descriptor.json"));
+    assert!(!stderr.contains("failed to serialize JSON output"));
+
+    let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
@@ -1823,6 +1987,36 @@ fn temp_dir(name: &str) -> std::path::PathBuf {
     ));
     std::fs::create_dir_all(&path).expect("temp directory should create");
     path
+}
+
+fn valid_target_descriptor_json(program: &str) -> String {
+    format!(
+        r#"{{
+  "apiVersion": "wesley.target-descriptor/v1",
+  "name": "hello-wesley-target",
+  "protocol": {{
+    "kind": "external-process",
+    "version": "wesley.target-process/v1"
+  }},
+  "command": {{
+    "program": "{program}",
+    "args": ["--request-stdin"]
+  }},
+  "execution": {{
+    "timeoutMs": 30000
+  }},
+  "capabilities": {{
+    "inputs": ["wesley.l1-ir/v1", "wesley.schema-operations/v1"],
+    "outputs": ["wesley.target-artifact-manifest/v1"],
+    "requiresNetwork": false,
+    "requiresAmbientFilesystem": false
+  }},
+  "outputs": {{
+    "defaultOutDir": "generated/hello"
+  }}
+}}
+"#
+    )
 }
 
 fn generated_hash_literal(generated: &str, constant: &str) -> serde_json::Value {
