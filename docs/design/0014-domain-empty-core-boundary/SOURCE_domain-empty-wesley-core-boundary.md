@@ -3,7 +3,7 @@
 - Lane: `design/0014-domain-empty-core-boundary`
 - Legend: `SOURCE`
 - Rank: `1`
-- Pulled from: `docs/method/backlog/asap/`
+- Promoted from retired tracker history.
 
 ## Why now
 

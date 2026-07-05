@@ -17,7 +17,8 @@ Do not confuse the closeout surface with the queue.
 
 - Retros and witnesses record what was proved.
 - GitHub Issues record what should happen.
-- The graveyard records what should stay rejected or retired with context.
+- Closed or triaged GitHub Issues record what should stay rejected or retired
+  with context.
 
 If a new idea surfaces during work, prefer a GitHub Issue over burying the idea
 in chat or in a retro note.

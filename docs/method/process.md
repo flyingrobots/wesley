@@ -30,8 +30,8 @@ direction, and evidence.
 - Closeout packets live in `docs/method/retro/<cycle>/` and carry a
   `witness/` directory with a witness index plus playback and verification
   artifacts.
-- Rejected or retired work belongs in `docs/method/graveyard/` with a short
-  note explaining why it is there.
+- Rejected or retired work should be closed, labeled, or moved in GitHub with
+  a clear comment explaining why it should not stay active.
 - Release doctrine lives in `docs/method/release.md`; internal release packets
   live in `docs/method/releases/`; user-facing release notes live in
   `docs/releases/`.
@@ -56,10 +56,9 @@ direction, and evidence.
 5. Produce a reproducible playback witness.
 6. Close the cycle packet with a retro in `docs/method/retro/<cycle>/` and a
    `witness/` directory that records playback and verification evidence.
-7. Reconcile GitHub Issue labels, milestone, and Project state; move genuinely
-   rejected or retired
-   repo evidence into `docs/method/graveyard/` instead of letting it drift
-   silently.
+7. Reconcile GitHub Issue labels, milestone, and Project state; close, move, or
+   label genuinely rejected or retired work in GitHub instead of letting stale
+   repo evidence drift silently.
 8. After merge, update `docs/BEARING.md`, `CHANGELOG.md`, and release notes
    when the merged state changes them.
 
@@ -70,8 +69,6 @@ Wesley's repo-visible closeout surface is:
 - `docs/method/retro/<cycle>/` for cycle retrospectives
 - `docs/method/retro/<cycle>/witness/` for witness index, playback, and
   verification artifacts
-- `docs/method/graveyard/` for rejected or retired work that should not be
-  re-proposed without context
 - `docs/method/releases/` for internal release packets
 - `docs/releases/` for user-facing release notes
 

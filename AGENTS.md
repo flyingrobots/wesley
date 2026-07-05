@@ -38,7 +38,6 @@ Do not audit the repository by recursively walking the filesystem. Follow the au
   `triage:*` labels for unscheduled intake and `vX.Y.Z` labels for work
   scheduled into a named future release. See
   **`docs/topics/contributing/triage.md`**.
-- **`docs/method/graveyard/github-issue-migration/`**: Historical evidence for the former filesystem backlog migration.
 
 ### 4. The Proof
 

@@ -101,9 +101,9 @@ The directive registry and draft docs still contain broader semantics than the m
 
 ## Dead Or Historical Syntax
 
-Older examples and migration archives still contain syntax from the deleted
-Node/Postgres era, Prisma-like sketches, or product-specific experiments. These
-forms are not current generic Wesley semantics.
+Git history still contains syntax from the deleted Node/Postgres era,
+Prisma-like sketches, or product-specific experiments. These forms are not
+current generic Wesley semantics.
 
 | Syntax family                                     | Status | Notes                                                                                           |
 | ------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------- |

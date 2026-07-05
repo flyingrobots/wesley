@@ -35,7 +35,7 @@ summary:
   remediation_status: 'Pending'
 related_reports:
   previous_audit: 'AUD-2026-05-04-DQ01'
-  tracking_ticket: 'docs/method/backlog/'
+  tracking_ticket: 'GitHub Issues'
 ---
 
 # AUDIT: DOCUMENTATION QUALITY (2026-05-05)

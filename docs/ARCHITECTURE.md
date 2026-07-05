@@ -137,7 +137,7 @@ semantics.
 | `schemas/`                       | JSON schemas and generic directive/schema assets used by tooling and tests.                                                                                                                                          |
 | `test/fixtures/`                 | GraphQL fixtures, Rust L1 goldens, package examples, and reference schemas.                                                                                                                                          |
 | `scripts/`                       | Preflight, docs truth, docs link, fixture generation, smoke, and CI helper scripts.                                                                                                                                  |
-| `docs/`                          | Operator docs, architecture, design packets, audits, specs, method docs, and archived backlog migration evidence.                                                                                                    |
+| `docs/`                          | Operator docs, architecture, design packets, audits, specs, method docs, release notes, and stable evidence.                                                                                                         |
 | `.github/workflows/`             | CI workflows for Rust, packages, docs, security, release, and assurance checks.                                                                                                                                      |
 
 Some directories still contain extraction residue. In particular,

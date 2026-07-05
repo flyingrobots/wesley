@@ -29,7 +29,7 @@ summary:
   remediation_status: 'Pending'
 related_reports:
   previous_audit: 'AUD-2026-05-04-CQ01'
-  tracking_ticket: 'docs/method/backlog/'
+  tracking_ticket: 'GitHub Issues'
 ---
 
 # AUDIT: CODE QUALITY (2026-05-05)
@@ -45,7 +45,7 @@ related_reports:
 ## 1. DX: ERGONOMICS & INTERFACE CLARITY (Advocate View)
 
 - **1.1. Time-to-Value (TTV) Score (1-10):** 7
-  - **Answer:** Basic compiler TTV is strong: `README.md:30-52` gets a developer through install, preflight, TypeScript generation, module selection, and module trust controls. The single biggest remaining setup burden is still module verification. The README tells a user to run `WESLEY_MODULES=/path/to/my-wesley-module.mjs pnpm wesley --help`, but there is no first-party command that reports which modules loaded, which entries were disabled, which entries were blocked, and which capabilities are available. The existing backlog card `docs/method/backlog/cool-ideas/DX_inspect-module-capabilities-command.md` is the right follow-up.
+  - **Answer:** Basic compiler TTV is strong: `README.md:30-52` gets a developer through install, preflight, TypeScript generation, module selection, and module trust controls. The single biggest remaining setup burden is still module verification. The README tells a user to run `WESLEY_MODULES=/path/to/my-wesley-module.mjs pnpm wesley --help`, but there is no first-party command that reports which modules loaded, which entries were disabled, which entries were blocked, and which capabilities are available. A GitHub Issue is the right follow-up surface.
   - **Action Prompt (TTV Improvement):** `Implement a first-party "wesley modules list" command. It must load modules through @wesley/runtime-node using the same cwd/env/default-specifier behavior as program(), then print config source, env source, loaded module names, disabled entries, blocked entries, import failures, and capability counts. Provide --json output, human-readable output, and tests covering no modules, WESLEY_DISABLE_MODULES=1, WESLEY_MODULE_ALLOWLIST, config modules, env modules, and duplicate/disabled entries. Add a README quick-start line showing the command after the WESLEY_MODULES example.`
 
 - **1.2. Principle of Least Astonishment (POLA):**

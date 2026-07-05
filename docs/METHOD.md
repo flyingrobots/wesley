@@ -19,21 +19,20 @@ The Wesley work doctrine: GitHub Issues, a loop, and honest bookkeeping.
 
 ## Structure
 
-| Signpost                                            | Role                                                                |
-| :-------------------------------------------------- | :------------------------------------------------------------------ |
-| **`README.md`**                                     | Public front door and project identity.                             |
-| **`docs/GUIDE.md`**                                 | Orientation and productive-fast path.                               |
-| **`docs/topics/`**                                  | Task-oriented routes across references, workflows, and boundaries.  |
-| **`BEARING.md`**                                    | Current direction and active tensions.                              |
-| **`VISION.md`**                                     | Core tenets and the "Trustworthy Change" mission.                   |
-| **`docs/ARCHITECTURE.md`**                          | Authoritative system map and pipeline.                              |
-| **`docs/design/`**                                  | Active design packets and cycle-bound doctrine.                     |
-| **GitHub Issues**                                   | Live work slices and raw intake.                                    |
-| **GitHub Milestones**                               | Goalposts and versioned release gates.                              |
-| **GitHub Projects**                                 | Roadmap board views over issues and milestones.                     |
-| **`AGENTS.md`**                                     | Context recovery protocol for AI and humans.                        |
-| **`docs/METHOD.md`**                                | Repo work doctrine (this document).                                 |
-| **`docs/method/graveyard/github-issue-migration/`** | Historical migration evidence for retired filesystem backlog cards. |
+| Signpost                   | Role                                                               |
+| :------------------------- | :----------------------------------------------------------------- |
+| **`README.md`**            | Public front door and project identity.                            |
+| **`docs/GUIDE.md`**        | Orientation and productive-fast path.                              |
+| **`docs/topics/`**         | Task-oriented routes across references, workflows, and boundaries. |
+| **`BEARING.md`**           | Current direction and active tensions.                             |
+| **`VISION.md`**            | Core tenets and the "Trustworthy Change" mission.                  |
+| **`docs/ARCHITECTURE.md`** | Authoritative system map and pipeline.                             |
+| **`docs/design/`**         | Active design packets and cycle-bound doctrine.                    |
+| **GitHub Issues**          | Live work slices and raw intake.                                   |
+| **GitHub Milestones**      | Goalposts and versioned release gates.                             |
+| **GitHub Projects**        | Roadmap board views over issues and milestones.                    |
+| **`AGENTS.md`**            | Context recovery protocol for AI and humans.                       |
+| **`docs/METHOD.md`**       | Repo work doctrine (this document).                                |
 
 ## Work Hierarchy
 
@@ -58,9 +57,6 @@ Short version:
 - `triage:*` labels are unscheduled intake.
 - `vX.Y.Z` labels are scheduled work for named future releases.
 - Do not use generic `lane:*` labels for active work.
-
-The directory `docs/method/backlog/` is now a compatibility signpost only, not
-the active queue.
 
 Legend labels preserve Wesley's work taxonomy: `legend:SOURCE`,
 `legend:TRANSMUTE`, `legend:RUNTIME`, `legend:EVIDENCE`, `legend:SPEC`,

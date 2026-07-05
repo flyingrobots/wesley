@@ -48,6 +48,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   labels.
 - Required PR bodies to reference at least one GitHub Issue and to use GitHub
   closing keywords for every fully resolved issue.
+- Removed the repo-resident Method backlog and graveyard trees from the current
+  checkout; live work tracking now stays in GitHub Issues, and historical notes
+  remain available through git history.
 
 ### Fixed
 
@@ -263,8 +266,7 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   validation.
 - **Method tracker migration**: GitHub Issues are now Wesley's live Method work
   tracker. Former filesystem backlog cards were migrated to GitHub Issues with
-  Method lane/legend labels, and the local backlog tree now points to the
-  archived migration evidence under `docs/method/graveyard/`.
+  Method lane/legend labels.
 - **Release signpost accuracy**: Refreshed README, GUIDE, ENTRYPOINTS,
   ARCHITECTURE, TECHNICAL_TEARDOWN, release packet signposts, release runbooks,
   and xtask help so `0.1.0` describes the current LE-binary codec-plan release,
@@ -297,8 +299,8 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
 - **Release guard tracker checks**: `cargo xtask release-prep-guard` and
   `cargo xtask release-guard` now query live GitHub Issues for open
   tag/version blockers by owned issue title/body, milestone, or label instead
-  of relying only on the retired filesystem backlog tree. Third-party comments
-  and automatic cross-reference chatter no longer create false release blockers.
+  of relying only on the former local tracker. Third-party comments and
+  automatic cross-reference chatter no longer create false release blockers.
 - **Release governance hardening**: Release guards now require exact README and
   changelog release headings, validate real calendar dates, reject shell
   commands as guide path citations, require guide SHAs to be commit objects,

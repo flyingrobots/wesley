@@ -1402,33 +1402,7 @@ fn is_leap_year(year: u16) -> bool {
     (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
-fn check_release_backlog_clear(tag: &str, version: &str) -> Result<(), Error> {
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let backlog_root = root.join("docs/method/backlog");
-    let mut files = Vec::new();
-    collect_markdown_files(&backlog_root, &mut files)?;
-
-    let mut failures = Vec::new();
-    for file in files {
-        let relative = display_path(&root, &file);
-        let content = fs::read_to_string(&file).map_err(|source| {
-            Error::Usage(format!("failed to read `{}`: {source}", file.display()))
-        })?;
-        if relative.contains(tag)
-            || relative.contains(version)
-            || content.contains(tag)
-            || content.contains(version)
-        {
-            failures.push(relative);
-        }
-    }
-
-    finish_check("release backlog", failures)
-}
-
 fn check_release_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
-    check_release_backlog_clear(tag, version)?;
     check_release_issue_tracker_clear(tag, version)
 }
 

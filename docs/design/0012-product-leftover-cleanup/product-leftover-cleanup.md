@@ -32,14 +32,14 @@ Wesley's architecture has moved to a stricter domain-empty boundary:
   module.
 - PostgreSQL/Supabase behavior belongs in `wesley-postgres`.
 
-The repo still carried active backlog cards that contradicted that direction or
+The repo still carried stale work notes that contradicted that direction or
 described already-completed cleanup as future work. This packet exists to make
 that bookkeeping honest before the release moves into IR fixtures and Rust
 parity.
 
 ## Playback Questions
 
-1. Do active backlog lanes still contain work that should obviously be owned by
+1. Do stale work notes still describe work that should obviously be owned by
    jedit, Echo, Continuum, `warp-ttd`, `git-warp`, or `wesley-postgres`?
 2. Do active ASAP cards still describe false current code facts?
 3. Are historical Continuum/Echo/TTD notes visibly historical rather than
@@ -54,7 +54,7 @@ The first slice is documentation and queue cleanup only.
 
 It:
 
-- pulls this cleanup work out of `docs/method/backlog/asap/`
+- promotes this cleanup work into the active design packet
 - retires active cards whose evidence is already false against current Rust IR
   and JSON schema truth
 - retires external product/runtime cards that should not remain in Wesley's
@@ -108,12 +108,12 @@ This slice:
 
 ## v0.1.0 Lane Slice
 
-The old `docs/method/backlog/v0.1.0/` lane predated the current domain-empty
-release bearing.
+The old filesystem `v0.1.0` lane predated the current domain-empty release
+bearing.
 
 This slice:
 
-- moves the lane to `docs/method/graveyard/v0.1.0/`
+- removes the lane from the current tree
 - updates docs signposts that previously presented the lane as active release
   carry-over
 - preserves the files as historical extraction context for Continuum-era design
@@ -126,11 +126,10 @@ architecture as current generic Wesley behavior.
 
 This slice:
 
-- retires the row-level-security feature page to the graveyard because RLS,
-  generated SQL, helper functions, and pgTAP tests belong in
-  `wesley-postgres`
-- retires the older architecture overview to the graveyard because the current
-  authoritative system map is `docs/ARCHITECTURE.md`
+- retires the row-level-security feature page because RLS, generated SQL,
+  helper functions, and pgTAP tests belong in `wesley-postgres`
+- retires the older architecture overview because the current authoritative
+  system map is `docs/ARCHITECTURE.md`
 - removes the stale overview from the docs start path
 
 ## Progress Metadata Slice
@@ -173,8 +172,7 @@ This slice:
 
 1. Active backlog lanes no longer keep Echo, jedit, Continuum, `warp-ttd`,
    `git-warp`, PostgreSQL, or Supabase product work in Wesley's release center.
-2. The old `docs/method/backlog/v0.1.0/` lane is graveyard context, not an
-   active release lane.
+2. The old filesystem `v0.1.0` lane is no longer an active release lane.
 3. Product-era docs that presented SQL/RLS/PostgreSQL behavior as generic
    Wesley behavior were retired to historical context.
 4. The README/progress surface now excludes extracted product scaffolding and

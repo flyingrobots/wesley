@@ -64,9 +64,9 @@ The `v0.2.0` launch surface is now:
 - [Topics](./topics/README.md)
 - [Releases topic](./topics/releases.md)
 
-The old Continuum-heavy `v0.1.0/` lane has been retired to
-[graveyard/v0.1.0](./method/graveyard/v0.1.0/README.md). Treat those notes as
-historical extraction context, not as active Wesley release commitments.
+The old Continuum-heavy `v0.1.0/` lane is no longer repo-resident live
+documentation. Its historical notes remain available in git history; they are
+not active Wesley release commitments.
 
 The active design direction is now:
 
@@ -88,8 +88,7 @@ were retired from generic Wesley during the domain-empty extraction. Recreate
 those surfaces only as Continuum-owned module commands or external packages.
 
 It also now has a more explicit METHOD closeout surface under
-`docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and
-`docs/releases/`.
+`docs/method/retro/`, `docs/method/releases/`, and `docs/releases/`.
 
 ## Start Paths
 
@@ -133,7 +132,6 @@ It also now has a more explicit METHOD closeout surface under
 - [Topics](./topics/README.md)
 - [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
 - [GitHub Milestones](https://github.com/flyingrobots/wesley/milestones)
-- [Legacy Backlog Signpost](./method/backlog/README.md) (historical only)
 - [Retro Packets](./method/retro/README.md)
 - [METHOD Release](./method/release.md)
 

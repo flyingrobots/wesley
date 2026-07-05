@@ -62,7 +62,7 @@ load 'bats-plugins/bats-assert/load'
   run test ! -e docs/DIRECTIVES.md
   assert_success
 
-  run rg -n "docs/DIRECTIVES\\.md|DIRECTIVES\\.md|\\]\\((?:\\.\\.?/)*DIRECTIVES\\.md\\)" README.md docs test/fixtures --glob '*.md' --glob '*.graphql' --glob '!docs/method/graveyard/**'
+  run rg -n "docs/DIRECTIVES\\.md|DIRECTIVES\\.md|\\]\\((?:\\.\\.?/)*DIRECTIVES\\.md\\)" README.md docs test/fixtures --glob '*.md' --glob '*.graphql'
   assert_failure
 }
 
@@ -71,18 +71,15 @@ load 'bats-plugins/bats-assert/load'
   assert_failure
 }
 
-@test "Echo directive/spec docs are historical extraction context" {
+@test "Echo directive/spec docs are not repo-resident current docs" {
   run test ! -e docs/guides/wes-join-directive.md
   assert_success
 
   run test ! -e docs/specs/echo-ir-v2.md
   assert_success
 
-  run test -e docs/method/graveyard/EXTERNAL_wes-join-directive.md
-  assert_success
-
-  run test -e docs/method/graveyard/EXTERNAL_echo-ir-v2.md
-  assert_success
+  run find docs/method -maxdepth 1 -type d -name graveyard -print -quit
+  assert_output ""
 }
 
 @test "front-door signposts route task readers through docs topics" {

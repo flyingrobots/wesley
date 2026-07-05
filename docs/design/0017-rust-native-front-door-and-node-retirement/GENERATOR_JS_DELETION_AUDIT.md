@@ -46,7 +46,7 @@ target owners.
 - `NODE_RETIREMENT_LEDGER.md`, `LEGACY_COMPATIBILITY_MATRIX.md`, and
   `node-retirement-ledger.json` remove `packages/wesley-generator-js/` from the
   live package inventory.
-- The GH-159 backlog item was archived because wiring host shims for the deleted
+- The GH-159 work item was closed because wiring host shims for the deleted
   package is now the wrong direction.
 
 ## Remaining Risk

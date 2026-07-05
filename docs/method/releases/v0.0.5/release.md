@@ -13,7 +13,7 @@ boundary work.
   `v0.1.0` release-lane residue.
 - Root governance docs that frame Wesley as a module-first semantic contract
   compiler and assurance toolchain.
-- Product-era docs moved to historical graveyard context.
+- Product-era docs moved out of the active release surface.
 - README/progress metadata cleanup for extracted product scaffolding.
 - Stable JS IR metadata for parity-sensitive bytes.
 - JS object type extension folding and validation in the GraphQL adapter.
