@@ -77,6 +77,12 @@ Starter issues must have one scheduling-state label such as `v0.3.0`, one
 validation command. If an issue still has a `triage:*` label, it is not a
 starter task until a maintainer schedules, splits, moves, or closes it.
 
+Every PR must name at least one GitHub Issue in its body. Use a closing keyword
+such as `Closes #123`, `Fixes #123`, or `Resolves #123` for every issue the PR
+fully resolves so GitHub auto-closes it on merge. If the PR only advances an
+issue, use a non-closing reference such as `Refs #123` or `Tracks #123` and
+state the remaining work explicitly.
+
 The normal first-contribution lanes are docs-only PRs, fixture-only PRs,
 emitter-test PRs, and CLI bug PRs. Advanced architecture, assurance, and
 release docs are background for these lanes, not required reading unless the
