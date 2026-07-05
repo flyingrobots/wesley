@@ -65,8 +65,7 @@ wesley schema lower --schema schema.graphql --json > ir.json
 ```
 
 Inspect the IR at a high level. The exact hash values will differ when the
-schema changes, but the shape should include `version`, `metadata`, and
-`types`:
+schema changes, but the shape should include `version` and `types`:
 
 ```bash
 python3 -m json.tool ir.json | sed -n '1,40p'
