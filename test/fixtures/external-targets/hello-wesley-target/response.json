@@ -1,0 +1,23 @@
+{
+  "apiVersion": "wesley.target-response/v1",
+  "requestId": "hello-request-0001",
+  "status": "ok",
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "target.fixture.ready",
+      "message": "hello external target fixture is ready for conformance validation",
+      "subject": "hello-wesley-target"
+    }
+  ],
+  "artifacts": {
+    "apiVersion": "wesley.target-artifact-manifest/v1",
+    "items": [
+      {
+        "path": "generated/hello/model.txt",
+        "kind": "text",
+        "sha256": "sha256:045b61e78729e77f18f0eead41e5324e41f6d3a28eb3f37a6f4d4b17677f9f0e"
+      }
+    ]
+  }
+}
