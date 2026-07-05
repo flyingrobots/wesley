@@ -49,7 +49,7 @@
   "homepage": "https://github.com/flyingrobots/wesley#readme",
   "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^22.13.0 || ^24.0.0 || >=26.0.0"
   },
   "pnpm": {
     "overrides": {

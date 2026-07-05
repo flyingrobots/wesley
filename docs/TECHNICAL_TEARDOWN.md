@@ -1444,7 +1444,7 @@ logic begins where those libraries return structured values or bytes.
 
 ### JavaScript Dependencies
 
-The root package uses pnpm with Node `>=22.0.0`. Retained JavaScript package
+The root package uses pnpm with Node `^22.13.0 || ^24.0.0 || >=26.0.0`. Retained JavaScript package
 tests rely on Node's `node --test` and package-local tooling. These
 dependencies support assurance, smoke, and docs workflows rather than the core
 compiler authority.

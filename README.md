@@ -92,8 +92,8 @@ cargo run --bin wesley -- config changed-schemas \
 ```
 
 The retained pnpm workspace supports docs, Holmes assurance tooling, and
-workspace checks. Use Node `>=22.12.0` with pnpm `9.15.9` when working from
-this checkout.
+workspace checks. Use Node `^22.13.0 || ^24.0.0 || >=26.0.0` with pnpm
+`9.15.9` when working from this checkout.
 
 For assurance status, use the
 [Assurance Capability Matrix](./docs/reference/assurance-capability-matrix.md).

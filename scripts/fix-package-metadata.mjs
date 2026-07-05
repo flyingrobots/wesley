@@ -9,7 +9,7 @@ const packagesDir = path.join(root, 'packages');
 const repoUrl = 'https://github.com/flyingrobots/wesley.git';
 const apiIssues = 'https://github.com/flyingrobots/wesley/issues';
 const author = 'Wesley Authors <oss@flyingrobots.dev>';
-const engines = { node: '>=22.0.0' };
+const engines = { node: '^22.13.0 || ^24.0.0 || >=26.0.0' };
 
 const packages = await fs.readdir(packagesDir, { withFileTypes: true });
 
