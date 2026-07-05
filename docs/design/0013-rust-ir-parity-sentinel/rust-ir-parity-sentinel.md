@@ -222,21 +222,21 @@ adding a third projection.
 
 The pulled
 [Rust core performance baseline](./EVIDENCE_rust-core-performance-baseline.md)
-slice adds:
+slice now uses the Rust-native advisory command:
 
 ```bash
-pnpm perf:ir
+cargo xtask bench-ir
 ```
 
-The v0 baseline measures Rust CLI `schema lower` wall-clock samples over the
-valid Rust IR fixture corpus, including `large-schema.graphql`. It records
-fixture identity, SDL byte size, output byte size, Rust L1 semantic hash, type
-count, sample durations, and summary timings.
+The current baseline measures Rust CLI `schema lower` wall-clock samples over
+generated scale fixtures covering wide schemas, deep input references,
+directive-heavy schemas, operation-heavy schemas, and extension folding. It
+records fixture identity, SDL byte size, output byte size, type count, field
+count, directive count, operation count, sample durations, and summary timings.
 
-`pnpm perf:ir -- --include-legacy-js` also records in-process legacy JS lowerer
-wall-clock samples for the same fixture run. This is comparison evidence only;
-it is not Node binding overhead, WASM binding overhead, peak RSS, or a cutover
-threshold.
+The retired `pnpm perf:ir` command and legacy JS comparison mode are archival
+v0.0.6 evidence only. The active command is not Node binding overhead, WASM
+binding overhead, peak RSS, or a cutover threshold.
 
 ## Type-Family Projection
 

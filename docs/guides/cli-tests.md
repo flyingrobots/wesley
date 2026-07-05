@@ -16,7 +16,8 @@ packages such as `@wesley/holmes` or the host experiments.
 ## Local Setup
 
 1. Install prerequisites:
-   - Node 22+ with Corepack enabled (repo pins pnpm 9.15.9)
+   - A Node version satisfying the root `package.json` engines, with Corepack
+     enabled (repo pins pnpm 9.15.9)
    - Rust stable, `bats`, `jq`, and `git` in your shell environment
 2. Verify the vendored Bats plugins with `pnpm run setup:bats-plugins`.
 3. Run the product gate with `cargo xtask preflight`.

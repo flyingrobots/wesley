@@ -92,8 +92,14 @@ cargo run --bin wesley -- config changed-schemas \
 ```
 
 The retained pnpm workspace supports docs, Holmes assurance tooling, and
-workspace checks. Use Node `>=22.12.0` with pnpm `9.15.9` when working from
-this checkout.
+workspace checks. Use Node `^22.13.0 || ^24.0.0 || >=26.0.0` with pnpm
+`9.15.9` when working from this checkout.
+
+For assurance status, use the
+[Assurance Capability Matrix](./docs/reference/assurance-capability-matrix.md).
+Wesley emits deterministic evidence inputs and ships experimental assurance
+tooling around them; a capability is shipped only when the matrix lists an
+executable command or workflow.
 
 ## What Wesley Owns
 
@@ -106,7 +112,8 @@ Wesley owns domain-free compiler facts:
 - Rust and TypeScript model and operation bindings
 - TypeScript and Rust LE-binary codec projections
 - `weslaw/v1` authoring, hashing, diffing, rebinding, and coverage metadata
-- release and assurance checks around those generic compiler contracts
+- deterministic evidence inputs and release checks around those generic
+  compiler contracts
 
 Wesley preserves directives as inspectable structure. It does not decide what
 those directives mean for a database, runtime, product, graph rewrite system,

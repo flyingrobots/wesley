@@ -37,10 +37,13 @@ without shipping the extension itself.
 - Use project manifest targets as metadata; target behavior lives elsewhere.
 - Add an explicit Rust-native registry, WASM boundary, or external-process
   protocol before executable target loading becomes a Wesley feature.
+- Use the [External Target Protocol](../reference/external-target-protocol.md)
+  for the current MVP specification of that external-process boundary.
 
 ## Related Authority
 
 - [Module Authoring Guide](../guides/module-authoring.md)
 - [Extending Wesley](../guides/extending.md)
+- [External Target Protocol](../reference/external-target-protocol.md)
 - [Project Manifests](./project-manifests.md)
 - [Compiler Boundary](./compiler-boundary.md)

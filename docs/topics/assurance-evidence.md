@@ -8,17 +8,22 @@ templates, evidence bundles, or report interpretation.
 Assurance tooling judges explicit evidence. It does not replace the compiler,
 and it does not create product semantics for GraphQL.
 
+Use the [Assurance Capability Matrix](../reference/assurance-capability-matrix.md)
+to distinguish shipped native CLI capabilities, transitional JavaScript tooling,
+Rust foundation code, and concept/design-only vocabulary.
+
 ## Current Surfaces
 
-| Surface                               | Use For                                                   |
-| ------------------------------------- | --------------------------------------------------------- |
-| `packages/wesley-holmes/`             | Retained JavaScript assurance reporting tools.            |
-| `crates/wesley-holmes/`               | Rust foundation for assurance data models and validation. |
-| `docs/holmes-policy/`                 | Policy documentation.                                     |
-| `docs/templates/holmes-policy/`       | Policy templates for host contexts.                       |
-| `docs/architecture/holmes-*`          | Architecture and integration notes.                       |
-| `.github/workflows/wesley-holmes.yml` | Pull request assurance workflow.                          |
-| `.github/workflows/cert-shipme.yml`   | Post-merge SHIPME certificate workflow.                   |
+| Surface                               | State                   | Use For                                                                                         |
+| ------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
+| Native `wesley law ...` commands      | Shipped native CLI      | Law validation, diffing, explanation, capability, and coverage facts.                           |
+| `packages/wesley-holmes/`             | Shipped JS/transitional | Retained JavaScript assurance reporting tools.                                                  |
+| `crates/wesley-holmes/`               | Internal foundation     | Rust assurance data models, validation, ports, and diagnostics without public CLI commands yet. |
+| `docs/holmes-policy/`                 | Documentation           | Policy documentation.                                                                           |
+| `docs/templates/holmes-policy/`       | Documentation           | Policy templates for host contexts.                                                             |
+| `docs/architecture/holmes-*`          | Design/reference        | Architecture and integration notes.                                                             |
+| `.github/workflows/wesley-holmes.yml` | Shipped JS/transitional | Pull request assurance workflow.                                                                |
+| `.github/workflows/cert-shipme.yml`   | Shipped JS/transitional | Post-merge SHIPME certificate workflow.                                                         |
 
 ## Rules Of Thumb
 
@@ -28,6 +33,8 @@ and it does not create product semantics for GraphQL.
 - PR-time HOLMES evidence and post-merge SHIPME certification are distinct
   gates. SHIPME records the landed `main` SHA, not the temporary PR merge SHA.
 - Domain-specific target facts should be produced by the owning target module.
+- Watson, Moriarty, and BLADE follow the Assurance Capability Matrix. Treat a
+  surface as shipped only when the matrix marks it shipped.
 
 ## Useful Checks
 
@@ -44,3 +51,4 @@ cargo test -p wesley-holmes
 - [HOLMES Integration](../architecture/holmes-integration.md)
 - [HOLMES Policy Spec](../holmes-policy-spec.md)
 - [Policy Templates](../templates/holmes-policy/README.md)
+- [Assurance Capability Matrix](../reference/assurance-capability-matrix.md)

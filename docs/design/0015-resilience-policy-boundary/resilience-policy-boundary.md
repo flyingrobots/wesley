@@ -100,10 +100,12 @@ Resilience policy does not make Wesley the owner of:
   sleeping on wall-clock time.
 - Rust policy tests include a synchronous-poll guard proving the wrapper does
   not present CPU-bound in-process parser work as preemptible.
-- `scripts/resilient-process.mjs` centralizes Alfred-backed child-process
-  timeout and output-buffer policy for JavaScript tooling.
-- `pnpm parity:ir` and `pnpm perf:ir` both use the shared runner for native CLI
-  probes.
+- `scripts/resilient-process.mjs` centralized Alfred-backed child-process
+  timeout and output-buffer policy for historical JavaScript tooling.
+- Historical `pnpm parity:ir` and `pnpm perf:ir` probes used the shared runner
+  before legacy Node retirement.
+- Current Rust-native IR benchmark evidence is emitted by
+  `cargo xtask bench-ir`.
 - JavaScript timeout behavior is covered with Alfred `TestClock`.
 
 ## Playback Questions

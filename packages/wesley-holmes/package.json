@@ -23,13 +23,13 @@
     "src/"
   ],
   "engines": {
-    "node": ">=22.0.0"
+    "node": "^22.13.0 || ^24.0.0 || >=26.0.0"
   },
   "scripts": {
     "test": "node --test"
   },
   "dependencies": {
-    "commander": "^14.0.2"
+    "commander": "^15.0.0"
   },
   "keywords": [
     "holmes",
