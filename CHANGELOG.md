@@ -33,6 +33,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   project manifest path.
 - Added CLI integration coverage for YAML project manifests in changed-schema
   selection.
+- Added a quick-start walkthrough for descriptor-only extension fixture groups.
 
 ### Changed
 

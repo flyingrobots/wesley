@@ -63,6 +63,26 @@ Validate it:
 cargo wesley config validate --json
 ```
 
+## Inspect extension examples
+
+Wesley keeps extension examples as descriptor-only test fixtures under
+`test/fixtures/extensions/fixture-zoo`. These files are examples for docs and
+tests, not executable modules.
+
+Start with the fixture zoo README, then inspect the three groups:
+
+- `compiler-heavy`: compiler-focused descriptors for schema lowering, operation
+  metadata, and generic emitters.
+- `evidence-heavy`: evidence-focused descriptors for artifact citations,
+  coverage summaries, and judgment summaries.
+- `blade-heavy`: BLADE-focused descriptors for release-readiness scenario
+  metadata.
+
+Each descriptor shows which generic facts Wesley core may validate and which
+meaning stays outside the core. Runtime execution, product behavior, storage,
+operator policy, and other domain choices belong to the owning external module
+or sibling repo.
+
 ## Diff a schema change
 
 Copy the file, make a change, and compare the two SDL states:
