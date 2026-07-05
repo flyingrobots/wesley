@@ -39,13 +39,16 @@ remain metadata surfaces.
 3. `wesley target verify <descriptor>` validates the descriptor without running
    target code.
 4. A future `wesley target run` lowers the schema, builds a request envelope,
-   starts the external process, and passes the request over stdin or a temp
-   file.
-5. The target writes generated files only under allowed output paths.
+   resolves the descriptor command without `PATH` lookup, starts the external
+   process under host-enforced capability restrictions, and passes the request
+   over stdin or a temp file.
+5. The target writes generated files only under a host-created staging output
+   root.
 6. The target returns a response envelope with diagnostics and an artifact
    manifest.
-7. Wesley validates the response envelope, artifact paths, and deterministic
-   manifest before accepting the run.
+7. Wesley validates the response envelope, artifact paths, staged artifact
+   bytes, and deterministic manifest before copying staged artifacts into
+   accepted workspace output paths.
 
 ## Descriptor Envelope
 
@@ -60,8 +63,11 @@ The descriptor is plain JSON. It is safe to validate without execution.
     "version": "wesley.target-process/v1"
   },
   "command": {
-    "program": "hello-wesley-target",
+    "program": "./bin/hello-wesley-target",
     "args": ["--request-stdin"]
+  },
+  "execution": {
+    "timeoutMs": 30000
   },
   "capabilities": {
     "inputs": ["wesley.l1-ir/v1", "wesley.schema-operations/v1"],
@@ -80,8 +86,11 @@ Descriptor rules:
 - `apiVersion` must be exactly `wesley.target-descriptor/v1` for this MVP.
 - `name` must be stable, non-empty, and path-safe.
 - `protocol.kind` must be `external-process`.
-- `command.program` must be a program name, not a shell string.
+- `command.program` must be a descriptor-relative executable path, not a shell
+  string, bare program name, or `PATH` lookup. A future package or digest-backed
+  binary reference may be added only if it preserves deterministic resolution.
 - `command.args` must be argv elements, not a shell command.
+- `execution.timeoutMs` must be finite and bounded by the host maximum.
 - output directories must be workspace-relative.
 - descriptors must not contain product semantics; examples should use names
   like `hello`, `model`, or `artifact`.
@@ -116,7 +125,8 @@ The request envelope is the only input a target needs from Wesley.
   "capabilityContext": {
     "network": "denied",
     "ambientFilesystem": "denied",
-    "allowedOutputDirs": ["generated/hello"]
+    "allowedOutputDirs": ["generated/hello"],
+    "stagingOutputRoot": "/tmp/wesley-target-runs/request-123/out"
   }
 }
 ```
@@ -129,6 +139,11 @@ Request rules:
 - `operations.items` is the schema operation catalog when requested.
 - `target` mirrors manifest target metadata after Wesley normalization.
 - `capabilityContext` is the host decision; the target must not exceed it.
+  Denied capabilities are not advisory: `wesley target run` must enforce them at
+  the process boundary before executing target code.
+- `stagingOutputRoot` is a host-created private directory. The target writes
+  artifacts there, preserving manifest-relative paths; it must not write
+  directly into workspace output directories.
 
 ## Response Envelope
 
@@ -207,6 +222,25 @@ Artifact manifest rules:
 - Artifact order must be deterministic.
 - Repeated paths are invalid.
 
+## Host Enforcement Rules
+
+`wesley target run` must not ship until the host can enforce the protocol
+instead of trusting target cooperation:
+
+- resolve `command.program` relative to the descriptor location after descriptor
+  validation; do not search `PATH`
+- invoke the target without a shell and pass args as argv values
+- enforce `network: denied` with a host sandbox or equivalent process
+  restriction before target startup
+- enforce `ambientFilesystem: denied` by granting the process only the request
+  input, the private staging output root, and explicitly allowed host resources
+- terminate the target when `execution.timeoutMs` expires and emit a
+  deterministic `target.execution.timeout` diagnostic
+- discard the staging directory on malformed JSON, non-zero exit, timeout,
+  path escape, duplicate artifact path, missing hash, or hash mismatch
+- copy staged artifacts into workspace output directories only after every
+  response and artifact-manifest rule passes
+
 ## Exit And I/O Rules
 
 | Condition                           | Host Behavior                     |
@@ -216,7 +250,8 @@ Artifact manifest rules:
 | Non-zero exit code                  | Fail and include bounded stderr.  |
 | Malformed JSON                      | Fail before artifact acceptance.  |
 | Missing response                    | Fail before artifact acceptance.  |
-| Path escape                         | Fail and ignore escaped artifact. |
+| Timeout                             | Kill target and discard staging.  |
+| Path escape                         | Fail before workspace copy-out.   |
 
 Wesley must not invoke targets through a shell. Program and args stay separate
 argv values.
@@ -241,14 +276,21 @@ deployment, or product runtime behavior.
 Before `wesley target run` ships, fixtures should cover:
 
 - valid descriptor verification
+- descriptor-relative command resolution
+- bare program name rejection
 - duplicate target names
 - missing required capabilities
 - incompatible protocol or ABI version
+- host-enforced denied network capability
+- host-enforced denied ambient filesystem capability
+- target timeout and deterministic timeout diagnostic
 - bad exit code
 - malformed JSON response
 - path escapes
+- staging discard on rejected response
 - duplicate artifact paths
 - output outside allowed directories
+- copy-out only after artifact validation
 - deterministic output for repeated runs
 
 ## Relationship To Current Surfaces
