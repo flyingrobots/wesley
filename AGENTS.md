@@ -8,6 +8,12 @@ This guide is for AI agents and human operators recovering context in the Wesley
 - **NEVER** rebase or force-push.
 - **NEVER** push to `main` without explicit permission.
 - Always use standard commits and regular pushes.
+- Every PR must name at least one GitHub Issue in the PR body.
+- Use a closing keyword such as `Closes #123`, `Fixes #123`, or
+  `Resolves #123` for every issue the PR fully resolves so GitHub auto-closes
+  it on merge.
+- If a PR only advances an issue, use a non-closing reference such as
+  `Refs #123` or `Tracks #123` and state what remains.
 
 ## Documentation & Planning Map
 
