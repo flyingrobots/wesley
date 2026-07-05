@@ -32,6 +32,7 @@ Commands:
 | `config validate`           | Validate a Wesley project manifest                           |
 | `config inspect`            | Print resolved manifest schema paths and targets             |
 | `config changed-schemas`    | Select schema sets affected by changed files                 |
+| `target verify`             | Validate an external target descriptor without execution     |
 | `schema lower`              | Lower GraphQL SDL to Wesley L1 IR JSON                       |
 | `schema hash`               | Print the Wesley L1 registry hash for GraphQL SDL            |
 | `schema operations`         | List Query/Mutation/Subscription root operations             |
@@ -76,10 +77,10 @@ pnpm, config modules, or plugin packages.
 
 Options:
 
-| Option         | Meaning          |
-| -------------- | ---------------- | ------------- |
-| `--json`       | Emit JSON output |
-| `--format text | json`            | Output format |
+| Option                | Meaning          |
+| --------------------- | ---------------- |
+| `--json`              | Emit JSON output |
+| `--format text\|json` | Output format    |
 
 ## Init Law
 
@@ -122,6 +123,27 @@ Options:
 
 The project manifest is documented in
 [Project Manifest](./project-manifest.md).
+
+## Target
+
+```text
+wesley target verify <descriptor> [--json]
+```
+
+`target verify` validates a `wesley.target-descriptor/v1` descriptor without
+executing the descriptor command. It checks the protocol version, path-safe
+target name, descriptor-relative command path, bounded timeout, required input
+and output capabilities, denied network and ambient filesystem requests, and
+workspace-relative output directory.
+
+Options:
+
+| Option   | Meaning          |
+| -------- | ---------------- |
+| `--json` | Emit JSON output |
+
+`target verify` is descriptor validation only. Wesley still does not ship
+`target run`, process sandboxing, artifact copy-out, or target SDK execution.
 
 ## Schema
 

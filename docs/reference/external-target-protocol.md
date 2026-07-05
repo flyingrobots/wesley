@@ -9,10 +9,11 @@ Wesley target authors:
 Wesley compiler facts -> external process -> artifact manifest and diagnostics
 ```
 
-Status: protocol MVP specification. The current `v0.2.0` native CLI does not
-ship `wesley target verify` or `wesley target run` yet. Until those commands
-exist with tests and release evidence, project manifests and fixture descriptors
-remain metadata surfaces.
+Status: protocol MVP specification. The native CLI ships
+`wesley target verify` for descriptor validation without execution. It does not
+ship `wesley target run` yet. Until `target run` exists with tests and release
+evidence, project manifests and fixture descriptors remain metadata surfaces
+for execution.
 
 ## Goals
 
@@ -53,6 +54,8 @@ remain metadata surfaces.
 ## Descriptor Envelope
 
 The descriptor is plain JSON. It is safe to validate without execution.
+The machine-readable schema is
+[`schemas/wesley-target-descriptor-v1.schema.json`](../../schemas/wesley-target-descriptor-v1.schema.json).
 
 ```json
 {
@@ -84,22 +87,33 @@ The descriptor is plain JSON. It is safe to validate without execution.
 Descriptor rules:
 
 - `apiVersion` must be exactly `wesley.target-descriptor/v1` for this MVP.
-- `name` must be stable, non-empty, and path-safe.
+- `name` must be stable, non-empty, and path-safe: no `.`, `..`, slashes,
+  backslashes, colons, or traversal-like `..` substrings.
 - `protocol.kind` must be `external-process`.
+- `protocol.version` must be exactly `wesley.target-process/v1`.
 - `command.program` must be a descriptor-relative executable path, not a shell
   string, bare program name, or `PATH` lookup. It must not be absolute or
-  contain `..`, and the host must reject symlink or canonicalization escapes
-  before launch. A future package or digest-backed binary reference may be added
-  only if it preserves deterministic resolution.
+  contain a parent-directory `..` segment, colon characters such as Windows
+  drive-like `:` prefixes, or backslashes, and the host must reject symlink or
+  canonicalization escapes before launch. A future package or digest-backed
+  binary reference may be added only if it preserves deterministic resolution.
 - `command.args` must be argv elements, not a shell command.
 - `execution.timeoutMs` must be finite and bounded by the host maximum.
-- output directories must be workspace-relative.
+- target capabilities must request `wesley.l1-ir/v1` input and
+  `wesley.target-artifact-manifest/v1` output.
+- network and ambient filesystem capability requests are denied by the MVP
+  verifier.
+- output directories must be workspace-relative and must not contain
+  parent-directory `..` segments, colon characters such as Windows drive-like
+  `:` prefixes, or backslashes. A directory of `.` alone is not valid.
 - descriptors must not contain product semantics; examples should use names
   like `hello`, `model`, or `artifact`.
 
 ## Request Envelope
 
 The request envelope is the only input a target needs from Wesley.
+The machine-readable schema is
+[`schemas/wesley-target-request-v1.schema.json`](../../schemas/wesley-target-request-v1.schema.json).
 
 ```json
 {
@@ -109,7 +123,7 @@ The request envelope is the only input a target needs from Wesley.
   "schema": {
     "id": "app",
     "path": "schema.graphql",
-    "hash": "sha256:..."
+    "hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
   },
   "ir": {
     "apiVersion": "wesley.l1-ir/v1",
@@ -150,7 +164,8 @@ Request rules:
 ## Response Envelope
 
 Targets return one JSON response envelope on stdout. Human logs should go to
-stderr.
+stderr. The machine-readable schema is
+[`schemas/wesley-target-response-v1.schema.json`](../../schemas/wesley-target-response-v1.schema.json).
 
 ```json
 {
@@ -164,7 +179,7 @@ stderr.
       {
         "path": "generated/hello/model.txt",
         "kind": "text",
-        "sha256": "..."
+        "sha256": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
       }
     ]
   }
@@ -183,6 +198,9 @@ Response rules:
   hashes are hard failures.
 
 ## Diagnostic Shape
+
+The machine-readable schema is
+[`schemas/wesley-target-diagnostic-v1.schema.json`](../../schemas/wesley-target-diagnostic-v1.schema.json).
 
 ```json
 {
@@ -203,6 +221,9 @@ Diagnostic rules:
 
 ## Artifact Manifest Shape
 
+The machine-readable schema is
+[`schemas/wesley-target-artifact-manifest-v1.schema.json`](../../schemas/wesley-target-artifact-manifest-v1.schema.json).
+
 ```json
 {
   "apiVersion": "wesley.target-artifact-manifest/v1",
@@ -210,7 +231,7 @@ Diagnostic rules:
     {
       "path": "generated/hello/model.txt",
       "kind": "text",
-      "sha256": "..."
+      "sha256": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
     }
   ]
 }
@@ -219,10 +240,13 @@ Diagnostic rules:
 Artifact manifest rules:
 
 - Every artifact must have a path, kind, and hash.
-- Paths must be relative and must not contain `..`, Windows drive prefixes, or
-  absolute path prefixes.
+- Paths must be relative and must not contain parent-directory `..` segments,
+  colon characters such as Windows drive prefixes, backslashes, or absolute
+  path prefixes. A path of `.` alone is not valid.
 - Artifact order must be deterministic.
-- Repeated paths are invalid.
+- Repeated paths are invalid. The JSON Schema rejects exact duplicate artifact
+  objects; `target run` must additionally reject the same path with different
+  metadata before artifact copy-out.
 
 ## Host Enforcement Rules
 
@@ -261,18 +285,25 @@ argv values.
 
 ## `hello-wesley-target` Template
 
-The first SDK template should contain:
+The repo-local conformance template lives at
+[`test/fixtures/external-targets/hello-wesley-target`](../../test/fixtures/external-targets/hello-wesley-target).
+It contains:
 
-- `schema.graphql`: a minimal GraphQL schema using `User` and `Query`.
-- `target-descriptor.json`: the descriptor envelope above.
-- `fixtures/request.json`: a request envelope generated from the schema.
-- `expected/model.txt`: one deterministic emitted artifact.
-- `expected/artifacts.json`: the artifact manifest.
-- one conformance test that runs the target process and compares the response
-  and artifact bytes.
+- `schema.graphql`: a minimal GraphQL schema with one generic `Query` field.
+- `target-descriptor.json`: a descriptor envelope that validates without
+  execution.
+- `request.json`: a request envelope generated from the schema's L1 IR and
+  schema operation metadata.
+- `diagnostic.json`: one standalone machine-readable diagnostic example.
+- `artifact-manifest.json`: the artifact manifest with a checked SHA-256
+  digest.
+- `response.json`: an `ok` response envelope carrying the artifact manifest.
+- `artifacts/generated/hello/model.txt`: one deterministic emitted artifact.
 
-The template must not mention Postgres, Echo, Continuum, auth, routing,
-deployment, or product runtime behavior.
+The template is not executable target loading and does not add `wesley target
+run`. Its conformance test validates the descriptor, request, diagnostic,
+response, artifact manifest, and artifact hash. It must not mention Postgres,
+Echo, Continuum, auth, routing, deployment, or product runtime behavior.
 
 ## Required Conformance Fixtures
 

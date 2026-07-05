@@ -12,6 +12,16 @@ This directory hosts machine-readable schemas that underpin Wesley’s generator
   Schema describing the emitted `wesley.contract-bundle-manifest/v1` shape.
 - `wesley-law-diff-v1.schema.json` – Versioned, canonical JSON Schema
   describing machine-readable `wesley.law-diff/v1` semantic law diff reports.
+- `wesley-target-descriptor-v1.schema.json` – JSON Schema for
+  `wesley.target-descriptor/v1` external target descriptors.
+- `wesley-target-request-v1.schema.json` – JSON Schema for
+  `wesley.target-request/v1` external target request envelopes.
+- `wesley-target-response-v1.schema.json` – JSON Schema for
+  `wesley.target-response/v1` external target response envelopes.
+- `wesley-target-diagnostic-v1.schema.json` – JSON Schema for machine-readable
+  target diagnostics used by the external target protocol.
+- `wesley-target-artifact-manifest-v1.schema.json` – JSON Schema for
+  `wesley.target-artifact-manifest/v1` target artifact manifests.
 - `evidence-map.schema.json` – JSON Schema for the evidence bundle map emitted by HOLMES/-SHIPME flows.
 - `scores.schema.json` – JSON Schema for holmes `scores.json` output.
 

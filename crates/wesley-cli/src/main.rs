@@ -32,6 +32,11 @@ const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
 const EXIT_USAGE: u8 = 2;
 const RUST_NATIVE_EXECUTION_MODE: &str = "rust-native";
+const TARGET_DESCRIPTOR_API_VERSION: &str = "wesley.target-descriptor/v1";
+const TARGET_PROCESS_PROTOCOL_VERSION: &str = "wesley.target-process/v1";
+const REQUIRED_TARGET_INPUT_IR: &str = "wesley.l1-ir/v1";
+const REQUIRED_TARGET_OUTPUT_MANIFEST: &str = "wesley.target-artifact-manifest/v1";
+const TARGET_VERIFY_MAX_TIMEOUT_MS: u64 = 300_000;
 
 fn main() -> ExitCode {
     let args = env::args().skip(1).collect::<Vec<_>>();
@@ -62,6 +67,7 @@ fn run(args: Vec<String>) -> Result<u8, CliError> {
         }
         Some("doctor") => run_doctor_command(&args[1..]),
         Some("config") => run_config_command(&args[1..]),
+        Some("target") => run_target_command(&args[1..]),
         Some("init-law") if wants_help(&args[1..]) => {
             print_init_law_help();
             Ok(EXIT_OK)
@@ -481,6 +487,69 @@ fn run_config_command(args: &[String]) -> Result<u8, CliError> {
         Some(command) => Err(CliError::usage(format!(
             "unknown config command '{command}'"
         ))),
+    }
+}
+
+fn run_target_command(args: &[String]) -> Result<u8, CliError> {
+    match args.first().map(String::as_str) {
+        None | Some("--help") | Some("-h") => {
+            print_target_help();
+            Ok(EXIT_OK)
+        }
+        Some("verify") if wants_help(&args[1..]) => {
+            print_target_help();
+            Ok(EXIT_OK)
+        }
+        Some("verify") => run_target_verify_command(&args[1..]),
+        Some(command) => Err(CliError::usage(format!(
+            "unknown target command '{command}'"
+        ))),
+    }
+}
+
+fn run_target_verify_command(args: &[String]) -> Result<u8, CliError> {
+    let (descriptor_path, json) = parse_target_verify_args(args)?;
+    let descriptor_source = read_file(&descriptor_path, "target descriptor")?;
+    let descriptor =
+        serde_json::from_str::<ExternalTargetDescriptor>(&descriptor_source).map_err(|source| {
+            CliError::JsonInput {
+                label: "target descriptor".to_string(),
+                path: descriptor_path.clone(),
+                source: source.to_string(),
+            }
+        })?;
+    let diagnostics = validate_external_target_descriptor(&descriptor);
+    let valid = diagnostics.is_empty();
+    let report = TargetVerifyReport {
+        valid,
+        descriptor_path: descriptor_path.display().to_string(),
+        descriptor: TargetDescriptorIdentity {
+            api_version: descriptor.api_version.clone(),
+            name: descriptor.name.clone(),
+            protocol: descriptor.protocol.version.clone(),
+        },
+        diagnostics,
+    };
+
+    if json {
+        print_json(&report)?;
+    } else if valid {
+        println!("Target descriptor valid: {}", report.descriptor.name);
+    } else {
+        eprintln!("Target descriptor invalid: {}", descriptor_path.display());
+        for diagnostic in &report.diagnostics {
+            if let Some(subject) = diagnostic.subject.as_deref() {
+                eprintln!("{}: {} ({subject})", diagnostic.code, diagnostic.message);
+            } else {
+                eprintln!("{}: {}", diagnostic.code, diagnostic.message);
+            }
+        }
+    }
+
+    if valid {
+        Ok(EXIT_OK)
+    } else {
+        Ok(EXIT_FAILURE)
     }
 }
 
@@ -1207,6 +1276,37 @@ fn parse_options(args: &[String], command: &str) -> Result<ParsedOptions, CliErr
     Ok(options)
 }
 
+fn parse_target_verify_args(args: &[String]) -> Result<(PathBuf, bool), CliError> {
+    let mut descriptor_path = None;
+    let mut json = false;
+
+    for argument in args {
+        match argument.as_str() {
+            "--json" => json = true,
+            value if value.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown option '{value}' for `target verify`"
+                )));
+            }
+            value => {
+                if descriptor_path.replace(PathBuf::from(value)).is_some() {
+                    return Err(CliError::usage(
+                        "pass exactly one descriptor path to `target verify`",
+                    ));
+                }
+            }
+        }
+    }
+
+    let Some(descriptor_path) = descriptor_path else {
+        return Err(CliError::usage(
+            "missing descriptor path for `target verify`",
+        ));
+    };
+
+    Ok((descriptor_path, json))
+}
+
 fn wants_help(args: &[String]) -> bool {
     args.iter()
         .any(|argument| argument == "--help" || argument == "-h")
@@ -1222,6 +1322,208 @@ fn required_value(args: &[String], index: usize, option: &str) -> Result<String,
     }
 
     Ok(value.clone())
+}
+
+fn validate_external_target_descriptor(
+    descriptor: &ExternalTargetDescriptor,
+) -> Vec<TargetVerifyDiagnostic> {
+    let mut diagnostics = Vec::new();
+
+    if descriptor.api_version != TARGET_DESCRIPTOR_API_VERSION {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.api_version.unsupported",
+            "target descriptor apiVersion is unsupported",
+            Some(&descriptor.api_version),
+        );
+    }
+
+    if !is_path_safe_name(&descriptor.name) {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.name.path_unsafe",
+            "target descriptor name must be non-empty and path-safe",
+            Some(&descriptor.name),
+        );
+    }
+
+    if descriptor.protocol.kind != "external-process" {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.protocol.kind_unsupported",
+            "target protocol kind must be external-process",
+            Some(&descriptor.protocol.kind),
+        );
+    }
+
+    if descriptor.protocol.version != TARGET_PROCESS_PROTOCOL_VERSION {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.protocol.version_unsupported",
+            "target process protocol version is unsupported",
+            Some(&descriptor.protocol.version),
+        );
+    }
+
+    if !is_safe_relative_path(&descriptor.command.program, true) {
+        let code = if is_bare_program_name(&descriptor.command.program) {
+            "target.command.program_bare"
+        } else {
+            "target.command.program_unsafe"
+        };
+        push_target_diagnostic(
+            &mut diagnostics,
+            code,
+            "target command program must be a descriptor-relative path without traversal",
+            Some(&descriptor.command.program),
+        );
+    }
+
+    if descriptor
+        .command
+        .args
+        .iter()
+        .any(|argument| argument.contains('\0'))
+    {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.command.arg_nul",
+            "target command args must not contain NUL bytes",
+            None,
+        );
+    }
+
+    if descriptor.execution.timeout_ms == 0
+        || descriptor.execution.timeout_ms > TARGET_VERIFY_MAX_TIMEOUT_MS
+    {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.execution.timeout_out_of_range",
+            "target execution timeout must be between 1 and the host maximum",
+            Some(&descriptor.execution.timeout_ms.to_string()),
+        );
+    }
+
+    if !descriptor
+        .capabilities
+        .inputs
+        .iter()
+        .any(|input| input == REQUIRED_TARGET_INPUT_IR)
+    {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.capability.input_missing",
+            "target descriptor must request the Wesley L1 IR input capability",
+            Some(REQUIRED_TARGET_INPUT_IR),
+        );
+    }
+
+    if !descriptor
+        .capabilities
+        .outputs
+        .iter()
+        .any(|output| output == REQUIRED_TARGET_OUTPUT_MANIFEST)
+    {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.capability.output_missing",
+            "target descriptor must declare the artifact manifest output capability",
+            Some(REQUIRED_TARGET_OUTPUT_MANIFEST),
+        );
+    }
+
+    if descriptor.capabilities.requires_network {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.capability.network_denied",
+            "target verify does not grant network capability",
+            None,
+        );
+    }
+
+    if descriptor.capabilities.requires_ambient_filesystem {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.capability.ambient_filesystem_denied",
+            "target verify does not grant ambient filesystem capability",
+            None,
+        );
+    }
+
+    if !is_safe_relative_path(&descriptor.outputs.default_out_dir, false) {
+        push_target_diagnostic(
+            &mut diagnostics,
+            "target.output.default_dir_unsafe",
+            "default output directory must be workspace-relative without traversal",
+            Some(&descriptor.outputs.default_out_dir),
+        );
+    }
+
+    diagnostics
+}
+
+fn push_target_diagnostic(
+    diagnostics: &mut Vec<TargetVerifyDiagnostic>,
+    code: &str,
+    message: &str,
+    subject: Option<&str>,
+) {
+    diagnostics.push(TargetVerifyDiagnostic {
+        severity: "error".to_string(),
+        code: code.to_string(),
+        message: message.to_string(),
+        subject: subject.map(ToOwned::to_owned),
+    });
+}
+
+fn is_path_safe_name(value: &str) -> bool {
+    let trimmed = value.trim();
+    !trimmed.is_empty()
+        && trimmed == value
+        && trimmed != "."
+        && trimmed != ".."
+        && !trimmed.contains("..")
+        && !trimmed.contains('/')
+        && !trimmed.contains('\\')
+        && !trimmed.contains(':')
+        && !trimmed.contains('\0')
+}
+
+fn is_bare_program_name(value: &str) -> bool {
+    !value.is_empty()
+        && !value.contains('/')
+        && !value.contains('\\')
+        && !value.contains(':')
+        && !value.contains('\0')
+        && !Path::new(value).is_absolute()
+}
+
+fn is_safe_relative_path(value: &str, require_nested: bool) -> bool {
+    if value.trim().is_empty()
+        || value.contains('\\')
+        || value.contains(':')
+        || value.contains('\0')
+    {
+        return false;
+    }
+
+    let path = Path::new(value);
+    if path.is_absolute() {
+        return false;
+    }
+
+    let mut normal_components = 0;
+    for component in path.components() {
+        match component {
+            std::path::Component::CurDir => {}
+            std::path::Component::Normal(_) => normal_components += 1,
+            std::path::Component::ParentDir
+            | std::path::Component::RootDir
+            | std::path::Component::Prefix(_) => return false,
+        }
+    }
+
+    normal_components > 0 && (!require_nested || value.contains('/'))
 }
 
 fn read_file(path: &PathBuf, label: &str) -> Result<String, CliError> {
@@ -1564,6 +1866,85 @@ fn print_json(value: &impl serde::Serialize) -> Result<(), CliError> {
     let json = serde_json::to_string_pretty(value)?;
     println!("{json}");
     Ok(())
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExternalTargetDescriptor {
+    api_version: String,
+    name: String,
+    protocol: ExternalTargetProtocol,
+    command: ExternalTargetCommand,
+    execution: ExternalTargetExecution,
+    capabilities: ExternalTargetCapabilities,
+    outputs: ExternalTargetOutputs,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExternalTargetProtocol {
+    kind: String,
+    version: String,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExternalTargetCommand {
+    program: String,
+    #[serde(default)]
+    args: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExternalTargetExecution {
+    timeout_ms: u64,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExternalTargetCapabilities {
+    #[serde(default)]
+    inputs: Vec<String>,
+    #[serde(default)]
+    outputs: Vec<String>,
+    #[serde(default)]
+    requires_network: bool,
+    #[serde(default)]
+    requires_ambient_filesystem: bool,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExternalTargetOutputs {
+    default_out_dir: String,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TargetVerifyReport {
+    valid: bool,
+    descriptor_path: String,
+    descriptor: TargetDescriptorIdentity,
+    diagnostics: Vec<TargetVerifyDiagnostic>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TargetDescriptorIdentity {
+    api_version: String,
+    name: String,
+    protocol: String,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TargetVerifyDiagnostic {
+    severity: String,
+    code: String,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    subject: Option<String>,
 }
 
 #[derive(serde::Serialize)]
@@ -2328,6 +2709,7 @@ Commands:
   config validate          Validate a Wesley project manifest
   config inspect           Print resolved manifest schema paths and targets
   config changed-schemas   Select schema sets affected by changed files
+  target verify            Validate an external target descriptor
   schema lower              Lower GraphQL SDL to Wesley L1 IR JSON
   schema hash               Print the Wesley L1 registry hash for GraphQL SDL
   schema operations         List Query/Mutation/Subscription root operations
@@ -2408,6 +2790,22 @@ Options:
   --changed <path>       Changed file path; may be passed more than once
   --changed-file <path>  Newline-delimited changed file list
   --json                 Emit JSON output"
+    );
+}
+
+fn print_target_help() {
+    println!(
+        "\
+Wesley target commands
+
+External target commands validate descriptor metadata without assigning product
+or runtime meaning to Wesley core.
+
+Usage:
+  wesley target verify <descriptor> [--json]
+
+Options:
+  --json  Emit JSON output"
     );
 }
 
@@ -2526,6 +2924,11 @@ enum CliError {
     Config(ProjectManifestError),
     Git(String),
     Json(String),
+    JsonInput {
+        label: String,
+        path: PathBuf,
+        source: String,
+    },
 }
 
 impl CliError {
@@ -2541,7 +2944,8 @@ impl CliError {
             | Self::Law(_)
             | Self::Config(_)
             | Self::Git(_)
-            | Self::Json(_) => EXIT_FAILURE,
+            | Self::Json(_)
+            | Self::JsonInput { .. } => EXIT_FAILURE,
         }
     }
 }
@@ -2573,6 +2977,15 @@ impl std::fmt::Display for CliError {
             Self::Config(error) => write!(formatter, "{error}"),
             Self::Git(error) => write!(formatter, "git error: {error}"),
             Self::Json(error) => write!(formatter, "failed to serialize JSON output: {error}"),
+            Self::JsonInput {
+                label,
+                path,
+                source,
+            } => write!(
+                formatter,
+                "failed to parse {label} `{}`: {source}",
+                path.display()
+            ),
         }
     }
 }
