@@ -673,6 +673,11 @@ fn hello_external_target_fixture_satisfies_protocol_schemas() {
     assert_eq!(request.pointer("/schema/hash"), Some(&json!(schema_hash)));
     assert_eq!(request.pointer("/ir/json"), Some(&ir_json));
     assert_eq!(request.pointer("/operations/items"), Some(&operations_json));
+    assert_eq!(request.pointer("/target/name"), descriptor.pointer("/name"));
+    assert_eq!(
+        request.pointer("/target/outputDir"),
+        descriptor.pointer("/outputs/defaultOutDir")
+    );
 
     let diagnostic = read_json(&format!("{fixture}/diagnostic.json"));
     assert_schema_valid(
@@ -704,5 +709,10 @@ fn hello_external_target_fixture_satisfies_protocol_schemas() {
         "hello target response fixture",
         &response,
     );
+    assert_eq!(
+        response.pointer("/requestId"),
+        request.pointer("/requestId")
+    );
+    assert_eq!(response.pointer("/diagnostics/0"), Some(&diagnostic));
     assert_eq!(response.pointer("/artifacts"), Some(&artifact_manifest));
 }

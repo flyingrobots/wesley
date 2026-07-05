@@ -2,7 +2,14 @@
   "apiVersion": "wesley.target-response/v1",
   "requestId": "hello-request-0001",
   "status": "ok",
-  "diagnostics": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "target.fixture.ready",
+      "message": "hello external target fixture is ready for conformance validation",
+      "subject": "hello-wesley-target"
+    }
+  ],
   "artifacts": {
     "apiVersion": "wesley.target-artifact-manifest/v1",
     "items": [
