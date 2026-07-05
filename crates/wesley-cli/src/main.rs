@@ -1485,6 +1485,7 @@ fn is_path_safe_name(value: &str) -> bool {
         && !trimmed.contains("..")
         && !trimmed.contains('/')
         && !trimmed.contains('\\')
+        && !trimmed.contains(':')
         && !trimmed.contains('\0')
 }
 
@@ -1492,12 +1493,17 @@ fn is_bare_program_name(value: &str) -> bool {
     !value.is_empty()
         && !value.contains('/')
         && !value.contains('\\')
+        && !value.contains(':')
         && !value.contains('\0')
         && !Path::new(value).is_absolute()
 }
 
 fn is_safe_relative_path(value: &str, require_nested: bool) -> bool {
-    if value.trim().is_empty() || value.contains('\\') || value.contains('\0') {
+    if value.trim().is_empty()
+        || value.contains('\\')
+        || value.contains(':')
+        || value.contains('\0')
+    {
         return false;
     }
 

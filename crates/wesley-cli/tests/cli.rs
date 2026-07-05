@@ -170,6 +170,63 @@ fn target_verify_reports_deterministic_diagnostics_for_unsafe_descriptor() {
 }
 
 #[test]
+fn target_verify_rejects_windows_drive_like_paths() {
+    let dir = temp_dir("target-verify-windows-drive");
+    let descriptor = dir.join("target-descriptor.json");
+    std::fs::write(
+        &descriptor,
+        r#"
+{
+  "apiVersion": "wesley.target-descriptor/v1",
+  "name": "hello:target",
+  "protocol": {
+    "kind": "external-process",
+    "version": "wesley.target-process/v1"
+  },
+  "command": {
+    "program": "C:/tools/hello-wesley-target",
+    "args": ["--request-stdin"]
+  },
+  "execution": {
+    "timeoutMs": 30000
+  },
+  "capabilities": {
+    "inputs": ["wesley.l1-ir/v1"],
+    "outputs": ["wesley.target-artifact-manifest/v1"],
+    "requiresNetwork": false,
+    "requiresAmbientFilesystem": false
+  },
+  "outputs": {
+    "defaultOutDir": "C:/generated"
+  }
+}
+"#,
+    )
+    .expect("descriptor should write");
+
+    let output = wesley()
+        .current_dir(&dir)
+        .args(["target", "verify", "target-descriptor.json", "--json"])
+        .output()
+        .expect("wesley should run");
+
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
+    let codes = report["diagnostics"]
+        .as_array()
+        .expect("diagnostics should be an array")
+        .iter()
+        .map(|diagnostic| diagnostic["code"].as_str().unwrap())
+        .collect::<Vec<_>>();
+    assert!(codes.contains(&"target.name.path_unsafe"));
+    assert!(codes.contains(&"target.command.program_unsafe"));
+    assert!(codes.contains(&"target.output.default_dir_unsafe"));
+
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
 fn target_verify_reports_descriptor_parse_errors() {
     let dir = temp_dir("target-verify-malformed");
     let descriptor = dir.join("target-descriptor.json");
