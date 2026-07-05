@@ -134,14 +134,10 @@ fn run_preflight() -> Result<(), Error> {
 
 fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {
     let options = BenchIrOptions::parse(args)?;
-    build_wesley_for_bench(options.json)?;
 
     let root = env::current_dir()
         .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let wesley_bin = root
-        .join("target")
-        .join("debug")
-        .join(format!("wesley{}", env::consts::EXE_SUFFIX));
+    let wesley_bin = build_wesley_for_bench(&root, options.json)?;
     let bench_root = env::temp_dir().join(format!(
         "wesley-bench-ir-{}-{}",
         std::process::id(),
@@ -259,12 +255,27 @@ fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {
     Ok(())
 }
 
-fn build_wesley_for_bench(json_output: bool) -> Result<(), Error> {
+fn build_wesley_for_bench(root: &Path, json_output: bool) -> Result<PathBuf, Error> {
     if json_output {
-        run_command_no_label("cargo", &["build", "--quiet", "--bin", "wesley"])
+        run_command_no_label("cargo", &["build", "--quiet", "--bin", "wesley"])?;
     } else {
-        run_command("cargo", &["build", "--bin", "wesley"])
+        run_command("cargo", &["build", "--bin", "wesley"])?;
     }
+
+    Ok(bench_wesley_binary_path(
+        root,
+        env::var_os("CARGO_TARGET_DIR"),
+    ))
+}
+
+fn bench_wesley_binary_path(root: &Path, cargo_target_dir: Option<OsString>) -> PathBuf {
+    let target_dir = cargo_target_dir
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.join("target"));
+
+    target_dir
+        .join("debug")
+        .join(format!("wesley{}", env::consts::EXE_SUFFIX))
 }
 
 fn run_wesley_schema_lower(wesley_bin: &Path, schema_path: &Path) -> Result<Vec<u8>, Error> {
@@ -3589,6 +3600,23 @@ mod tests {
             BenchIrOptions::parse(&args),
             Err(Error::Usage(message)) if message == "bench-ir --iterations must be greater than zero"
         ));
+    }
+
+    #[test]
+    fn bench_ir_binary_path_honors_cargo_target_dir() {
+        let root = Path::new("/workspace/wesley");
+        let expected_binary = format!("wesley{}", env::consts::EXE_SUFFIX);
+
+        assert_eq!(
+            bench_wesley_binary_path(root, Some(OsString::from("/tmp/wesley-target"))),
+            PathBuf::from("/tmp/wesley-target")
+                .join("debug")
+                .join(&expected_binary)
+        );
+        assert_eq!(
+            bench_wesley_binary_path(root, None),
+            root.join("target").join("debug").join(expected_binary)
+        );
     }
 
     #[test]
