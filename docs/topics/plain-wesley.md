@@ -177,8 +177,10 @@ repo. Wesley core should only preserve and project generic compiler facts.
 
 Wesley also has an assurance toolchain. Its docs use terms such as Holmes,
 Watson, Moriarty, BLADE, realization shells, and witness surfaces. Treat those
-as advanced or experimental vocabulary unless a page links to a shipped command
-and runnable example.
+as advanced vocabulary. Use the
+[Assurance Capability Matrix](../reference/assurance-capability-matrix.md) for
+current shipped, transitional, internal-foundation, and concept-only status
+instead of inferring status from page links.
 
 Start with the compiler pages first:
 

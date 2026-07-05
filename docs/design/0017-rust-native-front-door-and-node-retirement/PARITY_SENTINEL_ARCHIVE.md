@@ -18,12 +18,12 @@ Rust self-consistency is the product gate:
 
 ## Archived Migration Evidence
 
-| Surface              | Historical role                              | Current role                                                               |
-| -------------------- | -------------------------------------------- | -------------------------------------------------------------------------- |
-| `pnpm parity:ir`     | Compared selected JS and Rust IR projections | Optional migration evidence while legacy JS lowerer files still exist.     |
-| `pnpm parity:parser` | Compared parser/lowerer acceptance outcomes  | Optional acceptance archaeology for legacy fixtures.                       |
-| `pnpm perf:ir`       | Measured Rust CLI and optional JS lowerer    | Rust CLI baseline plus optional legacy comparison, not a release decision. |
-| `pnpm perf:bindings` | Named future binding cutover report slots    | Observatory evidence only; it does not authorize a binding choice.         |
+| Surface              | Historical role                              | Current role                                                                |
+| -------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
+| `pnpm parity:ir`     | Compared selected JS and Rust IR projections | Optional migration evidence while legacy JS lowerer files still exist.      |
+| `pnpm parity:parser` | Compared parser/lowerer acceptance outcomes  | Optional acceptance archaeology for legacy fixtures.                        |
+| `pnpm perf:ir`       | Measured Rust CLI and optional JS lowerer    | Retired; use `cargo xtask bench-ir` for current Rust CLI baseline evidence. |
+| `pnpm perf:bindings` | Named future binding cutover report slots    | Observatory evidence only; it does not authorize a binding choice.          |
 
 ## Retirement Rule
 

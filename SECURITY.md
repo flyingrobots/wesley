@@ -74,6 +74,9 @@ artifacts through generic emitters and external modules.
 
 - Keep dependency updates reviewable and run repository preflight before
   release.
+- Scope security scanners to Wesley's compiler and tooling surface. The current
+  baseline and candidate-gate decisions live in
+  [`docs/topics/security-tooling.md`](docs/topics/security-tooling.md).
 - Prefer deterministic inputs, injected clocks, and explicit host permissions
   for portable capability work.
 - Do not grant portable modules ambient filesystem, network, process, or clock
@@ -94,5 +97,6 @@ artifacts through generic emitters and external modules.
 - Domain-empty compiler boundary that keeps target security policy out of core
 - Hash-linked evidence and artifact review surfaces
 - Dependency and documentation preflight checks
+- Documented scanner-fit posture for advisory and static-analysis gates
 - Explicit external-module responsibility for database, runtime, and product
   security behavior

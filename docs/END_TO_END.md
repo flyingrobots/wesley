@@ -815,6 +815,11 @@ Holmes investigates evidence. Watson audits the evidence chain. Moriarty judges
 with policy and context. BLADE certifies readiness. Deployment remains a project
 or operator job.
 
+This is architectural vocabulary, not a list of shipped native commands. Use
+the [Assurance Capability Matrix](./reference/assurance-capability-matrix.md)
+for the current shipped, transitional, internal-foundation, and concept-only
+status of each assurance surface.
+
 ```mermaid
 stateDiagram-v2
     [*] --> Authored: schema is written

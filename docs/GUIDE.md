@@ -93,7 +93,9 @@ The direct replacements are `wesley schema lower`, `wesley schema hash`,
 Zod and certificate commands are no longer generic compiler-front-door work.
 Holmes-family commands still live under `@wesley/holmes`; the Rust foundation
 for future Holmes law-assurance ingestion lives in `crates/wesley-holmes` and
-does not expose public CLI commands yet.
+does not expose public CLI commands yet. Use the
+[Assurance Capability Matrix](./reference/assurance-capability-matrix.md) for
+the shipped/transitional/foundation/concept status of each assurance surface.
 
 Zod output is no longer treated as core Wesley retirement work. Reintroduce it
 through an external target module or package when a consumer needs JavaScript
@@ -129,6 +131,11 @@ Audit proposed changes, emit HOLMES reports, and inspect the static dashboard
 artifact assembled by CI.
 These are assurance/tooling surfaces outside compiler authority.
 
+Wesley emits deterministic evidence inputs and ships experimental assurance
+tooling around them; an assurance capability is shipped only when the
+[Assurance Capability Matrix](./reference/assurance-capability-matrix.md) lists
+an executable command or workflow.
+
 - **HOLMES report**: `pnpm --filter @wesley/holmes exec node src/cli.mjs report --help`
 - **Dashboard artifact**: open `docs/holmes-dashboard/index.html` with the
   HOLMES workflow JSON artifacts. See
@@ -161,6 +168,8 @@ This repo also ships surrounding toolchain surfaces:
 Those surfaces operate on compiler inputs and outputs. They are useful, but
 they are not the same thing as the core compile act. They are advanced
 assurance/toolchain vocabulary, not prerequisites for the first compiler path.
+Watson, Moriarty, and BLADE remain concept/design vocabulary unless the
+Assurance Capability Matrix marks the surface shipped.
 
 For the exact boundary, see
 [architecture/wesley-core-vs-toolchain.md](./architecture/wesley-core-vs-toolchain.md).
