@@ -143,14 +143,17 @@ async fn rejects_duplicate_canonical_directives() {
     let message = err.to_string();
 
     assert!(
-        message.contains("Duplicate directive '@wes_table'"),
+        message.contains("Duplicate non-repeatable directive '@wes_table'"),
         "unexpected error: {message}"
     );
 
     let diagnostic = err.diagnostic();
     assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
     assert_eq!(diagnostic.severity, "ERROR");
-    assert_eq!(diagnostic.message, "Duplicate directive '@wes_table'");
+    assert_eq!(
+        diagnostic.message,
+        "Duplicate non-repeatable directive '@wes_table'"
+    );
     assert_eq!(diagnostic.line, None);
     assert_eq!(diagnostic.column, None);
 }
@@ -191,7 +194,10 @@ async fn diagnostic_fixture_rejects_duplicate_canonical_directives() {
     let diagnostic = err.diagnostic();
 
     assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
-    assert_eq!(diagnostic.message, "Duplicate directive '@wes_table'");
+    assert_eq!(
+        diagnostic.message,
+        "Duplicate non-repeatable directive '@wes_table'"
+    );
 }
 
 #[tokio::test]
@@ -286,6 +292,143 @@ async fn preserves_repeated_custom_directives_as_ordered_values() {
     assert_eq!(
         tag_values[1]["name"],
         serde_json::Value::String("beta".into())
+    );
+}
+
+#[tokio::test]
+async fn rejects_duplicate_non_repeatable_custom_directives_on_same_location() {
+    let sdl = r#"
+        directive @tag(name: String!) on FIELD_DEFINITION
+
+        type Thing {
+          name: String @tag(name: "alpha") @tag(name: "beta")
+        }
+    "#;
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect_err("non-repeatable custom directive duplicates should fail");
+    let diagnostic = err.diagnostic();
+
+    assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
+    assert_eq!(
+        diagnostic.message,
+        "Duplicate non-repeatable directive '@tag'"
+    );
+}
+
+#[tokio::test]
+async fn rejects_duplicate_non_repeatable_custom_directives_across_base_and_extension() {
+    let sdl = r#"
+        directive @tag(name: String!) on OBJECT
+
+        type Thing @tag(name: "base") {
+          id: ID!
+        }
+
+        extend type Thing @tag(name: "extension")
+    "#;
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect_err("base and extension non-repeatable custom directives should collide");
+    let diagnostic = err.diagnostic();
+
+    assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
+    assert_eq!(
+        diagnostic.message,
+        "Duplicate non-repeatable directive '@tag'"
+    );
+}
+
+#[tokio::test]
+async fn rejects_duplicate_non_repeatable_custom_directives_across_extensions() {
+    let sdl = r#"
+        directive @tag(name: String!) on OBJECT
+
+        type Thing {
+          id: ID!
+        }
+
+        extend type Thing @tag(name: "first")
+        extend type Thing @tag(name: "second")
+    "#;
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect_err("extension non-repeatable custom directives should collide");
+    let diagnostic = err.diagnostic();
+
+    assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
+    assert_eq!(
+        diagnostic.message,
+        "Duplicate non-repeatable directive '@tag'"
+    );
+}
+
+#[tokio::test]
+async fn preserves_repeatable_custom_directives_across_extensions() {
+    let sdl = r#"
+        directive @tag(name: String!) repeatable on OBJECT
+
+        type Thing @tag(name: "base") {
+          id: ID!
+        }
+
+        extend type Thing @tag(name: "first")
+        extend type Thing @tag(name: "second")
+    "#;
+
+    let adapter = create_adapter();
+    let ir = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect("repeatable custom directives should accumulate across extensions");
+    let thing = find_type(&ir.types, "Thing");
+    let tag_values = thing.directives["tag"]
+        .as_array()
+        .expect("repeatable type directives should be preserved as an array");
+
+    assert_eq!(tag_values.len(), 3);
+    assert_eq!(
+        tag_values[0]["name"],
+        serde_json::Value::String("base".into())
+    );
+    assert_eq!(
+        tag_values[1]["name"],
+        serde_json::Value::String("first".into())
+    );
+    assert_eq!(
+        tag_values[2]["name"],
+        serde_json::Value::String("second".into())
+    );
+}
+
+#[tokio::test]
+async fn rejects_duplicate_undefined_custom_directives() {
+    let sdl = r#"
+        type Thing {
+          name: String @externalTag(name: "alpha") @externalTag(name: "beta")
+        }
+    "#;
+
+    let adapter = create_adapter();
+    let err = adapter
+        .lower_sdl(sdl)
+        .await
+        .expect_err("undefined custom directive duplicates should not become arrays");
+    let diagnostic = err.diagnostic();
+
+    assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
+    assert_eq!(
+        diagnostic.message,
+        "Duplicate non-repeatable directive '@externalTag'"
     );
 }
 
