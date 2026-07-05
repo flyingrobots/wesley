@@ -401,7 +401,7 @@ impl ApolloLoweringAdapter {
         match def {
             TypeDefinitionNode::Scalar(node) => {
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -413,7 +413,7 @@ impl ApolloLoweringAdapter {
                     collect_implements(interfaces, &mut acc.implements)?;
                 }
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -428,7 +428,7 @@ impl ApolloLoweringAdapter {
                     collect_implements(interfaces, &mut acc.implements)?;
                 }
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -440,7 +440,7 @@ impl ApolloLoweringAdapter {
             }
             TypeDefinitionNode::Union(node) => {
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -452,7 +452,7 @@ impl ApolloLoweringAdapter {
             }
             TypeDefinitionNode::Enum(node) => {
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -464,7 +464,7 @@ impl ApolloLoweringAdapter {
             }
             TypeDefinitionNode::InputObject(node) => {
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -488,7 +488,7 @@ impl ApolloLoweringAdapter {
         match ext {
             TypeExtensionNode::Scalar(node) => {
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -500,7 +500,7 @@ impl ApolloLoweringAdapter {
                     collect_implements(interfaces, &mut acc.implements)?;
                 }
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -515,7 +515,7 @@ impl ApolloLoweringAdapter {
                     collect_implements(interfaces, &mut acc.implements)?;
                 }
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -527,7 +527,7 @@ impl ApolloLoweringAdapter {
             }
             TypeExtensionNode::Union(node) => {
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -539,7 +539,7 @@ impl ApolloLoweringAdapter {
             }
             TypeExtensionNode::Enum(node) => {
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -551,7 +551,7 @@ impl ApolloLoweringAdapter {
             }
             TypeExtensionNode::InputObject(node) => {
                 if let Some(dirs) = node.directives() {
-                    self.extract_directives_with_repeatability(
+                    Self::extract_directives_with_repeatability(
                         dirs,
                         &mut acc.directives,
                         repeatable_directives,
@@ -567,7 +567,6 @@ impl ApolloLoweringAdapter {
     }
 
     fn extract_directives_with_repeatability(
-        &self,
         dirs: cst::Directives,
         map: &mut IndexMap<String, serde_json::Value>,
         repeatable_directives: &BTreeSet<String>,
@@ -660,7 +659,7 @@ impl ApolloLoweringAdapter {
 
         let mut field_directives = IndexMap::new();
         if let Some(dirs) = field_def.directives() {
-            self.extract_directives_with_repeatability(
+            Self::extract_directives_with_repeatability(
                 dirs,
                 &mut field_directives,
                 repeatable_directives,
@@ -701,7 +700,7 @@ impl ApolloLoweringAdapter {
 
         let mut field_directives = IndexMap::new();
         if let Some(dirs) = field_def.directives() {
-            self.extract_directives_with_repeatability(
+            Self::extract_directives_with_repeatability(
                 dirs,
                 &mut field_directives,
                 repeatable_directives,
@@ -963,7 +962,7 @@ fn field_argument_from_input_value(
 
     let mut directives = IndexMap::new();
     if let Some(dirs) = input_value.directives() {
-        ApolloLoweringAdapter::new(0).extract_directives_with_repeatability(
+        ApolloLoweringAdapter::extract_directives_with_repeatability(
             dirs,
             &mut directives,
             repeatable_directives,
@@ -3616,7 +3615,7 @@ fn schema_operation_from_field(
 
     let mut directives = IndexMap::new();
     if let Some(dirs) = field_def.directives() {
-        ApolloLoweringAdapter::new(0).extract_directives_with_repeatability(
+        ApolloLoweringAdapter::extract_directives_with_repeatability(
             dirs,
             &mut directives,
             repeatable_directives,
@@ -3674,7 +3673,7 @@ fn operation_argument_from_input_value(
 
     let mut directives = IndexMap::new();
     if let Some(dirs) = input_value.directives() {
-        ApolloLoweringAdapter::new(0).extract_directives_with_repeatability(
+        ApolloLoweringAdapter::extract_directives_with_repeatability(
             dirs,
             &mut directives,
             repeatable_directives,
