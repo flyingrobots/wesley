@@ -19,7 +19,9 @@ This directory contains helper scripts that power development workflows. Run the
 | _(composite)_                      | Convenience bootstrap script that installs dependencies, runs Rust product preflight, then runs the workspace tests.              | `pnpm run bootstrap`                                                                                                                  |
 
 > [!tip]
-> All scripts assume Node 22+ and `pnpm` (pinned via `package.json`). Use `pnpm exec` to ensure the local toolchain is picked up.
+> All scripts assume a Node version satisfying the root `package.json` engines
+> and `pnpm` (pinned via `package.json`). Use `pnpm exec` to ensure the local
+> toolchain is picked up.
 
 ## Formatter Policy
 
