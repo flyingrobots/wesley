@@ -36,8 +36,8 @@ use canonical `@wes_*` names and point to the directive truth table.
 - TTD, Continuum, Echo, renderer, database, and runtime directives are not
   generic Wesley surface unless the current directive reference says so.
 - Registry presence alone does not prove end-to-end command support.
-- Dead or historical directive examples should stay in archives or migration
-  context, not in current quick starts.
+- Dead or historical directive examples belong in git history, not in current
+  quick starts.
 
 ## Related Authority
 

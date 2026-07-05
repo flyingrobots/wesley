@@ -57,8 +57,8 @@ answering "how far along are we?", move that state to GitHub.
   ledgers, progress bars, or live release gates.
 - `docs/design/` contains specifications, design packets, and durable evidence.
   It must not be used as the active queue after an issue is created.
-- `docs/method/retro/`, `docs/method/graveyard/`, `docs/method/releases/`, and
-  `docs/releases/` preserve closeout and release evidence after the fact.
+- `docs/method/retro/`, `docs/method/releases/`, and `docs/releases/`
+  preserve closeout and release evidence after the fact.
 - `CHANGELOG.md` records merged behavior. It is not a planning document.
 - `docs/TECHNICAL_TEARDOWN.md` is a release-scoped orientation snapshot,
   structural audit, and risk map. It must not become a second architecture doc

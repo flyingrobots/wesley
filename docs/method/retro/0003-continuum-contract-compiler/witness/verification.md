@@ -36,7 +36,7 @@ $ jq '{success, result: {kind, scope, status, outputPath, summary}}' /tmp/wesley
 
 $ jq -e '.success == true and .result.kind == "wesley.continuum.conformance.v1" and .result.scope == "current-minimum-shared-surface" and .result.status == "pass" and .result.outputPath == ".wesley-cache/continuum/local-inspect/witness/conformance.json" and (.result.summary | has("totalChecks") and has("passed") and has("failed"))' /tmp/wesley-witness-continuum.json >/dev/null
 
-$ sed -n '1,120p' docs/method/backlog/asap/README.md
+$ gh issue list --state open --limit 20
 # ASAP
 
 Items here should be pulled soon. They are closer to commitment than `up-next/`

@@ -14,9 +14,9 @@ load 'bats-plugins/bats-assert/load'
   assert_success
 }
 
-@test "domain-empty boundary card is pulled from asap into design" {
-  run test -e docs/method/backlog/asap/SOURCE_domain-empty-wesley-core-boundary.md
-  assert_failure
+@test "domain-empty boundary card is design-owned" {
+  run find docs/method -maxdepth 1 -type d -name backlog -print -quit
+  assert_output ""
 
   run test -e docs/design/0014-domain-empty-core-boundary/SOURCE_domain-empty-wesley-core-boundary.md
   assert_success

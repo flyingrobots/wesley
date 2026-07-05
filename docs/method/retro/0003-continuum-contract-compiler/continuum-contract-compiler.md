@@ -40,8 +40,8 @@ receipt-family proof already exists.
 ## New Debt
 
 - None recorded as new debt. The remaining Continuum proving-path work was
-  active carry-over at closeout time; the old `v0.1.0` lane is now retired
-  historical context under `docs/method/graveyard/v0.1.0/`.
+  active carry-over at closeout time; the old `v0.1.0` lane is no longer
+  repo-resident current documentation.
 
 ## Cool Ideas
 
@@ -53,9 +53,9 @@ receipt-family proof already exists.
 - [x] Inbox processed
 - [x] Priorities reviewed
 - [x] Dead work buried or merged
-- Left the active Continuum proof carry-over in `docs/method/backlog/asap/`:
+- Left the active Continuum proof carry-over for later GitHub issue triage:
   `SOURCE_continuum-ownership-map-for-shared-nouns.md`,
   `RUNTIME_continuum-local-compile-and-inspect-surface.md`, and
   `EVIDENCE_continuum-conformance-and-roundtrip-witness.md`.
-- Left the wider product-shape recovery notes in `docs/method/backlog/inbox/`
-  so the signpost cleanup does not erase the older north-star goals.
+- Left the wider product-shape recovery notes for later GitHub issue triage so
+  the signpost cleanup does not erase the older north-star goals.

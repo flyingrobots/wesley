@@ -29,7 +29,7 @@ summary:
   remediation_status: 'Pending'
 related_reports:
   previous_audit: 'AUD-2026-04-11-CODE-QUALITY'
-  tracking_ticket: 'docs/method/backlog/'
+  tracking_ticket: 'GitHub Issues'
 ---
 
 # AUDIT: CODE QUALITY (2026-05-04)

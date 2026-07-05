@@ -126,8 +126,8 @@ The highest-value next notes are now:
 - [Module Capability Contract](./design/wesley-module-capability-contract.md)
 - [Extraction Map](./design/wesley-extraction-map.md)
 - [Domain-Empty Core Boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md)
-- Continuum repo:
-  `docs/method/backlog/asap/SOURCE_minimum-runtime-boundary-contract-family.md`
+- Continuum-owned minimum runtime boundary contract work should be tracked in
+  the Continuum repo's GitHub Issues.
 
 ## Practical rule
 

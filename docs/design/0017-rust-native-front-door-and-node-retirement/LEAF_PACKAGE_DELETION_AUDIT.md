@@ -27,14 +27,14 @@ closeout is recorded in
 
 | Slice  | Decision                                                                                                                                                                   |
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NR-089 | JavaScript remains for repository tooling, docs/site generation, and legacy compatibility lanes. It is not product compiler authority.                                      |
+| NR-089 | JavaScript remains for repository tooling, docs/site generation, and legacy compatibility lanes. It is not product compiler authority.                                     |
 | NR-090 | `@git-stunts/alfred` remains a root dev dependency only for JavaScript tooling seams that run bounded child processes.                                                     |
 | NR-091 | `ninelives` remains the Rust resilience primitive in `crates/wesley-core` and `xtask`; it is the chosen policy library for cooperative Rust compiler and capability seams. |
 
 ## Stale Shadow Audit
 
 The stale-package search intentionally still finds historical or retired
-references in changelog entries, graveyard notes, the retirement ledger, and
+references in changelog entries, retired notes, the retirement ledger, and
 this audit. It must not find a live package directory, package workflow, active
 progress row, or code path that imports the deleted packages as runtime
 dependencies.
@@ -48,7 +48,7 @@ Allowed remaining references:
   `docs/design/wesley-extraction-map.md`.
 - `docs/design/0017-rust-native-front-door-and-node-retirement/` package
   retirement rows and this audit.
-- `docs/method/graveyard/` archived backlog notes.
+- retired backlog notes preserved in git history.
 - `CHRONICLES_OF_THE_MACHINE-KIND_*.jsonl` historical machine logs.
 - Tests that assert deleted package names no longer appear in active workflow
   requirements.
@@ -56,7 +56,7 @@ Allowed remaining references:
 Active-surface search over manifests, workspace config, then-current progress
 metadata,
 `.github/`, `test/`, `packages/`, `crates/`, `scripts/`,
-`docs/truth-manifest.json`, and active backlog lanes finds no manifest,
+`docs/truth-manifest.json`, and design packets finds no manifest,
 workflow, script, import, dynamic import, or runtime dependency on the deleted
 packages. Broad text search still finds one pre-existing legacy-core comment
 that states the task graph descriptor has no dependency on the deleted task

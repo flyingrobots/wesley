@@ -80,11 +80,11 @@ This first slice is a boundary-definition and front-door enforcement slice.
 
 It:
 
-- pulls the domain-empty boundary card out of `docs/method/backlog/asap/`
+- promotes the domain-empty boundary note into this design packet
 - creates this packet as the active v0.0.6 boundary doctrine
 - updates front-door docs to point at the packet
 - reframes README extension examples as externally owned module families
-- adds a repo-level Bats check for the packet link, backlog move, and
+- adds a repo-level Bats check for the packet link and
   module-owned compile target dispatch
 
 It does not move behavior into `wesley-postgres`, Echo, jedit, Continuum, or
