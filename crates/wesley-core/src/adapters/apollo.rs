@@ -923,18 +923,48 @@ fn field_argument_from_input_value(
     input_value: cst::InputValueDefinition,
     repeatable_directives: &BTreeSet<String>,
 ) -> Result<FieldArgument, WesleyError> {
+    let parts = argument_parts_from_input_value(
+        input_value,
+        "field argument",
+        "Field argument missing name",
+        |name| format!("Field argument '{name}' missing type"),
+        repeatable_directives,
+    )?;
+
+    Ok(FieldArgument {
+        name: parts.name,
+        description: parts.description,
+        r#type: parts.r#type,
+        default_value: parts.default_value,
+        directives: parts.directives,
+    })
+}
+
+struct ArgumentParts {
+    name: String,
+    description: Option<String>,
+    r#type: TypeReference,
+    default_value: Option<serde_json::Value>,
+    directives: IndexMap<String, serde_json::Value>,
+}
+
+fn argument_parts_from_input_value<F>(
+    input_value: cst::InputValueDefinition,
+    error_area: &'static str,
+    missing_name_message: &'static str,
+    missing_type_message: F,
+    repeatable_directives: &BTreeSet<String>,
+) -> Result<ArgumentParts, WesleyError>
+where
+    F: FnOnce(&str) -> String,
+{
     let name = input_value
         .name()
         .map(|name| name.text().to_string())
-        .ok_or_else(|| {
-            lowering_error_value("field argument", "Field argument missing name".into())
-        })?;
-    let type_node = input_value.ty().ok_or_else(|| {
-        lowering_error_value(
-            "field argument",
-            format!("Field argument '{name}' missing type"),
-        )
-    })?;
+        .ok_or_else(|| lowering_error_value(error_area, missing_name_message.into()))?;
+    let type_node = input_value
+        .ty()
+        .ok_or_else(|| lowering_error_value(error_area, missing_type_message(&name)))?;
     let default_value = input_value
         .default_value()
         .and_then(|default_value| default_value.value())
@@ -950,7 +980,7 @@ fn field_argument_from_input_value(
         )?;
     }
 
-    Ok(FieldArgument {
+    Ok(ArgumentParts {
         name,
         description: description_from(input_value.description()),
         r#type: type_reference_from_type(type_node, true)?,
@@ -3634,38 +3664,19 @@ fn operation_argument_from_input_value(
     input_value: cst::InputValueDefinition,
     repeatable_directives: &BTreeSet<String>,
 ) -> Result<OperationArgument, WesleyError> {
-    let name = input_value
-        .name()
-        .map(|name| name.text().to_string())
-        .ok_or_else(|| {
-            lowering_error_value("schema operation", "Operation argument missing name".into())
-        })?;
-    let type_node = input_value.ty().ok_or_else(|| {
-        lowering_error_value(
-            "schema operation",
-            format!("Operation argument '{name}' missing type"),
-        )
-    })?;
-    let default_value = input_value
-        .default_value()
-        .and_then(|default_value| default_value.value())
-        .map(directive_value_to_json)
-        .transpose()?;
-
-    let mut directives = IndexMap::new();
-    if let Some(dirs) = input_value.directives() {
-        ApolloLoweringAdapter::extract_directives_with_repeatability(
-            dirs,
-            &mut directives,
-            repeatable_directives,
-        )?;
-    }
+    let parts = argument_parts_from_input_value(
+        input_value,
+        "schema operation",
+        "Operation argument missing name",
+        |name| format!("Operation argument '{name}' missing type"),
+        repeatable_directives,
+    )?;
 
     Ok(OperationArgument {
-        name,
-        r#type: type_reference_from_type(type_node, true)?,
-        default_value,
-        directives,
+        name: parts.name,
+        r#type: parts.r#type,
+        default_value: parts.default_value,
+        directives: parts.directives,
     })
 }
 
