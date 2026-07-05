@@ -73,9 +73,9 @@ backlog files:
 - [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
 
 Starter issues must have one scheduling-state label such as `v0.3.0`, one
-primary file or tiny file set, and one local validation command. If an issue
-still has a `triage:*` label, it is not a starter task until a maintainer
-schedules, splits, moves, or closes it.
+`Goalpost: ...` milestone, one primary file or tiny file set, and one local
+validation command. If an issue still has a `triage:*` label, it is not a
+starter task until a maintainer schedules, splits, moves, or closes it.
 
 The normal first-contribution lanes are docs-only PRs, fixture-only PRs,
 emitter-test PRs, and CLI bug PRs. Advanced architecture, assurance, and
