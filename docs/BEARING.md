@@ -157,11 +157,10 @@ Historical closeouts remain useful evidence, but they are not active work queues
 Use the [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
 and GitHub milestones for exact ordering. Product gravity remains:
 
-1. tag and publish `v0.2.0` from synced `main` with repo-resident release truth
-   already in place,
-2. keep the Rust-native compiler and project-manifest platform boring and
+1. keep the Rust-native compiler and project-manifest platform boring and
    reproducible,
-3. harden evidence truth around Holmes and `weslaw`,
-4. preserve the domain-empty module boundary while external targets consume
+2. harden the `v0.3.0` evidence truth around Holmes and `weslaw`,
+3. preserve the domain-empty module boundary while external targets consume
    Wesley artifacts, and
-5. cut only from tagged `main` once release-gate issues are satisfied.
+4. cut future releases only from tagged `main` once release-gate issues are
+   satisfied.
