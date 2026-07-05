@@ -116,8 +116,8 @@ This slice:
 - removes the lane from the current tree
 - updates docs signposts that previously presented the lane as active release
   carry-over
-- preserves the files as historical extraction context for Continuum-era design
-  references and future repo-specific coordination
+- records that the deleted lane is recoverable only through git history for
+  Continuum-era design references and future repo-specific coordination
 
 ## Product-Era Docs Slice
 

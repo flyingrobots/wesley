@@ -36,17 +36,6 @@ $ jq '{success, result: {kind, scope, status, outputPath, summary}}' /tmp/wesley
 
 $ jq -e '.success == true and .result.kind == "wesley.continuum.conformance.v1" and .result.scope == "current-minimum-shared-surface" and .result.status == "pass" and .result.outputPath == ".wesley-cache/continuum/local-inspect/witness/conformance.json" and (.result.summary | has("totalChecks") and has("passed") and has("failed"))' /tmp/wesley-witness-continuum.json >/dev/null
 
-$ gh issue list --state open --limit 20
-# ASAP
-
-Items here should be pulled soon. They are closer to commitment than `up-next/`
-or `inbox/`.
-
-Current pull order for the Continuum cluster:
-
-1. `SOURCE_continuum-ownership-map-for-shared-nouns.md`
-2. `RUNTIME_continuum-local-compile-and-inspect-surface.md`
-3. `EVIDENCE_continuum-conformance-and-roundtrip-witness.md`
 ```
 
 ## Interpretation
@@ -55,5 +44,7 @@ Current pull order for the Continuum cluster:
   chosen-family lane exists.
 - The current inspect and witness path is real and re-runnable for the present
   minimum surface.
-- The remaining proof work is still explicitly queued in `asap/`, so the cycle
-  can close honestly as `partial` without losing the carry-over.
+- The remaining proof work is no longer represented by a repo-local queue. Live
+  carry-over belongs in GitHub Issues and owning repos, so the cycle can close
+  honestly as `partial` without preserving deleted tracker files in the current
+  checkout.

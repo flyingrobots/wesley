@@ -64,5 +64,5 @@ The cycle lands useful scaffolding and doctrine:
 - current-state witness command
 - sharper signposts and METHOD closeout surface
 
-That is enough for an honest `partial` closeout. The remaining proof work stays
-alive in the Continuum `asap/` queue.
+That is enough for an honest `partial` closeout. Remaining proof work now lives
+in GitHub Issues and owning-repo follow-up, not in a repo-local Method queue.
