@@ -400,25 +400,21 @@ impl ApolloLoweringAdapter {
     ) -> Result<(), WesleyError> {
         match def {
             TypeDefinitionNode::Scalar(node) => {
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
             }
             TypeDefinitionNode::Object(node) => {
                 if let Some(interfaces) = node.implements_interfaces() {
                     collect_implements(interfaces, &mut acc.implements)?;
                 }
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.fields_definition() {
                     self.collect_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
@@ -427,49 +423,41 @@ impl ApolloLoweringAdapter {
                 if let Some(interfaces) = node.implements_interfaces() {
                     collect_implements(interfaces, &mut acc.implements)?;
                 }
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.fields_definition() {
                     self.collect_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
             TypeDefinitionNode::Union(node) => {
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(member_types) = node.union_member_types() {
                     collect_union_members(member_types, &mut acc.union_members)?;
                 }
             }
             TypeDefinitionNode::Enum(node) => {
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(values_def) = node.enum_values_definition() {
                     collect_enum_values(values_def, &mut acc.enum_values)?;
                 }
             }
             TypeDefinitionNode::InputObject(node) => {
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.input_fields_definition() {
                     self.collect_input_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
@@ -487,25 +475,21 @@ impl ApolloLoweringAdapter {
     ) -> Result<(), WesleyError> {
         match ext {
             TypeExtensionNode::Scalar(node) => {
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
             }
             TypeExtensionNode::Object(node) => {
                 if let Some(interfaces) = node.implements_interfaces() {
                     collect_implements(interfaces, &mut acc.implements)?;
                 }
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.fields_definition() {
                     self.collect_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
@@ -514,53 +498,57 @@ impl ApolloLoweringAdapter {
                 if let Some(interfaces) = node.implements_interfaces() {
                     collect_implements(interfaces, &mut acc.implements)?;
                 }
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.fields_definition() {
                     self.collect_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
             TypeExtensionNode::Union(node) => {
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(member_types) = node.union_member_types() {
                     collect_union_members(member_types, &mut acc.union_members)?;
                 }
             }
             TypeExtensionNode::Enum(node) => {
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(values_def) = node.enum_values_definition() {
                     collect_enum_values(values_def, &mut acc.enum_values)?;
                 }
             }
             TypeExtensionNode::InputObject(node) => {
-                if let Some(dirs) = node.directives() {
-                    Self::extract_directives_with_repeatability(
-                        dirs,
-                        &mut acc.directives,
-                        repeatable_directives,
-                    )?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.input_fields_definition() {
                     self.collect_input_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    fn extract_optional_directives(
+        dirs: Option<cst::Directives>,
+        map: &mut IndexMap<String, serde_json::Value>,
+        repeatable_directives: &BTreeSet<String>,
+    ) -> Result<(), WesleyError> {
+        if let Some(dirs) = dirs {
+            Self::extract_directives_with_repeatability(dirs, map, repeatable_directives)?;
         }
 
         Ok(())
