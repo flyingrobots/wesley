@@ -27,6 +27,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   baseline, rejects DAST for the current compiler-only surface, and gates future
   Semgrep or `cargo-deny` adoption on low-noise repo-owned policies.
 - Added CLI regression coverage for missing schema file diagnostics.
+- Added Rust emitter coverage for single-list GraphQL nullability shapes such
+  as `[String]!` and `[String!]`.
 
 ### Changed
 
