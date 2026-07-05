@@ -35,7 +35,7 @@ summary:
   remediation_status: 'Pending'
 related_reports:
   previous_audit: 'AUD-2026-05-04-DQ01'
-  tracking_ticket: 'GitHub Issues'
+  tracking_ticket: 'https://github.com/flyingrobots/wesley/issues/634'
 ---
 
 # AUDIT: DOCUMENTATION QUALITY (2026-05-05)

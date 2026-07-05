@@ -29,7 +29,7 @@ summary:
   remediation_status: 'Pending'
 related_reports:
   previous_audit: 'AUD-2026-04-11-SHIP-READINESS'
-  tracking_ticket: 'GitHub Issues'
+  tracking_ticket: 'https://github.com/flyingrobots/wesley/issues/634'
 ---
 
 # AUDIT: READY-TO-SHIP ASSESSMENT (2026-05-04)

@@ -54,6 +54,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Repaired tracker-deletion follow-up docs so pending audit reports point at a
+  concrete release gate, historical witness transcripts no longer show
+  impossible Method queue output, and design packets no longer claim deleted
+  files remain in the current checkout.
 - Rejected duplicate non-repeatable custom directives during SDL lowering,
   including duplicates split across type definitions and extensions, while
   preserving ordered arrays for directives declared `repeatable`.
