@@ -14,9 +14,24 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Added an assurance capability matrix that separates shipped native CLI
   evidence commands, transitional JavaScript tooling, Rust foundation code, and
   concept-only assurance vocabulary.
+- Added an external target protocol MVP specification for future
+  descriptor-verified external-process target execution with host-enforced
+  capability denial, bounded execution, deterministic command resolution, and
+  staged artifact copy-out.
+- Added `cargo xtask bench-ir`, an advisory Rust-native IR lowering benchmark
+  that generates scale fixtures, reports structural counters and timing
+  summaries, and can write JSON release evidence.
+- Added a first-PR contributor path with docs-only, fixture-only, emitter-test,
+  and CLI bug fast lanes plus maintainer starter-issue checks.
+- Added a security-tooling posture topic that records Wesley's current scanner
+  baseline, rejects DAST for the current compiler-only surface, and gates future
+  Semgrep or `cargo-deny` adoption on low-noise repo-owned policies.
 
 ### Fixed
 
+- Rejected duplicate non-repeatable custom directives during SDL lowering,
+  including duplicates split across type definitions and extensions, while
+  preserving ordered arrays for directives declared `repeatable`.
 - Escaped law-backed Rust validator error messages before emission so hostile
   case values containing quotes, backslashes, or control characters cannot break
   generated Rust source.

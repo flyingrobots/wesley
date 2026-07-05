@@ -130,6 +130,7 @@ pub fn list_schema_operations_sdl(schema_sdl: &str) -> Result<Vec<SchemaOperatio
     }
 
     let doc = cst.document();
+    let repeatable_directives = repeatable_directive_names_from_document(&doc)?;
     let mut root_types = RootTypes::default();
     for def in doc.definitions() {
         match def {
@@ -151,6 +152,7 @@ pub fn list_schema_operations_sdl(schema_sdl: &str) -> Result<Vec<SchemaOperatio
                     node.name(),
                     node.fields_definition(),
                     &root_types,
+                    &repeatable_directives,
                     &mut operations,
                 )?;
             }
@@ -159,6 +161,7 @@ pub fn list_schema_operations_sdl(schema_sdl: &str) -> Result<Vec<SchemaOperatio
                     node.name(),
                     node.fields_definition(),
                     &root_types,
+                    &repeatable_directives,
                     &mut operations,
                 )?;
             }
@@ -175,6 +178,15 @@ struct TypeAggregate {
     kind: TypeKind,
     definitions: Vec<TypeDefinitionNode>,
     extensions: Vec<TypeExtensionNode>,
+}
+
+#[derive(Default)]
+struct TypeBuildAccumulator {
+    directives: IndexMap<String, serde_json::Value>,
+    implements: Vec<String>,
+    fields: Vec<Field>,
+    enum_values: Vec<String>,
+    union_members: Vec<String>,
 }
 
 enum TypeDefinitionNode {
@@ -244,6 +256,7 @@ impl ApolloLoweringAdapter {
         }
 
         let doc = cst.document();
+        let repeatable_directives = repeatable_directive_names_from_document(&doc)?;
         let mut aggregates: BTreeMap<String, TypeAggregate> = BTreeMap::new();
 
         for def in doc.definitions() {
@@ -314,7 +327,7 @@ impl ApolloLoweringAdapter {
 
         let mut types = Vec::new();
         for agg in aggregates.values() {
-            types.push(self.build_type_from_aggregate(agg)?);
+            types.push(self.build_type_from_aggregate(agg, &repeatable_directives)?);
         }
 
         Ok(WesleyIR {
@@ -351,110 +364,102 @@ impl ApolloLoweringAdapter {
     fn build_type_from_aggregate(
         &self,
         agg: &TypeAggregate,
+        repeatable_directives: &BTreeSet<String>,
     ) -> Result<TypeDefinition, WesleyError> {
-        let mut directives = IndexMap::new();
-        let mut implements = Vec::new();
-        let mut fields = Vec::new();
-        let mut enum_values = Vec::new();
-        let mut union_members = Vec::new();
+        let mut acc = TypeBuildAccumulator::default();
         let mut description = None;
 
         for def in &agg.definitions {
             if description.is_none() {
                 description = description_from(def.description());
             }
-            self.merge_definition(
-                def,
-                &mut directives,
-                &mut implements,
-                &mut fields,
-                &mut enum_values,
-                &mut union_members,
-            )?;
+            self.merge_definition(def, &mut acc, repeatable_directives)?;
         }
 
         for ext in &agg.extensions {
-            self.merge_extension(
-                ext,
-                &mut directives,
-                &mut implements,
-                &mut fields,
-                &mut enum_values,
-                &mut union_members,
-            )?;
+            self.merge_extension(ext, &mut acc, repeatable_directives)?;
         }
 
         Ok(TypeDefinition {
             name: agg.name.clone(),
             kind: agg.kind,
             description,
-            directives,
-            implements,
-            fields,
-            enum_values,
-            union_members,
+            directives: acc.directives,
+            implements: acc.implements,
+            fields: acc.fields,
+            enum_values: acc.enum_values,
+            union_members: acc.union_members,
         })
     }
 
     fn merge_definition(
         &self,
         def: &TypeDefinitionNode,
-        directives: &mut IndexMap<String, serde_json::Value>,
-        implements: &mut Vec<String>,
-        fields: &mut Vec<Field>,
-        enum_values: &mut Vec<String>,
-        union_members: &mut Vec<String>,
+        acc: &mut TypeBuildAccumulator,
+        repeatable_directives: &BTreeSet<String>,
     ) -> Result<(), WesleyError> {
         match def {
             TypeDefinitionNode::Scalar(node) => {
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
             }
             TypeDefinitionNode::Object(node) => {
                 if let Some(interfaces) = node.implements_interfaces() {
-                    collect_implements(interfaces, implements)?;
+                    collect_implements(interfaces, &mut acc.implements)?;
                 }
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.fields_definition() {
-                    self.collect_fields(fields_def, fields)?;
+                    self.collect_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
             TypeDefinitionNode::Interface(node) => {
                 if let Some(interfaces) = node.implements_interfaces() {
-                    collect_implements(interfaces, implements)?;
+                    collect_implements(interfaces, &mut acc.implements)?;
                 }
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.fields_definition() {
-                    self.collect_fields(fields_def, fields)?;
+                    self.collect_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
             TypeDefinitionNode::Union(node) => {
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(member_types) = node.union_member_types() {
-                    collect_union_members(member_types, union_members)?;
+                    collect_union_members(member_types, &mut acc.union_members)?;
                 }
             }
             TypeDefinitionNode::Enum(node) => {
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(values_def) = node.enum_values_definition() {
-                    collect_enum_values(values_def, enum_values)?;
+                    collect_enum_values(values_def, &mut acc.enum_values)?;
                 }
             }
             TypeDefinitionNode::InputObject(node) => {
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.input_fields_definition() {
-                    self.collect_input_fields(fields_def, fields)?;
+                    self.collect_input_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
         }
@@ -465,62 +470,71 @@ impl ApolloLoweringAdapter {
     fn merge_extension(
         &self,
         ext: &TypeExtensionNode,
-        directives: &mut IndexMap<String, serde_json::Value>,
-        implements: &mut Vec<String>,
-        fields: &mut Vec<Field>,
-        enum_values: &mut Vec<String>,
-        union_members: &mut Vec<String>,
+        acc: &mut TypeBuildAccumulator,
+        repeatable_directives: &BTreeSet<String>,
     ) -> Result<(), WesleyError> {
         match ext {
             TypeExtensionNode::Scalar(node) => {
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
             }
             TypeExtensionNode::Object(node) => {
                 if let Some(interfaces) = node.implements_interfaces() {
-                    collect_implements(interfaces, implements)?;
+                    collect_implements(interfaces, &mut acc.implements)?;
                 }
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.fields_definition() {
-                    self.collect_fields(fields_def, fields)?;
+                    self.collect_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
             TypeExtensionNode::Interface(node) => {
                 if let Some(interfaces) = node.implements_interfaces() {
-                    collect_implements(interfaces, implements)?;
+                    collect_implements(interfaces, &mut acc.implements)?;
                 }
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.fields_definition() {
-                    self.collect_fields(fields_def, fields)?;
+                    self.collect_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
             TypeExtensionNode::Union(node) => {
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(member_types) = node.union_member_types() {
-                    collect_union_members(member_types, union_members)?;
+                    collect_union_members(member_types, &mut acc.union_members)?;
                 }
             }
             TypeExtensionNode::Enum(node) => {
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(values_def) = node.enum_values_definition() {
-                    collect_enum_values(values_def, enum_values)?;
+                    collect_enum_values(values_def, &mut acc.enum_values)?;
                 }
             }
             TypeExtensionNode::InputObject(node) => {
-                if let Some(dirs) = node.directives() {
-                    self.extract_directives(dirs, directives)?;
-                }
+                Self::extract_optional_directives(
+                    node.directives(),
+                    &mut acc.directives,
+                    repeatable_directives,
+                )?;
                 if let Some(fields_def) = node.input_fields_definition() {
-                    self.collect_input_fields(fields_def, fields)?;
+                    self.collect_input_fields(fields_def, &mut acc.fields, repeatable_directives)?;
                 }
             }
         }
@@ -528,10 +542,22 @@ impl ApolloLoweringAdapter {
         Ok(())
     }
 
-    fn extract_directives(
-        &self,
+    fn extract_optional_directives(
+        dirs: Option<cst::Directives>,
+        map: &mut IndexMap<String, serde_json::Value>,
+        repeatable_directives: &BTreeSet<String>,
+    ) -> Result<(), WesleyError> {
+        if let Some(dirs) = dirs {
+            Self::extract_directives_with_repeatability(dirs, map, repeatable_directives)?;
+        }
+
+        Ok(())
+    }
+
+    fn extract_directives_with_repeatability(
         dirs: cst::Directives,
         map: &mut IndexMap<String, serde_json::Value>,
+        repeatable_directives: &BTreeSet<String>,
     ) -> Result<(), WesleyError> {
         for dir in dirs.directives() {
             let dir_name = dir
@@ -561,14 +587,8 @@ impl ApolloLoweringAdapter {
                 serde_json::Value::Object(args_map)
             };
 
-            if core_name.is_some() && map.contains_key(&canonical_name) {
-                return Err(lowering_error_value(
-                    "directive",
-                    format!("Duplicate directive '@{canonical_name}'"),
-                ));
-            }
-
-            insert_directive_value(map, canonical_name, val);
+            let repeatable = core_name.is_none() && repeatable_directives.contains(&canonical_name);
+            insert_directive_value(map, canonical_name, val, repeatable)?;
         }
         Ok(())
     }
@@ -577,9 +597,10 @@ impl ApolloLoweringAdapter {
         &self,
         fields_def: cst::FieldsDefinition,
         fields: &mut Vec<Field>,
+        repeatable_directives: &BTreeSet<String>,
     ) -> Result<(), WesleyError> {
         for field_def in fields_def.field_definitions() {
-            fields.push(self.build_field(field_def)?);
+            fields.push(self.build_field(field_def, repeatable_directives)?);
         }
 
         Ok(())
@@ -589,15 +610,20 @@ impl ApolloLoweringAdapter {
         &self,
         fields_def: cst::InputFieldsDefinition,
         fields: &mut Vec<Field>,
+        repeatable_directives: &BTreeSet<String>,
     ) -> Result<(), WesleyError> {
         for field_def in fields_def.input_value_definitions() {
-            fields.push(self.build_input_field(field_def)?);
+            fields.push(self.build_input_field(field_def, repeatable_directives)?);
         }
 
         Ok(())
     }
 
-    fn build_field(&self, field_def: cst::FieldDefinition) -> Result<Field, WesleyError> {
+    fn build_field(
+        &self,
+        field_def: cst::FieldDefinition,
+        repeatable_directives: &BTreeSet<String>,
+    ) -> Result<Field, WesleyError> {
         let name = field_def
             .name()
             .ok_or(WesleyError::LoweringError {
@@ -614,13 +640,20 @@ impl ApolloLoweringAdapter {
 
         let mut field_directives = IndexMap::new();
         if let Some(dirs) = field_def.directives() {
-            self.extract_directives(dirs, &mut field_directives)?;
+            Self::extract_directives_with_repeatability(
+                dirs,
+                &mut field_directives,
+                repeatable_directives,
+            )?;
         }
 
         Ok(Field {
             name,
             r#type: self.build_type_reference(type_node)?,
-            arguments: field_arguments_from_definition(field_def.arguments_definition())?,
+            arguments: field_arguments_from_definition(
+                field_def.arguments_definition(),
+                repeatable_directives,
+            )?,
             default_value: None,
             directives: field_directives,
             description: description_from(field_def.description()),
@@ -630,6 +663,7 @@ impl ApolloLoweringAdapter {
     fn build_input_field(
         &self,
         field_def: cst::InputValueDefinition,
+        repeatable_directives: &BTreeSet<String>,
     ) -> Result<Field, WesleyError> {
         let name = field_def
             .name()
@@ -647,7 +681,11 @@ impl ApolloLoweringAdapter {
 
         let mut field_directives = IndexMap::new();
         if let Some(dirs) = field_def.directives() {
-            self.extract_directives(dirs, &mut field_directives)?;
+            Self::extract_directives_with_repeatability(
+                dirs,
+                &mut field_directives,
+                repeatable_directives,
+            )?;
         }
         let default_value = field_def
             .default_value()
@@ -869,6 +907,7 @@ fn type_reference_shape_from_type(
 
 fn field_arguments_from_definition(
     arguments_definition: Option<cst::ArgumentsDefinition>,
+    repeatable_directives: &BTreeSet<String>,
 ) -> Result<Vec<FieldArgument>, WesleyError> {
     let Some(arguments_definition) = arguments_definition else {
         return Ok(Vec::new());
@@ -876,12 +915,13 @@ fn field_arguments_from_definition(
 
     arguments_definition
         .input_value_definitions()
-        .map(field_argument_from_input_value)
+        .map(|input_value| field_argument_from_input_value(input_value, repeatable_directives))
         .collect()
 }
 
 fn field_argument_from_input_value(
     input_value: cst::InputValueDefinition,
+    repeatable_directives: &BTreeSet<String>,
 ) -> Result<FieldArgument, WesleyError> {
     let name = input_value
         .name()
@@ -903,7 +943,11 @@ fn field_argument_from_input_value(
 
     let mut directives = IndexMap::new();
     if let Some(dirs) = input_value.directives() {
-        ApolloLoweringAdapter::new(0).extract_directives(dirs, &mut directives)?;
+        ApolloLoweringAdapter::extract_directives_with_repeatability(
+            dirs,
+            &mut directives,
+            repeatable_directives,
+        )?;
     }
 
     Ok(FieldArgument {
@@ -1056,12 +1100,46 @@ fn canonical_core_directive_name(name: &str) -> Option<&str> {
     }
 }
 
+fn repeatable_directive_names_from_document(
+    doc: &cst::Document,
+) -> Result<BTreeSet<String>, WesleyError> {
+    let mut repeatable = BTreeSet::new();
+    for definition in doc.definitions() {
+        let cst::Definition::DirectiveDefinition(directive) = definition else {
+            continue;
+        };
+        if directive.repeatable_token().is_none() {
+            continue;
+        }
+
+        let name = directive
+            .name()
+            .map(|name| name.text().to_string())
+            .ok_or_else(|| {
+                lowering_error_value("directive", "Directive definition missing name".to_string())
+            })?;
+        let canonical_name = canonical_core_directive_name(&name)
+            .unwrap_or(name.as_str())
+            .to_string();
+        repeatable.insert(canonical_name);
+    }
+
+    Ok(repeatable)
+}
+
 fn insert_directive_value(
     map: &mut IndexMap<String, serde_json::Value>,
     name: String,
     value: serde_json::Value,
-) {
+    repeatable: bool,
+) -> Result<(), WesleyError> {
     match map.get_mut(&name) {
+        Some(_) if !repeatable => {
+            return Err(lowering_error_value(
+                "directive",
+                format!("Duplicate non-repeatable directive '@{name}'"),
+            ));
+        }
         Some(serde_json::Value::Array(values)) => values.push(value),
         Some(existing) => {
             let first = std::mem::take(existing);
@@ -1071,6 +1149,8 @@ fn insert_directive_value(
             map.insert(name, value);
         }
     }
+
+    Ok(())
 }
 
 /// Resolves response-path field selections from a single GraphQL operation.
@@ -3468,6 +3548,7 @@ fn collect_schema_operations_from_object(
     name: Option<cst::Name>,
     fields_definition: Option<cst::FieldsDefinition>,
     root_types: &RootTypes,
+    repeatable_directives: &BTreeSet<String>,
     operations: &mut Vec<SchemaOperation>,
 ) -> Result<(), WesleyError> {
     let type_name = type_node_name(name, "Object type missing name")?;
@@ -3486,6 +3567,7 @@ fn collect_schema_operations_from_object(
                 *operation_type,
                 &type_name,
                 field_def.clone(),
+                repeatable_directives,
             )?);
         }
     }
@@ -3497,6 +3579,7 @@ fn schema_operation_from_field(
     operation_type: OperationType,
     root_type_name: &str,
     field_def: cst::FieldDefinition,
+    repeatable_directives: &BTreeSet<String>,
 ) -> Result<SchemaOperation, WesleyError> {
     let field_name = field_def
         .name()
@@ -3513,14 +3596,21 @@ fn schema_operation_from_field(
 
     let mut directives = IndexMap::new();
     if let Some(dirs) = field_def.directives() {
-        ApolloLoweringAdapter::new(0).extract_directives(dirs, &mut directives)?;
+        ApolloLoweringAdapter::extract_directives_with_repeatability(
+            dirs,
+            &mut directives,
+            repeatable_directives,
+        )?;
     }
 
     Ok(SchemaOperation {
         operation_type,
         root_type_name: root_type_name.to_string(),
         field_name,
-        arguments: operation_arguments_from_definition(field_def.arguments_definition())?,
+        arguments: operation_arguments_from_definition(
+            field_def.arguments_definition(),
+            repeatable_directives,
+        )?,
         result_type: type_reference_from_type(result_type, true)?,
         directives,
     })
@@ -3528,6 +3618,7 @@ fn schema_operation_from_field(
 
 fn operation_arguments_from_definition(
     arguments_definition: Option<cst::ArgumentsDefinition>,
+    repeatable_directives: &BTreeSet<String>,
 ) -> Result<Vec<OperationArgument>, WesleyError> {
     let Some(arguments_definition) = arguments_definition else {
         return Ok(Vec::new());
@@ -3535,12 +3626,13 @@ fn operation_arguments_from_definition(
 
     arguments_definition
         .input_value_definitions()
-        .map(operation_argument_from_input_value)
+        .map(|input_value| operation_argument_from_input_value(input_value, repeatable_directives))
         .collect()
 }
 
 fn operation_argument_from_input_value(
     input_value: cst::InputValueDefinition,
+    repeatable_directives: &BTreeSet<String>,
 ) -> Result<OperationArgument, WesleyError> {
     let name = input_value
         .name()
@@ -3562,7 +3654,11 @@ fn operation_argument_from_input_value(
 
     let mut directives = IndexMap::new();
     if let Some(dirs) = input_value.directives() {
-        ApolloLoweringAdapter::new(0).extract_directives(dirs, &mut directives)?;
+        ApolloLoweringAdapter::extract_directives_with_repeatability(
+            dirs,
+            &mut directives,
+            repeatable_directives,
+        )?;
     }
 
     Ok(OperationArgument {

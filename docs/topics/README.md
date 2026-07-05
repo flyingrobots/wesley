@@ -25,13 +25,13 @@ short path to the authoritative surface.
 
 ### Boundaries And Extension
 
-| Task                                                         | Start Here                                  | Authority                                      |
-| ------------------------------------------------------------ | ------------------------------------------- | ---------------------------------------------- |
-| Decide whether a change belongs in Wesley or an extension.   | [Compiler Boundary](./compiler-boundary.md) | `docs/design/0014-domain-empty-core-boundary/` |
-| Configure schema sets, changed-schema selection, or targets. | [Project Manifests](./project-manifests.md) | `docs/reference/project-manifest.md`           |
-| Author or review descriptor-only extension fixtures.         | [Extension Modules](./extension-modules.md) | `docs/guides/module-authoring.md`              |
-| Handle old Node, host, or package references.                | [Legacy Node Retirement](./legacy-node.md)  | `docs/LEGACY_NODE_MIGRATION.md`                |
-| Check durable repo properties.                               | [Invariants](./invariants.md)               | `docs/invariants/README.md`                    |
+| Task                                                         | Start Here                                  | Authority                                                                       |
+| ------------------------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------- |
+| Decide whether a change belongs in Wesley or an extension.   | [Compiler Boundary](./compiler-boundary.md) | `docs/design/0014-domain-empty-core-boundary/`                                  |
+| Configure schema sets, changed-schema selection, or targets. | [Project Manifests](./project-manifests.md) | `docs/reference/project-manifest.md`                                            |
+| Author or review descriptor-only extension fixtures.         | [Extension Modules](./extension-modules.md) | `docs/guides/module-authoring.md`, `docs/reference/external-target-protocol.md` |
+| Handle old Node, host, or package references.                | [Legacy Node Retirement](./legacy-node.md)  | `docs/LEGACY_NODE_MIGRATION.md`                                                 |
+| Check durable repo properties.                               | [Invariants](./invariants.md)               | `docs/invariants/README.md`                                                     |
 
 ### Assurance, CI, And Release
 
@@ -39,6 +39,7 @@ short path to the authoritative surface.
 | ------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Choose local checks before a PR or release. | [Validation](./validation.md)                 | `cargo xtask preflight`, `docs/governance/RELEASE_POLICY.md`                       |
 | Interpret GitHub Actions checks.            | [CI Workflows](./ci-workflows.md)             | `docs/ci.md`, `.github/workflows/`                                                 |
+| Evaluate security scanners and gates.       | [Security Tooling](./security-tooling.md)     | `SECURITY.md`, `.github/workflows/`, `docs/governance/RELEASE_POLICY.md`           |
 | Understand HOLMES CI and PR comments.       | [HOLMES CI](./holmes-ci.md)                   | `.github/workflows/wesley-holmes.yml`, `docs/architecture/`                        |
 | Work with assurance evidence and policies.  | [Assurance Evidence](./assurance-evidence.md) | `docs/reference/assurance-capability-matrix.md`, `docs/holmes-policy-spec.md`      |
 | Prepare or judge a release.                 | [Releases](./releases.md)                     | `.continuum/release.yml`, `docs/method/release.md`, `docs/governance/`             |
@@ -48,6 +49,7 @@ short path to the authoritative surface.
 
 | Task                               | Start Here                                             | Authority                                       |
 | ---------------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
+| Make a first small PR.             | [First PR](./contributing/first-pr.md)                 | `CONTRIBUTING.md`, GitHub Issues                |
 | Make a first generic compiler PR.  | [Plain Wesley](./plain-wesley.md#contributor-tutorial) | `docs/guides/extending.md`                      |
 | Find the right documentation path. | [Docs Orientation](./docs-orientation.md)              | `docs/README.md`                                |
 | Triage issues into release lanes.  | [Issue Triage](./contributing/triage.md)               | GitHub Issues, Milestones, Projects, and labels |

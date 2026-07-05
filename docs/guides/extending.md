@@ -136,7 +136,9 @@ semantics.
 
 For the detailed current boundary, see
 [Module Authoring Guide](./module-authoring.md) and
-[Project Manifest](../reference/project-manifest.md). The historical
+[Project Manifest](../reference/project-manifest.md). For the proposed
+external-process executable target boundary, see
+[External Target Protocol](../reference/external-target-protocol.md). The historical
 `wesley.config.mjs`, `WESLEY_MODULES`, `WESLEY_DISABLE_MODULES`, and
 `WESLEY_MODULE_ALLOWLIST` path is retired from generic Wesley core.
 
