@@ -43,11 +43,11 @@ lowering, hashing, diffing, and emitter flows.
 Directive values in L1 IR follow GraphQL repeatability:
 
 - non-repeatable directives lower to a single directive value
-- duplicate non-repeatable directives fail lowering, including duplicates split
-  across a base definition and extensions
+- custom directives are non-repeatable unless their SDL directive definition
+  is marked `repeatable`
+- duplicate non-repeatable directives fail lowering across base definitions
+  and any extensions, including extension-to-extension collisions
 - directives declared with `repeatable` lower to ordered arrays when repeated
-- unknown custom directives are treated as non-repeatable unless the SDL
-  declares them `repeatable`
 
 Canonical Wesley directive aliases, such as `@table` and `@wes_table`, still
 collide as their canonical `@wes_*` directive and are rejected when repeated.
