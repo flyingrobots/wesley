@@ -970,6 +970,29 @@ pub struct UserFilter {
     }
 
     #[test]
+    fn emits_single_list_nullability_shapes() {
+        let ir = lower_schema_sdl(
+            r#"
+            type ListShape {
+              requiredListNullableItems: [String]!
+              nullableListRequiredItems: [String!]
+            }
+            "#,
+        )
+        .expect("schema should lower");
+
+        let actual = emit_rust(&ir);
+
+        syn::parse_file(&actual).expect("generated Rust should parse");
+        assert!(actual.contains(
+            "#[serde(rename = \"requiredListNullableItems\")]\n    pub required_list_nullable_items: Vec<Option<String>>,"
+        ));
+        assert!(actual.contains(
+            "#[serde(rename = \"nullableListRequiredItems\")]\n    pub nullable_list_required_items: Option<Vec<String>>,"
+        ));
+    }
+
+    #[test]
     fn emits_jedit_shaped_hot_text_fixture() {
         let ir = lower_schema_sdl(include_str!(
             "../../../test/fixtures/consumer-models/jedit-hot-text-core.graphql"
