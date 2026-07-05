@@ -31,6 +31,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   as `[String]!` and `[String!]`.
 - Added a docs/site starter example for the current `wesley.config.json`
   project manifest path.
+- Added CLI integration coverage for YAML project manifests in changed-schema
+  selection.
 
 ### Changed
 
