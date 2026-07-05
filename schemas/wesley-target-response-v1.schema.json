@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/wesley-target-response-v1.schema.json",
+  "title": "wesley.target-response/v1",
+  "description": "Response envelope returned by an external Wesley target process.",
+  "type": "object",
+  "required": ["apiVersion", "requestId", "status", "diagnostics"],
+  "properties": {
+    "apiVersion": { "const": "wesley.target-response/v1" },
+    "requestId": { "$ref": "#/definitions/noNulNonEmptyString" },
+    "status": { "enum": ["ok", "error"] },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "wesley-target-diagnostic-v1.schema.json#" }
+    },
+    "artifacts": { "$ref": "wesley-target-artifact-manifest-v1.schema.json#" }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "ok" } },
+        "required": ["status"]
+      },
+      "then": { "required": ["artifacts"] }
+    }
+  ],
+  "definitions": {
+    "noNulNonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000]+$"
+    }
+  }
+}

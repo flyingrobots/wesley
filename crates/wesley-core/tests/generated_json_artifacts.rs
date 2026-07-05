@@ -60,6 +60,12 @@ fn local_schema_ref(reference: &str) -> Option<&'static str> {
         "realm.schema.json#" => Some("schemas/realm.schema.json"),
         "runtime-event.schema.json#" => Some("schemas/runtime-event.schema.json"),
         "runtime-run.schema.json#" => Some("schemas/runtime-run.schema.json"),
+        "wesley-target-artifact-manifest-v1.schema.json#" => {
+            Some("schemas/wesley-target-artifact-manifest-v1.schema.json")
+        }
+        "wesley-target-diagnostic-v1.schema.json#" => {
+            Some("schemas/wesley-target-diagnostic-v1.schema.json")
+        }
         _ => None,
     }
 }
@@ -75,6 +81,17 @@ fn assert_schema_valid(schema_path: &str, artifact_name: &str, artifact: &serde_
     assert!(
         errors.is_empty(),
         "{artifact_name} failed {schema_path}: {errors:#?}"
+    );
+}
+
+fn assert_schema_invalid(schema_path: &str, artifact_name: &str, artifact: &serde_json::Value) {
+    let schema = schema_json(schema_path);
+    let validator = jsonschema::validator_for(&schema).expect("schema should compile");
+    let errors = validator.iter_errors(artifact).collect::<Vec<_>>();
+
+    assert!(
+        !errors.is_empty(),
+        "{artifact_name} unexpectedly satisfied {schema_path}"
     );
 }
 
@@ -375,5 +392,191 @@ fn holmes_and_shipme_artifacts_satisfy_declared_schemas() {
         "schemas/shipme.schema.json",
         "representative SHIPME certificate",
         &shipme,
+    );
+}
+
+#[test]
+fn external_target_protocol_artifacts_satisfy_declared_schemas() {
+    let artifact_hash = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let descriptor = json!({
+        "apiVersion": "wesley.target-descriptor/v1",
+        "name": "hello-wesley-target",
+        "protocol": {
+            "kind": "external-process",
+            "version": "wesley.target-process/v1"
+        },
+        "command": {
+            "program": "./bin/hello-wesley-target",
+            "args": ["--request-stdin"]
+        },
+        "execution": {
+            "timeoutMs": 30000
+        },
+        "capabilities": {
+            "inputs": ["wesley.l1-ir/v1", "wesley.schema-operations/v1"],
+            "outputs": ["wesley.target-artifact-manifest/v1"],
+            "requiresNetwork": false,
+            "requiresAmbientFilesystem": false
+        },
+        "outputs": {
+            "defaultOutDir": "generated/hello"
+        }
+    });
+    assert_schema_valid(
+        "schemas/wesley-target-descriptor-v1.schema.json",
+        "representative target descriptor",
+        &descriptor,
+    );
+
+    let unsafe_descriptor = json!({
+        "apiVersion": "wesley.target-descriptor/v1",
+        "name": "hello-wesley-target",
+        "protocol": {
+            "kind": "external-process",
+            "version": "wesley.target-process/v1"
+        },
+        "command": {
+            "program": "C:/tools/hello-wesley-target",
+            "args": []
+        },
+        "execution": {
+            "timeoutMs": 30000
+        },
+        "capabilities": {
+            "inputs": ["wesley.l1-ir/v1"],
+            "outputs": ["wesley.target-artifact-manifest/v1"],
+            "requiresNetwork": false,
+            "requiresAmbientFilesystem": false
+        },
+        "outputs": {
+            "defaultOutDir": "generated/hello"
+        }
+    });
+    assert_schema_invalid(
+        "schemas/wesley-target-descriptor-v1.schema.json",
+        "drive-like target descriptor",
+        &unsafe_descriptor,
+    );
+
+    let dot_only_descriptor = json!({
+        "apiVersion": "wesley.target-descriptor/v1",
+        "name": "hello-wesley-target",
+        "protocol": {
+            "kind": "external-process",
+            "version": "wesley.target-process/v1"
+        },
+        "command": {
+            "program": "./",
+            "args": []
+        },
+        "execution": {
+            "timeoutMs": 30000
+        },
+        "capabilities": {
+            "inputs": ["wesley.l1-ir/v1"],
+            "outputs": ["wesley.target-artifact-manifest/v1"],
+            "requiresNetwork": false,
+            "requiresAmbientFilesystem": false
+        },
+        "outputs": {
+            "defaultOutDir": "."
+        }
+    });
+    assert_schema_invalid(
+        "schemas/wesley-target-descriptor-v1.schema.json",
+        "dot-only target descriptor paths",
+        &dot_only_descriptor,
+    );
+
+    let target_request = json!({
+        "apiVersion": "wesley.target-request/v1",
+        "requestId": "request-hello-0001",
+        "workspaceRoot": "/workspace",
+        "schema": {
+            "id": "app",
+            "path": "schema.graphql",
+            "hash": artifact_hash
+        },
+        "ir": {
+            "apiVersion": "wesley.l1-ir/v1",
+            "json": {}
+        },
+        "operations": {
+            "apiVersion": "wesley.schema-operations/v1",
+            "items": []
+        },
+        "target": {
+            "name": "hello-wesley-target",
+            "module": "example.hello",
+            "outputDir": "generated/hello"
+        },
+        "capabilityContext": {
+            "network": "denied",
+            "ambientFilesystem": "denied",
+            "allowedOutputDirs": ["generated/hello"],
+            "stagingOutputRoot": "/tmp/wesley-target-runs/request-hello-0001/out"
+        }
+    });
+    assert_schema_valid(
+        "schemas/wesley-target-request-v1.schema.json",
+        "representative target request",
+        &target_request,
+    );
+
+    let diagnostic = json!({
+        "severity": "error",
+        "code": "target.output.path_escape",
+        "message": "artifact path escapes the allowed output directory",
+        "subject": "generated/../escape.txt"
+    });
+    assert_schema_valid(
+        "schemas/wesley-target-diagnostic-v1.schema.json",
+        "representative target diagnostic",
+        &diagnostic,
+    );
+
+    let artifact_manifest = json!({
+        "apiVersion": "wesley.target-artifact-manifest/v1",
+        "items": [
+            {
+                "path": "generated/hello/model.txt",
+                "kind": "text",
+                "sha256": artifact_hash
+            }
+        ]
+    });
+    assert_schema_valid(
+        "schemas/wesley-target-artifact-manifest-v1.schema.json",
+        "representative target artifact manifest",
+        &artifact_manifest,
+    );
+
+    let dot_only_artifact_manifest = json!({
+        "apiVersion": "wesley.target-artifact-manifest/v1",
+        "items": [
+            {
+                "path": ".",
+                "kind": "text",
+                "sha256": artifact_hash
+            }
+        ]
+    });
+    assert_schema_invalid(
+        "schemas/wesley-target-artifact-manifest-v1.schema.json",
+        "dot-only artifact manifest path",
+        &dot_only_artifact_manifest,
+    );
+
+    let target_response = json!({
+        "apiVersion": "wesley.target-response/v1",
+        "requestId": "request-hello-0001",
+        "status": "ok",
+        "diagnostics": [],
+        "artifacts": artifact_manifest
+    });
+    assert_schema_valid(
+        "schemas/wesley-target-response-v1.schema.json",
+        "representative target response",
+        &target_response,
     );
 }

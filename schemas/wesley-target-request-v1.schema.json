@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/wesley-target-request-v1.schema.json",
+  "title": "wesley.target-request/v1",
+  "description": "Request envelope passed to an external Wesley target process.",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "requestId",
+    "workspaceRoot",
+    "schema",
+    "ir",
+    "operations",
+    "target",
+    "capabilityContext"
+  ],
+  "properties": {
+    "apiVersion": { "const": "wesley.target-request/v1" },
+    "requestId": { "$ref": "#/definitions/noNulNonEmptyString" },
+    "workspaceRoot": { "$ref": "#/definitions/noNulNonEmptyString" },
+    "schema": {
+      "type": "object",
+      "required": ["id", "path", "hash"],
+      "properties": {
+        "id": { "$ref": "#/definitions/pathSafeName" },
+        "path": { "$ref": "#/definitions/workspaceRelativePath" },
+        "hash": { "$ref": "#/definitions/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "ir": {
+      "type": "object",
+      "required": ["apiVersion", "json"],
+      "properties": {
+        "apiVersion": { "const": "wesley.l1-ir/v1" },
+        "json": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "operations": {
+      "type": "object",
+      "required": ["apiVersion", "items"],
+      "properties": {
+        "apiVersion": { "const": "wesley.schema-operations/v1" },
+        "items": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "required": ["name", "outputDir"],
+      "properties": {
+        "name": { "$ref": "#/definitions/pathSafeName" },
+        "module": { "$ref": "#/definitions/noNulNonEmptyString" },
+        "outputDir": { "$ref": "#/definitions/workspaceRelativePath" }
+      },
+      "additionalProperties": false
+    },
+    "capabilityContext": {
+      "type": "object",
+      "required": ["network", "ambientFilesystem", "allowedOutputDirs", "stagingOutputRoot"],
+      "properties": {
+        "network": { "const": "denied" },
+        "ambientFilesystem": { "const": "denied" },
+        "allowedOutputDirs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/workspaceRelativePath" }
+        },
+        "stagingOutputRoot": { "$ref": "#/definitions/noNulNonEmptyString" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "noNulNonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000]+$"
+    },
+    "pathSafeName": {
+      "type": "string",
+      "pattern": "^(?!\\.\\.?$)(?!.*\\.\\.)(?!.*[/:\\\\\\u0000])\\S(?:.*\\S)?$"
+    },
+    "workspaceRelativePath": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))(?!.*[:\\\\\\u0000])(?=.*[^./]).+"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}
