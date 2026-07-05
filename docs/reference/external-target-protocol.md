@@ -87,8 +87,10 @@ Descriptor rules:
 - `name` must be stable, non-empty, and path-safe.
 - `protocol.kind` must be `external-process`.
 - `command.program` must be a descriptor-relative executable path, not a shell
-  string, bare program name, or `PATH` lookup. A future package or digest-backed
-  binary reference may be added only if it preserves deterministic resolution.
+  string, bare program name, or `PATH` lookup. It must not be absolute or
+  contain `..`, and the host must reject symlink or canonicalization escapes
+  before launch. A future package or digest-backed binary reference may be added
+  only if it preserves deterministic resolution.
 - `command.args` must be argv elements, not a shell command.
 - `execution.timeoutMs` must be finite and bounded by the host maximum.
 - output directories must be workspace-relative.
@@ -228,7 +230,8 @@ Artifact manifest rules:
 instead of trusting target cooperation:
 
 - resolve `command.program` relative to the descriptor location after descriptor
-  validation; do not search `PATH`
+  validation; reject absolute paths, `..` traversal, and symlink or
+  canonicalization escapes; do not search `PATH`
 - invoke the target without a shell and pass args as argv values
 - enforce `network: denied` with a host sandbox or equivalent process
   restriction before target startup
