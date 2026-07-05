@@ -143,14 +143,17 @@ async fn rejects_duplicate_canonical_directives() {
     let message = err.to_string();
 
     assert!(
-        message.contains("Duplicate directive '@wes_table'"),
+        message.contains("Duplicate non-repeatable directive '@wes_table'"),
         "unexpected error: {message}"
     );
 
     let diagnostic = err.diagnostic();
     assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
     assert_eq!(diagnostic.severity, "ERROR");
-    assert_eq!(diagnostic.message, "Duplicate directive '@wes_table'");
+    assert_eq!(
+        diagnostic.message,
+        "Duplicate non-repeatable directive '@wes_table'"
+    );
     assert_eq!(diagnostic.line, None);
     assert_eq!(diagnostic.column, None);
 }
@@ -191,7 +194,10 @@ async fn diagnostic_fixture_rejects_duplicate_canonical_directives() {
     let diagnostic = err.diagnostic();
 
     assert_eq!(diagnostic.code, "WESLEY_LOWERING_ERROR");
-    assert_eq!(diagnostic.message, "Duplicate directive '@wes_table'");
+    assert_eq!(
+        diagnostic.message,
+        "Duplicate non-repeatable directive '@wes_table'"
+    );
 }
 
 #[tokio::test]

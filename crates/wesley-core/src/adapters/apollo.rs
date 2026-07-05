@@ -599,13 +599,6 @@ impl ApolloLoweringAdapter {
                 serde_json::Value::Object(args_map)
             };
 
-            if core_name.is_some() && map.contains_key(&canonical_name) {
-                return Err(lowering_error_value(
-                    "directive",
-                    format!("Duplicate directive '@{canonical_name}'"),
-                ));
-            }
-
             let repeatable = core_name.is_none() && repeatable_directives.contains(&canonical_name);
             insert_directive_value(map, canonical_name, val, repeatable)?;
         }
