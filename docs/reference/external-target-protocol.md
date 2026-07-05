@@ -54,6 +54,8 @@ for execution.
 ## Descriptor Envelope
 
 The descriptor is plain JSON. It is safe to validate without execution.
+The machine-readable schema is
+[`schemas/wesley-target-descriptor-v1.schema.json`](../../schemas/wesley-target-descriptor-v1.schema.json).
 
 ```json
 {
@@ -91,24 +93,27 @@ Descriptor rules:
 - `protocol.version` must be exactly `wesley.target-process/v1`.
 - `command.program` must be a descriptor-relative executable path, not a shell
   string, bare program name, or `PATH` lookup. It must not be absolute or
-  contain `..`, a Windows drive-like `:` prefix, or backslashes, and the host
-  must reject symlink or canonicalization escapes before launch. A future
-  package or digest-backed binary reference may be added only if it preserves
-  deterministic resolution.
+  contain a parent-directory `..` segment, colon characters such as Windows
+  drive-like `:` prefixes, or backslashes, and the host must reject symlink or
+  canonicalization escapes before launch. A future package or digest-backed
+  binary reference may be added only if it preserves deterministic resolution.
 - `command.args` must be argv elements, not a shell command.
 - `execution.timeoutMs` must be finite and bounded by the host maximum.
 - target capabilities must request `wesley.l1-ir/v1` input and
   `wesley.target-artifact-manifest/v1` output.
 - network and ambient filesystem capability requests are denied by the MVP
   verifier.
-- output directories must be workspace-relative and must not contain `..`,
-  Windows drive-like `:` prefixes, or backslashes.
+- output directories must be workspace-relative and must not contain
+  parent-directory `..` segments, colon characters such as Windows drive-like
+  `:` prefixes, or backslashes. A directory of `.` alone is not valid.
 - descriptors must not contain product semantics; examples should use names
   like `hello`, `model`, or `artifact`.
 
 ## Request Envelope
 
 The request envelope is the only input a target needs from Wesley.
+The machine-readable schema is
+[`schemas/wesley-target-request-v1.schema.json`](../../schemas/wesley-target-request-v1.schema.json).
 
 ```json
 {
@@ -118,7 +123,7 @@ The request envelope is the only input a target needs from Wesley.
   "schema": {
     "id": "app",
     "path": "schema.graphql",
-    "hash": "sha256:..."
+    "hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
   },
   "ir": {
     "apiVersion": "wesley.l1-ir/v1",
@@ -159,7 +164,8 @@ Request rules:
 ## Response Envelope
 
 Targets return one JSON response envelope on stdout. Human logs should go to
-stderr.
+stderr. The machine-readable schema is
+[`schemas/wesley-target-response-v1.schema.json`](../../schemas/wesley-target-response-v1.schema.json).
 
 ```json
 {
@@ -173,7 +179,7 @@ stderr.
       {
         "path": "generated/hello/model.txt",
         "kind": "text",
-        "sha256": "..."
+        "sha256": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
       }
     ]
   }
@@ -192,6 +198,9 @@ Response rules:
   hashes are hard failures.
 
 ## Diagnostic Shape
+
+The machine-readable schema is
+[`schemas/wesley-target-diagnostic-v1.schema.json`](../../schemas/wesley-target-diagnostic-v1.schema.json).
 
 ```json
 {
@@ -212,6 +221,9 @@ Diagnostic rules:
 
 ## Artifact Manifest Shape
 
+The machine-readable schema is
+[`schemas/wesley-target-artifact-manifest-v1.schema.json`](../../schemas/wesley-target-artifact-manifest-v1.schema.json).
+
 ```json
 {
   "apiVersion": "wesley.target-artifact-manifest/v1",
@@ -219,7 +231,7 @@ Diagnostic rules:
     {
       "path": "generated/hello/model.txt",
       "kind": "text",
-      "sha256": "..."
+      "sha256": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
     }
   ]
 }
@@ -228,10 +240,13 @@ Diagnostic rules:
 Artifact manifest rules:
 
 - Every artifact must have a path, kind, and hash.
-- Paths must be relative and must not contain `..`, Windows drive prefixes, or
-  absolute path prefixes.
+- Paths must be relative and must not contain parent-directory `..` segments,
+  colon characters such as Windows drive prefixes, backslashes, or absolute
+  path prefixes. A path of `.` alone is not valid.
 - Artifact order must be deterministic.
-- Repeated paths are invalid.
+- Repeated paths are invalid. The JSON Schema rejects exact duplicate artifact
+  objects; `target run` must additionally reject the same path with different
+  metadata before artifact copy-out.
 
 ## Host Enforcement Rules
 

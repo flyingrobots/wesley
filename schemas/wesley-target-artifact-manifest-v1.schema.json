@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/wesley-target-artifact-manifest-v1.schema.json",
+  "title": "wesley.target-artifact-manifest/v1",
+  "description": "Manifest of artifacts emitted by an external Wesley target process.",
+  "type": "object",
+  "required": ["apiVersion", "items"],
+  "properties": {
+    "apiVersion": { "const": "wesley.target-artifact-manifest/v1" },
+    "items": {
+      "type": "array",
+      "description": "JSON Schema rejects exact duplicate artifact objects. Hosts must additionally reject repeated path values when metadata differs.",
+      "uniqueItems": true,
+      "items": { "$ref": "#/definitions/artifact" }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "artifact": {
+      "type": "object",
+      "required": ["path", "kind", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/definitions/workspaceRelativePath" },
+        "kind": { "$ref": "#/definitions/noNulNonEmptyString" },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "noNulNonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000]+$"
+    },
+    "workspaceRelativePath": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))(?!.*[:\\\\\\u0000])(?=.*[^./]).+"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

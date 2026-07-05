@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://wesley.dev/schemas/wesley-target-descriptor-v1.schema.json",
+  "title": "wesley.target-descriptor/v1",
+  "description": "External-process target descriptor validated before Wesley executes target code.",
+  "type": "object",
+  "required": ["apiVersion", "name", "protocol", "command", "execution", "capabilities", "outputs"],
+  "properties": {
+    "apiVersion": { "const": "wesley.target-descriptor/v1" },
+    "name": { "$ref": "#/definitions/pathSafeName" },
+    "protocol": {
+      "type": "object",
+      "required": ["kind", "version"],
+      "properties": {
+        "kind": { "const": "external-process" },
+        "version": { "const": "wesley.target-process/v1" }
+      },
+      "additionalProperties": false
+    },
+    "command": {
+      "type": "object",
+      "required": ["program"],
+      "properties": {
+        "program": { "$ref": "#/definitions/descriptorRelativeProgram" },
+        "args": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/noNulString" },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "execution": {
+      "type": "object",
+      "required": ["timeoutMs"],
+      "properties": {
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300000
+        }
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["inputs", "outputs", "requiresNetwork", "requiresAmbientFilesystem"],
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/noNulString" },
+          "contains": { "const": "wesley.l1-ir/v1" }
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/noNulString" },
+          "contains": { "const": "wesley.target-artifact-manifest/v1" }
+        },
+        "requiresNetwork": { "const": false },
+        "requiresAmbientFilesystem": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["defaultOutDir"],
+      "properties": {
+        "defaultOutDir": { "$ref": "#/definitions/workspaceRelativePath" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "noNulString": {
+      "type": "string",
+      "pattern": "^[^\\u0000]*$"
+    },
+    "pathSafeName": {
+      "type": "string",
+      "pattern": "^(?!\\.\\.?$)(?!.*\\.\\.)(?!.*[/:\\\\\\u0000])\\S(?:.*\\S)?$"
+    },
+    "descriptorRelativeProgram": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))(?!.*[:\\\\\\u0000])(?=.*\\/)(?=.*[^./]).+"
+    },
+    "workspaceRelativePath": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))(?!.*[:\\\\\\u0000])(?=.*[^./]).+"
+    }
+  }
+}
