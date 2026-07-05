@@ -1,0 +1,62 @@
+{
+  "apiVersion": "wesley.target-request/v1",
+  "requestId": "hello-request-0001",
+  "workspaceRoot": "/workspace",
+  "schema": {
+    "id": "hello",
+    "path": "test/fixtures/external-targets/hello-wesley-target/schema.graphql",
+    "hash": "sha256:d1f0871163ea0edc001202821c3e07d457d472623971c61323fc7c97850f5128"
+  },
+  "ir": {
+    "apiVersion": "wesley.l1-ir/v1",
+    "json": {
+      "version": "1.0.0",
+      "types": [
+        {
+          "name": "Query",
+          "kind": "OBJECT",
+          "directives": {},
+          "fields": [
+            {
+              "name": "hello",
+              "type": {
+                "base": "String",
+                "nullable": false,
+                "isList": false
+              },
+              "directives": {}
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "operations": {
+    "apiVersion": "wesley.schema-operations/v1",
+    "items": [
+      {
+        "operationType": "QUERY",
+        "rootTypeName": "Query",
+        "fieldName": "hello",
+        "arguments": [],
+        "resultType": {
+          "base": "String",
+          "nullable": false,
+          "isList": false
+        },
+        "directives": {}
+      }
+    ]
+  },
+  "target": {
+    "name": "hello-wesley-target",
+    "module": "example.hello",
+    "outputDir": "generated/hello"
+  },
+  "capabilityContext": {
+    "network": "denied",
+    "ambientFilesystem": "denied",
+    "allowedOutputDirs": ["generated/hello"],
+    "stagingOutputRoot": "/tmp/wesley-target-runs/hello-request-0001/out"
+  }
+}

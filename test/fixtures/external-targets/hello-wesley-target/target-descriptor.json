@@ -1,0 +1,24 @@
+{
+  "apiVersion": "wesley.target-descriptor/v1",
+  "name": "hello-wesley-target",
+  "protocol": {
+    "kind": "external-process",
+    "version": "wesley.target-process/v1"
+  },
+  "command": {
+    "program": "./bin/hello-wesley-target",
+    "args": ["--request-stdin"]
+  },
+  "execution": {
+    "timeoutMs": 30000
+  },
+  "capabilities": {
+    "inputs": ["wesley.l1-ir/v1", "wesley.schema-operations/v1"],
+    "outputs": ["wesley.target-artifact-manifest/v1"],
+    "requiresNetwork": false,
+    "requiresAmbientFilesystem": false
+  },
+  "outputs": {
+    "defaultOutDir": "generated/hello"
+  }
+}
