@@ -83,8 +83,14 @@ load 'bats-plugins/bats-assert/load'
 }
 
 @test "retired Method tracker references do not survive in closeout evidence" {
-  run rg -n 'tracking_ticket: ['"'"'"]GitHub Issues['"'"'"]|# ASAP|asap/|preserves the files as historical extraction context' docs/audit docs/method/retro docs/design/0012-product-leftover-cleanup --glob '*.md'
-  assert_failure
+  run rg -n \
+    'tracking_ticket: ['"'"'"]GitHub Issues['"'"'"]|# ASAP|asap/|preserves the files as historical extraction context' \
+    docs/audit \
+    docs/method/retro \
+    docs/design/0012-product-leftover-cleanup \
+    --glob '*.md'
+  assert_equal "$status" 1
+  assert_output ""
 }
 
 @test "front-door signposts route task readers through docs topics" {
