@@ -217,6 +217,11 @@
       "owner": "@flyingrobots"
     },
     {
+      "path": "docs/topics/security-tooling.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
       "path": "docs/topics/validation.md",
       "status": "current",
       "owner": "@flyingrobots"
@@ -238,6 +243,11 @@
     },
     {
       "path": "docs/topics/contributing/triage.md",
+      "status": "current",
+      "owner": "@flyingrobots"
+    },
+    {
+      "path": "docs/topics/contributing/first-pr.md",
       "status": "current",
       "owner": "@flyingrobots"
     },

@@ -99,8 +99,8 @@ Current v0.0.6 behavior:
 - fixture corpus covers small, medium, large, directive-heavy, invalid,
   legacy-alias, schema-extension, and nested-list SDL cases
 - expected diagnostics include stable codes and spans where available
-- baseline Rust lowering wall-clock evidence is captured for the valid fixture
-  corpus by `pnpm perf:ir`
+- baseline Rust lowering wall-clock evidence is captured for generated scale
+  fixtures by `cargo xtask bench-ir`
 - memory and binding overhead remain separate follow-on evidence instead of
   hidden claims inside the wall-clock baseline
 - parity failure output shows the first semantic mismatch, not just a raw diff
@@ -119,6 +119,6 @@ Current v0.0.6 behavior:
 - `scripts/generate-ir-fixtures.mjs`
 - `scripts/check-ir-parity.mjs`
 - `scripts/check-parser-parity.mjs`
-- `scripts/measure-ir-performance.mjs`
+- `xtask/src/main.rs`
 - `test/fixtures/ir-parity/`
 - `test/fixtures/ir-parity-invalid/`

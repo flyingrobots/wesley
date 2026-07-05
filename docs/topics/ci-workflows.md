@@ -17,6 +17,7 @@ diff or running focused checks before a PR.
 | Compatibility smoke          | Workspace compatibility and Rust product smoke.    |
 | CodeQL / analysis            | Static analysis for supported languages.           |
 | Dependency review            | Dependency risk in PRs.                            |
+| Security posture             | Advisory gates, scanner fit, and false positives.  |
 | HOLMES workflow              | Schema-selected assurance reports and PR comments. |
 | SHIPME certificate           | Post-merge evidence for the landed `main` SHA.     |
 
@@ -54,6 +55,7 @@ BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
 ## Related Authority
 
 - [Continuous Integration](../ci.md)
+- [Security Tooling](./security-tooling.md)
 - [HOLMES CI](./holmes-ci.md)
 - [Validation](./validation.md)
 - [Release Workflow](./releases.md)
