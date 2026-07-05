@@ -90,7 +90,8 @@ context:
 - acceptance criteria include exactly one required local command
 - labels include exactly one scheduling state: either one `triage:*` label or
   one `vX.Y.Z` label
-- scheduled starter issues use a `vX.Y.Z` label instead of `triage:*`
+- scheduled starter issues use a `vX.Y.Z` label instead of `triage:*` and
+  belong to a `Goalpost: ...` milestone
 - no advanced Wesley term appears without a plain-English alias
 
 Useful commands:
