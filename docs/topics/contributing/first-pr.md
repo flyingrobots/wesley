@@ -54,12 +54,13 @@ unless the issue explicitly says it is scoped for a first PR.
 
 ## Fast Paths
 
-| Path            | Typical Files                                        | Local Command                                     | Good First Shape                                      |
-| --------------- | ---------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------- |
-| Docs-only PR    | `docs/topics/*.md`, `docs/guides/*.md`, `README.md`  | `cargo xtask docs-check`                          | Clarify one page, fix one route, or add one example.  |
-| Fixture-only PR | `test/fixtures/**/*.graphql`, related golden fixture | Issue-named test command                          | Add one domain-free schema shape and its expectation. |
-| Emitter-test PR | `crates/wesley-emit-rust/src/lib.rs` or TypeScript   | `cargo test -p wesley-emit-rust` or issue command | Add one schema case and assert generated type shape.  |
-| CLI bug PR      | `crates/wesley-cli/tests/cli.rs`                     | `cargo test -p wesley-cli --test cli <filter>`    | Reproduce one command failure with a clear assertion. |
+| Path            | Typical Files                                        | Local Command                                           | Good First Shape                                      |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| Docs-only PR    | `docs/topics/*.md`, `docs/guides/*.md`, `README.md`  | `cargo xtask docs-check`                                | Clarify one page, fix one route, or add one example.  |
+| Fixture-only PR | `test/fixtures/**/*.graphql`, related golden fixture | Issue-named test command                                | Add one domain-free schema shape and its expectation. |
+| Rust emitter PR | `crates/wesley-emit-rust/src/lib.rs`                 | `cargo test -p wesley-emit-rust` or issue command       | Add one schema case and assert generated type shape.  |
+| TS emitter PR   | `crates/wesley-emit-typescript/src/lib.rs`           | `cargo test -p wesley-emit-typescript` or issue command | Add one schema case and assert generated type shape.  |
+| CLI bug PR      | `crates/wesley-cli/tests/cli.rs`                     | `cargo test -p wesley-cli --test cli <filter>`          | Reproduce one command failure with a clear assertion. |
 
 Do not start by refactoring shared architecture. A first PR should leave a
 reviewer able to answer: issue, file, command, result.
