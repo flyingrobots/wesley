@@ -29,6 +29,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Added CLI regression coverage for missing schema file diagnostics.
 - Added Rust emitter coverage for single-list GraphQL nullability shapes such
   as `[String]!` and `[String!]`.
+- Added a docs/site starter example for the current `wesley.config.json`
+  project manifest path.
 
 ### Changed
 
