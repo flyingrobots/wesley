@@ -80,6 +80,19 @@ Examples must say what they are:
 
 Examples that contradict runtime behavior are bugs in the docs.
 
+## Public Vocabulary
+
+New public nouns must reduce reader load. When a page introduces a Wesley term
+that is not standard GraphQL, Rust, TypeScript, CLI, GitHub, or release-process
+language, do one of the following near first use:
+
+- give it a plain-English alias,
+- link to a page that defines it with a runnable or inspectable example, or
+- mark it as internal or experimental vocabulary.
+
+Beginner paths should use standard GraphQL and compiler terms before advanced
+assurance/toolchain terms.
+
 ## Coverage Matrix
 
 For each public capability, keep one obvious path to:

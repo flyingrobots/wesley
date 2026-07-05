@@ -123,6 +123,8 @@ use them. IDs may contain only ASCII letters, digits, `.`, `_`, and `-`.
 ## Target Compatibility
 
 Targets are selected metadata, not built-in domain behavior.
+For the proposed future executable boundary that consumes this metadata, see
+[External Target Protocol](./external-target-protocol.md).
 
 ```json
 {

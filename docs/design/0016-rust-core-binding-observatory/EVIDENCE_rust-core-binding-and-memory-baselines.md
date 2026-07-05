@@ -40,7 +40,8 @@ The report captures:
 - Cutover criteria as explicit `not-evaluated` release posture.
 
 The fixture corpus remains useful as historical evidence, but the active
-product gate is now `cargo xtask preflight`.
+product gate is now `cargo xtask preflight`, and the active Rust-native
+lowering benchmark is `cargo xtask bench-ir`.
 
 ## Deferred Evidence
 
@@ -72,4 +73,5 @@ These remain intentionally outside this slice:
   legacy Node retirement.
 - Historical test: `test/ir-performance-baseline.bats` was deleted during
   legacy Node retirement.
+- Current Rust-native advisory command: `cargo xtask bench-ir`
 - [Rust core performance baseline](../0013-rust-ir-parity-sentinel/EVIDENCE_rust-core-performance-baseline.md)

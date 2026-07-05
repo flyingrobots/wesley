@@ -15,6 +15,12 @@ semantics, runtime policy, database behavior, Echo behavior, and deployment.
 The active ownership doctrine is
 [Domain-Empty Core Boundary](./design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md).
 
+For executable assurance status, use the
+[Assurance Capability Matrix](./reference/assurance-capability-matrix.md).
+Wesley emits deterministic evidence inputs and experimental assurance tooling;
+native assurance capabilities are shipped only when the matrix names an
+executable command or workflow.
+
 If you are trying to figure out where to start, read
 [ENTRYPOINTS.md](./ENTRYPOINTS.md) first. This document is the deeper structural
 map; the entrypoint map is the short answer to "which Wesley do I run or edit?"

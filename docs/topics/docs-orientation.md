@@ -13,6 +13,8 @@ surface, then follow that surface's authority links.
 | Task                                   | Start Here                                                             |
 | -------------------------------------- | ---------------------------------------------------------------------- |
 | Understand what Wesley is.             | [README](../../README.md)                                              |
+| Complete the first-hour compiler path. | [Plain Wesley](./plain-wesley.md)                                      |
+| Make a first small PR.                 | [First PR](./contributing/first-pr.md)                                 |
 | Find a task-specific path.             | [Topics Index](./README.md)                                            |
 | Orient across all docs signposts.      | [Docs Entrance](../README.md)                                          |
 | Understand the current architecture.   | [Architecture](../ARCHITECTURE.md)                                     |
