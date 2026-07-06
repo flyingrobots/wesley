@@ -41,6 +41,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Added a `hello-wesley-target` external target conformance fixture with
   descriptor, request, diagnostic, response, artifact manifest, and artifact
   hash validation.
+- Added Holmes CLI regression coverage for normalized `weights --json` output.
 
 ### Changed
 
