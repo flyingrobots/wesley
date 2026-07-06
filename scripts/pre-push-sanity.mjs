@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = resolve(__dirname, '..');
@@ -44,14 +44,14 @@ function main() {
   for (const command of commands) {
     console.log(`  - ${command.label}`);
     if (dryRun) {
-      console.log(`    $ ${command.command}`);
+      console.log(`    $ ${formatCommand(command)}`);
     }
   }
 
   if (dryRun) return;
 
   for (const command of commands) {
-    runCommand(command.label, command.command);
+    runCommand(command);
   }
 }
 
@@ -61,10 +61,10 @@ function buildCommands(changedFiles) {
   const packages = loadPackageTests();
   const touchedPackages = new Set();
 
-  const addCommand = (key, label, command) => {
+  const addCommand = (key, label, cmd, args) => {
     if (seen.has(key)) return;
     seen.add(key);
-    commands.push({ key, label, command });
+    commands.push({ key, label, cmd, args });
   };
 
   for (const file of changedFiles) {
@@ -73,23 +73,28 @@ function buildCommands(changedFiles) {
   }
 
   if (needsPreflight(changedFiles)) {
-    addCommand('preflight', 'Rust product preflight', 'cargo xtask preflight');
+    addCommand('preflight', 'Rust product preflight', 'cargo', ['xtask', 'preflight']);
   }
 
   if (needsLegacyPreflight(changedFiles)) {
-    addCommand('legacy-preflight', 'JavaScript package preflight', 'cargo xtask legacy-preflight');
+    addCommand('legacy-preflight', 'JavaScript package preflight', 'cargo', [
+      'xtask',
+      'legacy-preflight'
+    ]);
   }
 
   if (needsRepoBats(changedFiles)) {
-    addCommand('repo-bats', 'Repo Bats smoke suite', 'bash scripts/smoke/repo-bats-prepush.sh');
+    addCommand('repo-bats', 'Repo Bats smoke suite', 'bash', [
+      'scripts/smoke/repo-bats-prepush.sh'
+    ]);
   }
 
   for (const packageName of [...touchedPackages].sort()) {
-    addCommand(
-      `package:${packageName}`,
-      `${packageName} tests`,
-      `pnpm --filter ${shellQuote(packageName)} test`
-    );
+    addCommand(`package:${packageName}`, `${packageName} tests`, 'pnpm', [
+      '--filter',
+      packageName,
+      'test'
+    ]);
   }
 
   return commands;
@@ -222,13 +227,19 @@ function gitText(args, options = {}) {
   return result.stdout;
 }
 
-function runCommand(label, command) {
-  console.log(`[pre-push] Running ${label}`);
-  const result = spawnSync('/bin/bash', ['-lc', command], {
+function runCommand(command) {
+  console.log(`[pre-push] Running ${command.label}`);
+  const resolvedCommand = resolveCommand(command);
+  const result = spawnSync(resolvedCommand.cmd, resolvedCommand.args, {
     cwd: ROOT_DIR,
     stdio: 'inherit',
-    env: buildGitDiscoveryEnv(process.env)
+    env: buildGitDiscoveryEnv(process.env),
+    shell: false
   });
+  if (result.error) {
+    console.error(formatSpawnFailure(command, result.error));
+    process.exit(1);
+  }
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
@@ -242,8 +253,33 @@ function readStdin() {
   }
 }
 
-function shellQuote(value) {
-  return `'${String(value).replaceAll("'", "'\"'\"'")}'`;
+function formatCommand(command) {
+  return [command.cmd, ...command.args].map(formatCommandArg).join(' ');
+}
+
+function resolveCommand(command, { platform = process.platform, env = process.env } = {}) {
+  if (platform === 'win32' && command.cmd === 'pnpm') {
+    return {
+      cmd: env.ComSpec || 'cmd.exe',
+      args: ['/d', '/s', '/c', command.cmd, ...command.args]
+    };
+  }
+  return command;
+}
+
+function formatSpawnFailure(command, error) {
+  return [
+    `[pre-push] Failed to start ${command.label}: ${formatCommand(command)}`,
+    `[pre-push] ${error?.message ?? 'unknown spawn error'}`
+  ].join('\n');
+}
+
+function formatCommandArg(value) {
+  const raw = String(value);
+  if (raw.length > 0 && /^[A-Za-z0-9_./:=@%+,-]+$/.test(raw)) {
+    return raw;
+  }
+  return `'${raw.replaceAll("'", "'\"'\"'")}'`;
 }
 
 function buildGitDiscoveryEnv(env) {
@@ -253,4 +289,13 @@ function buildGitDiscoveryEnv(env) {
   };
 }
 
-main();
+function isDirectInvocation() {
+  const entry = process.argv[1];
+  return Boolean(entry) && import.meta.url === pathToFileURL(resolve(entry)).href;
+}
+
+if (isDirectInvocation()) {
+  main();
+}
+
+export { buildCommands, formatCommand, formatSpawnFailure, resolveCommand };
