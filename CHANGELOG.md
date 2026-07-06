@@ -45,6 +45,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- Documented and test-protected the supported JSON Schema draft boundary for
+  canonical schema artifacts.
 - Aligned Dependabot GitHub Actions update PR labels with existing repository
   labels.
 - Required PR bodies to reference at least one GitHub Issue and to use GitHub
