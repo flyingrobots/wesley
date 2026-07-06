@@ -432,24 +432,33 @@ function runHolmesRunsInspect(fixture, runId, transmutation) {
 function runWeights(options = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'holmes-weights-'));
   const weightsPath = path.join(tempDir, 'weights.json');
+  const jsonPath = path.join(tempDir, 'weights-output.json');
   if (options.writeWeights) {
     writeFileSync(weightsPath, JSON.stringify(options.writeWeights, null, 2));
   }
 
   const args = [cliPath, 'weights', '--file', weightsPath];
+  if (options.jsonOutput) {
+    args.push('--json', jsonPath);
+  }
   const result = spawnSync(process.execPath, args, {
     cwd: repoRoot,
     encoding: 'utf8'
   });
 
   try {
+    let jsonOutput;
     if (options.expectSuccess !== false) {
       assert.equal(result.status, 0, `weights exited with ${result.status}: ${result.stderr}`);
       assert.ok(result.stdout.includes('weights configuration valid'));
+      if (options.jsonOutput) {
+        assert.ok(existsSync(jsonPath), 'weights --json should write the requested output file');
+        jsonOutput = JSON.parse(readFileSync(jsonPath, 'utf8'));
+      }
     } else {
       assert.notEqual(result.status, 0, 'weights command should fail');
     }
-    return result;
+    return { ...result, jsonOutput };
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -875,6 +884,37 @@ test('holmes CLI predict fails when requested runtime run is missing', () => {
 
 test('weights command validates custom configuration', () => {
   runWeights({ writeWeights: { default: 6, password: 12 }, expectSuccess: true });
+});
+
+test('weights command writes normalized JSON output', () => {
+  const result = runWeights({
+    writeWeights: {
+      default: 6,
+      substrings: { Email: 9 },
+      directives: { '@PrimaryKey': 11 },
+      overrides: { 'User.password': 13 }
+    },
+    jsonOutput: true,
+    expectSuccess: true
+  });
+
+  assert.deepEqual(result.jsonOutput, {
+    default: 6,
+    substrings: {
+      password: 10,
+      email: 9,
+      id: 7,
+      user: 6,
+      created: 5,
+      theme: 2
+    },
+    directives: {
+      primarykey: 11
+    },
+    overrides: {
+      'User.password': 13
+    }
+  });
 });
 
 test('weights command fails when file missing', () => {
