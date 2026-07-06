@@ -4,7 +4,12 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildCommands, formatCommand } from './pre-push-sanity.mjs';
+import {
+  buildCommands,
+  formatCommand,
+  formatSpawnFailure,
+  resolveCommand
+} from './pre-push-sanity.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = resolve(dirname(__filename), '..');
@@ -56,6 +61,42 @@ test('pre-push sanity formats dry-run commands without making them executable in
       args: ['value with spaces', "quote'value"]
     }),
     "tool 'value with spaces' 'quote'\"'\"'value'"
+  );
+});
+
+test('pre-push sanity resolves pnpm through cmd on Windows only', () => {
+  const command = {
+    cmd: 'pnpm',
+    args: ['--filter', '@wesley/holmes', 'test']
+  };
+
+  assert.deepEqual(resolveCommand(command, { platform: 'linux' }), command);
+  assert.deepEqual(
+    resolveCommand(command, {
+      platform: 'win32',
+      env: { ComSpec: 'C:\\Windows\\System32\\cmd.exe' }
+    }),
+    {
+      cmd: 'C:\\Windows\\System32\\cmd.exe',
+      args: ['/d', '/s', '/c', 'pnpm', '--filter', '@wesley/holmes', 'test']
+    }
+  );
+});
+
+test('pre-push sanity reports command startup errors with actionable context', () => {
+  assert.equal(
+    formatSpawnFailure(
+      {
+        label: 'JavaScript package preflight',
+        cmd: 'pnpm',
+        args: ['--filter', '@wesley/holmes', 'test']
+      },
+      new Error('spawn pnpm ENOENT')
+    ),
+    [
+      '[pre-push] Failed to start JavaScript package preflight: pnpm --filter @wesley/holmes test',
+      '[pre-push] spawn pnpm ENOENT'
+    ].join('\n')
   );
 });
 

@@ -229,12 +229,17 @@ function gitText(args, options = {}) {
 
 function runCommand(command) {
   console.log(`[pre-push] Running ${command.label}`);
-  const result = spawnSync(command.cmd, command.args, {
+  const resolvedCommand = resolveCommand(command);
+  const result = spawnSync(resolvedCommand.cmd, resolvedCommand.args, {
     cwd: ROOT_DIR,
     stdio: 'inherit',
     env: buildGitDiscoveryEnv(process.env),
     shell: false
   });
+  if (result.error) {
+    console.error(formatSpawnFailure(command, result.error));
+    process.exit(1);
+  }
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
@@ -250,6 +255,23 @@ function readStdin() {
 
 function formatCommand(command) {
   return [command.cmd, ...command.args].map(formatCommandArg).join(' ');
+}
+
+function resolveCommand(command, { platform = process.platform, env = process.env } = {}) {
+  if (platform === 'win32' && command.cmd === 'pnpm') {
+    return {
+      cmd: env.ComSpec || 'cmd.exe',
+      args: ['/d', '/s', '/c', command.cmd, ...command.args]
+    };
+  }
+  return command;
+}
+
+function formatSpawnFailure(command, error) {
+  return [
+    `[pre-push] Failed to start ${command.label}: ${formatCommand(command)}`,
+    `[pre-push] ${error?.message ?? 'unknown spawn error'}`
+  ].join('\n');
 }
 
 function formatCommandArg(value) {
@@ -276,4 +298,4 @@ if (isDirectInvocation()) {
   main();
 }
 
-export { buildCommands, formatCommand };
+export { buildCommands, formatCommand, formatSpawnFailure, resolveCommand };
