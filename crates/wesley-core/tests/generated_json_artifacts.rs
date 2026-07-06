@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -9,6 +10,9 @@ use wesley_core::{
     build_contract_bundle_manifest_v1, compute_registry_hash, diff_law_ir_v1,
     list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl, to_canonical_law_ir_json,
 };
+
+const JSON_SCHEMA_DRAFT_07: &str = "http://json-schema.org/draft-07/schema#";
+const JSON_SCHEMA_DRAFT_2020_12: &str = "https://json-schema.org/draft/2020-12/schema";
 
 fn repo_path(path: impl AsRef<Path>) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -36,6 +40,81 @@ fn schema_json(path: &str) -> serde_json::Value {
     let mut schema = read_json(path);
     inline_local_schema_refs(&mut schema);
     schema
+}
+
+fn schema_file_paths() -> Vec<PathBuf> {
+    let mut paths = fs::read_dir(repo_path("schemas"))
+        .expect("schema directory should be readable")
+        .map(|entry| entry.expect("schema entry should be readable").path())
+        .filter(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.ends_with(".schema.json"))
+        })
+        .collect::<Vec<_>>();
+    paths.sort();
+    paths
+}
+
+fn repo_relative_path(path: &Path) -> String {
+    path.strip_prefix(repo_path(""))
+        .expect("path should live under repo")
+        .to_string_lossy()
+        .replace('\\', "/")
+}
+
+fn schema_draft(schema_path: &str, schema: &serde_json::Value) -> String {
+    schema
+        .get("$schema")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_else(|| panic!("{schema_path} must declare $schema"))
+        .to_string()
+}
+
+fn collect_refs(value: &serde_json::Value, refs: &mut Vec<String>) {
+    match value {
+        serde_json::Value::Object(object) => {
+            if let Some(serde_json::Value::String(reference)) = object.get("$ref") {
+                refs.push(reference.clone());
+            }
+            for child in object.values() {
+                collect_refs(child, refs);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for child in items {
+                collect_refs(child, refs);
+            }
+        }
+        serde_json::Value::Null
+        | serde_json::Value::Bool(_)
+        | serde_json::Value::Number(_)
+        | serde_json::Value::String(_) => {}
+    }
+}
+
+fn local_schema_reference_target(reference: &str) -> Option<String> {
+    if reference.starts_with('#') {
+        return None;
+    }
+
+    let path = reference
+        .split_once('#')
+        .map_or(reference, |(path, _fragment)| path);
+    if path.is_empty() {
+        return None;
+    }
+
+    assert!(
+        !path.contains("://"),
+        "schema $ref must not use remote schemas: {reference}"
+    );
+    assert!(
+        path.ends_with(".schema.json"),
+        "schema $ref must target a local schema file: {reference}"
+    );
+
+    Some(format!("schemas/{path}"))
 }
 
 fn inline_local_schema_refs(value: &mut serde_json::Value) {
@@ -143,6 +222,48 @@ fn yaml_to_json_value(value: &Yaml) -> serde_json::Value {
         }
         Yaml::Null => serde_json::Value::Null,
         Yaml::Alias(_) | Yaml::BadValue => panic!("unsupported YAML value in fixture"),
+    }
+}
+
+#[test]
+fn schema_family_declares_supported_draft_boundary() {
+    let readme = read_text("schemas/README.md");
+    assert!(
+        readme.contains("## JSON Schema Draft Policy"),
+        "schemas/README.md must document the supported draft boundary"
+    );
+
+    let mut drafts = BTreeMap::new();
+    for schema_path in schema_file_paths() {
+        let repo_path = repo_relative_path(&schema_path);
+        let schema = read_json(&repo_path);
+        let draft = schema_draft(&repo_path, &schema);
+        assert!(
+            matches!(
+                draft.as_str(),
+                JSON_SCHEMA_DRAFT_07 | JSON_SCHEMA_DRAFT_2020_12
+            ),
+            "{repo_path} uses unsupported JSON Schema draft {draft}"
+        );
+        drafts.insert(repo_path, draft);
+    }
+
+    for (schema_path, source_draft) in &drafts {
+        let schema = read_json(schema_path);
+        let mut refs = Vec::new();
+        collect_refs(&schema, &mut refs);
+        for reference in refs {
+            let Some(target_path) = local_schema_reference_target(&reference) else {
+                continue;
+            };
+            let Some(target_draft) = drafts.get(&target_path) else {
+                panic!("{schema_path} references missing local schema {reference}");
+            };
+            assert_eq!(
+                source_draft, target_draft,
+                "{schema_path} must not $ref {target_path} across JSON Schema drafts"
+            );
+        }
     }
 }
 

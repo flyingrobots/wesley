@@ -25,6 +25,21 @@ This directory hosts machine-readable schemas that underpin Wesley’s generator
 - `evidence-map.schema.json` – JSON Schema for the evidence bundle map emitted by HOLMES/-SHIPME flows.
 - `scores.schema.json` – JSON Schema for holmes `scores.json` output.
 
+## JSON Schema Draft Policy
+
+Wesley supports two JSON Schema draft families in `schemas/`:
+
+- **Draft 2020-12** for newer canonical evidence and `weslaw` artifacts whose
+  schemas are generated or published as canonical JSON.
+- **Draft-07** for retained runtime, SHIPME, L1 IR, and external-target
+  protocol artifacts that already have stable consumers.
+
+This is an explicit compatibility boundary, not an accidental mixed state.
+Schema validators must compile each file according to its declared `$schema`.
+Local `$ref` links must stay inside the same draft family. A schema may not
+reference a local schema that declares a different draft unless the boundary is
+redesigned and the validation tests are updated in the same change.
+
 > [!note]
 > When a schema evolves, update the corresponding validation logic/tests and regenerate fixtures so downstream consumers stay aligned.
 
