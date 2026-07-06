@@ -54,6 +54,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Replaced pre-push sanity shell-string execution with argv-based command
+  spawning while preserving dry-run command display.
 - Repaired tracker-deletion follow-up docs so pending audit reports point at a
   concrete release gate, historical witness transcripts no longer show
   impossible Method queue output, and design packets no longer claim deleted
