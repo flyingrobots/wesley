@@ -1979,7 +1979,9 @@ fn operation_directive_args_emit_generic_directive_data() {
 }
 
 fn wesley() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_wesley"))
+    let mut command = Command::new(env!("CARGO_BIN_EXE_wesley"));
+    clear_git_repository_environment(&mut command);
+    command
 }
 
 fn assert_normalized_sdl_fixture(name: &str) {
@@ -2085,11 +2087,10 @@ fn generated_hash_literal(generated: &str, constant: &str) -> serde_json::Value 
 }
 
 fn run_git<const N: usize>(repo: &std::path::Path, args: [&str; N]) {
-    let output = Command::new("git")
-        .current_dir(repo)
-        .args(args)
-        .output()
-        .expect("git should run");
+    let mut command = Command::new("git");
+    command.current_dir(repo).args(args);
+    clear_git_repository_environment(&mut command);
+    let output = command.output().expect("git should run");
 
     if !output.status.success() {
         panic!(
@@ -2098,5 +2099,19 @@ fn run_git<const N: usize>(repo: &std::path::Path, args: [&str; N]) {
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr)
         );
+    }
+}
+
+fn clear_git_repository_environment(command: &mut Command) {
+    for variable in [
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_DIR",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_PREFIX",
+        "GIT_WORK_TREE",
+    ] {
+        command.env_remove(variable);
     }
 }
