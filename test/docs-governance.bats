@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load 'bats-plugins/bats-support/load'
-load 'bats-plugins/bats-assert/load'
+load 'vendor/bats-plugins/bats-support/load'
+load 'vendor/bats-plugins/bats-assert/load'
 
 @test "design template does not scaffold live progress checklists" {
   run rg -n "^- \\[ \\]" docs/design/TEMPLATE.md

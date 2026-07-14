@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  buildGitDiscoveryEnv,
   buildCommands,
   formatCommand,
   formatSpawnFailure,
@@ -105,6 +106,34 @@ test('pre-push sanity does not execute selected checks through a shell', () => {
 
   assert.doesNotMatch(source, /spawnSync\(['"]\/bin\/bash['"],\s*\[\s*['"]-lc['"]/);
   assert.doesNotMatch(source, /function shellQuote\b/);
+});
+
+test('pre-push sanity removes hook-local Git context from child checks', () => {
+  const env = buildGitDiscoveryEnv({
+    PATH: '/fixture/bin',
+    GIT_ALTERNATE_OBJECT_DIRECTORIES: '/caller/objects',
+    GIT_CONFIG: '/caller/config',
+    GIT_CONFIG_PARAMETERS: "'core.hooksPath'='fixture'",
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'core.hooksPath',
+    GIT_CONFIG_VALUE_0: '/caller/hooks',
+    GIT_OBJECT_DIRECTORY: '/caller/objects',
+    GIT_DIR: '/caller/.git',
+    GIT_WORK_TREE: '/caller',
+    GIT_IMPLICIT_WORK_TREE: '0',
+    GIT_GRAFT_FILE: '/caller/grafts',
+    GIT_INDEX_FILE: '/caller/.git/index',
+    GIT_NO_REPLACE_OBJECTS: '1',
+    GIT_REPLACE_REF_BASE: 'caller-ref',
+    GIT_PREFIX: 'nested/',
+    GIT_SHALLOW_FILE: '/caller/shallow',
+    GIT_COMMON_DIR: '/caller/.git'
+  });
+
+  assert.deepEqual(env, {
+    PATH: '/fixture/bin',
+    GIT_OPTIONAL_LOCKS: '0'
+  });
 });
 
 function commandByKey(commands, key) {

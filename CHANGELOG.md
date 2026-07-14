@@ -8,6 +8,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- Added a pure `wesley-core` extension-generation contract with canonical
+  Shape/Law/operation inputs, digest-locked owner declarations and settings,
+  generator/source/output provenance verification, and a deterministic
+  non-authoritative review projection for external semantic generators.
+
 - Added a Plain Wesley first-hour docs path with a beginner compiler tutorial,
   GraphQL-to-Wesley term map, contributor tutorial, and public-vocabulary rule
   for new docs terminology.
@@ -57,6 +62,23 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Made review authority structurally false by rejecting authoritative JSON at
+  deserialization and exposing only a read-only authority accessor.
+- Distinguished malformed generic generation tokens from malformed coordinates
+  with the stable `WESLEY_GENERATION_INVALID_TOKEN` diagnostic code.
+- Aligned published input, provenance, and review schemas with Rust's token
+  validation so padded or control-character-bearing values fail both surfaces.
+- Rejected empty, padded, or control-character-bearing operation root, field,
+  and argument names before serializing extension-generation input.
+- Triggered the Rust product preflight when checked extension-generation
+  fixtures change on pull requests or the main branch.
+- Accepted optional Shape field-argument descriptions in the published
+  extension-generation input schema while keeping root operation arguments
+  description-free.
+- Isolated pre-push child checks from hook-owned Git repository variables so
+  nested fixture repositories cannot mutate the caller's index.
+- Tightened the extension-generation input schema so nested Shape IR, operation,
+  and Law IR values must satisfy their published contracts.
 - Replaced pre-push sanity shell-string execution with argv-based command
   spawning while preserving dry-run command display.
 - Repaired tracker-deletion follow-up docs so pending audit reports point at a

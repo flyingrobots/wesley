@@ -1,0 +1,12 @@
+schema {
+  query: Query
+}
+
+type Query {
+  projection(id: ID!): Projection!
+}
+
+type Projection {
+  coordinate: ID!
+  digest: String!
+}
