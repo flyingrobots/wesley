@@ -509,6 +509,44 @@ fn published_input_schema_rejects_malformed_nested_contracts() {
 }
 
 #[test]
+fn published_generation_schemas_reject_malformed_tokens() {
+    let cases = [
+        (
+            "schemas/wesley-extension-generation-input-v1.schema.json",
+            "test/fixtures/extension-generation/input.json",
+            "/ownerDeclarations/0/coordinate",
+            serde_json::json!(" fixture:semantic-source@1 "),
+        ),
+        (
+            "schemas/wesley-generation-provenance-manifest-v1.schema.json",
+            "test/fixtures/extension-generation/provenance.json",
+            "/generator/version",
+            serde_json::json!("1.0.0\n"),
+        ),
+        (
+            "schemas/wesley-generation-review-v1.schema.json",
+            "test/fixtures/extension-generation/review.json",
+            "/projectionRoles/0",
+            serde_json::json!("\tgenerated-profile"),
+        ),
+    ];
+
+    for (schema_path, fixture_path, token_path, malformed) in cases {
+        let schema: Value = serde_json::from_str(&read(schema_path)).unwrap();
+        let validator = generation_schema_validator(&schema);
+        let mut fixture: Value = serde_json::from_str(&read(fixture_path)).unwrap();
+        *fixture
+            .pointer_mut(token_path)
+            .unwrap_or_else(|| panic!("missing fixture token at {token_path}")) = malformed;
+
+        assert!(
+            !validator.is_valid(&fixture),
+            "{schema_path} accepted malformed token at {token_path}"
+        );
+    }
+}
+
+#[test]
 fn published_input_schema_accepts_documented_shape_arguments() {
     let schema_sdl = r#"
         type Query {

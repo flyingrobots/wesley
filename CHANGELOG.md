@@ -62,6 +62,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Aligned published input, provenance, and review schemas with Rust's token
+  validation so padded or control-character-bearing values fail both surfaces.
 - Rejected empty, padded, or control-character-bearing operation root, field,
   and argument names before serializing extension-generation input.
 - Triggered the Rust product preflight when checked extension-generation
