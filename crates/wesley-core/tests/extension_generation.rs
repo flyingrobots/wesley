@@ -19,6 +19,21 @@ fn read(path: &str) -> String {
     fs::read_to_string(repo_path(path)).unwrap_or_else(|error| panic!("read {path}: {error}"))
 }
 
+fn generation_schema_validator(schema: &Value) -> jsonschema::Validator {
+    let registry = jsonschema::Registry::new()
+        .add(
+            "https://wesley.dev/schemas/wesley-law-ir-v1.schema.json",
+            serde_json::from_str::<Value>(&read("schemas/wesley-law-ir-v1.schema.json")).unwrap(),
+        )
+        .expect("Law IR schema URI should be valid")
+        .prepare()
+        .expect("generation schema registry should prepare");
+    jsonschema::options()
+        .with_registry(&registry)
+        .build(schema)
+        .expect("generation schema should compile")
+}
+
 fn shape_fixture() -> (wesley_core::WesleyIR, Vec<wesley_core::SchemaOperation>) {
     let sdl = read("test/fixtures/weslaw/contract-bundle-shape.graphql");
     let shape_ir = lower_schema_sdl(&sdl).expect("fixture schema should lower");
@@ -415,7 +430,7 @@ fn checked_generation_fixtures_match_public_api_and_published_schemas() {
         );
 
         let schema: Value = serde_json::from_str(&read(schema_path)).unwrap();
-        let validator = jsonschema::validator_for(&schema).expect("schema should compile");
+        let validator = generation_schema_validator(&schema);
         let errors = validator
             .iter_errors(&value)
             .map(|error| error.to_string())
@@ -426,4 +441,39 @@ fn checked_generation_fixtures_match_public_api_and_published_schemas() {
     manifest
         .verify(&input, generator_bytes, &[source], &[output])
         .expect("checked fixture materials should verify");
+}
+
+#[test]
+fn published_input_schema_rejects_malformed_nested_contracts() {
+    let schema: Value = serde_json::from_str(&read(
+        "schemas/wesley-extension-generation-input-v1.schema.json",
+    ))
+    .unwrap();
+    let validator = generation_schema_validator(&schema);
+    let fixture: Value =
+        serde_json::from_str(&read("test/fixtures/extension-generation/input.json")).unwrap();
+
+    let mut empty_operation = fixture.clone();
+    empty_operation["operations"][0] = serde_json::json!({});
+
+    let mut empty_shape_type = fixture.clone();
+    empty_shape_type["shapeIr"]["types"][0] = serde_json::json!({});
+
+    let mut incomplete_law = fixture;
+    incomplete_law["law"] = serde_json::json!({
+        "lawIr": { "apiVersion": "wesley.law-ir/v1" },
+        "semanticDigest": compute_generation_artifact_digest_v1(b"semantic-law"),
+        "canonicalDigest": compute_generation_artifact_digest_v1(b"canonical-law")
+    });
+
+    for (name, invalid) in [
+        ("empty operation", empty_operation),
+        ("empty Shape IR type", empty_shape_type),
+        ("incomplete Law IR", incomplete_law),
+    ] {
+        assert!(
+            !validator.is_valid(&invalid),
+            "published input schema accepted {name}"
+        );
+    }
 }
