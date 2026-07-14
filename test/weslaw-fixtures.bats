@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load 'bats-plugins/bats-support/load'
-load 'bats-plugins/bats-assert/load'
+load 'vendor/bats-plugins/bats-support/load'
+load 'vendor/bats-plugins/bats-assert/load'
 
 @test "weslaw substrate schema does not shadow accepted footprint law with inline directive law" {
   run grep -n '^[[:space:]]*@wes_footprint(' test/fixtures/weslaw/contract-bundle-shape.graphql

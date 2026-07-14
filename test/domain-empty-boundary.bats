@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load 'bats-plugins/bats-support/load'
-load 'bats-plugins/bats-assert/load'
+load 'vendor/bats-plugins/bats-support/load'
+load 'vendor/bats-plugins/bats-assert/load'
 
 @test "front-door docs point to the domain-empty boundary packet" {
   run grep -F "[Domain-Empty Core Boundary](./docs/design/0014-domain-empty-core-boundary/domain-empty-core-boundary.md)" README.md

@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load 'bats-plugins/bats-support/load'
-load 'bats-plugins/bats-assert/load'
+load 'vendor/bats-plugins/bats-support/load'
+load 'vendor/bats-plugins/bats-assert/load'
 
 @test "CI names distinguish Rust product checks from retired host experiments" {
   run bash -lc "grep -F 'name: Rust Product - Native CLI' .github/workflows/rust-native.yml | wc -l"
