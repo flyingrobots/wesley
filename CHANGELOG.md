@@ -62,6 +62,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Rejected empty, padded, or control-character-bearing operation root, field,
+  and argument names before serializing extension-generation input.
 - Triggered the Rust product preflight when checked extension-generation
   fixtures change on pull requests or the main branch.
 - Accepted optional Shape field-argument descriptions in the published

@@ -205,6 +205,36 @@ fn every_semantic_input_class_moves_the_generation_digest() {
 }
 
 #[test]
+fn generation_input_rejects_malformed_operation_coordinates() {
+    let (shape_ir, operations) = shape_fixture();
+    let assert_invalid = |operations, expected_subject: &str| {
+        let error = ExtensionGenerationInputV1::new(
+            shape_ir.clone(),
+            operations,
+            None,
+            Vec::new(),
+            compute_generation_artifact_digest_v1(b"settings"),
+            Vec::new(),
+        )
+        .expect_err("malformed operation coordinate must fail");
+        assert_eq!(error.kind, GenerationContractErrorKind::InvalidCoordinate);
+        assert_eq!(error.subject, expected_subject);
+    };
+
+    let mut empty_root = operations.clone();
+    empty_root[0].root_type_name.clear();
+    assert_invalid(empty_root, "operations[0].rootTypeName");
+
+    let mut empty_field = operations.clone();
+    empty_field[0].field_name.clear();
+    assert_invalid(empty_field, "operations[0].fieldName");
+
+    let mut empty_argument = operations;
+    empty_argument[0].arguments[0].name.clear();
+    assert_invalid(empty_argument, "operations[0].arguments[0].name");
+}
+
+#[test]
 fn conflicting_digests_for_one_coordinate_are_rejected_structurally() {
     let (shape_ir, operations) = shape_fixture();
     let error = ExtensionGenerationInputV1::new(

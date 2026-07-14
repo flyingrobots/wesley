@@ -672,7 +672,21 @@ fn normalize_shape_ir(mut shape_ir: WesleyIR) -> Result<WesleyIR, GenerationCont
 fn normalize_operations(
     mut operations: Vec<SchemaOperation>,
 ) -> Result<Vec<SchemaOperation>, GenerationContractError> {
-    for operation in &mut operations {
+    for (operation_index, operation) in operations.iter_mut().enumerate() {
+        validate_token(
+            &operation.root_type_name,
+            &format!("operations[{operation_index}].rootTypeName"),
+        )?;
+        validate_token(
+            &operation.field_name,
+            &format!("operations[{operation_index}].fieldName"),
+        )?;
+        for (argument_index, argument) in operation.arguments.iter().enumerate() {
+            validate_token(
+                &argument.name,
+                &format!("operations[{operation_index}].arguments[{argument_index}].name"),
+            )?;
+        }
         operation
             .arguments
             .sort_by(|left, right| left.name.cmp(&right.name));
