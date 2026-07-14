@@ -283,10 +283,33 @@ function formatCommandArg(value) {
 }
 
 function buildGitDiscoveryEnv(env) {
-  return {
-    ...env,
-    GIT_OPTIONAL_LOCKS: env.GIT_OPTIONAL_LOCKS || '0'
-  };
+  const childEnv = { ...env };
+  for (const variable of [
+    'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+    'GIT_CONFIG',
+    'GIT_CONFIG_PARAMETERS',
+    'GIT_CONFIG_COUNT',
+    'GIT_OBJECT_DIRECTORY',
+    'GIT_DIR',
+    'GIT_WORK_TREE',
+    'GIT_IMPLICIT_WORK_TREE',
+    'GIT_GRAFT_FILE',
+    'GIT_INDEX_FILE',
+    'GIT_NO_REPLACE_OBJECTS',
+    'GIT_REPLACE_REF_BASE',
+    'GIT_PREFIX',
+    'GIT_SHALLOW_FILE',
+    'GIT_COMMON_DIR'
+  ]) {
+    delete childEnv[variable];
+  }
+  for (const variable of Object.keys(childEnv)) {
+    if (/^GIT_CONFIG_(?:KEY|VALUE)_\d+$/.test(variable)) {
+      delete childEnv[variable];
+    }
+  }
+  childEnv.GIT_OPTIONAL_LOCKS = env.GIT_OPTIONAL_LOCKS || '0';
+  return childEnv;
 }
 
 function isDirectInvocation() {
@@ -298,4 +321,10 @@ if (isDirectInvocation()) {
   main();
 }
 
-export { buildCommands, formatCommand, formatSpawnFailure, resolveCommand };
+export {
+  buildCommands,
+  buildGitDiscoveryEnv,
+  formatCommand,
+  formatSpawnFailure,
+  resolveCommand
+};
