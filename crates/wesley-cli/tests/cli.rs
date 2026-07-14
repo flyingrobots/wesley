@@ -2103,6 +2103,8 @@ fn run_git<const N: usize>(repo: &std::path::Path, args: [&str; N]) {
 }
 
 fn clear_git_repository_environment(command: &mut Command) {
+    // Git hooks export their repository context; fixture repos must discover
+    // identity and worktree state from their own current directory.
     for variable in [
         "GIT_ALTERNATE_OBJECT_DIRECTORIES",
         "GIT_COMMON_DIR",
