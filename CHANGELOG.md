@@ -62,6 +62,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Triggered the Rust product preflight when checked extension-generation
+  fixtures change on pull requests or the main branch.
 - Accepted optional Shape field-argument descriptions in the published
   extension-generation input schema while keeping root operation arguments
   description-free.

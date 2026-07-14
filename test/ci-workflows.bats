@@ -56,6 +56,10 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 2 ]
 
+  run bash -lc "grep -F \"'test/fixtures/extension-generation/**'\" .github/workflows/rust-native.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
   run bash -lc "grep -F 'pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271' .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
