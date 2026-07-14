@@ -408,10 +408,26 @@ fn review_json_is_deterministic_and_explicitly_non_authoritative() {
 
     let first = GenerationReviewV1::from_manifest(&input, &first_manifest).unwrap();
     let second = GenerationReviewV1::from_manifest(&input, &second_manifest).unwrap();
-    assert!(!first.authoritative);
+    assert!(!first.authoritative());
     assert_eq!(
         first.canonical_bytes().unwrap(),
         second.canonical_bytes().unwrap()
+    );
+}
+
+#[test]
+fn generation_review_deserialization_rejects_authority_claims() {
+    let mut fixture: Value =
+        serde_json::from_str(&read("test/fixtures/extension-generation/review.json")).unwrap();
+    fixture["authoritative"] = Value::Bool(true);
+
+    let error = serde_json::from_value::<GenerationReviewV1>(fixture)
+        .expect_err("authoritative review projection must not deserialize");
+    assert!(
+        error
+            .to_string()
+            .contains("WESLEY_GENERATION_AUTHORITATIVE_REVIEW_REJECTED"),
+        "unexpected deserialization failure: {error}"
     );
 }
 
@@ -485,6 +501,30 @@ fn checked_generation_fixtures_match_public_api_and_published_schemas() {
             .collect::<Vec<_>>();
         assert!(errors.is_empty(), "{schema_path}: {errors:#?}");
     }
+
+    let input_fixture = read(&format!("{fixture_root}/input.json"));
+    let decoded_input: ExtensionGenerationInputV1 =
+        serde_json::from_str(&input_fixture).expect("input fixture should deserialize");
+    assert_eq!(
+        decoded_input.canonical_bytes().unwrap(),
+        input_fixture.trim_end().as_bytes()
+    );
+
+    let provenance_fixture = read(&format!("{fixture_root}/provenance.json"));
+    let decoded_manifest: GenerationProvenanceManifestV1 =
+        serde_json::from_str(&provenance_fixture).expect("provenance fixture should deserialize");
+    assert_eq!(
+        decoded_manifest.canonical_bytes().unwrap(),
+        provenance_fixture.trim_end().as_bytes()
+    );
+
+    let review_fixture = read(&format!("{fixture_root}/review.json"));
+    let decoded_review: GenerationReviewV1 =
+        serde_json::from_str(&review_fixture).expect("review fixture should deserialize");
+    assert_eq!(
+        decoded_review.canonical_bytes().unwrap(),
+        review_fixture.trim_end().as_bytes()
+    );
 
     manifest
         .verify(&input, generator_bytes, &[source], &[output])

@@ -62,6 +62,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Made review authority structurally false by rejecting authoritative JSON at
+  deserialization and exposing only a read-only authority accessor.
 - Distinguished malformed generic generation tokens from malformed coordinates
   with the stable `WESLEY_GENERATION_INVALID_TOKEN` diagnostic code.
 - Aligned published input, provenance, and review schemas with Rust's token

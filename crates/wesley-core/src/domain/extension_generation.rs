@@ -453,7 +453,8 @@ pub struct GenerationReviewV1 {
     /// Exact review projection version.
     pub api_version: String,
     /// Always false: this projection is never an authority artifact.
-    pub authoritative: bool,
+    #[serde(deserialize_with = "deserialize_non_authoritative")]
+    authoritative: bool,
     /// Canonical generation-input digest.
     pub generation_input_digest: String,
     /// Canonical provenance-manifest digest.
@@ -468,7 +469,24 @@ pub struct GenerationReviewV1 {
     pub emitted_artifacts: Vec<GenerationArtifactReferenceV1>,
 }
 
+fn deserialize_non_authoritative<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    if bool::deserialize(deserializer)? {
+        return Err(serde::de::Error::custom(
+            GenerationContractErrorKind::AuthoritativeReviewRejected.as_str(),
+        ));
+    }
+    Ok(false)
+}
+
 impl GenerationReviewV1 {
+    /// Returns false because review projections cannot claim authority.
+    pub const fn authoritative(&self) -> bool {
+        self.authoritative
+    }
+
     /// Derives a non-authoritative review projection from validated input and provenance.
     pub fn from_manifest(
         input: &ExtensionGenerationInputV1,
