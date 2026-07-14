@@ -12,6 +12,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   Shape/Law/operation inputs, digest-locked owner declarations and settings,
   generator/source/output provenance verification, and a deterministic
   non-authoritative review projection for external semantic generators.
+
 - Added a Plain Wesley first-hour docs path with a beginner compiler tutorial,
   GraphQL-to-Wesley term map, contributor tutorial, and public-vocabulary rule
   for new docs terminology.
@@ -61,6 +62,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Isolated pre-push child checks from hook-owned Git repository variables so
+  nested fixture repositories cannot mutate the caller's index.
 - Replaced pre-push sanity shell-string execution with argv-based command
   spawning while preserving dry-run command display.
 - Repaired tracker-deletion follow-up docs so pending audit reports point at a
