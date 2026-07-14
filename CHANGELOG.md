@@ -64,6 +64,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 - Isolated pre-push child checks from hook-owned Git repository variables so
   nested fixture repositories cannot mutate the caller's index.
+- Tightened the extension-generation input schema so nested Shape IR, operation,
+  and Law IR values must satisfy their published contracts.
 - Replaced pre-push sanity shell-string execution with argv-based command
   spawning while preserving dry-run command display.
 - Repaired tracker-deletion follow-up docs so pending audit reports point at a
