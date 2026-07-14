@@ -235,6 +235,24 @@ fn generation_input_rejects_malformed_operation_coordinates() {
 }
 
 #[test]
+fn generation_input_classifies_invalid_projection_roles_as_tokens() {
+    let (shape_ir, operations) = shape_fixture();
+    let error = ExtensionGenerationInputV1::new(
+        shape_ir,
+        operations,
+        None,
+        Vec::new(),
+        compute_generation_artifact_digest_v1(b"settings"),
+        vec![" padded-role ".to_owned()],
+    )
+    .expect_err("padded projection role must fail");
+
+    assert_eq!(error.kind, GenerationContractErrorKind::InvalidToken);
+    assert_eq!(error.kind.as_str(), "WESLEY_GENERATION_INVALID_TOKEN");
+    assert_eq!(error.subject, "projectionRoles");
+}
+
+#[test]
 fn conflicting_digests_for_one_coordinate_are_rejected_structurally() {
     let (shape_ir, operations) = shape_fixture();
     let error = ExtensionGenerationInputV1::new(

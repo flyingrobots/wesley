@@ -62,6 +62,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Distinguished malformed generic generation tokens from malformed coordinates
+  with the stable `WESLEY_GENERATION_INVALID_TOKEN` diagnostic code.
 - Aligned published input, provenance, and review schemas with Rust's token
   validation so padded or control-character-bearing values fail both surfaces.
 - Rejected empty, padded, or control-character-bearing operation root, field,

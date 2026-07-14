@@ -262,7 +262,7 @@ impl GeneratorIdentityV1 {
 
     fn validate(&self) -> Result<(), GenerationContractError> {
         validate_coordinate(&self.coordinate)?;
-        validate_token(&self.version, "generator.version")?;
+        validate_coordinate_token(&self.version, "generator.version")?;
         validate_digest(&self.digest, &self.coordinate)
     }
 }
@@ -555,8 +555,10 @@ impl GenerationReviewV1 {
 pub enum GenerationContractErrorKind {
     /// A versioned artifact used an unsupported API version.
     UnsupportedApiVersion,
-    /// An owner-defined coordinate or version token was empty or malformed.
+    /// A coordinate, generator version, or operation coordinate was malformed.
     InvalidCoordinate,
+    /// A non-coordinate contract token was empty or malformed.
+    InvalidToken,
     /// A digest was not a lowercase `sha256:<hex>` value.
     InvalidDigest,
     /// A set-like declaration repeated one coordinate.
@@ -595,6 +597,7 @@ impl GenerationContractErrorKind {
         match self {
             Self::UnsupportedApiVersion => "WESLEY_GENERATION_UNSUPPORTED_API_VERSION",
             Self::InvalidCoordinate => "WESLEY_GENERATION_INVALID_COORDINATE",
+            Self::InvalidToken => "WESLEY_GENERATION_INVALID_TOKEN",
             Self::InvalidDigest => "WESLEY_GENERATION_INVALID_DIGEST",
             Self::DuplicateCoordinate => "WESLEY_GENERATION_DUPLICATE_COORDINATE",
             Self::CoordinateDigestConflict => "WESLEY_GENERATION_COORDINATE_DIGEST_CONFLICT",
@@ -673,16 +676,16 @@ fn normalize_operations(
     mut operations: Vec<SchemaOperation>,
 ) -> Result<Vec<SchemaOperation>, GenerationContractError> {
     for (operation_index, operation) in operations.iter_mut().enumerate() {
-        validate_token(
+        validate_coordinate_token(
             &operation.root_type_name,
             &format!("operations[{operation_index}].rootTypeName"),
         )?;
-        validate_token(
+        validate_coordinate_token(
             &operation.field_name,
             &format!("operations[{operation_index}].fieldName"),
         )?;
         for (argument_index, argument) in operation.arguments.iter().enumerate() {
-            validate_token(
+            validate_coordinate_token(
                 &argument.name,
                 &format!("operations[{operation_index}].arguments[{argument_index}].name"),
             )?;
@@ -1052,18 +1055,31 @@ where
 }
 
 fn validate_coordinate(coordinate: &str) -> Result<(), GenerationContractError> {
-    validate_token(coordinate, coordinate)
+    validate_coordinate_token(coordinate, coordinate)
 }
 
 fn validate_token(value: &str, subject: &str) -> Result<(), GenerationContractError> {
+    validate_token_as(value, subject, GenerationContractErrorKind::InvalidToken)
+}
+
+fn validate_coordinate_token(value: &str, subject: &str) -> Result<(), GenerationContractError> {
+    validate_token_as(
+        value,
+        subject,
+        GenerationContractErrorKind::InvalidCoordinate,
+    )
+}
+
+fn validate_token_as(
+    value: &str,
+    subject: &str,
+    kind: GenerationContractErrorKind,
+) -> Result<(), GenerationContractError> {
     if value.is_empty()
         || value.trim() != value
         || value.chars().any(|character| character.is_control())
     {
-        return Err(GenerationContractError::new(
-            GenerationContractErrorKind::InvalidCoordinate,
-            subject,
-        ));
+        return Err(GenerationContractError::new(kind, subject));
     }
     Ok(())
 }
