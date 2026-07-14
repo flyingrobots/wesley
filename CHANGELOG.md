@@ -62,6 +62,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Accepted optional Shape field-argument descriptions in the published
+  extension-generation input schema while keeping root operation arguments
+  description-free.
 - Isolated pre-push child checks from hook-owned Git repository variables so
   nested fixture repositories cannot mutate the caller's index.
 - Tightened the extension-generation input schema so nested Shape IR, operation,

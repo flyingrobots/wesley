@@ -477,3 +477,35 @@ fn published_input_schema_rejects_malformed_nested_contracts() {
         );
     }
 }
+
+#[test]
+fn published_input_schema_accepts_documented_shape_arguments() {
+    let schema_sdl = r#"
+        type Query {
+          projection(
+            """Stable owner-defined projection coordinate."""
+            coordinate: ID!
+          ): String!
+        }
+    "#;
+    let input = input_with(
+        lower_schema_sdl(schema_sdl).expect("documented schema should lower"),
+        list_schema_operations_sdl(schema_sdl).expect("documented operations should list"),
+        None,
+        Vec::new(),
+        b"settings",
+        vec!["projection"],
+    );
+    let schema: Value = serde_json::from_str(&read(
+        "schemas/wesley-extension-generation-input-v1.schema.json",
+    ))
+    .unwrap();
+    let validator = generation_schema_validator(&schema);
+    let value = serde_json::to_value(&input).expect("generation input should serialize");
+
+    let errors = validator
+        .iter_errors(&value)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(errors.is_empty(), "documented Shape argument: {errors:#?}");
+}
