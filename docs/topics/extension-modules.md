@@ -29,6 +29,18 @@ a domain.
 Use descriptor fixtures when Wesley needs hermetic coverage for extension shape
 without shipping the extension itself.
 
+## Semantic Generators
+
+Rust generators that need Wesley's canonical compiler facts can consume the
+[`wesley-core` extension-generation contract](../reference/extension-generation.md).
+That contract is separate from the descriptor-only external-target protocol: it
+passes typed in-memory facts to a generator and records deterministic
+provenance, but it does not discover or execute a target.
+
+The generator owner supplies domain declarations, settings, requested output
+roles, and output schemas. Wesley canonicalizes the neutral Shape/Law input and
+verifies exact bytes; it does not interpret the external target's meaning.
+
 ## Rules Of Thumb
 
 - Do not rebuild the retired dynamic JavaScript module loader in core.
@@ -45,5 +57,6 @@ without shipping the extension itself.
 - [Module Authoring Guide](../guides/module-authoring.md)
 - [Extending Wesley](../guides/extending.md)
 - [External Target Protocol](../reference/external-target-protocol.md)
+- [Extension Generation Contract](../reference/extension-generation.md)
 - [Project Manifests](./project-manifests.md)
 - [Compiler Boundary](./compiler-boundary.md)

@@ -12,6 +12,15 @@ This directory hosts machine-readable schemas that underpin Wesley’s generator
   Schema describing the emitted `wesley.contract-bundle-manifest/v1` shape.
 - `wesley-law-diff-v1.schema.json` – Versioned, canonical JSON Schema
   describing machine-readable `wesley.law-diff/v1` semantic law diff reports.
+- `wesley-extension-generation-input-v1.schema.json` – Versioned, canonical
+  JSON Schema for the domain-neutral semantic input supplied to an external
+  Rust generator.
+- `wesley-generation-provenance-manifest-v1.schema.json` – Versioned,
+  canonical JSON Schema binding one generator invocation to its exact input,
+  sources, settings, contract versions, and outputs.
+- `wesley-generation-review-v1.schema.json` – Versioned, canonical JSON Schema
+  for the explicitly non-authoritative review projection derived from one
+  generation invocation.
 - `wesley-target-descriptor-v1.schema.json` – JSON Schema for
   `wesley.target-descriptor/v1` external target descriptors.
 - `wesley-target-request-v1.schema.json` – JSON Schema for

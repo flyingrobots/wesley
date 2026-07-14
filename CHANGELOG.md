@@ -8,6 +8,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- Added a pure `wesley-core` extension-generation contract with canonical
+  Shape/Law/operation inputs, digest-locked owner declarations and settings,
+  generator/source/output provenance verification, and a deterministic
+  non-authoritative review projection for external semantic generators.
 - Added a Plain Wesley first-hour docs path with a beginner compiler tutorial,
   GraphQL-to-Wesley term map, contributor tutorial, and public-vocabulary rule
   for new docs terminology.
