@@ -470,6 +470,23 @@ load 'vendor/bats-plugins/bats-assert/load'
   [ -z "$output" ]
 }
 
+@test "release crates workflow marks pre-release tags as pre-releases" {
+  # Classifies the release channel from the tag's SemVer pre-release suffix
+  # (e.g. v0.3.0-alpha.1) so alpha/beta/rc tags do not publish as stable.
+  run grep -F 'WESLEY_PRERELEASE' .github/workflows/release-crates.yml
+  assert_success
+
+  # Threads the pre-release flag into the GitHub Release create and finalize
+  # steps so the published release is marked prerelease and not latest.
+  run bash -lc "grep -c -- '--prerelease' .github/workflows/release-crates.yml"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  # Stable tags still publish as the latest release.
+  run grep -F -- '--latest' .github/workflows/release-crates.yml
+  assert_success
+}
+
 @test "pull request template preserves rollback metadata" {
   run grep -F '## Backout' .github/pull_request_template.md
   assert_success

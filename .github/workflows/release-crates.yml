@@ -201,12 +201,13 @@ jobs:
         run: |
           set -euo pipefail
           # A SemVer pre-release (e.g. v0.3.0-alpha.1) carries a hyphen after the
-          # core version. Stable releases (v0.3.0) do not.
-          if printf '%s' "${GITHUB_REF_NAME#v}" | grep -q '-'; then
-            echo "WESLEY_PRERELEASE=true" >> "$GITHUB_ENV"
-          else
-            echo "WESLEY_PRERELEASE=false" >> "$GITHUB_ENV"
-          fi
+          # core version; stable releases (v0.3.0) do not. Use a shell glob so
+          # classification never depends on how grep treats a leading-dash
+          # pattern.
+          case "${GITHUB_REF_NAME#v}" in
+            *-*) echo "WESLEY_PRERELEASE=true" >> "$GITHUB_ENV" ;;
+            *) echo "WESLEY_PRERELEASE=false" >> "$GITHUB_ENV" ;;
+          esac
 
       - name: Create draft GitHub Release
         env:
