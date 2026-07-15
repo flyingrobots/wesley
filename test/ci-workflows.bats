@@ -471,14 +471,18 @@ load 'vendor/bats-plugins/bats-assert/load'
 }
 
 @test "release crates workflow marks pre-release tags as pre-releases" {
-  # Classifies the release channel from the tag's SemVer pre-release suffix
-  # (e.g. v0.3.0-alpha.1) so alpha/beta/rc tags do not publish as stable.
-  run grep -F 'WESLEY_PRERELEASE' .github/workflows/release-crates.yml
+  # Assert the classification wiring, not merely that the variable is mentioned:
+  # the hyphen (pre-release) case arm must set true and the default arm false,
+  # so an inverted mapping would fail here.
+  run grep -F '*-*) echo "WESLEY_PRERELEASE=true"' .github/workflows/release-crates.yml
   assert_success
 
-  # Threads the pre-release flag into the GitHub Release create and finalize
+  run grep -F '*) echo "WESLEY_PRERELEASE=false"' .github/workflows/release-crates.yml
+  assert_success
+
+  # The pre-release flag is threaded into the GitHub Release create and finalize
   # steps so the published release is marked prerelease and not latest.
-  run bash -lc "grep -c -- '--prerelease' .github/workflows/release-crates.yml"
+  run grep -c -- '--prerelease' .github/workflows/release-crates.yml
   assert_success
   [ "$output" -ge 1 ]
 

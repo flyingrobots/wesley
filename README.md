@@ -39,12 +39,16 @@ as release-scoped until the project declares a stable `1.0` surface.
 
 ## Quick Start
 
-After the signed `v0.2.0` tag publishes, install the native CLI:
+Install the latest stable native CLI from crates.io:
 
 ```bash
 cargo install wesley-cli --version 0.2.0
 wesley --help
 ```
+
+Pre-release builds of the next line (for example `0.3.0-alpha.1`) are published
+to crates.io as opt-in previews; pin the exact pre-release version to install
+one. They are unstable and are not the recommended default.
 
 From a source checkout:
 
