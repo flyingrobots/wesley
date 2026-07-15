@@ -84,10 +84,14 @@ runs, in order:
 
 1. `cargo fmt --check`
 2. `cargo clippy --workspace --all-targets -- -D warnings`
-3. `pnpm audit --prod=false --json`
-4. `cargo xtask docs-check`
-5. `cargo test --workspace`
-6. `cargo run --bin wesley -- --help`
+3. `cargo xtask docs-check`
+4. `cargo test --workspace`
+5. `cargo run --bin wesley -- --help`
+
+JavaScript dependency advisories are tracked by Dependabot and the
+`dependency-review` workflow. `pnpm audit` was removed from the gate after npm
+retired its audit endpoint (HTTP 410), so the preflight no longer depends on
+npm registry health.
 
 `cargo xtask strict-preflight` is an explicit alias for the same gate.
 `cargo xtask release-check` starts with the same gate before building release

@@ -126,7 +126,10 @@ fn run_preflight() -> Result<(), Error> {
             "warnings",
         ],
     )?;
-    run_command("pnpm", &["audit", "--prod=false", "--json"])?;
+    // JavaScript dependency advisories are covered by the dependency-review
+    // workflow and Dependabot. `pnpm audit` is intentionally not run here: npm
+    // retired its audit endpoint (HTTP 410), so the call always fails, and the
+    // Rust-native compiler preflight should not depend on npm registry health.
     run_docs_check()?;
     run_command("cargo", &["test", "--workspace"])?;
     run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])

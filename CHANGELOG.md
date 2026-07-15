@@ -50,6 +50,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- Removed `pnpm audit` from `cargo xtask preflight` and the release gate after
+  npm retired its audit endpoint (HTTP 410), which had turned the step into an
+  unconditional failure. JavaScript dependency advisories are now tracked by
+  Dependabot and the `dependency-review` workflow; the Rust-native preflight no
+  longer depends on npm registry health.
 - Documented and test-protected the supported JSON Schema draft boundary for
   canonical schema artifacts.
 - Aligned Dependabot GitHub Actions update PR labels with existing repository
@@ -62,6 +67,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Taught the crates release workflow to classify a tag's release channel from
+  its SemVer pre-release suffix, so pre-release tags (for example
+  `v0.3.0-alpha.1`) now publish a GitHub Release marked `prerelease` and not
+  `latest`, while stable tags continue to publish as the latest release.
 - Made review authority structurally false by rejecting authoritative JSON at
   deserialization and exposing only a read-only authority accessor.
 - Distinguished malformed generic generation tokens from malformed coordinates
