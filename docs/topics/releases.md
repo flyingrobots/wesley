@@ -71,7 +71,7 @@ needed, and crates are published to crates.io for both channels.
 Pre-releases are cut the same way as stable releases — from synced `main`, under
 the same guards — but are opt-in previews whose APIs and emitted artifacts may
 change before the stable `vX.Y.Z`. `v0.3.0-alpha.1` is the first Wesley
-pre-release, published to unblock downstream consumers.
+pre-release, cut to unblock downstream consumers.
 
 ## Pre-Tag Launch Pass
 

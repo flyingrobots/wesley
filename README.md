@@ -47,8 +47,9 @@ wesley --help
 ```
 
 Pre-release builds of the next line (for example `0.3.0-alpha.1`) are published
-to crates.io as opt-in previews; pin the exact pre-release version to install
-one. They are unstable and are not the recommended default.
+to crates.io as opt-in previews once their signed tag lands; after one is
+published, pin its exact version to install it. Pre-releases are unstable and
+are not the recommended default.
 
 From a source checkout:
 
@@ -142,9 +143,9 @@ extension consumes Wesley IR independently and emits its own artifacts.
 
 ## What's New in v0.3.0-alpha.1
 
-`0.3.0-alpha.1` is the first pre-release of the 0.3.0 line, published to
-crates.io to unblock downstream consumers that need Wesley changes landed
-since `0.2.0`. Notable changes since `0.2.0` include the extension generation
+`0.3.0-alpha.1` is the first pre-release of the 0.3.0 line, cut to unblock
+downstream consumers that need Wesley changes landed since `0.2.0`. Notable
+changes since `0.2.0` include the extension generation
 provenance contract, hardened generation input-schema validation, pre-push and
 test Git-context isolation, and a release pipeline that now publishes
 pre-release tags as GitHub pre-releases (not `latest`). As a pre-release, APIs,

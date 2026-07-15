@@ -12,7 +12,7 @@
 This document is an end-to-end technical explanation of the Wesley repository
 as prepared for the `v0.2.0` release on June 26, 2026. The `v0.3.0-alpha.1`
 pre-release carries the same architecture; it is the first 0.3.0-line
-pre-release published to crates.io to unblock downstream consumers.
+pre-release, cut to unblock downstream consumers.
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the
