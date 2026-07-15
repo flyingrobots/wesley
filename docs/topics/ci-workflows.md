@@ -20,6 +20,7 @@ diff or running focused checks before a PR.
 | Security posture             | Advisory gates, scanner fit, and false positives.  |
 | HOLMES workflow              | Schema-selected assurance reports and PR comments. |
 | SHIPME certificate           | Post-merge evidence for the landed `main` SHA.     |
+| Crates release publishing    | Signed-tag crate publish and GitHub release cut.   |
 
 ## Local Mirrors
 
@@ -50,6 +51,12 @@ BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
 - Browser, Bun, and Deno host experiment workflows are retired from Wesley.
 - Required checks should name the Rust product or repository hygiene surface
   they protect.
+- The crates release workflow classifies the tag channel from its SemVer
+  suffix: pre-release tags (for example `v0.3.0-alpha.1`) publish as GitHub
+  pre-releases and are not marked `latest`; stable tags publish as `latest`.
+- Git hooks export `GIT_DIR`/`GIT_WORK_TREE` into child processes, so the
+  pre-push checks and the CLI git tests strip them to keep nested fixture
+  repositories from mutating the caller's repository.
 - Do not widen workflow permissions or secret exposure casually.
 
 ## Related Authority

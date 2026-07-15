@@ -58,6 +58,21 @@ implementation slices, release milestones own release-gate issues, and concrete
 `vX.Y.Z` labels are the version scheduling axis. This is intentional because a
 GitHub issue can carry only one milestone.
 
+## Pre-Release Channels
+
+A tag whose version carries a SemVer pre-release suffix (for example
+`v0.3.0-alpha.1`, `-beta.N`, or `-rc.N`) is published as a GitHub Release marked
+`prerelease` and is not promoted to `latest`; stable `vX.Y.Z` tags publish as
+`latest`. The crates release workflow
+([`.github/workflows/release-crates.yml`](../../.github/workflows/release-crates.yml))
+classifies the channel from the tag itself, so no separate configuration is
+needed, and crates are published to crates.io for both channels.
+
+Pre-releases are cut the same way as stable releases — from synced `main`, under
+the same guards — but are opt-in previews whose APIs and emitted artifacts may
+change before the stable `vX.Y.Z`. `v0.3.0-alpha.1` is the first Wesley
+pre-release, published to unblock downstream consumers.
+
 ## Pre-Tag Launch Pass
 
 After the release-prep PR lands on `main` but before creating the signed tag,
