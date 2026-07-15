@@ -39,12 +39,17 @@ as release-scoped until the project declares a stable `1.0` surface.
 
 ## Quick Start
 
-After the signed `v0.2.0` tag publishes, install the native CLI:
+Install the latest stable native CLI from crates.io:
 
 ```bash
 cargo install wesley-cli --version 0.2.0
 wesley --help
 ```
+
+Pre-release builds of the next line (for example `0.3.0-alpha.1`) are published
+to crates.io as opt-in previews once their signed tag lands; after one is
+published, pin its exact version to install it. Pre-releases are unstable and
+are not the recommended default.
 
 From a source checkout:
 
@@ -135,6 +140,17 @@ extension consumes Wesley IR independently and emits its own artifacts.
 | Codec         | Wesley emitter or external target | Binary and runtime codecs                             |
 | Echo          | Echo-owned integration            | Runtime law, footprints, observation semantics        |
 | Continuum     | Continuum-owned module/repo       | Deferred protocol generation                          |
+
+## What's New in v0.3.0-alpha.1
+
+`0.3.0-alpha.1` is the first pre-release of the 0.3.0 line, cut to unblock
+downstream consumers that need Wesley changes landed since `0.2.0`. Notable
+changes since `0.2.0` include the extension generation
+provenance contract, hardened generation input-schema validation, pre-push and
+test Git-context isolation, and a release pipeline that now publishes
+pre-release tags as GitHub pre-releases (not `latest`). As a pre-release, APIs,
+CLI surface, and emitted artifacts remain unstable and may change before the
+stable `0.3.0`; see the changelog for the complete list.
 
 ## What's New in v0.2.0
 

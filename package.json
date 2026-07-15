@@ -1,6 +1,6 @@
 {
   "name": "wesley",
-  "version": "0.2.0",
+  "version": "0.3.0-alpha.1",
   "private": true,
   "type": "module",
   "description": "Core GraphQL compiler and assurance toolchain. Wesley brings the compiler; external modules bring target semantics.",

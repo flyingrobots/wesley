@@ -10,7 +10,9 @@
 > [BEARING.md](./BEARING.md) for current direction and active tensions.
 
 This document is an end-to-end technical explanation of the Wesley repository
-as prepared for the `v0.2.0` release on June 26, 2026.
+as prepared for the `v0.2.0` release on June 26, 2026. The `v0.3.0-alpha.1`
+pre-release carries the same architecture; it is the first 0.3.0-line
+pre-release, cut to unblock downstream consumers.
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the
@@ -295,12 +297,13 @@ intentionally not yet exposed as a public Holmes CLI from Rust.
 
 ### Current Tensions
 
-The README now describes `v0.2.0`, aligned with the `Cargo.toml` crate version
-declared across the workspace. The changelog's dated `0.2.0` section carries
-the post-`0.1.1` project-manifest, HOLMES schema-selection, and documentation
-coverage work. Release preparation has landed on synced `main`; the remaining
-release gate is the final pre-tag validation, signed tag, publish, and
-post-publish verification sequence.
+The README now describes `v0.3.0-alpha.1`, aligned with the `Cargo.toml` crate
+version declared across the workspace. The changelog's dated `0.3.0-alpha.1`
+section carries the post-`0.2.0` extension-generation provenance contract,
+generation input-schema hardening, pre-push and test Git-context isolation, and
+release-pipeline pre-release support. Release preparation has landed on synced
+`main`; the remaining release gate is the final pre-tag validation, signed tag,
+publish, and post-publish verification sequence.
 
 ## Package(s) Overview
 

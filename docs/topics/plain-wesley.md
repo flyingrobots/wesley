@@ -34,7 +34,8 @@ and toolchain terms.
 
 ## Beginner Tutorial
 
-Install the current release:
+Install the latest stable release (`0.2.0`; the `0.3.0` line is still a
+pre-release preview, so beginners should stay on stable):
 
 ```bash
 cargo install wesley-cli --version 0.2.0

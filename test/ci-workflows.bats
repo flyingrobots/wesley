@@ -470,6 +470,43 @@ load 'vendor/bats-plugins/bats-assert/load'
   [ -z "$output" ]
 }
 
+@test "release crates workflow classifies pre-release, stable, and build-metadata tags" {
+  # Exercise the workflow's own channel-classification shell across tag shapes
+  # instead of grepping for token presence (a plain '--latest' grep also matches
+  # '--latest=false' and proves nothing about the mapping). Extract the Classify
+  # step's run body and run it for each shape.
+  local snippet
+  snippet="$(awk '
+    /- name: Classify release channel/ { f = 1; next }
+    f && /^      - name: / { exit }
+    f && /run: \|/ { r = 1; next }
+    f && r { print }
+  ' .github/workflows/release-crates.yml)"
+  [ -n "$snippet" ]
+
+  classify() {
+    local env_file="$BATS_TEST_TMPDIR/gh_env"
+    : > "$env_file"
+    GITHUB_REF_NAME="$1" GITHUB_ENV="$env_file" bash -c "$snippet"
+    grep -F 'WESLEY_PRERELEASE=' "$env_file"
+  }
+
+  [ "$(classify v0.3.0)" = "WESLEY_PRERELEASE=false" ]
+  [ "$(classify v0.3.0-alpha.1)" = "WESLEY_PRERELEASE=true" ]
+  [ "$(classify v1.0.0+build.7)" = "WESLEY_PRERELEASE=false" ]
+  [ "$(classify v0.3.0-alpha.1+build.7)" = "WESLEY_PRERELEASE=true" ]
+
+  # The classified value must map to the exact publish flags: pre-release =>
+  # --prerelease --latest=false, stable => --latest. Asserting the exact array
+  # literals (not a bare '--latest' substring) proves the branch mapping.
+  run grep -F 'if [ "${WESLEY_PRERELEASE}" = "true" ]; then' .github/workflows/release-crates.yml
+  assert_success
+  run grep -F 'channel_flags=(--latest)' .github/workflows/release-crates.yml
+  assert_success
+  run grep -F 'channel_flags=(--prerelease --latest=false)' .github/workflows/release-crates.yml
+  assert_success
+}
+
 @test "pull request template preserves rollback metadata" {
   run grep -F '## Backout' .github/pull_request_template.md
   assert_success

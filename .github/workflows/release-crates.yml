@@ -200,13 +200,17 @@ jobs:
       - name: Classify release channel
         run: |
           set -euo pipefail
-          # A SemVer pre-release (e.g. v0.3.0-alpha.1) carries a hyphen after the
-          # core version. Stable releases (v0.3.0) do not.
-          if printf '%s' "${GITHUB_REF_NAME#v}" | grep -q '-'; then
-            echo "WESLEY_PRERELEASE=true" >> "$GITHUB_ENV"
-          else
-            echo "WESLEY_PRERELEASE=false" >> "$GITHUB_ENV"
-          fi
+          # SemVer marks a pre-release with a hyphen after the core version
+          # (v0.3.0-alpha.1) and build metadata with a plus (v0.3.0+build.7).
+          # Strip any build metadata first so a `-` inside it cannot be mistaken
+          # for a pre-release, then a hyphen in what remains means a pre-release.
+          # A shell glob keeps this independent of how grep treats a leading-dash
+          # pattern.
+          version="${GITHUB_REF_NAME#v}"
+          case "${version%%+*}" in
+            *-*) echo "WESLEY_PRERELEASE=true" >> "$GITHUB_ENV" ;;
+            *) echo "WESLEY_PRERELEASE=false" >> "$GITHUB_ENV" ;;
+          esac
 
       - name: Create draft GitHub Release
         env:
