@@ -51,9 +51,8 @@ working directly from this checkout before publication, or
 `cargo install --locked --path crates/wesley-cli` when you need a local
 installed binary. Use `cargo xtask preflight` before opening a PR. This is the
 strict quality gate: it runs `cargo fmt --check`,
-`cargo clippy --workspace --all-targets -- -D warnings`,
-`pnpm audit --prod=false --json`, docs checks, workspace tests, and a native
-CLI smoke test. Use `cargo xtask release-check` before cutting native release
+`cargo clippy --workspace --all-targets -- -D warnings`, docs checks, workspace
+tests, and a native CLI smoke test. Use `cargo xtask release-check` before cutting native release
 artifacts; it runs the same strict gate, then builds the optimized binary,
 smokes it, and packages the Rust library crate without publishing anything.
 

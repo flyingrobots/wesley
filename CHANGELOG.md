@@ -50,6 +50,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- Removed `pnpm audit` from `cargo xtask preflight` and the release gate after
+  npm retired its audit endpoint (HTTP 410), which had turned the step into an
+  unconditional failure. JavaScript dependency advisories are now tracked by
+  Dependabot and the `dependency-review` workflow; the Rust-native preflight no
+  longer depends on npm registry health.
 - Documented and test-protected the supported JSON Schema draft boundary for
   canonical schema artifacts.
 - Aligned Dependabot GitHub Actions update PR labels with existing repository
