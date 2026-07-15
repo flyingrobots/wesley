@@ -136,6 +136,17 @@ extension consumes Wesley IR independently and emits its own artifacts.
 | Echo          | Echo-owned integration            | Runtime law, footprints, observation semantics        |
 | Continuum     | Continuum-owned module/repo       | Deferred protocol generation                          |
 
+## What's New in v0.3.0-alpha.1
+
+`0.3.0-alpha.1` is the first pre-release of the 0.3.0 line, published to
+crates.io to unblock downstream consumers that need Wesley changes landed
+since `0.2.0`. Notable changes since `0.2.0` include the extension generation
+provenance contract, hardened generation input-schema validation, pre-push and
+test Git-context isolation, and a release pipeline that now publishes
+pre-release tags as GitHub pre-releases (not `latest`). As a pre-release, APIs,
+CLI surface, and emitted artifacts remain unstable and may change before the
+stable `0.3.0`; see the changelog for the complete list.
+
 ## What's New in v0.2.0
 
 Wesley `0.2.0` is the domain-free project-manifest platform release. It adds

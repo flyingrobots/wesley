@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.3.0-alpha.1] - 2026-07-15
+
 ### Added
 
 - Added a pure `wesley-core` extension-generation contract with canonical
