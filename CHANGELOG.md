@@ -62,6 +62,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Taught the crates release workflow to classify a tag's release channel from
+  its SemVer pre-release suffix, so pre-release tags (for example
+  `v0.3.0-alpha.1`) now publish a GitHub Release marked `prerelease` and not
+  `latest`, while stable tags continue to publish as the latest release.
 - Made review authority structurally false by rejecting authoritative JSON at
   deserialization and exposing only a read-only authority accessor.
 - Distinguished malformed generic generation tokens from malformed coordinates
