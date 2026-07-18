@@ -7,7 +7,7 @@
 use std::env;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::io::{Error as IoError, ErrorKind};
+use std::io::{Error as IoError, ErrorKind, Write};
 
 use wesley_core::{
     compute_generation_artifact_digest_v1, list_schema_operations_sdl, lower_schema_sdl,
@@ -119,7 +119,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let program = generated.program()?;
 
     if source_only {
-        println!("{program}");
+        let mut stdout = std::io::stdout().lock();
+        write_brainfuck_source(&mut stdout, program)?;
         return Ok(());
     }
 
@@ -141,6 +142,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     );
 
     Ok(())
+}
+
+fn write_brainfuck_source(writer: &mut impl Write, program: &str) -> Result<(), std::io::Error> {
+    writer.write_all(program.as_bytes())?;
+    writer.flush()
 }
 
 fn generate_brainfuck_extension(
@@ -342,6 +348,9 @@ mod tests {
             execute_brainfuck(first.program().unwrap()).unwrap(),
             first.decoded_message.as_bytes()
         );
+        let mut source_bytes = Vec::new();
+        write_brainfuck_source(&mut source_bytes, first.program().unwrap()).unwrap();
+        assert_eq!(source_bytes, first.output.bytes);
         assert!(first.decoded_message.contains("QUERY.PONDER"));
         assert!(first.decoded_message.contains(&first.input.shape_digest));
         assert!(!first.review.authoritative());
