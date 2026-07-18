@@ -92,7 +92,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
             print_help();
             Ok(())
         }
-        "test" => run_command("cargo", &["test", "--workspace"]),
+        "test" => run_tests(),
         "bench-ir" => run_bench_ir(&args[1..]),
         "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
@@ -131,8 +131,16 @@ fn run_preflight() -> Result<(), Error> {
     // retired its audit endpoint (HTTP 410), so the call always fails, and the
     // Rust-native compiler preflight should not depend on npm registry health.
     run_docs_check()?;
-    run_command("cargo", &["test", "--workspace"])?;
+    run_tests()?;
     run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
+}
+
+fn run_tests() -> Result<(), Error> {
+    run_command("cargo", &["test", "--workspace"])?;
+    run_command(
+        "cargo",
+        &["test", "-p", "wesley-core", "--example", "ir_to_brainfuck"],
+    )
 }
 
 fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {

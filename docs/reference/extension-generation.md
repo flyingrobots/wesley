@@ -84,15 +84,47 @@ missing, unexpected, or mismatched material with structured error kinds.
 - No API in this contract reads the filesystem, environment, clock, network,
   package registry, or process state.
 
+## Runnable Example: IR To Brainfuck
+
+For an end-to-end external-generator example with appropriately questionable
+target-language judgment, run:
+
+```text
+cargo run --quiet -p wesley-core --example ir_to_brainfuck
+```
+
+Cargo compiles an example target as a separate crate, so
+`crates/wesley-core/examples/ir_to_brainfuck.rs` consumes only the public
+`wesley-core` API. It lowers a small GraphQL schema, derives a deterministic
+summary from canonical Shape IR and normalized root operations, compiles that
+summary into Brainfuck, executes the program, and verifies the exact owner
+declaration, generator component, and emitted program bytes. The playback also
+prints the input and provenance digests and confirms that the review projection
+is non-authoritative.
+
+Emit the complete Brainfuck source instead of running the human-readable
+playback with:
+
+```text
+cargo run --quiet -p wesley-core --example ir_to_brainfuck -- --source
+```
+
+The example is educational evidence for the external-generation contract. It
+does not add plugin discovery, target execution, Brainfuck semantics, or a new
+command to the `wesley` CLI.
+
 ## Verification
 
 Run the focused executable contract and fixture checks with:
 
 ```text
 cargo test -p wesley-core --test extension_generation
+cargo test -p wesley-core --example ir_to_brainfuck
 ```
 
 The integration test is compiled as an external Rust crate against only the
 public `wesley-core` API. Checked fixtures under
 `test/fixtures/extension-generation/` are compared with canonical output and
-validated against the published schemas.
+validated against the published schemas. `cargo xtask test` and
+`pnpm run preflight` also execute the Brainfuck example tests so the shipped
+playback cannot silently drift.
