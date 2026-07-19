@@ -258,6 +258,13 @@ fn compile_to_brainfuck(message: &[u8]) -> String {
 }
 
 fn execute_brainfuck(program: &str) -> Result<Vec<u8>, BrainfuckError> {
+    execute_brainfuck_with_step_limit(program, MAX_BRAINFUCK_STEPS)
+}
+
+fn execute_brainfuck_with_step_limit(
+    program: &str,
+    step_limit: usize,
+) -> Result<Vec<u8>, BrainfuckError> {
     let instructions = program.as_bytes();
     let jumps = bracket_jumps(instructions)?;
     if let Some(offset) = instructions
@@ -274,10 +281,8 @@ fn execute_brainfuck(program: &str) -> Result<Vec<u8>, BrainfuckError> {
 
     while offset < instructions.len() {
         steps += 1;
-        if steps > MAX_BRAINFUCK_STEPS {
-            return Err(BrainfuckError::StepLimitExceeded {
-                limit: MAX_BRAINFUCK_STEPS,
-            });
+        if steps > step_limit {
+            return Err(BrainfuckError::StepLimitExceeded { limit: step_limit });
         }
 
         match instructions[offset] {
@@ -439,6 +444,22 @@ mod tests {
         assert_eq!(
             execute_brainfuck("[,]").unwrap_err(),
             BrainfuckError::InputUnsupported { offset: 1 }
+        );
+    }
+
+    #[test]
+    fn interpreter_rejects_pointer_underflow() {
+        assert_eq!(
+            execute_brainfuck("<").unwrap_err(),
+            BrainfuckError::PointerUnderflow { offset: 0 }
+        );
+    }
+
+    #[test]
+    fn interpreter_enforces_the_step_limit() {
+        assert_eq!(
+            execute_brainfuck_with_step_limit("+[]", 3).unwrap_err(),
+            BrainfuckError::StepLimitExceeded { limit: 3 }
         );
     }
 }
