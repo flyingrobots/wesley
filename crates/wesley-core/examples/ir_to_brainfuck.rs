@@ -6,6 +6,7 @@
 
 use std::env;
 use std::error::Error;
+use std::ffi::OsString;
 use std::fmt::{Display, Formatter};
 use std::io::{Error as IoError, ErrorKind, Write};
 
@@ -103,11 +104,11 @@ impl Error for BrainfuckError {}
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut stdout = std::io::stdout().lock();
-    run(env::args().skip(1), &mut stdout)
+    run(env::args_os().skip(1), &mut stdout)
 }
 
 fn run(
-    args: impl IntoIterator<Item = String>,
+    args: impl IntoIterator<Item = OsString>,
     stdout: &mut impl Write,
 ) -> Result<(), Box<dyn Error>> {
     let source_only = match args.into_iter().collect::<Vec<_>>().as_slice() {
@@ -375,7 +376,7 @@ mod tests {
             first.decoded_message.as_bytes()
         );
         let mut source_bytes = Vec::new();
-        run(["--source".to_owned()], &mut source_bytes).unwrap();
+        run([OsString::from("--source")], &mut source_bytes).unwrap();
         assert_eq!(source_bytes, first.output.bytes);
         assert_eq!(
             compute_generation_artifact_digest_v1(&source_bytes),
@@ -461,5 +462,17 @@ mod tests {
             execute_brainfuck_with_step_limit("+[]", 3).unwrap_err(),
             BrainfuckError::StepLimitExceeded { limit: 3 }
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn non_utf8_arguments_return_the_usage_error() {
+        use std::os::unix::ffi::OsStringExt;
+
+        let argument = OsString::from_vec(vec![0xff]);
+        let error = run([argument], &mut Vec::new()).unwrap_err();
+        let io_error = error.downcast_ref::<IoError>().unwrap();
+
+        assert_eq!(io_error.kind(), ErrorKind::InvalidInput);
     }
 }
