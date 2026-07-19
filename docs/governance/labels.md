@@ -23,7 +23,6 @@ GitHub and can be reviewed with `gh label list`.
 | `status: non-blocking`         | Nice-to-have items that are not release blockers.                                                               |
 | `pkg:*`                        | Ownership hints for the affected package(s).                                                                    |
 | `triage:*`                     | Unscheduled intake classification.                                                                              |
-| `v*`                           | Named future release scheduling.                                                                                |
 | `legend:*`                     | Wesley legend classification.                                                                                   |
 | `work:*`                       | Product, integrity, or enabler work shape.                                                                      |
 
@@ -37,12 +36,20 @@ flow.
 | `triage:requests`   | Raw requests and incoming asks.                           |
 | `triage:bad-code`   | Debt intake awaiting scheduling, split, move, or closure. |
 | `triage:cool-ideas` | Idea intake awaiting scheduling, split, move, or closure. |
-| `vX.Y.Z`            | Work scheduled for a named future release.                |
 
-Every open issue should carry exactly one scheduling-state label: either one
-`triage:*` label or one `vX.Y.Z` label. Do not use generic labels such as
-`lane:asap`, `lane:inbox`, `lane:bad-code`, `lane:cool-ideas`,
-`lane:release`, or `lane:planned` for active work.
+Every open issue must be in exactly one scheduling state:
+
+- unscheduled with exactly one `triage:*` label and no milestone; or
+- scheduled in exactly one plain `vX.Y.Z` milestone with no `triage:*` or
+  concrete-version scheduling label.
+
+Milestones are the sole named-release schedule. Labels classify only. Concrete
+`vX.Y.Z` scheduling labels and generic labels such as `lane:asap`,
+`lane:inbox`, `lane:bad-code`, `lane:cool-ideas`, `lane:release`, and
+`lane:planned` are retired and must not be used for active work. Every issue
+committed to a release shares its plain version milestone; the release gate is
+the final pre-tag issue in that milestone. Release outcomes are narrative
+groupings, not alternate schedules.
 
 ## Legends
 
@@ -62,14 +69,18 @@ Legend labels preserve Wesley's work taxonomy:
 ## Label conventions
 
 - Every newly opened issue should get **one work-type label** (bug/feature/chore/docs/tests).
-- Every implementation issue should have a goalpost milestone.
-- Release-gate issues should have a `Release: ...` milestone.
+- Keep new unscheduled intake in exactly one `triage:*` classification and no
+  milestone.
+- Schedule work by assigning exactly one plain `vX.Y.Z` milestone and removing
+  every triage or concrete-version scheduling label.
+- Keep the release-gate issue in that same milestone and close it last before
+  tagging.
 - Use **module labels** (`pkg:*`) when the work sits in a single package; skip
   them for cross-cutting features.
 - Add `good first issue` only if the description already includes clear steps
   and the acceptance criteria can be completed without repo-wide context.
 - `status: non-blocking` is a reminder that an issue can be deferred without
-  risking the next milestone.
+  risking the target release.
 
 ## Adding new labels
 

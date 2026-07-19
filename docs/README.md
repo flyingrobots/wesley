@@ -35,7 +35,7 @@ which signpost is supposed to answer which question.
 | [METHOD Release](./method/release.md)                                       | How releases are shaped, verified, and documented.                                                    |
 | [Documentation Standard](./governance/DOCUMENTATION_STANDARD.md)            | How Wesley docs stay useful without becoming a shadow backlog.                                        |
 | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) | Live GitHub Project for roadmap board views.                                                          |
-| [GitHub Milestones](https://github.com/flyingrobots/wesley/milestones)      | Live goalpost and release milestones.                                                                 |
+| [GitHub Milestones](https://github.com/flyingrobots/wesley/milestones)      | Sole live schedule for named releases through plain `vX.Y.Z` milestones.                              |
 
 ## Current Center Of Gravity
 

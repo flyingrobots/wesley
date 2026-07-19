@@ -7,9 +7,10 @@ It is lighter than doctrine in `README.md` or `docs/method/process.md`.
 
 If a work-worthy idea surfaces during the work, capture it now.
 
-Open a GitHub Issue with the right `triage:*` intake label, release lane if the
-target release is already known, and legend labels instead of leaving the idea
-only in chat, in a dirty worktree, or buried inside a retro.
+Open a GitHub Issue in one canonical scheduling state: unscheduled with exactly
+one `triage:*` label and no milestone, or scheduled with one plain `vX.Y.Z`
+milestone and no `triage:*` or version label. Add classification labels instead
+of leaving the idea only in chat, in a dirty worktree, or buried inside a retro.
 
 ## Retro versus Issues
 

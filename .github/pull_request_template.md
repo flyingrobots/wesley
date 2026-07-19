@@ -28,7 +28,7 @@ Closes #
 ## Tracker Hygiene
 
 - [ ] Linked issue had `work-in-progress` while active.
-- [ ] Linked issue lane/status/legend labels are current.
+- [ ] Linked issue is scheduled in one plain `vX.Y.Z` milestone and has no `triage:*` or version label.
 - [ ] Follow-up work is captured as GitHub Issues, not hidden in chat or local-only backlog files.
 
 ## Risk

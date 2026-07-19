@@ -10,9 +10,7 @@ versioning:
   strategy: semver
   tag_format: 'v{version}'
   release_branch_format: 'release/v{version}'
-  release_milestone_format: 'Release: v{version}'
-  release_lane_label_format: 'v{version}'
-  goalpost_milestone_format: 'Goalpost: {name}'
+  release_milestone_format: 'v{version}'
 
 version_sources:
   - path: crates/wesley-core/Cargo.toml
@@ -90,7 +88,7 @@ docs:
 
 validation:
   docs_check: cargo xtask docs-check
-  prep: cargo xtask release-prep-guard --version {version}
+  post_merge_pre_tag_tracker_clear: cargo xtask release-prep-guard --version {version}
   preflight: cargo xtask preflight
   rust_advisory_audit: cargo audit
   release_check: cargo xtask release-check
@@ -119,11 +117,11 @@ publish:
 
 issue_model:
   live_tracker: github
-  implementation_bucket: 'Goalpost: ... milestone'
-  release_gate_bucket: 'Release: v{version} milestone for gate and closeout issues'
-  release_scheduling_axis: 'v{version} label for pre-tag blockers and scheduled work'
-  triage_axis: 'triage:* label'
-  required_state_label: 'exactly one of triage:* or v{version}'
+  scheduling_authority: 'plain v{version} milestone'
+  scheduled_state: 'exactly one v{version} milestone and no triage:* or concrete version label'
+  unscheduled_state: 'exactly one triage:* label and no milestone'
+  classification_axis: 'type, status, legend:*, work:*, and pkg:* labels'
+  release_gate: 'final pre-tag issue in the target version milestone'
 
 release_evidence:
   internal_packet: docs/method/releases/v{version}/release.md

@@ -2,7 +2,6 @@
 
 use ninelives::{Backoff, Jitter, ResilienceError, RetryPolicy};
 use semver::Version;
-use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -14,6 +13,7 @@ const EXIT_OK: u8 = 0;
 const EXIT_FAILURE: u8 = 1;
 const EXIT_USAGE: u8 = 2;
 const ALPHA_VERSION: &str = "0.0.1";
+const RELEASE_GITHUB_HOST: &str = "github.com";
 const FORBIDDEN_GIT_IDENTITIES: &[&str] = &[
     "Wesley Tests",
     "wesley-tests@example.com",
@@ -822,7 +822,7 @@ fn run_release_prep_guard(args: &[OsString]) -> Result<(), Error> {
     check_git_identity_guard()?;
     check_publish_manifest_versions(&options.version)?;
     check_release_required_files(&options.version)?;
-    check_release_tracker_clear(&tag, &options.version)?;
+    check_release_tracker_clear(&tag)?;
     check_package_file_sets()?;
     println!("xtask: release prep guard passed for {}", options.version);
     Ok(())
@@ -836,7 +836,7 @@ fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     assert_clean_worktree()?;
     check_publish_manifest_versions(&version)?;
     check_release_required_files(&version)?;
-    check_release_tracker_clear(tag, &version)?;
+    check_release_tracker_clear(tag)?;
     check_readme_version_headline(&version)?;
     check_technical_teardown_version(&version)?;
     check_no_wip_fixup_commits(tag)?;
@@ -1405,8 +1405,8 @@ fn is_leap_year(year: u16) -> bool {
     (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
-fn check_release_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
-    check_release_issue_tracker_clear(tag, version)
+fn check_release_tracker_clear(tag: &str) -> Result<(), Error> {
+    check_release_issue_tracker_clear(tag)
 }
 
 fn check_readme_version_headline(version: &str) -> Result<(), Error> {
@@ -1830,184 +1830,119 @@ fn check_cargo_doc_clean() -> Result<(), Error> {
     }
 }
 
-fn check_release_issue_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
-    let repo = release_github_repository()?;
-    let queries = release_issue_query_specs(tag, version, &repo);
-    let mut matches = BTreeMap::new();
+struct GhCommandOutput {
+    success: bool,
+    stdout: String,
+    stderr: String,
+}
 
-    let text_query = release_issue_title_body_query(&repo);
-    let text_output = Command::new("gh")
-        .args(&text_query)
-        .output()
-        .map_err(|source| {
-            Error::Usage(format!(
-                "failed to spawn `gh {}` for release issue tracker check: {source}",
-                text_query.join(" ")
-            ))
-        })?;
+fn run_gh_command(query: &[String]) -> Result<GhCommandOutput, std::io::Error> {
+    let output = Command::new("gh").args(query).output()?;
+    Ok(GhCommandOutput {
+        success: output.status.success(),
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+    })
+}
 
-    if !text_output.status.success() {
-        let stderr = String::from_utf8_lossy(&text_output.stderr);
+fn run_release_tracker_query<R>(query: &[String], run_gh: &mut R) -> Result<String, Error>
+where
+    R: FnMut(&[String]) -> Result<GhCommandOutput, std::io::Error>,
+{
+    let output = run_gh(query).map_err(|source| {
+        Error::Usage(format!(
+            "failed to spawn `gh {}` for release issue tracker check: {source}",
+            query.join(" ")
+        ))
+    })?;
+
+    if !output.success {
         return Err(Error::CheckFailed {
             check: "release issue tracker".to_string(),
             failures: vec![format!(
                 "`gh {}` failed: {}",
-                text_query.join(" "),
-                stderr.trim()
+                query.join(" "),
+                output.stderr.trim()
             )],
         });
     }
 
-    let text_stdout = String::from_utf8_lossy(&text_output.stdout);
-    for issue in parse_current_version_issue_text(&text_stdout, tag, version)? {
-        matches.entry(issue.key).or_insert(issue.display);
-    }
+    Ok(output.stdout)
+}
 
-    for query in queries {
-        let output = Command::new("gh")
-            .args(&query.args)
-            .output()
-            .map_err(|source| {
-                Error::Usage(format!(
-                    "failed to spawn `gh {}` for release issue tracker check: {source}",
-                    query.args.join(" ")
-                ))
-            })?;
-
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            if query.ignore_missing_selector && is_missing_issue_selector_error(&stderr) {
-                continue;
-            }
-            return Err(Error::CheckFailed {
-                check: "release issue tracker".to_string(),
-                failures: vec![format!(
-                    "`gh {}` failed: {}",
-                    query.args.join(" "),
-                    stderr.trim()
-                )],
-            });
-        }
-
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        for issue in parse_release_issue_list(&stdout, &query.source)? {
-            matches.entry(issue.key).or_insert(issue.display);
-        }
-    }
-
-    let prior_output = Command::new("gh")
-        .args([
-            "issue",
-            "list",
-            "--repo",
-            &repo,
-            "--state",
-            "open",
-            "--limit",
-            "1000",
-            "--json",
-            "number,title,url,labels,milestone",
-        ])
-        .output()
-        .map_err(|source| {
-            Error::Usage(format!(
-                "failed to spawn `gh issue list --repo {repo}` for prior-version issue check: {source}"
-            ))
-        })?;
-
-    if !prior_output.status.success() {
-        let stderr = String::from_utf8_lossy(&prior_output.stderr);
-        return Err(Error::CheckFailed {
+fn check_release_milestone_exists<R>(tag: &str, repo: &str, run_gh: &mut R) -> Result<(), Error>
+where
+    R: FnMut(&[String]) -> Result<GhCommandOutput, std::io::Error>,
+{
+    let query = release_milestone_query(repo);
+    let stdout = run_release_tracker_query(&query, run_gh)?;
+    if release_milestone_exists(&stdout, tag) {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
             check: "release issue tracker".to_string(),
             failures: vec![format!(
-                "`gh issue list --repo {repo}` failed: {}",
-                stderr.trim()
+                "required open version milestone `{tag}` does not exist in `{repo}`"
             )],
-        });
+        })
     }
-
-    let prior_stdout = String::from_utf8_lossy(&prior_output.stdout);
-    for issue in parse_prior_version_issue_lanes(&prior_stdout, version)? {
-        matches.entry(issue.key).or_insert(issue.display);
-    }
-
-    finish_check(
-        "release issue tracker",
-        matches.into_values().collect::<Vec<_>>(),
-    )
 }
 
-struct ReleaseIssueQuery {
-    args: Vec<String>,
-    source: String,
-    ignore_missing_selector: bool,
+fn check_release_issue_tracker_clear(tag: &str) -> Result<(), Error> {
+    let repo = release_github_repository()?;
+    check_release_issue_tracker_clear_with(tag, &repo, &mut run_gh_command)
 }
 
-struct ReleaseIssueMatch {
-    key: String,
-    display: String,
+fn check_release_issue_tracker_clear_with<R>(
+    tag: &str,
+    repo: &str,
+    run_gh: &mut R,
+) -> Result<(), Error>
+where
+    R: FnMut(&[String]) -> Result<GhCommandOutput, std::io::Error>,
+{
+    check_release_milestone_exists(tag, repo, run_gh)?;
+    let query = release_milestone_issue_query(tag, repo);
+    let stdout = run_release_tracker_query(&query, run_gh)?;
+
+    let matches = parse_release_issue_list(&stdout, &format!("version milestone `{tag}`"))?;
+    finish_check("release issue tracker", matches)
 }
 
-#[cfg(test)]
-fn release_issue_queries(tag: &str, version: &str, repo: &str) -> Vec<Vec<String>> {
-    std::iter::once(release_issue_title_body_query(repo))
-        .chain(
-            release_issue_query_specs(tag, version, repo)
-                .into_iter()
-                .map(|query| query.args),
-        )
-        .collect()
-}
-
-fn release_issue_query_specs(tag: &str, version: &str, _repo: &str) -> Vec<ReleaseIssueQuery> {
+fn release_milestone_query(repo: &str) -> Vec<String> {
     vec![
-        ReleaseIssueQuery {
-            args: release_issue_selector_query("--label", tag),
-            source: format!("release label `{tag}`"),
-            ignore_missing_selector: true,
-        },
-        ReleaseIssueQuery {
-            args: release_issue_selector_query("--label", tag),
-            source: format!("label `{tag}`"),
-            ignore_missing_selector: true,
-        },
-        ReleaseIssueQuery {
-            args: release_issue_selector_query("--label", version),
-            source: format!("label `{version}`"),
-            ignore_missing_selector: true,
-        },
+        "api".to_string(),
+        "--hostname".to_string(),
+        RELEASE_GITHUB_HOST.to_string(),
+        "--paginate".to_string(),
+        format!("repos/{repo}/milestones?state=open&per_page=100"),
+        "--jq".to_string(),
+        ".[].title".to_string(),
     ]
 }
 
-fn release_issue_title_body_query(repo: &str) -> Vec<String> {
+fn release_milestone_exists(content: &str, target: &str) -> bool {
+    content.lines().any(|title| title == target)
+}
+
+fn release_milestone_issue_query(tag: &str, repo: &str) -> Vec<String> {
     vec![
         "issue".to_string(),
         "list".to_string(),
         "--repo".to_string(),
-        repo.to_string(),
+        format!("{RELEASE_GITHUB_HOST}/{repo}"),
         "--state".to_string(),
         "open".to_string(),
+        "--milestone".to_string(),
+        tag.to_string(),
         "--limit".to_string(),
         "1000".to_string(),
-        "--json".to_string(),
-        "number,title,url,body".to_string(),
-    ]
-}
-
-fn release_issue_selector_query(selector: &str, value: &str) -> Vec<String> {
-    vec![
-        "issue".to_string(),
-        "list".to_string(),
-        "--state".to_string(),
-        "open".to_string(),
-        selector.to_string(),
-        value.to_string(),
         "--json".to_string(),
         "number,title,url".to_string(),
     ]
 }
 
-fn parse_release_issue_list(content: &str, source: &str) -> Result<Vec<ReleaseIssueMatch>, Error> {
+fn parse_release_issue_list(content: &str, source: &str) -> Result<Vec<String>, Error> {
     let issues = serde_json::from_str::<serde_json::Value>(content).map_err(|source| {
         Error::Usage(format!(
             "failed to parse release issue tracker output as JSON: {source}"
@@ -2039,221 +1974,83 @@ fn parse_release_issue_list(content: &str, source: &str) -> Result<Vec<ReleaseIs
             .ok_or_else(|| {
                 Error::Usage("release issue tracker issue is missing string `url`".to_string())
             })?;
-        matches.push(ReleaseIssueMatch {
-            key: url.to_string(),
-            display: format!("#{number} {title} {url} ({source})"),
-        });
+        matches.push((number, format!("#{number} {title} {url} ({source})")));
     }
-    Ok(matches)
-}
-
-fn parse_current_version_issue_text(
-    content: &str,
-    tag: &str,
-    version: &str,
-) -> Result<Vec<ReleaseIssueMatch>, Error> {
-    let issues = serde_json::from_str::<serde_json::Value>(content).map_err(|source| {
-        Error::Usage(format!(
-            "failed to parse release issue tracker title/body output as JSON: {source}"
-        ))
-    })?;
-    let Some(issues) = issues.as_array() else {
-        return Err(Error::Usage(
-            "release issue tracker title/body output must be a JSON array".to_string(),
-        ));
-    };
-
-    let mut matches = Vec::new();
-    for issue in issues {
-        let number = issue
-            .get("number")
-            .and_then(serde_json::Value::as_u64)
-            .ok_or_else(|| {
-                Error::Usage(
-                    "release issue tracker title/body issue is missing numeric `number`"
-                        .to_string(),
-                )
-            })?;
-        let title = issue
-            .get("title")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| {
-                Error::Usage(
-                    "release issue tracker title/body issue is missing string `title`".to_string(),
-                )
-            })?;
-        let url = issue
-            .get("url")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| {
-                Error::Usage(
-                    "release issue tracker title/body issue is missing string `url`".to_string(),
-                )
-            })?;
-        let body = issue
-            .get("body")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or("");
-
-        if contains_exact_release_reference(title, tag, version)
-            || contains_exact_release_reference(body, tag, version)
-        {
-            matches.push(ReleaseIssueMatch {
-                key: url.to_string(),
-                display: format!("#{number} {title} {url} (title/body text)"),
-            });
-        }
-    }
-    Ok(matches)
-}
-
-fn contains_exact_release_reference(content: &str, tag: &str, version: &str) -> bool {
-    contains_exact_release_token(content, tag) || contains_exact_release_token(content, version)
-}
-
-fn contains_exact_release_token(content: &str, needle: &str) -> bool {
-    let mut search = content;
-    while let Some(pos) = search.find(needle) {
-        let before = search[..pos].chars().next_back();
-        let after = &search[pos + needle.len()..];
-        if is_release_version_boundary(before) && is_release_issue_token_end_boundary(after) {
-            return true;
-        }
-        search = &search[pos + 1..];
-    }
-    false
-}
-
-fn is_release_issue_token_end_boundary(after: &str) -> bool {
-    let mut chars = after.chars();
-    match chars.next() {
-        None => true,
-        Some('.') => match chars.next() {
-            None => true,
-            Some(c) => c.is_whitespace(),
-        },
-        Some(c) => !c.is_ascii_alphanumeric() && c != '-' && c != '+' && c != '_',
-    }
-}
-
-fn parse_prior_version_issue_lanes(
-    content: &str,
-    current_version: &str,
-) -> Result<Vec<ReleaseIssueMatch>, Error> {
-    let current = Version::parse(current_version).map_err(|source| {
-        Error::Usage(format!(
-            "failed to parse current release version `{current_version}` for prior-version issue check: {source}"
-        ))
-    })?;
-    let issues = serde_json::from_str::<serde_json::Value>(content).map_err(|source| {
-        Error::Usage(format!(
-            "failed to parse prior-version issue tracker output as JSON: {source}"
-        ))
-    })?;
-    let Some(issues) = issues.as_array() else {
-        return Err(Error::Usage(
-            "prior-version issue tracker output must be a JSON array".to_string(),
-        ));
-    };
-
-    let mut matches = Vec::new();
-    for issue in issues {
-        let number = issue
-            .get("number")
-            .and_then(serde_json::Value::as_u64)
-            .ok_or_else(|| {
-                Error::Usage(
-                    "prior-version issue tracker issue is missing numeric `number`".to_string(),
-                )
-            })?;
-        let title = issue
-            .get("title")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| {
-                Error::Usage(
-                    "prior-version issue tracker issue is missing string `title`".to_string(),
-                )
-            })?;
-        let url = issue
-            .get("url")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| {
-                Error::Usage(
-                    "prior-version issue tracker issue is missing string `url`".to_string(),
-                )
-            })?;
-
-        let mut lanes = Vec::new();
-        if let Some(title) = issue
-            .get("milestone")
-            .and_then(|milestone| milestone.get("title"))
-            .and_then(serde_json::Value::as_str)
-        {
-            if version_lane_is_prior(title, &current) {
-                lanes.push(format!("milestone `{title}`"));
-            }
-        }
-
-        if let Some(labels) = issue.get("labels").and_then(serde_json::Value::as_array) {
-            for label in labels {
-                if let Some(name) = label.get("name").and_then(serde_json::Value::as_str) {
-                    if version_lane_is_prior(name, &current) {
-                        lanes.push(format!("label `{name}`"));
-                    }
-                }
-            }
-        }
-
-        if !lanes.is_empty() {
-            matches.push(ReleaseIssueMatch {
-                key: url.to_string(),
-                display: format!(
-                    "#{number} {title} {url} (prior version {})",
-                    lanes.join(", ")
-                ),
-            });
-        }
-    }
-
-    Ok(matches)
-}
-
-fn version_lane_is_prior(lane: &str, current: &Version) -> bool {
-    version_from_lane_name(lane).is_some_and(|version| version < *current)
-}
-
-fn version_from_lane_name(lane: &str) -> Option<Version> {
-    let lane = lane.trim();
-    let version = lane.strip_prefix('v').unwrap_or(lane);
-    let parsed = Version::parse(version).ok()?;
-    if parsed.build.is_empty() {
-        Some(parsed)
-    } else {
-        None
-    }
-}
-
-fn is_missing_issue_selector_error(stderr: &str) -> bool {
-    let stderr = stderr.to_ascii_lowercase();
-    stderr.contains("could not resolve")
-        || stderr.contains("not found")
-        || stderr.contains("no milestone")
-        || stderr.contains("no label")
+    matches.sort_by_key(|(number, _)| *number);
+    Ok(matches.into_iter().map(|(_, display)| display).collect())
 }
 
 fn release_github_repository() -> Result<String, Error> {
-    if let Ok(repository) = env::var("GITHUB_REPOSITORY") {
-        if parse_github_repository_path(&repository).is_some() {
-            return Ok(repository);
+    let ambient = match env::var("GITHUB_REPOSITORY") {
+        Ok(repository) => Some(repository),
+        Err(env::VarError::NotPresent) => None,
+        Err(env::VarError::NotUnicode(_)) => {
+            return Err(Error::Usage(
+                "GITHUB_REPOSITORY must be valid UTF-8".to_string(),
+            ));
+        }
+    };
+
+    release_github_repository_with(ambient.as_deref(), &mut git_output)
+}
+
+fn release_github_repository_with<G>(
+    ambient_repository: Option<&str>,
+    git: &mut G,
+) -> Result<String, Error>
+where
+    G: FnMut(&[&str]) -> Result<String, Error>,
+{
+    let fetch_remote = git(&["remote", "get-url", "origin"])?;
+    let push_remotes = git(&["remote", "get-url", "--push", "--all", "origin"])?;
+
+    resolve_release_github_repository(&fetch_remote, &push_remotes, ambient_repository)
+        .map_err(Error::Usage)
+}
+
+fn resolve_release_github_repository(
+    origin_fetch_remote: &str,
+    origin_push_remotes: &str,
+    ambient_repository: Option<&str>,
+) -> Result<String, String> {
+    let origin_repository =
+        parse_github_repository_remote(origin_fetch_remote).ok_or_else(|| {
+            format!(
+                "could not infer GitHub repository from origin fetch URL `{origin_fetch_remote}`"
+            )
+        })?;
+
+    let push_remotes = origin_push_remotes
+        .lines()
+        .map(str::trim)
+        .filter(|remote| !remote.is_empty())
+        .collect::<Vec<_>>();
+    if push_remotes.is_empty() {
+        return Err("origin has no effective push URL".to_string());
+    }
+    for push_remote in push_remotes {
+        let push_repository = parse_github_repository_remote(push_remote).ok_or_else(|| {
+            format!("could not infer GitHub repository from origin push URL `{push_remote}`")
+        })?;
+        if push_repository != origin_repository {
+            return Err(format!(
+                "origin push repository `{push_repository}` does not match origin fetch repository `{origin_repository}`"
+            ));
         }
     }
 
-    let remote = git_output(&["remote", "get-url", "origin"])?;
-    parse_github_repository_remote(&remote).ok_or_else(|| {
-        Error::Usage(format!(
-            "could not infer GitHub repository from origin remote `{remote}`"
-        ))
-    })
+    if let Some(repository) = ambient_repository {
+        let repository = parse_github_repository_path(repository).ok_or_else(|| {
+            format!("GITHUB_REPOSITORY `{repository}` is not a valid owner/repository path")
+        })?;
+        if repository != origin_repository {
+            return Err(format!(
+                "GITHUB_REPOSITORY `{repository}` does not match origin fetch and push repository `{origin_repository}`"
+            ));
+        }
+    }
+
+    Ok(origin_repository)
 }
 
 fn parse_github_repository_remote(remote: &str) -> Option<String> {
@@ -3159,7 +2956,7 @@ Commands:
   package-crates    Check package file sets for the crates.io release set
   publish-alpha     Publish the crates.io alpha package set; dry-run by default
   publish-crates    Publish crates.io package set for a release tag
-  release-prep-guard Verify release prep before a tag exists
+  release-prep-guard Verify the post-merge tracker is clear before local tagging
   release-guard     Verify that a release tag is eligible to publish
   release-check     Run strict preflight, then build and package release artifacts
   legacy-preflight  Run the historical pnpm package preflight for legacy changes
@@ -3533,9 +3330,116 @@ enum Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::VecDeque;
+    use yaml_rust2::{Yaml, YamlLoader};
 
     fn os_args(args: &[&str]) -> Vec<OsString> {
         args.iter().map(OsString::from).collect()
+    }
+
+    fn string_args(args: &[&str]) -> Vec<String> {
+        args.iter().map(|arg| (*arg).to_string()).collect()
+    }
+
+    fn gh_success(stdout: &str) -> GhCommandOutput {
+        GhCommandOutput {
+            success: true,
+            stdout: stdout.to_string(),
+            stderr: String::new(),
+        }
+    }
+
+    fn gh_failure(stderr: &str) -> GhCommandOutput {
+        GhCommandOutput {
+            success: false,
+            stdout: String::new(),
+            stderr: stderr.to_string(),
+        }
+    }
+
+    fn exercise_release_tracker_guard(
+        responses: Vec<Result<GhCommandOutput, std::io::Error>>,
+    ) -> (Result<(), Error>, Vec<Vec<String>>, usize) {
+        let mut responses = VecDeque::from(responses);
+        let mut calls = Vec::new();
+        let result = {
+            let mut fake_gh = |args: &[String]| {
+                calls.push(args.to_vec());
+                responses
+                    .pop_front()
+                    .expect("release guard made an unexpected gh call")
+            };
+            check_release_issue_tracker_clear_with("v1.2.3", "flyingrobots/wesley", &mut fake_gh)
+        };
+
+        (result, calls, responses.len())
+    }
+
+    fn exercise_release_repository_discovery(
+        ambient_repository: Option<&str>,
+        responses: Vec<&str>,
+    ) -> (Result<String, Error>, Vec<Vec<String>>, usize) {
+        let mut responses = VecDeque::from(responses);
+        let mut calls = Vec::new();
+        let result = {
+            let mut fake_git = |args: &[&str]| {
+                calls.push(string_args(args));
+                Ok(responses
+                    .pop_front()
+                    .expect("release repository discovery made an unexpected git call")
+                    .to_string())
+            };
+            release_github_repository_with(ambient_repository, &mut fake_git)
+        };
+
+        (result, calls, responses.len())
+    }
+
+    fn expected_release_tracker_calls() -> Vec<Vec<String>> {
+        vec![
+            string_args(&[
+                "api",
+                "--hostname",
+                "github.com",
+                "--paginate",
+                "repos/flyingrobots/wesley/milestones?state=open&per_page=100",
+                "--jq",
+                ".[].title",
+            ]),
+            string_args(&[
+                "issue",
+                "list",
+                "--repo",
+                "github.com/flyingrobots/wesley",
+                "--state",
+                "open",
+                "--milestone",
+                "v1.2.3",
+                "--limit",
+                "1000",
+                "--json",
+                "number,title,url",
+            ]),
+        ]
+    }
+
+    fn parse_yaml_document(name: &str, source: &str) -> Yaml {
+        let documents = YamlLoader::load_from_str(source)
+            .unwrap_or_else(|error| panic!("{name} should parse as YAML: {error}"));
+        assert_eq!(
+            documents.len(),
+            1,
+            "{name} should contain one YAML document"
+        );
+        documents.into_iter().next().unwrap()
+    }
+
+    fn yaml_field<'a>(value: &'a Yaml, key: &str) -> Option<&'a Yaml> {
+        value.as_hash()?.get(&Yaml::String(key.to_string()))
+    }
+
+    fn is_concrete_version_label(label: &str) -> bool {
+        Version::parse(label.strip_prefix('v').unwrap_or(label)).is_ok()
     }
 
     #[test]
@@ -3697,122 +3601,474 @@ mod tests {
     }
 
     #[test]
-    fn release_guard_queries_github_issue_tracker() {
-        let queries = release_issue_queries("v1.2.3", "1.2.3", "flyingrobots/wesley");
-
+    fn release_governance_yaml_is_structurally_valid() {
+        let profile = parse_yaml_document(
+            ".continuum/release.yml",
+            include_str!("../../.continuum/release.yml"),
+        );
+        let versioning = yaml_field(&profile, "versioning").expect("versioning should exist");
         assert_eq!(
-            queries,
+            yaml_field(versioning, "release_milestone_format").and_then(Yaml::as_str),
+            Some("v{version}")
+        );
+        assert!(yaml_field(versioning, "release_lane_label_format").is_none());
+        assert!(yaml_field(versioning, "goalpost_milestone_format").is_none());
+
+        let validation = yaml_field(&profile, "validation").expect("validation should exist");
+        assert!(yaml_field(validation, "prep").is_none());
+        assert_eq!(
+            yaml_field(validation, "post_merge_pre_tag_tracker_clear").and_then(Yaml::as_str),
+            Some("cargo xtask release-prep-guard --version {version}")
+        );
+
+        let issue_model = yaml_field(&profile, "issue_model").expect("issue_model should exist");
+        assert_eq!(
+            yaml_field(issue_model, "scheduled_state").and_then(Yaml::as_str),
+            Some("exactly one v{version} milestone and no triage:* or concrete version label")
+        );
+        assert_eq!(
+            yaml_field(issue_model, "unscheduled_state").and_then(Yaml::as_str),
+            Some("exactly one triage:* label and no milestone")
+        );
+
+        let issue_forms = [
+            (
+                ".github/ISSUE_TEMPLATE/bug.yml",
+                include_str!("../../.github/ISSUE_TEMPLATE/bug.yml"),
+            ),
+            (
+                ".github/ISSUE_TEMPLATE/chore.yml",
+                include_str!("../../.github/ISSUE_TEMPLATE/chore.yml"),
+            ),
+            (
+                ".github/ISSUE_TEMPLATE/feature.yml",
+                include_str!("../../.github/ISSUE_TEMPLATE/feature.yml"),
+            ),
+            (
+                ".github/ISSUE_TEMPLATE/rfc.yml",
+                include_str!("../../.github/ISSUE_TEMPLATE/rfc.yml"),
+            ),
+        ];
+
+        for (name, source) in issue_forms {
+            let form = parse_yaml_document(name, source);
+            let labels = yaml_field(&form, "labels")
+                .and_then(Yaml::as_vec)
+                .unwrap_or_else(|| panic!("{name} labels should be a YAML sequence"));
+            let labels = labels
+                .iter()
+                .map(|label| {
+                    label
+                        .as_str()
+                        .unwrap_or_else(|| panic!("{name} labels should be strings"))
+                })
+                .collect::<Vec<_>>();
+
+            assert_eq!(
+                labels
+                    .iter()
+                    .filter(|label| label.starts_with("triage:"))
+                    .count(),
+                1,
+                "{name} should declare exactly one triage label"
+            );
+            assert!(
+                labels.iter().all(|label| !is_concrete_version_label(label)),
+                "{name} should not declare a concrete version label"
+            );
+            assert!(
+                yaml_field(&form, "milestone").is_none(),
+                "{name} should not preassign a milestone"
+            );
+        }
+    }
+
+    #[test]
+    fn concrete_version_label_detection_covers_bare_and_v_prefixed_semver() {
+        for label in [
+            "1.2.3",
+            "v1.2.3",
+            "1.2.3-alpha.2",
+            "v1.2.3-alpha.2",
+            "1.2.3+build.4",
+            "v1.2.3+build.4",
+        ] {
+            assert!(
+                is_concrete_version_label(label),
+                "{label} should be recognized as a concrete version label"
+            );
+        }
+
+        for label in ["version", "v1.2", "release:v1.2.3", "triage:requests"] {
+            assert!(
+                !is_concrete_version_label(label),
+                "{label} should remain a classification label"
+            );
+        }
+    }
+
+    #[test]
+    fn release_milestone_issue_query_is_exact_and_stable() {
+        assert_eq!(
+            release_milestone_issue_query("v1.2.3", "flyingrobots/wesley"),
             vec![
-                vec![
-                    "issue",
-                    "list",
-                    "--repo",
-                    "flyingrobots/wesley",
-                    "--state",
-                    "open",
-                    "--limit",
-                    "1000",
-                    "--json",
-                    "number,title,url,body",
-                ],
-                vec![
-                    "issue",
-                    "list",
-                    "--state",
-                    "open",
-                    "--label",
-                    "v1.2.3",
-                    "--json",
-                    "number,title,url",
-                ],
-                vec![
-                    "issue",
-                    "list",
-                    "--state",
-                    "open",
-                    "--label",
-                    "v1.2.3",
-                    "--json",
-                    "number,title,url",
-                ],
-                vec![
-                    "issue",
-                    "list",
-                    "--state",
-                    "open",
-                    "--label",
-                    "1.2.3",
-                    "--json",
-                    "number,title,url",
-                ],
+                "issue",
+                "list",
+                "--repo",
+                "github.com/flyingrobots/wesley",
+                "--state",
+                "open",
+                "--milestone",
+                "v1.2.3",
+                "--limit",
+                "1000",
+                "--json",
+                "number,title,url",
             ]
         );
     }
 
     #[test]
-    fn release_guard_does_not_query_release_gate_milestones() {
-        let queries = release_issue_queries("v1.2.3", "1.2.3", "flyingrobots/wesley");
+    fn release_guard_orchestrates_exact_milestone_queries_only() {
+        let (result, calls, remaining_responses) = exercise_release_tracker_guard(vec![
+            Ok(gh_success("v1.2.2\nv1.2.3\nv1.2.30\n")),
+            Ok(gh_success("[]")),
+        ]);
 
-        assert!(
-            queries
-                .iter()
-                .all(|query| !query.iter().any(|arg| arg == "--milestone")),
-            "release-gate milestones may stay open until post-publication closeout"
+        assert!(result.is_ok(), "{result:?}");
+        assert_eq!(calls, expected_release_tracker_calls());
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_rejects_missing_target_milestone_before_issue_query() {
+        let (result, calls, remaining_responses) =
+            exercise_release_tracker_guard(vec![Ok(gh_success(""))]);
+
+        assert!(matches!(
+            result,
+            Err(Error::CheckFailed { check, failures })
+                if check == "release issue tracker"
+                    && failures == vec![
+                        "required open version milestone `v1.2.3` does not exist in `flyingrobots/wesley`"
+                    ]
+        ));
+        assert_eq!(calls, &expected_release_tracker_calls()[..1]);
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_rejects_closed_target_milestone_before_issue_query() {
+        // Closed milestones are intentionally absent from the open-milestone API
+        // response, so they are observationally identical to missing milestones.
+        let (result, calls, remaining_responses) =
+            exercise_release_tracker_guard(vec![Ok(gh_success("v1.2.2\nv1.2.30\n"))]);
+
+        assert!(matches!(result, Err(Error::CheckFailed { .. })));
+        assert_eq!(calls, &expected_release_tracker_calls()[..1]);
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_reports_open_target_milestone_issue() {
+        let (result, calls, remaining_responses) = exercise_release_tracker_guard(vec![
+            Ok(gh_success("v1.2.3\n")),
+            Ok(gh_success(
+                r#"[{"number":17,"title":"Finish release proof","url":"https://example.test/issues/17"}]"#,
+            )),
+        ]);
+
+        assert!(matches!(
+            result,
+            Err(Error::CheckFailed { check, failures })
+                if check == "release issue tracker"
+                    && failures == vec![
+                        "#17 Finish release proof https://example.test/issues/17 (version milestone `v1.2.3`)"
+                    ]
+        ));
+        assert_eq!(calls, expected_release_tracker_calls());
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_reports_all_returned_issues_in_number_order() {
+        let (result, calls, remaining_responses) = exercise_release_tracker_guard(vec![
+            Ok(gh_success("v1.2.3\n")),
+            Ok(gh_success(
+                r#"[
+                    {"number":30,"title":"Third","url":"https://example.test/issues/30"},
+                    {"number":2,"title":"First","url":"https://example.test/issues/2"},
+                    {"number":17,"title":"Second","url":"https://example.test/issues/17"}
+                ]"#,
+            )),
+        ]);
+
+        assert!(matches!(
+            result,
+            Err(Error::CheckFailed { failures, .. })
+                if failures == vec![
+                    "#2 First https://example.test/issues/2 (version milestone `v1.2.3`)",
+                    "#17 Second https://example.test/issues/17 (version milestone `v1.2.3`)",
+                    "#30 Third https://example.test/issues/30 (version milestone `v1.2.3`)",
+                ]
+        ));
+        assert_eq!(calls, expected_release_tracker_calls());
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_rejects_malformed_issue_response() {
+        let (result, calls, remaining_responses) =
+            exercise_release_tracker_guard(vec![Ok(gh_success("v1.2.3\n")), Ok(gh_success("{"))]);
+
+        assert!(matches!(
+            result,
+            Err(Error::Usage(message))
+                if message.starts_with("failed to parse release issue tracker output as JSON:")
+        ));
+        assert_eq!(calls, expected_release_tracker_calls());
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_fails_closed_on_milestone_api_error() {
+        let (result, calls, remaining_responses) =
+            exercise_release_tracker_guard(vec![Ok(gh_failure("HTTP 500"))]);
+
+        assert!(matches!(
+            result,
+            Err(Error::CheckFailed { failures, .. })
+                if failures.len() == 1 && failures[0].contains("HTTP 500")
+        ));
+        assert_eq!(calls, &expected_release_tracker_calls()[..1]);
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_fails_closed_on_issue_list_api_error() {
+        let (result, calls, remaining_responses) = exercise_release_tracker_guard(vec![
+            Ok(gh_success("v1.2.3\n")),
+            Ok(gh_failure("GraphQL transport unavailable")),
+        ]);
+
+        assert!(matches!(
+            result,
+            Err(Error::CheckFailed { failures, .. })
+                if failures.len() == 1
+                    && failures[0].contains("GraphQL transport unavailable")
+        ));
+        assert_eq!(calls, expected_release_tracker_calls());
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_reports_gh_spawn_error_without_fallback_query() {
+        let (result, calls, remaining_responses) = exercise_release_tracker_guard(vec![Err(
+            std::io::Error::new(std::io::ErrorKind::NotFound, "gh not found"),
+        )]);
+
+        assert!(matches!(
+            result,
+            Err(Error::Usage(message))
+                if message.contains("failed to spawn `gh api --hostname github.com --paginate")
+                    && message.contains("gh not found")
+        ));
+        assert_eq!(calls, &expected_release_tracker_calls()[..1]);
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_guard_uses_full_prerelease_tag_as_milestone() {
+        let query = release_milestone_issue_query("v0.3.0-alpha.2", "flyingrobots/wesley");
+
+        assert_eq!(
+            query
+                .windows(2)
+                .find(|args| args[0] == "--milestone")
+                .map(|args| args[1].as_str()),
+            Some("v0.3.0-alpha.2")
         );
     }
 
     #[test]
-    fn current_release_issue_text_ignores_comment_only_matches() {
-        let content = serde_json::json!([
-            {
-                "number": 1,
-                "title": "release: ship v1.2.3",
-                "url": "https://github.com/flyingrobots/wesley/issues/1",
-                "body": "release umbrella"
-            },
-            {
-                "number": 2,
-                "title": "future runtime work",
-                "url": "https://github.com/flyingrobots/wesley/issues/2",
-                "body": "No current release assignment here."
-            },
-            {
-                "number": 3,
-                "title": "future evidence work",
-                "url": "https://github.com/flyingrobots/wesley/issues/3",
-                "body": "Related PR comment mentions are not part of this JSON payload."
-            },
-            {
-                "number": 4,
-                "title": "version substring",
-                "url": "https://github.com/flyingrobots/wesley/issues/4",
-                "body": "v1.2.30 belongs to another release lane."
-            },
-            {
-                "number": 5,
-                "title": "bare version blocker",
-                "url": "https://github.com/flyingrobots/wesley/issues/5",
-                "body": "Must clear before 1.2.3."
-            },
-            {
-                "number": 6,
-                "title": "unrelated method migration",
-                "url": "https://github.com/flyingrobots/wesley/issues/6",
-                "body": "METHOD v2.1.0 migration text is not this release lane."
-            }
-        ])
-        .to_string();
-
-        let matches = parse_current_version_issue_text(&content, "v1.2.3", "1.2.3").unwrap();
-
-        assert_eq!(matches.len(), 2);
+    fn release_guard_queries_open_milestones_for_target() {
         assert_eq!(
-            matches[0].display,
-            "#1 release: ship v1.2.3 https://github.com/flyingrobots/wesley/issues/1 (title/body text)"
+            release_milestone_query("flyingrobots/wesley"),
+            vec![
+                "api",
+                "--hostname",
+                "github.com",
+                "--paginate",
+                "repos/flyingrobots/wesley/milestones?state=open&per_page=100",
+                "--jq",
+                ".[].title",
+            ]
         );
+    }
+
+    #[test]
+    fn release_milestone_presence_requires_an_exact_title() {
+        let titles = "v1.2.2\nv1.2.3\nv1.2.30\n";
+
+        assert!(release_milestone_exists(titles, "v1.2.3"));
+        assert!(!release_milestone_exists(titles, "v1.2.4"));
+        assert!(!release_milestone_exists("v1.2.30\n", "v1.2.3"));
+    }
+
+    #[test]
+    fn release_repository_discovery_queries_fetch_then_all_push_urls() {
+        let (result, calls, remaining_responses) = exercise_release_repository_discovery(
+            Some("flyingrobots/wesley"),
+            vec![
+                "https://github.com/flyingrobots/wesley.git",
+                "git@github.com:flyingrobots/wesley.git\nssh://git@github.com/flyingrobots/wesley.git",
+            ],
+        );
+
+        assert!(matches!(result, Ok(repository) if repository == "flyingrobots/wesley"));
         assert_eq!(
-            matches[1].display,
-            "#5 bare version blocker https://github.com/flyingrobots/wesley/issues/5 (title/body text)"
+            calls,
+            vec![
+                string_args(&["remote", "get-url", "origin"]),
+                string_args(&["remote", "get-url", "--push", "--all", "origin"]),
+            ]
+        );
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_repository_discovery_checks_actual_push_output() {
+        let (result, calls, remaining_responses) = exercise_release_repository_discovery(
+            Some("flyingrobots/wesley"),
+            vec![
+                "https://github.com/flyingrobots/wesley.git",
+                "git@github.com:flyingrobots/fork.git",
+            ],
+        );
+
+        assert!(matches!(
+            result,
+            Err(Error::Usage(message))
+                if message == "origin push repository `flyingrobots/fork` does not match origin fetch repository `flyingrobots/wesley`"
+        ));
+        assert_eq!(
+            calls,
+            vec![
+                string_args(&["remote", "get-url", "origin"]),
+                string_args(&["remote", "get-url", "--push", "--all", "origin"]),
+            ]
+        );
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
+    fn release_repository_uses_origin_when_ambient_value_is_absent() {
+        assert_eq!(
+            resolve_release_github_repository(
+                "git@github.com:flyingrobots/wesley.git",
+                "git@github.com:flyingrobots/wesley.git",
+                None,
+            ),
+            Ok("flyingrobots/wesley".to_string())
+        );
+    }
+
+    #[test]
+    fn release_repository_accepts_ambient_value_matching_origin() {
+        assert_eq!(
+            resolve_release_github_repository(
+                "https://github.com/flyingrobots/wesley.git",
+                "git@github.com:flyingrobots/wesley.git",
+                Some("flyingrobots/wesley"),
+            ),
+            Ok("flyingrobots/wesley".to_string())
+        );
+    }
+
+    #[test]
+    fn release_repository_rejects_ambient_value_mismatching_origin() {
+        let error = resolve_release_github_repository(
+            "https://github.com/flyingrobots/wesley.git",
+            "git@github.com:flyingrobots/wesley.git",
+            Some("flyingrobots/another-repo"),
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error,
+            "GITHUB_REPOSITORY `flyingrobots/another-repo` does not match origin fetch and push repository `flyingrobots/wesley`"
+        );
+    }
+
+    #[test]
+    fn release_repository_rejects_malformed_ambient_value() {
+        let error = resolve_release_github_repository(
+            "https://github.com/flyingrobots/wesley.git",
+            "git@github.com:flyingrobots/wesley.git",
+            Some("not-a-repository"),
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error,
+            "GITHUB_REPOSITORY `not-a-repository` is not a valid owner/repository path"
+        );
+    }
+
+    #[test]
+    fn release_repository_accepts_multiple_matching_push_urls() {
+        assert_eq!(
+            resolve_release_github_repository(
+                "https://github.com/flyingrobots/wesley.git",
+                "git@github.com:flyingrobots/wesley.git\nssh://git@github.com/flyingrobots/wesley.git\n",
+                Some("flyingrobots/wesley"),
+            ),
+            Ok("flyingrobots/wesley".to_string())
+        );
+    }
+
+    #[test]
+    fn release_repository_rejects_mismatched_push_url() {
+        let error = resolve_release_github_repository(
+            "https://github.com/flyingrobots/wesley.git",
+            "git@github.com:flyingrobots/fork.git",
+            Some("flyingrobots/wesley"),
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error,
+            "origin push repository `flyingrobots/fork` does not match origin fetch repository `flyingrobots/wesley`"
+        );
+    }
+
+    #[test]
+    fn release_repository_rejects_multiple_distinct_push_destinations() {
+        let error = resolve_release_github_repository(
+            "https://github.com/flyingrobots/wesley.git",
+            "git@github.com:flyingrobots/wesley.git\ngit@github.com:flyingrobots/mirror.git\n",
+            None,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error,
+            "origin push repository `flyingrobots/mirror` does not match origin fetch repository `flyingrobots/wesley`"
+        );
+    }
+
+    #[test]
+    fn release_repository_rejects_unparseable_push_url() {
+        let error = resolve_release_github_repository(
+            "https://github.com/flyingrobots/wesley.git",
+            "ssh://example.test/flyingrobots/wesley.git",
+            None,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error,
+            "could not infer GitHub repository from origin push URL `ssh://example.test/flyingrobots/wesley.git`"
         );
     }
 
@@ -3920,54 +4176,6 @@ mod tests {
                 "CI run `Missing conclusion` did not pass (conclusion: <missing>)"
             ]
         );
-    }
-
-    #[test]
-    fn prior_version_issue_lanes_find_older_semver_labels_and_milestones() {
-        let content = serde_json::json!([
-            {
-                "number": 1,
-                "title": "Older label",
-                "url": "https://github.com/flyingrobots/wesley/issues/1",
-                "labels": [
-                    { "name": "triage:bad-code" },
-                    { "name": "v0.0.4" },
-                    { "name": "v0.0.5" },
-                    { "name": "v0.0.4+build" }
-                ],
-                "milestone": null
-            },
-            {
-                "number": 2,
-                "title": "Older milestone",
-                "url": "https://github.com/flyingrobots/wesley/issues/2",
-                "labels": [],
-                "milestone": { "title": "0.0.3" }
-            },
-            {
-                "number": 3,
-                "title": "Current release",
-                "url": "https://github.com/flyingrobots/wesley/issues/3",
-                "labels": [{ "name": "v0.0.5" }],
-                "milestone": { "title": "0.0.5" }
-            }
-        ])
-        .to_string();
-
-        let matches = parse_prior_version_issue_lanes(&content, "0.0.5").unwrap();
-
-        assert_eq!(matches.len(), 2);
-        assert_eq!(
-            matches[0].display,
-            "#1 Older label https://github.com/flyingrobots/wesley/issues/1 (prior version label `v0.0.4`)"
-        );
-        assert_eq!(
-            matches[1].display,
-            "#2 Older milestone https://github.com/flyingrobots/wesley/issues/2 (prior version milestone `0.0.3`)"
-        );
-        assert!(version_from_lane_name("v0.0.4").is_some());
-        assert!(version_from_lane_name("triage:bad-code").is_none());
-        assert!(version_from_lane_name("v0.0.4+build").is_none());
     }
 
     #[test]

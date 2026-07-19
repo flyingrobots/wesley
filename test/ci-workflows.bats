@@ -518,20 +518,45 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
 }
 
-@test "release crates workflow checks version milestones and labels" {
-  run bash -lc "grep -F -- '--milestone' .github/workflows/release-crates.yml | wc -l"
-  assert_success
-  [ "$output" -ge 2 ]
+@test "release crates workflow delegates issue checks to the release guard" {
+  run grep -F 'gh issue list' .github/workflows/release-crates.yml
+  assert_failure
 
-  run bash -lc "grep -F -- '--label' .github/workflows/release-crates.yml | wc -l"
+  run bash -lc "grep -F 'cargo xtask release-guard --tag \"\$GITHUB_REF_NAME\"' .github/workflows/release-crates.yml | wc -l"
   assert_success
-  [ "$output" -ge 2 ]
+  [ "$output" -eq 2 ]
+}
+
+@test "release governance suite is wired into repository checks" {
+  run grep -F 'test/release-governance.bats' .github/workflows/ci.yml
+  assert_success
+
+  run grep -F 'test/release-governance.bats' scripts/smoke/repo-bats-prepush.sh
+  assert_success
+
+  run grep -F 'test/release-governance.bats' scripts/test-ci-locally.sh
+  assert_success
+}
+
+@test "repo Bats checks run unconditionally" {
+  run grep -F 'Detect changes for repo Bats tests' .github/workflows/ci.yml
+  assert_failure
+
+  run grep -F 'RUN_BATS' .github/workflows/ci.yml
+  assert_failure
+
+  run grep -F 'name: Repo Bats tests (unit/docs/ci checks only)' .github/workflows/ci.yml
+  assert_success
 }
 
 @test "release crates workflow authenticates release guard GitHub API checks" {
   run bash -lc "grep -F 'actions: read' .github/workflows/release-crates.yml | wc -l"
   assert_success
   [ "$output" -ge 2 ]
+
+  run bash -lc "grep -F 'issues: read' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
 
   run bash -lc "grep -n 'name: Release guard' -A5 .github/workflows/release-crates.yml | grep -F 'GH_TOKEN: \${{ github.token }}' | wc -l"
   assert_success

@@ -57,6 +57,7 @@ BATS_LIB_PATH=test/vendor \
     test/docs-planning-boundary.bats \
     test/domain-empty-boundary.bats \
     test/ir-fixtures.bats \
+    test/release-governance.bats \
     test/ci-*.bats
 ```
 

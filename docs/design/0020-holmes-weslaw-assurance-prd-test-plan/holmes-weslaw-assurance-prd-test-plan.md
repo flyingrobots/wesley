@@ -12,7 +12,7 @@ This packet is closed planning evidence. It is not a live implementation
 tracker.
 
 Live Holmes and `weslaw` implementation work belongs in GitHub Issues,
-goalpost milestones, release-gate issues, and the
+plain version milestones, release-gate issues, and the
 [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18).
 
 ## Question

@@ -19,6 +19,10 @@ names, and verification commands.
   output on failure.
 - Ensure the working tree is clean; abort if dirty.
 - Confirm `main` is exactly synced with `origin/main`; abort if not.
+- Confirm the exact plain `vX.Y.Z` milestone exists; abort if the GitHub query
+  cannot resolve it.
+- Confirm every scheduled issue, including the release gate, uses that milestone
+  and no version label or narrative milestone as a second schedule.
 - Verify required tools, credentials, signing configuration, CI visibility, and
   registry visibility are available; abort if missing.
 - Ensure every required validation and publish verification step succeeds;
@@ -36,6 +40,8 @@ Before changing anything, determine and record:
 - latest reachable semver tag matching `v*`
 - current branch
 - exact sync state versus `origin/main`
+- exact target `vX.Y.Z` milestone and its open issue set
+- release-gate issue in that milestone
 
 If any discovery item cannot be determined confidently, abort.
 
@@ -48,6 +54,9 @@ Run these in order:
 3. Fetch `origin/main` and tags.
 4. Verify `HEAD` exactly matches `origin/main`.
 5. Verify tag-signing requirements if the repository requires signed tags.
+6. Query the open-milestones API and verify an exact `vX.Y.Z` title match. Do
+   not use an empty `gh issue list --milestone` result as existence proof;
+   GitHub CLI also returns an empty successful result for a missing milestone.
 
 Do not continue past the first failed guard.
 
@@ -73,7 +82,6 @@ Run validation strictly in order, using repo-native commands where available:
 - audit every tracked file under `docs/topics/` for release-relevant accuracy
   and coverage
 - release pre-flight script, if the repo already has one
-- `cargo xtask release-prep-guard --version X.Y.Z`, before the tag exists
 - `cargo xtask preflight`
 - `cargo xtask release-check`
 - `cargo xtask package-crates --version X.Y.Z`, before the tag exists
@@ -108,56 +116,105 @@ reach the 90% accuracy and 90% coverage floors before tagging.
 Abort on the first hard failure. Do not claim success from queued or in-progress
 CI state.
 
-## Phase 4: Commit, Tag, and Publish
+The final `cargo xtask release-prep-guard --version X.Y.Z` is intentionally not
+run while the release gate remains open. It is the post-merge, pre-tag tracker
+guard in Phase 4.
+
+## Phase 4: Commit, Close Gate, Pre-Tag Checks, Tag, and Publish
 
 1. Review the final diff.
 2. Stage the release changes.
 3. Create the release commit on a release branch.
 4. Land the release commit through the protected `main` branch.
-5. Sync local main to origin/main after the release commit has landed.
-6. Create the release tag on the synced `main` commit.
-7. Verify the tag points at the release commit and satisfies signing
-   requirements where applicable.
-8. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally.
-9. Push the exact release tag only, for example: `git push origin vX.Y.Z`.
-10. Create the GitHub Release or equivalent forge release using the versioned
-    release notes.
-11. Monitor triggered workflows to completion.
-12. Verify registries directly before claiming publication succeeded.
-13. Record release evidence and retrospective before starting the next planned
-    release train.
+5. Sync local `main` to `origin/main` after the release commit has landed and
+   record the exact validated `HEAD` commit.
+6. Verify every issue except the gate has been closed, moved to another exact
+   version milestone, or explicitly cut.
+7. Run a fresh `cargo xtask preflight` from synced `main`; if it fails, leave
+   the release gate open and land corrections through a pull request.
+8. Complete the human checklist and close the release-gate issue.
+9. Run `cargo xtask release-prep-guard --version X.Y.Z`; abort if the exact
+   `vX.Y.Z` milestone is missing or still has any open issue.
+10. Fetch `origin` again.
+11. Abort unless `HEAD` still equals both the recorded validated commit and the
+    refreshed `origin/main`.
+12. Create the release tag locally on that unchanged, synced `main` commit.
+13. Verify the tag points at the release commit and satisfies signing
+    requirements where applicable.
+14. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally;
+    abort before push on any failure.
+15. Push the exact release tag only, for example: `git push origin vX.Y.Z`.
+16. Monitor the tag-triggered workflow that creates its draft GitHub Release,
+    publishes artifacts, verifies delivery, and finalizes that same release.
+    Do not create or finalize a competing release manually.
+17. Verify registries directly before claiming publication succeeded.
+18. Preserve post-publication evidence in the workflow run, finalized GitHub
+    Release, registry records, and direct delivery witness.
 
 ## Idempotency And Failure Handling
 
 The public tag is immutable. Do not move it.
 
+If any check or action fails after the gate closes but before the tag is pushed:
+
+1. Do not push again. Resolve the exact remote state with
+   `git ls-remote --exit-code --tags origin refs/tags/vX.Y.Z`. Exit zero means
+   the tag is already public; exit two with no matching ref means it is proven
+   absent. Any authentication, transport, or other result is indeterminate.
+2. If the tag is present remotely, do not delete the local tag and do not reopen
+   the gate. Stop this recovery and use the immutable public-tag failure path
+   below.
+3. If remote state is indeterminate, change neither the tag nor the gate. Stop
+   until remote state can be resolved conclusively.
+4. Only when the tag is proven absent may local recovery continue. If a local
+   tag was created, delete only that unpublished tag with `git tag -d vX.Y.Z`;
+   if failure occurred before local tag creation, skip deletion.
+5. Reopen the release gate, record the failed check, and assign any corrective
+   issue to the exact version milestone.
+6. Land corrections through the normal pull-request path, then repeat the
+   post-merge pre-tag checks before recreating the signed local tag.
+
+An unpublished local tag is recoverable scratch state. A tag that exists on the
+remote is a public release fact and must never be deleted, moved, or recreated.
+
 If the tag exists but publication did not complete:
 
 1. Keep the tag fixed.
 2. Determine whether the failure is in release inputs or release machinery.
-3. Same-tag reruns are for credentials, permissions, transient registry, or
-   GitHub Release/API problems.
+3. Same-tag reruns are allowed only when the tagged source is correct and the
+   failure is credentials, permissions, transient registry state, or GitHub
+   Release/API delivery.
 4. If the workflow source checked into the tag is wrong, do not rerun the
    immutable tag expecting a later workflow fix to apply.
-5. For workflow-source failures, patch forward from `main`, or use an explicit
-   maintainer-approved manual recovery only when no public artifact escaped and
-   the recovery still verifies the same tagged source.
-6. Record both the failure and the successful rerun or patch-forward release in
-   release evidence.
+5. If any source, metadata, package, or workflow-input change is required, open
+   the next patch milestone and patch forward from `main` under a new version
+   and tag.
+6. Use explicit maintainer-approved manual recovery only when no source change
+   is required, no contradictory public artifact escaped, and the recovery
+   still verifies the same tagged source. Manual recovery must never create,
+   edit, finalize, or recreate the GitHub Release; the tag workflow exclusively
+   owns that lifecycle.
+7. Preserve both the failure and the successful rerun or patch-forward release
+   in workflow, GitHub Release, and delivery-witness evidence.
 
 If one crate publishes and another fails:
 
 1. Keep the tag fixed.
 2. Confirm the already-published crate versions match the tag source.
-3. Fix the failing crate path.
-4. Rerun the workflow so it verifies existing crates and publishes only missing
+3. If the tagged inputs are correct and the failure was transient, rerun the
+   idempotent workflow so it verifies existing crates and publishes only missing
    artifacts where crates.io allows that path.
+4. If a source or package fix is required, do not mutate the tag or reuse an
+   already-published version; cut a corrective patch release.
 
 If the GitHub Release fails:
 
 1. Keep the tag fixed.
-2. Recreate or update the GitHub Release for the same tag.
-3. Verify the release notes match the tag source.
+2. If the tagged inputs and checked-in workflow are correct, rerun the same tag
+   workflow so it resumes or recreates its own draft and finalizes that release.
+3. If source or checked-in workflow changes are required, patch forward under a
+   new version and tag; do not mutate the failed release manually.
+4. Verify the workflow-owned release notes match the tag source.
 
 If a published artifact is bad:
 
@@ -168,35 +225,41 @@ If a published artifact is bad:
 4. File fallout issues and record the patch-forward decision.
 
 Manual tagging is not an emergency bypass in Wesley. It is the normal mechanism
-because the release profile declares `autotag: none`. It still must happen only
-after final guards pass from clean, fetched, synced `main`.
+because the release profile declares `autotag: none`. Create the local tag only
+after post-merge pre-tag checks pass from clean, fetched, synced `main`, and push
+it only after the tag-specific guard passes.
 
-## Phase 5: Retrospective And Closeout
+## Phase 5: Verification, Retrospective, And Closeout
 
 After the tag workflow publishes and public verification passes:
 
-1. Update `docs/method/releases/vX.Y.Z/verification.md` with tag, commit,
-   workflow, GitHub Release, registry, smoke, and warning evidence.
-2. Record plan-versus-actual scope: shipped, slipped, cut, expanded, and why.
-3. Identify repeatable wins and concrete process improvements.
-4. File fallout issues with a definition of done and exactly one scheduling
-   state label.
-5. Close or move every scoped issue.
-6. Close the release milestone after release-gate work is complete.
+1. Verify the workflow, finalized GitHub Release, crates.io records, and direct
+   CLI smoke witness. These are the authoritative post-publication evidence.
+2. Do not edit the tagged release packet merely to backfill facts that did not
+   exist before publication. Preserve historical release packets as they were
+   reviewed and tagged.
+3. Record plan-versus-actual scope: shipped, slipped, cut, expanded, and why.
+4. Identify repeatable wins and concrete process improvements.
+5. File fallout issues with a definition of done and either one future plain
+   version milestone or one `triage:*` label with no milestone.
+6. Close the now-empty release milestone.
 7. Write or refresh the next release thesis before making the next planned
    train active.
 
 ## Evidence
 
-Record the release witness in `docs/method/releases/vX.Y.Z/verification.md`. At
-minimum include:
+Before tagging, record the repo-resident validation witness in
+`docs/method/releases/vX.Y.Z/verification.md`. At minimum include:
 
 - discovery facts
 - commands run
 - pass/fail results
-- tag and commit SHAs
-- GitHub Release URL
-- registry URLs
+- intended tag and candidate commit SHA
+- intended GitHub Release and registry verification paths
 - `docs/topics/` accuracy and coverage scores, with links to any corrections
 - any non-blocking warnings
-- retrospective summary and fallout issue links
+
+After publication, keep the actual workflow URL, finalized GitHub Release,
+registry URLs, smoke output, warnings, and patch-forward decisions in the
+workflow/GitHub Release/delivery witness. Do not require a post-publication
+commit to make the tagged source truthful.

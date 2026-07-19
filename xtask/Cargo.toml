@@ -11,3 +11,6 @@ semver = "1.0"
 serde_json = "1.0"
 tokio = { version = "1", features = ["rt", "time"] }
 toml = "0.8"
+
+[dev-dependencies]
+yaml-rust2 = { version = "0.11", default-features = false }

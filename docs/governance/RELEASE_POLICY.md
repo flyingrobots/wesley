@@ -27,54 +27,71 @@ lacks the human sign-off is not a valid release, and vice versa.
   native CLI and packages release artifacts without publishing anything.
 - **Human sign-off** is collected on the release PR using the template in
   [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md). The checklist must be
-  completed by a human reviewer before the tag is created.
+  completed by a human reviewer before the release gate is closed and the tag
+  is created.
+
+All release work and the release-gate issue share one exact plain `vX.Y.Z`
+milestone. Project fields, grouping labels, titles, and body text do not
+schedule work. The gate is the final open issue and must close before the
+signed local tag is created.
+
+Here `vX.Y.Z` means the exact tag-form SemVer. Every prerelease uses its full
+milestone title, such as `v0.3.0-alpha.2`.
+
+The final local sequence is ordered: repeat preflight on synced `main` while
+the gate is open; close the gate only after it passes; run the post-merge
+tracker-clear guard; reverify the unchanged `main` commit; create the signed tag
+locally; run the tag-specific guard; then push. After gate closure, resolve
+remote tag state before recovery: only a proven-absent tag permits local-tag
+deletion and gate reopening. Present or indeterminate remote state permits
+neither mutation, and a remote tag is immutable.
 
 ## Enforcement Matrix
 
-| #   | Check                                                | Automated      | Human    |
-| --- | ---------------------------------------------------- | -------------- | -------- |
-| 1   | Zero open current release-lane GitHub issues         | `xtask` + `gh` |          |
-| 2   | Zero open exact-version tracker references           | `xtask` + `gh` |          |
-| 3   | Strict preflight gate                                | `xtask`        |          |
-| 4   | Zero open issues from prior-version lanes            | `gh`           |          |
-| 5   | Version lockstep across release version sources      | parse          |          |
-| 6   | `CHANGELOG.md` has a dated entry for this version    | parse          |          |
-| 7   | `CHANGELOG.md` reflects actual diff vs. prior tag    |                | reviewer |
-| 8   | `README.md` version headline matches tag             | grep           |          |
-| 9   | `docs/TECHNICAL_TEARDOWN.md` references tag version  | grep           |          |
-| 10  | `docs/ARCHITECTURE.md` is current                    |                | reviewer |
-| 11  | Guide file paths resolve to existing repo paths      | grep + stat    |          |
-| 12  | Guide cited commit SHAs exist in git history         | git cat-file   |          |
-| 13  | Guide claims are accurate                            |                | reviewer |
-| 14  | `docs-truth` manifest passes                         | `xtask`        |          |
-| 15  | `cargo audit` reports zero vulnerabilities           | shell          |          |
-| 16  | No WIP or `fixup!` commits in release range          | git log        |          |
-| 17  | Working tree is clean                                | git status     |          |
-| 18  | Tag is the synced `main` release boundary            | git branch     | reviewer |
-| 19  | CI is green on HEAD at tag time                      | `gh` API       |          |
-| 20  | `BREAKING CHANGE` commits → major/minor version bump | git log        |          |
-| 21  | `cargo doc --workspace` builds with zero warnings    | cargo doc      |          |
-| 22  | No known issues silently shipped                     |                | reviewer |
-| 23  | `docs/topics/` accuracy and coverage gate            |                | reviewer |
-| 24  | Release thesis, scope, and retrospective path exist  |                | reviewer |
+| #   | Check                                                 | Automated      | Human    |
+| --- | ----------------------------------------------------- | -------------- | -------- |
+| 1   | Exact plain `vX.Y.Z` milestone exists                 | `xtask` + `gh` |          |
+| 2   | Zero open issues in the target version milestone      | `xtask` + `gh` |          |
+| 3   | Strict preflight gate                                 | `xtask`        |          |
+| 4   | No label, Project, title, or body scheduling fallback | unit tests     |          |
+| 5   | Version lockstep across release version sources       | parse          |          |
+| 6   | `CHANGELOG.md` has a dated entry for this version     | parse          |          |
+| 7   | `CHANGELOG.md` reflects actual diff vs. prior tag     |                | reviewer |
+| 8   | `README.md` version headline matches tag              | grep           |          |
+| 9   | `docs/TECHNICAL_TEARDOWN.md` references tag version   | grep           |          |
+| 10  | `docs/ARCHITECTURE.md` is current                     |                | reviewer |
+| 11  | Guide file paths resolve to existing repo paths       | grep + stat    |          |
+| 12  | Guide cited commit SHAs exist in git history          | git cat-file   |          |
+| 13  | Guide claims are accurate                             |                | reviewer |
+| 14  | `docs-truth` manifest passes                          | `xtask`        |          |
+| 15  | `cargo audit` reports zero vulnerabilities            | shell          |          |
+| 16  | No WIP or `fixup!` commits in release range           | git log        |          |
+| 17  | Working tree is clean                                 | git status     |          |
+| 18  | Tag is the synced `main` release boundary             | git branch     | reviewer |
+| 19  | CI is green on HEAD at tag time                       | `gh` API       |          |
+| 20  | `BREAKING CHANGE` commits → major/minor version bump  | git log        |          |
+| 21  | `cargo doc --workspace` builds with zero warnings     | cargo doc      |          |
+| 22  | No known issues silently shipped                      |                | reviewer |
+| 23  | `docs/topics/` accuracy and coverage gate             |                | reviewer |
+| 24  | Release thesis, scope, and retrospective path exist   |                | reviewer |
 
 ## Automated Checks — Details
 
 ### Check 1–4: Issue Tracker
 
-`cargo xtask release-guard` calls the GitHub CLI to list open issues:
+`cargo xtask release-guard` calls the GitHub CLI with the exact milestone name:
 
-- **Check 1** — Current release lane: open issues labeled with the concrete
-  release label `vX.Y.Z` block that release. Those issues are scheduled
-  work for the release being cut, so they must be closed, moved to a later
-  release lane, split, or explicitly removed from the release before tagging.
-- **Check 2** — Exact-version tracker references: open issues labeled or
-  milestoned with the release tag or version (e.g. `v0.1.0`) or matching the
-  exact tag/version token in issue title or body. Comments and automatic
-  cross-reference chatter are not release-lane ownership.
-- **Check 4** — Prior-version issues: open issues from older version lanes
-  (older `v*` labels, SemVer milestones, or exact SemVer labels) that were
-  never closed.
+- **Check 1** — Milestone existence: the open-milestones API must contain an
+  exact title match for `vX.Y.Z`. This is a separate check because
+  `gh issue list --milestone <missing>` exits successfully with an empty list.
+  A missing or closed target milestone is a hard failure.
+- **Check 2** — Target milestone clear: every issue in `vX.Y.Z`, including the
+  release gate, must be closed or moved before tagging. The guard enumerates
+  those issues with `gh issue list --milestone vX.Y.Z`. Labels, Project fields,
+  issue titles, and issue bodies are not additional scheduling selectors.
+- **Check 4** — No scheduling fallback: target-scope queries use only the exact
+  version milestone. Version labels, Project fields, issue titles, and issue
+  bodies neither add blockers nor excuse an open milestone issue.
 
 ### Check 3: Strict Preflight Gate
 
@@ -221,8 +238,8 @@ A human reviewer must confirm that no open GitHub Issues represent known defects
 or outstanding decisions that affect this release's correctness or safety, and
 are being knowingly shipped without acknowledgment in the CHANGELOG or a
 documented follow-on issue. Automated issue-tracker checks surface issues by
-version label and milestone; they cannot detect an issue that was never labeled
-but is nonetheless blocking.
+the exact version milestone; they cannot detect an unscheduled issue that is
+nonetheless blocking.
 
 ### Check 23: `docs/topics/` Accuracy and Coverage Gate
 
@@ -243,7 +260,7 @@ post-release merge to make the released commit truthful.
 ### Check 24: Release Thesis, Scope, And Retrospective Path
 
 A human reviewer must confirm planned releases have a current release thesis,
-must-ship/may-slip/not-included scope, two to five goalposts with acceptance
+must-ship/may-slip/not-included scope, two to five release outcomes with acceptance
 evidence, and an explicit retrospective/evidence location under
 `docs/method/releases/vX.Y.Z/`. Patch and emergency releases may use a shorter
 thesis, but they still need a recorded reason, validation evidence,
@@ -254,10 +271,12 @@ post-publication verification, and fallout issue path.
 If a release is discovered to have shipped in violation of this policy:
 
 1. File a `triage:bad-code` GitHub Issue immediately documenting the violation,
-   or schedule the corrective fix into a concrete patch release lane if the
+   or schedule the corrective fix into a concrete patch release milestone if the
    release target is already known.
-2. Do not attempt to retroactively fix the published crate — crates.io publishes
-   are permanent.
+2. Do not move or overwrite the published tag and do not attempt to replace the
+   published crate — both are immutable release facts.
 3. If the violation involves a security defect, follow `SECURITY.md`.
 4. Issue a corrective patch release at the earliest opportunity.
-5. Post-mortem the gate failure and update xtask checks to prevent recurrence.
+5. Keep the failed publication evidence in the workflow run, GitHub Release,
+   and delivery witness; patch forward instead of rewriting release history.
+6. Post-mortem the gate failure and update xtask checks to prevent recurrence.

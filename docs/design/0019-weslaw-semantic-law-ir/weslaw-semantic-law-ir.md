@@ -1264,7 +1264,7 @@ layer because it creates false confidence.
 ## Implementation Evidence
 
 The v1 runway is closed. This packet no longer carries a live slice ledger; live
-work belongs in GitHub Issues and goalpost milestones.
+work belongs in GitHub Issues and plain version milestones.
 
 Durable evidence from the closed runway covers:
 

@@ -18,15 +18,16 @@ automation and reviewers should enforce.
 Wesley uses the Continuum spine, but the generic template must be adapted in
 these important ways:
 
-| Generic lifecycle point | Wesley adaptation                                                                                                                                  |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Version bucket          | Implementation issues stay in `Goalpost: ...` milestones. Concrete `vX.Y.Z` labels are the scheduling axis.                                        |
-| Release milestone       | `Release: vX.Y.Z` milestones hold release-gate and closeout issues only. They are not queried as pre-tag blockers.                                 |
-| Autotag                 | `.continuum/release.yml` declares `autotag: none`. Maintainers create a signed tag manually after final guards pass from synced `main`.            |
-| Package/channel policy  | crates.io is the public package registry. npm, JSR, and dist-tag policy do not apply to the current Wesley release surface.                        |
-| Publication             | `.github/workflows/release-crates.yml` runs from the tag and must verify tag, metadata, main reachability, package visibility, and GitHub Release. |
-| Public release boundary | The tag must point at the exact reviewed `main` commit. Do not merge post-release fixes into `main` and pretend they are part of the same release. |
-| Domain boundary         | Release scope must not add downstream domain semantics to Wesley core. Extensions and sibling repos own meaning.                                   |
+| Generic lifecycle point | Wesley adaptation                                                                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Version bucket          | One exact plain `vX.Y.Z` milestone is the sole schedule for implementation work and its release gate.                                               |
+| Release gate            | The gate shares the version milestone, is its final open issue, and closes before the signed local tag is created.                                  |
+| Grouping and priority   | GitHub Project fields and classification labels may group or prioritize work, but they never schedule a release.                                    |
+| Autotag                 | `.continuum/release.yml` declares `autotag: none`. Maintainers tag locally after pre-tag checks, then run the tag-specific guard before push.       |
+| Package/channel policy  | crates.io is the public package registry. npm, JSR, and dist-tag policy do not apply to the current Wesley release surface.                         |
+| Publication             | `.github/workflows/release-crates.yml` runs from the tag and must verify tag, metadata, main reachability, package visibility, and GitHub Release.  |
+| Public release boundary | The tag points at the exact reviewed `main` commit. A bad public release is corrected by a later patch; its tag and published artifacts never move. |
+| Domain boundary         | Release scope must not add downstream domain semantics to Wesley core. Extensions and sibling repos own meaning.                                    |
 
 The root [release process](../../RELEASE.md) is a thin maintainer entrance. This
 page remains the doctrine. The command-by-command execution layer remains
@@ -38,18 +39,20 @@ A valid Wesley release has all of the following:
 
 1. **A reason**: planned releases have a release thesis before implementation
    scope becomes active.
-2. **A bucket**: Wesley uses GitHub for live work state. Implementation issues
-   stay in `Goalpost: ...` milestones; release-gate issues stay in
-   `Release: vX.Y.Z` milestones; concrete `vX.Y.Z` labels are the version
-   scheduling axis because GitHub issues can carry only one milestone. Release
-   guards query labels and exact-version references for blockers, not the
-   release-gate milestone itself.
+2. **One schedule**: Wesley uses one exact plain `vX.Y.Z` GitHub milestone for
+   every scheduled issue, including the release gate. An unscheduled issue has
+   exactly one `triage:*` label and no milestone. Project fields, grouping
+   labels, issue titles, and body text may explain work, but they do not
+   schedule it. Release guards query only the exact version milestone and fail
+   if it is missing.
+   Here `vX.Y.Z` means exact tag-form SemVer. Every prerelease uses its full
+   milestone title, such as `v0.3.0-alpha.2`.
 3. **Honest scope**: must-ship, may-slip, and explicitly-not-included work is
    recorded before release prep.
 4. **A reviewed source commit**: the release tag points at the exact `main`
    commit that passed release prep.
-5. **An immutable public tag**: signed public tags are not moved. Bad releases
-   are fixed by patching forward.
+5. **An immutable public tag**: the release gate closes before tagging. Signed
+   public tags are never moved, and bad releases are fixed by patching forward.
 6. **Synchronized metadata**: every version source declared in the release
    profile agrees.
 7. **Updated signposts**: changelog, README, guide, architecture, topics,
@@ -61,8 +64,9 @@ A valid Wesley release has all of the following:
    evidence are produced from the tagged source.
 10. **Post-publication verification**: a release is done when consumers can see
     and use the crates, not when the upload command returns.
-11. **Evidence**: tag, commit, workflow, artifact, verification, and
-    retrospective evidence remain inspectable.
+11. **Evidence**: the tagged commit carries all repo-resident truth available
+    before publication. The tag workflow, GitHub Release, registry, and direct
+    delivery witness retain post-publication evidence without a backfill merge.
 12. **Learning**: planned releases end with a retrospective and fallout issues.
 
 ## Lifecycle
@@ -83,39 +87,52 @@ planned
 
 ### planned
 
-A release is planned when a `Release: vX.Y.Z` milestone exists, a release-gate
-issue exists, the release thesis exists, must-ship/may-slip/not-included scope
-is recorded, two to five goalposts are named, and acceptance evidence is clear.
+A release is planned when the exact plain `vX.Y.Z` milestone exists, its
+release-gate issue exists in that milestone, the release thesis exists,
+must-ship/may-slip/not-included scope is recorded, two to five release outcomes
+are named, and acceptance evidence is clear.
 
 ### active
 
-A release is active when it is the current version train, at least one selected
-goalpost issue is in progress, priority labels reflect the real queue, and
-exactly one active slice or tracking issue is marked as active for the train.
+A release is active when it is the current version train, at least one issue in
+its version milestone is in progress, Project priority and workflow fields
+reflect the real queue, and exactly one active slice or tracking issue is marked
+as active for the train.
 
 ### release-prep
 
 A release enters prep when implementation scope is reconciled against the
 previous public tag, slipped work is moved or cut, version metadata is updated,
 release signposts are updated, local release-prep validation passes, and a
-`release/vX.Y.Z` branch exists.
+`release/vX.Y.Z` branch exists. The gate remains open while other milestone
+work remains and becomes the final pre-tag issue.
 
 ### merged
 
 A release is merged when the release-prep PR has approval or explicit maintainer
 admin authorization, CI is green, release-prep validation has passed, and the
 release branch has landed on `main`. The merge commit is the candidate release
-commit.
+commit. At this point every other issue in the version milestone must already
+be closed, moved to another exact version milestone, or cut.
 
 ### tagged
 
-A release is tagged when final preflight passes from synced `main`, the expected
-tag does not already exist, and an annotated signed tag is created at the exact
-candidate release commit.
+A release is tagged locally only after a fresh `cargo xtask preflight` passes
+from synced `main` while the gate remains open, the gate then closes, the
+post-merge `release-prep-guard` confirms the exact version milestone has zero
+open issues, the validated commit still equals refreshed `origin/main`, the
+expected tag does not already exist, and an annotated signed tag is created at
+that exact candidate release commit. The tag-specific `release-guard` then must
+pass against that local tag before it is pushed.
 
 ```bash
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
 ```
+
+The public immutability boundary is the tag push. After a post-gate failure,
+follow the runbook to resolve remote tag state. Reopen the gate and delete a
+local tag only when that tag is proven absent from the remote; mutate neither
+when it is present or indeterminate.
 
 ### published
 
@@ -144,7 +161,7 @@ exists; and the next active slice is selected.
 ## Release Types
 
 - **Planned release**: normal minor, major, and meaningful patch trains. Requires
-  thesis, scoped issues, goalposts, release-prep PR, full validation,
+  thesis, scoped issues, release outcomes, release-prep PR, full validation,
   publication evidence, and retrospective.
 - **Patch release**: compatible bug fixes, packaging fixes, docs corrections
   tied to current behavior, and narrow operator workflow improvements. Requires
@@ -190,8 +207,10 @@ Required release artifacts:
   - why this exact version number is justified
   - whether migration guidance is required
 - `docs/method/releases/vX.Y.Z/verification.md`
-  Internal release witness. It records discovery, pre-flight validation,
-  tag/publish evidence, and direct verification of delivery.
+  Internal pre-tag release witness. It records discovery, pre-flight validation,
+  the intended tag/publish path, and the direct verification plan. Actual
+  post-publication facts remain in the workflow run, finalized GitHub Release,
+  registry records, and direct delivery witness rather than a backfill commit.
 - `docs/releases/vX.Y.Z.md`
   User-facing release notes and migration guide.
 - `CHANGELOG.md`
@@ -213,12 +232,13 @@ Commit history, diff inspection, and validation can support or challenge that
 judgment during pre-flight, but they do not silently own the decision by
 themselves.
 
-## Goalposts And Evidence
+## Release Outcomes And Evidence
 
-A planned release should have two to five goalposts. Each goalpost names an
-outcome, issue set, and observable acceptance evidence. Good evidence includes
-command output, test results, workflow runs, registry lookups, documentation
-links, smoke tests, closed issues, and merged PRs.
+A planned release should have two to five named release outcomes. Each outcome
+names an issue set and observable acceptance evidence without creating a second
+scheduling axis. Good evidence includes command output, test results, workflow
+runs, registry lookups, documentation links, smoke tests, closed issues, and
+merged PRs.
 
 ## Signposts
 
@@ -260,36 +280,39 @@ workflows.
 
 1. Shape the release in `docs/method/releases/vX.Y.Z/release.md`.
 2. Confirm the release profile still matches the repo.
-3. Accept the release thesis, scope, goalposts, and version justification.
+3. Accept the release thesis, scope, release outcomes, and version justification.
 4. Draft the user-facing release notes in `docs/releases/vX.Y.Z.md`.
 5. Reconcile scope against the previous public tag.
 6. Run the sequential pre-flight in `docs/method/release-runbook.md`.
 7. Land the release-prep PR on `main`.
-8. Create the signed tag on synced `main`.
-9. Publish from the tag.
-10. Verify delivery directly.
-11. Record the release witness and retrospective.
-12. Close the release and plan the next thesis.
+8. Confirm the release gate is the milestone's only remaining open issue, then
+   repeat fresh preflight from synced `main` while the gate remains open.
+9. Close the gate, run the final exact-milestone guard, reverify the unchanged
+   synced commit, create the signed local tag, and run the tag-specific guard.
+10. Push the exact tag and let its workflow publish.
+11. Verify delivery directly from workflow, GitHub Release, registry, and smoke
+    evidence.
+12. Record the retrospective and plan the next thesis without rewriting the
+    published release.
 
 ## Templates
 
 Use these shapes for planned releases and heavier patch releases.
 
-### Release Tracking Issue
+### Release Gate Issue
 
-Keep the open gate issue title/body free of the target tag/version literal while
-it remains open. Record the concrete version in the release packet path, release
-label, PR, and tagged source, and link issue queries instead of spelling the
-target tag in the gate issue.
+The gate uses the exact release version in its title and belongs to the matching
+plain `vX.Y.Z` milestone. It is the final pre-tag issue, not a post-publication
+evidence bucket. Close the gate issue before creating the signed local tag.
 
 ```markdown
-# Release gate: current planned release
+# Release gate: vX.Y.Z
 
 ## Thesis
 
 This release advances `<capability boundary>` for `<primary user/operator>` by
 `<main outcome>`. It focuses on `<included scope>` and deliberately excludes
-`<not-included scope>`, which remains in `<future release/goalpost/research>`.
+`<not-included scope>`, which remains in `<future version/research>`.
 
 ## Release type
 
@@ -309,7 +332,7 @@ planned | patch | emergency | security | prerelease | docs-only
 
 - ...
 
-## Goalposts
+## Release outcomes
 
 ### 1. <name>
 
@@ -320,45 +343,47 @@ Issues:
 ## Release prep
 
 - [ ] Scope reconciled
+- [ ] Every scheduled issue shares milestone `vX.Y.Z`
+- [ ] Every other milestone issue is closed, moved, or cut
 - [ ] Version metadata updated
 - [ ] Changelog updated
 - [ ] Signposts updated
 - [ ] Release prep validation passed
 - [ ] Release-prep PR merged to main
+- [ ] Fresh preflight passed from synced main while this gate remained open
+- [ ] Human release checklist complete
+- [ ] Close this gate before running the exact-milestone tracker-clear guard
+- [ ] Create the signed local tag only from the unchanged validated commit
+- [ ] Run the tag-specific guard before pushing the tag
 
-## Publication
+## Planned publication
 
-- [ ] Signed tag created from synced main
-- [ ] Release guard passed against tag
-- [ ] Tag pushed
-- [ ] Release Crates workflow completed
-- [ ] GitHub Release visible
-- [ ] crates.io visibility verified
+- Signed tag: `vX.Y.Z` from synced `main`
+- Workflow: Release Crates
+- GitHub Release: created/finalized by the tag workflow
+- Registry verification: direct crates.io lookup and CLI smoke
 
-## Evidence
+## Pre-tag evidence
 
-Tag:
 Commit:
 Release PR:
-Publish workflow:
-GitHub Release:
-Registry evidence:
-Smoke evidence:
-
-## Retrospective
-
-- [ ] Released work recorded
-- [ ] Unreleased work recorded
-- [ ] Plan-versus-actual recorded
-- [ ] Improvements recorded
-- [ ] Fallout issues filed
-- [ ] Next release thesis planned
+Validation:
+Release packet:
+Verification plan:
 ```
 
 ### Release-Prep PR Body
 
 ```markdown
 # release: vX.Y.Z
+
+## Linked issue
+
+Tracks #<release-gate>
+
+Use a non-closing reference for the gate. The release-prep PR must not use
+`Closes`, `Fixes`, or `Resolves` for it; the gate closes only after this PR
+lands and final human sign-off completes.
 
 ## Summary
 
@@ -412,12 +437,14 @@ vX.Y.Z
 
 ## Validation
 
-- [ ] `cargo xtask release-prep-guard --version X.Y.Z`
 - [ ] `cargo xtask preflight`
 - [ ] `cargo xtask release-check`
 - [ ] `cargo xtask package-crates --version X.Y.Z`
 - [ ] docs/topics accuracy and coverage audit
 - [ ] CI green
+
+The final `release-prep-guard` runs only after this PR lands and the release
+gate closes; it cannot pass while that gate remains open.
 
 ## Publish notes
 

@@ -40,4 +40,5 @@ packages are not part of the Rust-native product spine.
 
 Host maturity and release scheduling are not tracked by README progress tables
 or filesystem milestone docs. Use GitHub Issues, Milestones, Projects, and
-version labels for live planning state.
+classification labels for live planning state. Plain `vX.Y.Z` milestones are
+the release-scheduling authority.

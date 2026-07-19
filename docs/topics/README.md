@@ -52,7 +52,7 @@ short path to the authoritative surface.
 | Make a first small PR.             | [First PR](./contributing/first-pr.md)                 | `CONTRIBUTING.md`, GitHub Issues                |
 | Make a first generic compiler PR.  | [Plain Wesley](./plain-wesley.md#contributor-tutorial) | `docs/guides/extending.md`                      |
 | Find the right documentation path. | [Docs Orientation](./docs-orientation.md)              | `docs/README.md`                                |
-| Triage issues into release lanes.  | [Issue Triage](./contributing/triage.md)               | GitHub Issues, Milestones, Projects, and labels |
+| Schedule or triage issues.         | [Issue Triage](./contributing/triage.md)               | GitHub Issues, plain version milestones, labels |
 | Keep docs accurate and covered.    | [Docs Maintenance](./docs-maintenance.md)              | `docs/governance/DOCUMENTATION_STANDARD.md`     |
 
 ## Coverage Rule

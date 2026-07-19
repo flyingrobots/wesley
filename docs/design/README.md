@@ -3,8 +3,9 @@
 Design packets live here as specifications, boundary notes, and durable
 evidence. They are not live progress trackers.
 
-Work slices live in GitHub Issues. Goalposts live in GitHub Milestones. The
-roadmap board lives in the
+Work slices live in GitHub Issues. Scheduled work uses plain `vX.Y.Z`
+milestones; unscheduled intake uses `triage:*` labels. Release outcomes are
+narrative groups, not additional milestones. The roadmap board lives in the
 [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18).
 
 Use [`TEMPLATE.md`](./TEMPLATE.md) as the starting point for every new design
@@ -67,8 +68,8 @@ Current packets:
   substrate notes
 - [`0020`](./0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md):
   completed Holmes `weslaw` assurance PRD and test-plan campaign. Rust Holmes
-  implementation work is tracked by GitHub Issues and goalpost milestones, not
-  packet-local status docs
+  implementation work is tracked by GitHub Issues and plain version milestones,
+  not packet-local status docs
 - [`0021`](./0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/continuum-yolo-runtime-neutral-edict-sha-lock-assurance.md):
   extracted Continuum lawful-autonomous lane and runtime-neutral Edict packet;
   the canonical specs now live in

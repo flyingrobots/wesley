@@ -32,15 +32,20 @@ updated: 'YYYY-MM-DD'
 
 ## GitHub Work
 
-Name the issue, goalpost milestone, and project item this packet supports.
+Name the issue, canonical scheduling state, narrative release outcome, and
+project item this packet supports.
 
 Example:
 
 - Issue: `https://github.com/flyingrobots/wesley/issues/{number}`
-- Goalpost milestone: `Goalpost: Make It Truthful`
+- Scheduling milestone: `v0.4.0`
+- Release outcome: `Make It Truthful` (narrative group, not a milestone)
 - Project: `https://github.com/users/flyingrobots/projects/18`
 
-Do not use this section as a progress tracker.
+Scheduled work must have one plain `vX.Y.Z` milestone and no `triage:*` or
+version label. If the packet documents unscheduled intake, name its one
+`triage:*` label and confirm that it has no milestone. Do not use this section
+as a progress tracker.
 
 ## Cycle Preparation
 
@@ -50,7 +55,8 @@ section as a progress checklist.
 Include:
 
 - branch basis from synced `origin/main`
-- linked GitHub issue, goalpost milestone, and Project item
+- linked GitHub issue, scheduling milestone or triage state, narrative release
+  outcome, and Project item
 - `work-in-progress` label state, when applicable
 - branch and PR links, when available
 
