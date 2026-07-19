@@ -102,7 +102,15 @@ impl Display for BrainfuckError {
 impl Error for BrainfuckError {}
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let source_only = match env::args().skip(1).collect::<Vec<_>>().as_slice() {
+    let mut stdout = std::io::stdout().lock();
+    run(env::args().skip(1), &mut stdout)
+}
+
+fn run(
+    args: impl IntoIterator<Item = String>,
+    stdout: &mut impl Write,
+) -> Result<(), Box<dyn Error>> {
+    let source_only = match args.into_iter().collect::<Vec<_>>().as_slice() {
         [] => false,
         [flag] if flag == "--source" => true,
         _ => {
@@ -119,8 +127,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let program = generated.program()?;
 
     if source_only {
-        let mut stdout = std::io::stdout().lock();
-        write_brainfuck_source(&mut stdout, program)?;
+        write_brainfuck_source(stdout, program)?;
         return Ok(());
     }
 
@@ -129,17 +136,31 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Err(IoError::other("Brainfuck playback did not match generated input").into());
     }
 
-    println!("IR -> Brainfuck -> stdout");
-    print!("{playback}");
-    println!("brainfuck instructions: {}", program.len());
-    println!("generation input: {}", generated.input.digest()?);
-    println!("emitted program: {}", generated.output.reference().digest);
-    println!("provenance manifest: {}", generated.manifest.digest()?);
-    println!("review authoritative: {}", generated.review.authoritative());
-    println!(
+    writeln!(stdout, "IR -> Brainfuck -> stdout")?;
+    write!(stdout, "{playback}")?;
+    writeln!(stdout, "brainfuck instructions: {}", program.len())?;
+    writeln!(stdout, "generation input: {}", generated.input.digest()?)?;
+    writeln!(
+        stdout,
+        "emitted program: {}",
+        generated.output.reference().digest
+    )?;
+    writeln!(
+        stdout,
+        "provenance manifest: {}",
+        generated.manifest.digest()?
+    )?;
+    writeln!(
+        stdout,
+        "review authoritative: {}",
+        generated.review.authoritative()
+    )?;
+    writeln!(
+        stdout,
         "verified materials: {} source / {} output",
         verification.verified_source_count, verification.verified_output_count
-    );
+    )?;
+    stdout.flush()?;
 
     Ok(())
 }
@@ -349,8 +370,12 @@ mod tests {
             first.decoded_message.as_bytes()
         );
         let mut source_bytes = Vec::new();
-        write_brainfuck_source(&mut source_bytes, first.program().unwrap()).unwrap();
+        run(["--source".to_owned()], &mut source_bytes).unwrap();
         assert_eq!(source_bytes, first.output.bytes);
+        assert_eq!(
+            compute_generation_artifact_digest_v1(&source_bytes),
+            "sha256:5a895685bbf8fe174cbdf148b853fd615432fc0f795a9bb82d9bb216e6cbcfe9"
+        );
         assert!(first.decoded_message.contains("QUERY.PONDER"));
         assert!(first.decoded_message.contains(&first.input.shape_digest));
         assert!(!first.review.authoritative());
