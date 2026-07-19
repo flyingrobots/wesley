@@ -83,6 +83,28 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "strict-preflight docs track the explicit example tests" {
+  run awk '
+    /^4\. `cargo test --workspace`$/ { workspace = NR }
+    /^5\. `cargo test -p wesley-core --example ir_to_brainfuck`$/ { example = NR }
+    /^6\. `cargo run --bin wesley -- --help`$/ { smoke = NR }
+    END { exit !(workspace && example == workspace + 1 && smoke == example + 1) }
+  ' docs/governance/RELEASE_POLICY.md
+  assert_success
+
+  for path in \
+    docs/ARCHITECTURE.md \
+    docs/END_TO_END.md \
+    docs/TECHNICAL_TEARDOWN.md \
+    docs/topics/validation.md; do
+    run grep -F "ir_to_brainfuck" "$path"
+    assert_success
+  done
+
+  run grep -F "Run Rust workspace and explicit example tests" xtask/src/main.rs
+  assert_success
+}
+
 @test "release profile assertions are YAML spacing tolerant" {
   run bash -lc "awk '/@test \"release profile names every published Wesley crate\"/{in_test=1} in_test && /^@test / && !/release profile names every published Wesley crate/{exit} in_test {print}' test/release-governance.bats | grep -F 'grep -Eq'"
   assert_success

@@ -460,6 +460,7 @@ flowchart LR
     Maintainer --> CargoXtask[cargo xtask]
     CargoXtask --> DocsCheck[docs-check]
     CargoXtask --> Tests[cargo test --workspace]
+    CargoXtask --> ExampleTests[cargo test -p wesley-core --example ir_to_brainfuck]
     CargoXtask --> NativeHelp[cargo run --bin wesley -- --help]
     CargoXtask --> Release[cargo build --release + package wesley-core]
     CargoXtask --> Legacy[cargo xtask legacy-preflight]
@@ -477,9 +478,10 @@ wesley schema diff --schema schema.graphql --base origin/main
 ```
 
 `cargo xtask preflight` is the ordinary product health check. It runs
-Rust-native docs hygiene checks, Rust workspace tests, and verifies the native
-CLI help surface. `cargo xtask legacy-preflight` intentionally crosses into
-JavaScript package tooling only for retained package or pnpm-workspace changes.
+Rust-native docs hygiene checks, Rust workspace tests, the explicit
+`ir_to_brainfuck` example tests, and verifies the native CLI help surface.
+`cargo xtask legacy-preflight` intentionally crosses into JavaScript package
+tooling only for retained package or pnpm-workspace changes.
 
 ## Non-Compiler JavaScript Tooling
 
@@ -631,7 +633,9 @@ Those systems may consume Wesley facts. They should not become Wesley core.
 flowchart LR
     RustTests[cargo test --workspace] --> CoreTests[core lowering + operation analysis]
     RustTests --> CliTests[native CLI help/unknown command]
+    ExampleTests[cargo test -p wesley-core --example ir_to_brainfuck] --> BrainfuckTests[external generation playback + provenance]
     Preflight[cargo xtask preflight] --> RustTests
+    Preflight --> ExampleTests
     Preflight --> NativeHelp[native help smoke]
     Legacy[cargo xtask legacy-preflight] --> Pnpm[pnpm run legacy-preflight]
     Pnpm --> Links[docs links]

@@ -980,6 +980,7 @@ flowchart TD
     Change --> Fixtures[pnpm fixtures:ir]
 
     RustPreflight --> RustTests[cargo test --workspace]
+    RustPreflight --> ExampleTests[cargo test -p wesley-core --example ir_to_brainfuck]
     RustPreflight --> NativeHelp[native CLI help smoke]
     LegacyPreflight --> PnpmLegacy[pnpm run legacy-preflight]
     PnpmLegacy --> DocsLinks[legacy docs links]
@@ -991,6 +992,7 @@ flowchart TD
     Fixtures --> Golden[L1 golden files]
 
     RustTests --> PR[Pull request]
+    ExampleTests --> PR
     NativeHelp --> PR
     DocsLinks --> PR
     DocsTruth --> PR

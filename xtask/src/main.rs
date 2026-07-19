@@ -3159,7 +3159,7 @@ Usage:
   cargo xtask <command>
 
 Commands:
-  test              Run Rust workspace tests
+  test              Run Rust workspace and explicit example tests
   bench-ir          Run advisory Rust-native IR lowering benchmarks
   docs-check        Run Rust-native documentation hygiene checks
   preflight         Run the strict pre-PR/release quality gate
