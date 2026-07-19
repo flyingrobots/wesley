@@ -109,9 +109,10 @@ playback with:
 cargo run --quiet -p wesley-core --example ir_to_brainfuck -- --source
 ```
 
-The example is educational evidence for the external-generation contract. It
-does not add plugin discovery, target execution, Brainfuck semantics, or a new
-command to the `wesley` CLI.
+The example is educational evidence for the external-generation contract. Its
+compiler and interpreter remain owned by the separate example crate; the public
+`wesley-core` library and `wesley` CLI gain no plugin discovery, target-execution,
+Brainfuck-semantics, or command surface.
 
 ## Verification
 
