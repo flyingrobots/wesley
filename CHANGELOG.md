@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- Added a runnable `wesley-core` Cargo example that deterministically compiles
+  canonical Shape IR and normalized operations into Brainfuck, executes the
+  resulting program, and verifies generator, source, and output provenance
+  through the public extension-generation contract.
+
 ## [0.3.0-alpha.1] - 2026-07-15
 
 ### Added

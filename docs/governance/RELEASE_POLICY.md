@@ -86,7 +86,8 @@ runs, in order:
 2. `cargo clippy --workspace --all-targets -- -D warnings`
 3. `cargo xtask docs-check`
 4. `cargo test --workspace`
-5. `cargo run --bin wesley -- --help`
+5. `cargo test -p wesley-core --example ir_to_brainfuck`
+6. `cargo run --bin wesley -- --help`
 
 JavaScript dependency advisories are tracked by Dependabot and the
 `dependency-review` workflow. `pnpm audit` was removed from the gate after npm

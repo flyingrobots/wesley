@@ -13,9 +13,10 @@ Run strict preflight before opening or updating a substantial PR:
 cargo xtask preflight
 ```
 
-The gate runs formatting, clippy, docs checks, workspace tests, and a native
-CLI smoke test. JavaScript dependency advisories are handled by Dependabot and
-the `dependency-review` workflow, not by preflight.
+The gate runs formatting, clippy, docs checks, workspace tests, the explicit
+`ir_to_brainfuck` example tests, and a native CLI smoke test. JavaScript
+dependency advisories are handled by Dependabot and the `dependency-review`
+workflow, not by preflight.
 
 ## Focused Checks
 

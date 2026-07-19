@@ -508,7 +508,8 @@ exits. Nothing persists unless the user chooses a command with `--out` or
 ### Xtask Runtime
 
 `cargo xtask preflight` is a different runtime surface. It is a repository
-maintenance command that runs docs checks, `cargo test --workspace`, and
+maintenance command that runs docs checks, `cargo test --workspace`,
+`cargo test -p wesley-core --example ir_to_brainfuck`, and
 `cargo run --bin wesley -- --help`. It does not define compiler semantics; it
 checks that the repository remains healthy.
 
