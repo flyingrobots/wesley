@@ -255,15 +255,15 @@ Packaging sanity must fail on:
 2. Stage all release-prep changes.
 3. Create exactly one release-prep commit on a release branch:
 
-```bash
-git commit -m "chore(release): vX.Y.Z"
-```
+   ```bash
+   git commit -m "chore(release): vX.Y.Z"
+   ```
 
-For prereleases:
+   For prereleases:
 
-```bash
-git commit -m "chore(release): vX.Y.Z-alpha.1"
-```
+   ```bash
+   git commit -m "chore(release): vX.Y.Z-alpha.1"
+   ```
 
 4. Land the release-prep change through the protected `main` branch.
 5. Fetch `origin/main` and tags.
@@ -286,15 +286,15 @@ git commit -m "chore(release): vX.Y.Z-alpha.1"
 1. Confirm the release-gate issue is closed, then create exactly one signed tag
    on the synced `main` commit:
 
-```bash
-git tag -s vX.Y.Z -m "release: vX.Y.Z"
-```
+   ```bash
+   git tag -s vX.Y.Z -m "release: vX.Y.Z"
+   ```
 
-For prereleases:
+   For prereleases:
 
-```bash
-git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
-```
+   ```bash
+   git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
+   ```
 
 2. Verify the tag points at the synced `main` commit.
 3. Verify the tag signature.
