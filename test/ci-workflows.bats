@@ -282,6 +282,11 @@ load 'vendor/bats-plugins/bats-assert/load'
   [ "$output" -ge 3 ]
 }
 
+@test "repo Bats tests do not nest Cargo builds" {
+  run rg -n '^[[:space:]]*run cargo([[:space:]]|$)' test --glob '*.bats'
+  assert_failure
+}
+
 @test "repo Bats installer provisions command dependencies" {
   run grep -F "sudo apt-get install -y bats jq ripgrep" .github/actions/install-bats/action.yml
   assert_success

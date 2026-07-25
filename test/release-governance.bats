@@ -123,13 +123,6 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
 }
 
-@test "release governance YAML is structurally valid" {
-  run cargo test --quiet --locked -p xtask tests::release_governance_yaml_is_structurally_valid -- --exact
-  assert_success
-  assert_output --partial "running 1 test"
-  assert_output --partial "1 passed; 0 failed"
-}
-
 @test "release profile uses plain version milestones as the sole schedule" {
   run grep -F "release_milestone_format: 'v{version}'" .continuum/release.yml
   assert_success
