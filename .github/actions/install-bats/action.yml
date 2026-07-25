@@ -1,11 +1,11 @@
-name: 'Install Bats and JQ'
-description: 'Installs bats and jq on Ubuntu runners'
+name: 'Install Bats, JQ, and ripgrep'
+description: 'Installs bats, jq, and ripgrep on Ubuntu runners'
 runs:
   using: 'composite'
   steps:
     - name: apt-get update
       shell: bash
       run: sudo apt-get update
-    - name: install bats and jq
+    - name: install bats, jq, and ripgrep
       shell: bash
-      run: sudo apt-get install -y bats jq
+      run: sudo apt-get install -y bats jq ripgrep
