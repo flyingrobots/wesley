@@ -118,8 +118,8 @@ publish:
 issue_model:
   live_tracker: github
   scheduling_authority: 'plain v{version} milestone'
-  scheduled_state: 'exactly one v{version} milestone and no triage:* or concrete version label'
-  unscheduled_state: 'exactly one triage:* label and no milestone'
+  scheduled_state: 'exactly one milestone named v{version}; no extra milestone or triage:*, retired lane:*, or concrete version label'
+  unscheduled_state: 'exactly one triage:* label; no milestone, retired lane:*, or concrete version label'
   classification_axis: 'type, status, legend:*, work:*, and pkg:* labels'
   release_gate: 'final pre-tag issue in the target version milestone'
 

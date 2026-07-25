@@ -43,7 +43,8 @@ Use the
 [good first issue query](https://github.com/flyingrobots/wesley/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22)
 and choose an issue that has:
 
-- exactly one plain `vX.Y.Z` milestone and no `triage:*` or version label
+- exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`, retired
+  `lane:*`, or concrete-version scheduling label
 - no `work-in-progress` label
 - one primary file or a very small file set
 - one local validation command in the acceptance criteria
@@ -89,8 +90,9 @@ context:
 - scope names one primary file or tiny file set
 - acceptance criteria include exactly one required local command
 - tracker metadata has exactly one scheduling state: either one `triage:*`
-  label and no milestone, or one plain `vX.Y.Z` milestone and no `triage:*` or
-  version label
+  label and no milestone, retired `lane:*`, or concrete-version scheduling
+  label, or exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`,
+  retired `lane:*`, or concrete-version scheduling label
 - starter issues are scheduled with a plain `vX.Y.Z` milestone; narrative
   release outcomes do not become additional milestones
 - no advanced Wesley term appears without a plain-English alias

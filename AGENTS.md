@@ -35,9 +35,10 @@ Do not audit the repository by recursively walking the filesystem. Follow the au
 - **`docs/BEARING.md`**: Current execution gravity and active tensions.
 - **`docs/design/README.md`**: Active design packets and structural doctrine.
 - **GitHub Issues**: The active source of truth for pending work. Unscheduled
-  intake has exactly one `triage:*` label and no milestone. Work scheduled
-  into a named release has exactly one plain `vX.Y.Z` milestone and no
-  `triage:*` or concrete-version scheduling label. See
+  intake has exactly one `triage:*` label and no milestone, retired `lane:*`,
+  or concrete-version scheduling label. Work scheduled into a named release
+  has exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`, retired
+  `lane:*`, or concrete-version scheduling label. See
   **`docs/topics/contributing/triage.md`**.
 
 ### 4. The Proof
@@ -61,8 +62,10 @@ After altering files:
 
 1. **Verify Truth**: Ensure documentation is updated if behavior or structure changed.
 2. **Log Debt**: Add follow-on work as either unscheduled intake (exactly one
-   `triage:*` label and no milestone) or scheduled work (exactly one plain
-   `vX.Y.Z` milestone and no triage or concrete-version scheduling label).
+   `triage:*` label and no milestone, retired `lane:*`, or concrete-version
+   scheduling label) or scheduled work (exactly one milestone, named plain
+   `vX.Y.Z`, and no triage, retired `lane:*`, or concrete-version scheduling
+   label).
 3. **Commit**: Use focused, conventional commit messages. Propose a draft before executing.
 4. **Validate**: Run `pnpm run preflight`.
 

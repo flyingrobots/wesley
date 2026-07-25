@@ -3629,11 +3629,15 @@ mod tests {
         let issue_model = yaml_field(&profile, "issue_model").expect("issue_model should exist");
         assert_eq!(
             yaml_field(issue_model, "scheduled_state").and_then(Yaml::as_str),
-            Some("exactly one v{version} milestone and no triage:* or concrete version label")
+            Some(
+                "exactly one milestone named v{version}; no extra milestone or triage:*, retired lane:*, or concrete version label"
+            )
         );
         assert_eq!(
             yaml_field(issue_model, "unscheduled_state").and_then(Yaml::as_str),
-            Some("exactly one triage:* label and no milestone")
+            Some(
+                "exactly one triage:* label; no milestone, retired lane:*, or concrete version label"
+            )
         );
 
         let issue_forms = [

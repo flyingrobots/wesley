@@ -146,15 +146,32 @@ load 'vendor/bats-plugins/bats-assert/load'
   run rg -n "Goalpost:|Release:" .continuum/release.yml
   assert_failure
 
-  run grep -F "scheduled_state: 'exactly one v{version} milestone and no triage:* or concrete version label'" .continuum/release.yml
+  run grep -F "scheduled_state: 'exactly one milestone named v{version}; no extra milestone or triage:*, retired lane:*, or concrete version label'" .continuum/release.yml
   assert_success
 
-  run grep -F "unscheduled_state: 'exactly one triage:* label and no milestone'" .continuum/release.yml
+  run grep -F "unscheduled_state: 'exactly one triage:* label; no milestone, retired lane:*, or concrete version label'" .continuum/release.yml
   assert_success
 }
 
+@test "scheduling predicates reject every retired scheduling state" {
+  run grep -F "scheduled_state: 'exactly one milestone named v{version}; no extra milestone or triage:*, retired lane:*, or concrete version label'" .continuum/release.yml
+  assert_success
+
+  run grep -F "unscheduled_state: 'exactly one triage:* label; no milestone, retired lane:*, or concrete version label'" .continuum/release.yml
+  assert_success
+
+  run grep -F 'Linked issue has exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`, retired `lane:*`, or concrete-version scheduling label.' .github/pull_request_template.md
+  assert_success
+
+  for path in AGENTS.md docs/topics/contributing/first-pr.md; do
+    run bash -lc "grep -F 'retired \`lane:*\`' '$path' | wc -l"
+    assert_success
+    [ "$output" -ge 2 ]
+  done
+}
+
 @test "issue and pull request templates preserve the scheduling invariant" {
-  run grep -F 'Linked issue is scheduled in one plain `vX.Y.Z` milestone and has no `triage:*` or version label.' .github/pull_request_template.md
+  run grep -F 'Linked issue has exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`, retired `lane:*`, or concrete-version scheduling label.' .github/pull_request_template.md
   assert_success
 
   run grep -F 'Linked issue is either unscheduled' .github/pull_request_template.md
