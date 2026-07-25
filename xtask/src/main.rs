@@ -3776,9 +3776,8 @@ mod tests {
 
     #[test]
     fn release_guard_rejects_duplicate_target_milestones_before_issue_query() {
-        let (result, calls, remaining_responses) = exercise_release_tracker_guard(vec![Ok(
-            gh_success("v1.2.3\nv1.2.3\n"),
-        )]);
+        let (result, calls, remaining_responses) =
+            exercise_release_tracker_guard(vec![Ok(gh_success("v1.2.3\nv1.2.3\n"))]);
 
         assert!(matches!(
             result,
@@ -3935,10 +3934,7 @@ mod tests {
 
         assert_eq!(release_milestone_match_count(titles, "v1.2.3"), 1);
         assert_eq!(release_milestone_match_count(titles, "v1.2.4"), 0);
-        assert_eq!(
-            release_milestone_match_count("v1.2.30\n", "v1.2.3"),
-            0
-        );
+        assert_eq!(release_milestone_match_count("v1.2.30\n", "v1.2.3"), 0);
         assert_eq!(
             release_milestone_match_count("v1.2.3\nv1.2.3\n", "v1.2.3"),
             2
