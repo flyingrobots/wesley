@@ -1876,15 +1876,20 @@ where
 {
     let query = release_milestone_query(repo);
     let stdout = run_release_tracker_query(&query, run_gh)?;
-    if release_milestone_exists(&stdout, tag) {
-        Ok(())
-    } else {
-        Err(Error::CheckFailed {
+    match release_milestone_match_count(&stdout, tag) {
+        1 => Ok(()),
+        0 => Err(Error::CheckFailed {
             check: "release issue tracker".to_string(),
             failures: vec![format!(
                 "required open version milestone `{tag}` does not exist in `{repo}`"
             )],
-        })
+        }),
+        count => Err(Error::CheckFailed {
+            check: "release issue tracker".to_string(),
+            failures: vec![format!(
+                "required exactly one open version milestone `{tag}` in `{repo}`, found {count}"
+            )],
+        }),
     }
 }
 
@@ -1921,8 +1926,8 @@ fn release_milestone_query(repo: &str) -> Vec<String> {
     ]
 }
 
-fn release_milestone_exists(content: &str, target: &str) -> bool {
-    content.lines().any(|title| title == target)
+fn release_milestone_match_count(content: &str, target: &str) -> usize {
+    content.lines().filter(|title| *title == target).count()
 }
 
 fn release_milestone_issue_query(tag: &str, repo: &str) -> Vec<String> {
@@ -3770,6 +3775,24 @@ mod tests {
     }
 
     #[test]
+    fn release_guard_rejects_duplicate_target_milestones_before_issue_query() {
+        let (result, calls, remaining_responses) = exercise_release_tracker_guard(vec![Ok(
+            gh_success("v1.2.3\nv1.2.3\n"),
+        )]);
+
+        assert!(matches!(
+            result,
+            Err(Error::CheckFailed { check, failures })
+                if check == "release issue tracker"
+                    && failures == vec![
+                        "required exactly one open version milestone `v1.2.3` in `flyingrobots/wesley`, found 2"
+                    ]
+        ));
+        assert_eq!(calls, &expected_release_tracker_calls()[..1]);
+        assert_eq!(remaining_responses, 0);
+    }
+
+    #[test]
     fn release_guard_reports_open_target_milestone_issue() {
         let (result, calls, remaining_responses) = exercise_release_tracker_guard(vec![
             Ok(gh_success("v1.2.3\n")),
@@ -3910,9 +3933,16 @@ mod tests {
     fn release_milestone_presence_requires_an_exact_title() {
         let titles = "v1.2.2\nv1.2.3\nv1.2.30\n";
 
-        assert!(release_milestone_exists(titles, "v1.2.3"));
-        assert!(!release_milestone_exists(titles, "v1.2.4"));
-        assert!(!release_milestone_exists("v1.2.30\n", "v1.2.3"));
+        assert_eq!(release_milestone_match_count(titles, "v1.2.3"), 1);
+        assert_eq!(release_milestone_match_count(titles, "v1.2.4"), 0);
+        assert_eq!(
+            release_milestone_match_count("v1.2.30\n", "v1.2.3"),
+            0
+        );
+        assert_eq!(
+            release_milestone_match_count("v1.2.3\nv1.2.3\n", "v1.2.3"),
+            2
+        );
     }
 
     #[test]
