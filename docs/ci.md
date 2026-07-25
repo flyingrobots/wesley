@@ -19,16 +19,18 @@ Workflow names distinguish product checks from compatibility checks:
 
 ## Reusable Pieces
 
-### Install Bats (reusable workflow)
+### Install Bats Dependencies
 
-We provide a reusable workflow to install Bats and jq:
+Repository workflows install Bats, jq, and ripgrep through one checked-in
+composite action. Run it after `actions/checkout` so the local action is
+available:
 
 ```yaml
 - name: Install Bats
-  uses: flyingrobots/wesley/.github/workflows/install-bats.yml@main
+  uses: ./.github/actions/install-bats
 ```
 
-Use this anywhere Bats-based tests run (Linux runners).
+Use this action anywhere repository Bats suites run on Ubuntu.
 
 ## Repo-level Bats Tests
 

@@ -290,6 +290,15 @@ load 'vendor/bats-plugins/bats-assert/load'
 @test "repo Bats installer provisions command dependencies" {
   run grep -F "sudo apt-get install -y bats jq ripgrep" .github/actions/install-bats/action.yml
   assert_success
+
+  run test ! -e .github/workflows/install-bats.yml
+  assert_success
+
+  run grep -F "uses: ./.github/actions/install-bats" docs/ci.md
+  assert_success
+
+  run rg -n "\\.github/workflows/install-bats\\.yml" docs .github
+  assert_failure
 }
 
 @test "cert-shipme certifies only landed target-branch commits" {

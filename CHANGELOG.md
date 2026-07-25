@@ -15,6 +15,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   remain Project fields rather than classification labels. GitHub
   owner/repository path comparisons treat letter casing as non-semantic while
   preserving the origin-derived path.
+- Consolidated repository Bats dependency installation on the checked-in
+  composite action, including Bats, jq, and ripgrep, and retired the duplicate
+  workflow that could not provision tools into its caller job.
 
 ## [0.3.0-alpha.1] - 2026-07-15
 
