@@ -315,6 +315,14 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
 }
 
+@test "release sequence ordering oracles require every marker" {
+  run grep -E '^[[:space:]]*END \{ exit !\(preflight && gate && prep && refresh && unchanged && tag && tagged && push && workflow && preflight < gate' test/release-governance.bats
+  assert_success
+
+  run grep -E '^[[:space:]]*END \{ exit !\(sync && record && preflight && gate && clear && refresh && unchanged && synced && tag && sync < record' test/release-governance.bats
+  assert_success
+}
+
 @test "release runbook orders pre-tag and tag-specific guards" {
   run awk '
     /Run a fresh `cargo xtask preflight`/{preflight=NR}
@@ -326,7 +334,7 @@ load 'vendor/bats-plugins/bats-assert/load'
     /Run `cargo xtask release-guard/{tagged=NR}
     /Push the exact release tag only/{push=NR}
     /Monitor the tag-triggered workflow/{workflow=NR}
-    END { exit !(preflight < gate && gate < prep && prep < refresh && refresh < unchanged && unchanged < tag && tag < tagged && tagged < push && push < workflow) }
+    END { exit !(preflight && gate && prep && refresh && unchanged && tag && tagged && push && workflow && preflight < gate && gate < prep && prep < refresh && refresh < unchanged && unchanged < tag && tag < tagged && tagged < push && push < workflow) }
   ' docs/method/release-runbook.md
   assert_success
 
@@ -385,7 +393,7 @@ load 'vendor/bats-plugins/bats-assert/load'
     /test .*git rev-parse HEAD.*validated_head/{unchanged=NR}
     /test .*git rev-parse HEAD.*git rev-parse origin\/main/{synced=NR}
     /git tag -s vX.Y.Z/{tag=NR}
-    END { exit !(sync < record && record < preflight && preflight < gate && gate < clear && clear < refresh && refresh < unchanged && unchanged < synced && synced < tag) }
+    END { exit !(sync && record && preflight && gate && clear && refresh && unchanged && synced && tag && sync < record && record < preflight && preflight < gate && gate < clear && clear < refresh && refresh < unchanged && unchanged < synced && synced < tag) }
   ' RELEASE.md
   assert_success
 
