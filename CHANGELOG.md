@@ -12,7 +12,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   with one plain `vX.Y.Z` milestone per planned release. Release guards now
   require that exact open milestone and block on its open issues; the release
   gate closes before the immutable tag is created. Priority and workflow status
-  remain Project fields rather than classification labels.
+  remain Project fields rather than classification labels. GitHub
+  owner/repository path comparisons treat letter casing as non-semantic while
+  preserving the origin-derived path.
 
 ## [0.3.0-alpha.1] - 2026-07-15
 

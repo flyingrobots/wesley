@@ -2037,7 +2037,7 @@ fn resolve_release_github_repository(
         let push_repository = parse_github_repository_remote(push_remote).ok_or_else(|| {
             format!("could not infer GitHub repository from origin push URL `{push_remote}`")
         })?;
-        if push_repository != origin_repository {
+        if !push_repository.eq_ignore_ascii_case(&origin_repository) {
             return Err(format!(
                 "origin push repository `{push_repository}` does not match origin fetch repository `{origin_repository}`"
             ));
@@ -2048,7 +2048,7 @@ fn resolve_release_github_repository(
         let repository = parse_github_repository_path(repository).ok_or_else(|| {
             format!("GITHUB_REPOSITORY `{repository}` is not a valid owner/repository path")
         })?;
-        if repository != origin_repository {
+        if !repository.eq_ignore_ascii_case(&origin_repository) {
             return Err(format!(
                 "GITHUB_REPOSITORY `{repository}` does not match origin fetch and push repository `{origin_repository}`"
             ));
@@ -4018,6 +4018,30 @@ mod tests {
                 "https://github.com/flyingrobots/wesley.git",
                 "git@github.com:flyingrobots/wesley.git",
                 Some("flyingrobots/wesley"),
+            ),
+            Ok("flyingrobots/wesley".to_string())
+        );
+    }
+
+    #[test]
+    fn release_repository_accepts_case_insensitive_fetch_and_push_paths() {
+        assert_eq!(
+            resolve_release_github_repository(
+                "https://github.com/FlyingRobots/Wesley.git",
+                "git@github.com:flyingrobots/wesley.git",
+                None,
+            ),
+            Ok("FlyingRobots/Wesley".to_string())
+        );
+    }
+
+    #[test]
+    fn release_repository_accepts_case_insensitive_ambient_path() {
+        assert_eq!(
+            resolve_release_github_repository(
+                "https://github.com/flyingrobots/wesley.git",
+                "git@github.com:flyingrobots/wesley.git",
+                Some("FLYINGROBOTS/WESLEY"),
             ),
             Ok("flyingrobots/wesley".to_string())
         );
