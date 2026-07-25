@@ -9,24 +9,35 @@ prepare release facts, but the tag must point at the merged `main` commit.
 
 ## Release Shape
 
-Release state is split intentionally:
+Release state has one scheduling authority:
 
-| Surface                                       | Purpose                                      |
-| --------------------------------------------- | -------------------------------------------- |
-| GitHub label `vX.Y.Z`                         | Scheduled work and pre-tag blockers          |
-| GitHub milestone `Release: vX.Y.Z`            | Release-gate and closeout issue only         |
-| GitHub goalpost milestones                    | Implementation issues                        |
-| `CHANGELOG.md`                                | Historical ledger of merged behavior         |
-| `.continuum/release.yml`                      | Repo-local release profile and publish facts |
-| `docs/method/releases/vX.Y.Z/release.md`      | Internal release design and scope            |
-| `docs/method/releases/vX.Y.Z/verification.md` | Release witness after validation and publish |
-| `docs/releases/vX.Y.Z.md`                     | User-facing release notes                    |
+| Surface                                       | Purpose                                             |
+| --------------------------------------------- | --------------------------------------------------- |
+| GitHub milestone `vX.Y.Z`                     | Sole schedule for release work and its pre-tag gate |
+| GitHub Project fields                         | Priority, workflow status, and optional grouping    |
+| GitHub labels                                 | Triage and classification; never release scheduling |
+| `CHANGELOG.md`                                | Historical ledger of merged behavior                |
+| `.continuum/release.yml`                      | Repo-local release profile and publish facts        |
+| `docs/method/releases/vX.Y.Z/release.md`      | Internal release design and scope                   |
+| `docs/method/releases/vX.Y.Z/verification.md` | Repo-resident pre-tag validation witness            |
+| `docs/releases/vX.Y.Z.md`                     | User-facing release notes                           |
 
-Implementation issues stay in goalpost milestones. Release-gate issues link to
-the selected goalposts and release-lane queries. The executable release guards
-query version labels and exact-version references for blockers; they do not
-block merely because the `Release: vX.Y.Z` gate issue remains open for
-post-publication evidence.
+Every scheduled issue, including the release gate, belongs to the one exact
+plain `vX.Y.Z` milestone. Project fields and grouping labels may organize that
+work, but they do not schedule it. The release gate is the final open issue in
+the milestone: close it after every other issue is closed, moved, or cut, and
+before creating the signed local tag.
+
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
+
+Here `vX.Y.Z` means exact tag-form SemVer. Every prerelease uses its full
+milestone title, such as `v0.3.0-alpha.2`.
+
+Executable release guards query only the exact `vX.Y.Z` milestone. A missing
+milestone is a hard failure, not an empty release schedule. Post-publication truth
+stays with the tag workflow, finalized GitHub Release, registry records, and
+direct delivery witness; it does not require a manual backfill merge.
 
 ## Required Human Checks
 
@@ -53,10 +64,10 @@ Wesley uses the lifecycle defined in
 planned -> active -> release-prep -> merged -> tagged -> published -> verified -> retrospected -> closed
 ```
 
-The live tracker shape is Wesley-specific: goalpost milestones own
-implementation slices, release milestones own release-gate issues, and concrete
-`vX.Y.Z` labels are the version scheduling axis. This is intentional because a
-GitHub issue can carry only one milestone.
+The live tracker shape is deliberately small: an unscheduled issue has exactly
+one `triage:*` label and no milestone; a scheduled issue has exactly one plain
+`vX.Y.Z` milestone and no `triage:*` or version scheduling label. Narrative
+themes are release outcomes in the release packet, not a second milestone axis.
 
 ## Pre-Release Channels
 
@@ -75,10 +86,10 @@ pre-release, cut to unblock downstream consumers.
 
 ## Pre-Tag Launch Pass
 
-After the release-prep PR lands on `main` but before creating the signed tag,
-run one last docs/signpost audit. The goal is not to create a progress tracker;
-it is to make sure the tagged commit tells the truth without a post-release
-backfill.
+After the release-prep PR lands on `main` but before closing the release gate
+and creating the signed tag, run one last docs/signpost audit. The goal is not
+to create a progress tracker; it is to make sure the tagged commit tells the
+truth without a post-release backfill.
 
 Check these durable surfaces at minimum:
 
@@ -107,14 +118,25 @@ guards are:
 ```bash
 git status --porcelain
 git fetch origin --tags
-cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask preflight
 cargo xtask release-check
+# After the release-prep PR lands, while the release gate remains open:
+cargo xtask preflight
+# After that preflight passes, complete sign-off and close the gate:
+cargo xtask release-prep-guard --version X.Y.Z
+# After the signed tag exists locally, but before pushing it:
 cargo xtask release-guard --tag vX.Y.Z
 ```
 
-Run `release-guard` only after the signed tag exists locally and points at the
-synced `main` release commit.
+Run the final `release-prep-guard` only after every issue in milestone
+`vX.Y.Z`, including the release gate, is closed or moved. Close the gate before
+creating the tag. Run `release-guard` only after the signed tag exists locally
+and points at the synced `main` release commit, and require it to pass before
+the tag is pushed. On failure, resolve remote tag state first. Only when the tag
+is proven absent may the unpublished local tag be deleted and the gate reopened
+for pull-request corrections. If the tag is present or remote state is
+indeterminate, mutate neither tag nor gate. Never delete or recreate a remote
+tag.
 
 ## Related Authority
 

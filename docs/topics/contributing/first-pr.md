@@ -43,7 +43,8 @@ Use the
 [good first issue query](https://github.com/flyingrobots/wesley/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22)
 and choose an issue that has:
 
-- exactly one scheduling label such as `v0.3.0`, not a `triage:*` label
+- exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`, retired
+  `lane:*`, or concrete-version scheduling label
 - no `work-in-progress` label
 - one primary file or a very small file set
 - one local validation command in the acceptance criteria
@@ -76,8 +77,8 @@ reviewer able to answer: issue, file, command, result.
    completes it.
 5. Include the exact validation command and result in the PR body.
 
-If you cannot add labels yourself, comment on the issue that you are taking it.
-A maintainer should add `work-in-progress` while the slice is active.
+If you cannot edit issue metadata yourself, comment on the issue that you are
+taking it. A maintainer should add `work-in-progress` while the slice is active.
 
 ## Maintainer Starter-Issue Checklist
 
@@ -88,17 +89,19 @@ context:
 - summary explains the task in two or three sentences
 - scope names one primary file or tiny file set
 - acceptance criteria include exactly one required local command
-- labels include exactly one scheduling state: either one `triage:*` label or
-  one `vX.Y.Z` label
-- scheduled starter issues use a `vX.Y.Z` label instead of `triage:*` and
-  belong to a `Goalpost: ...` milestone
+- tracker metadata has exactly one scheduling state: either one `triage:*`
+  label and no milestone, retired `lane:*`, or concrete-version scheduling
+  label, or exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`,
+  retired `lane:*`, or concrete-version scheduling label
+- starter issues are scheduled with a plain `vX.Y.Z` milestone; narrative
+  release outcomes do not become additional milestones
 - no advanced Wesley term appears without a plain-English alias
 
 Useful commands:
 
 ```bash
 gh issue edit <number> --add-label "good first issue"
-gh issue edit <number> --remove-label triage:requests --add-label v0.3.0
+gh issue edit <number> --remove-label triage:requests --milestone v0.3.0
 gh issue edit <number> --add-label work-in-progress
 gh issue edit <number> --remove-label work-in-progress
 ```
@@ -112,14 +115,18 @@ Use these only when maintaining the queue or preparing a release:
 ```bash
 gh issue list --label triage:requests --state open
 gh issue list --label "good first issue" --state open
-gh issue list --label v0.3.0 --state open
+gh issue list --milestone v0.3.0 --state open
+# After the release-prep PR lands, while the release gate remains open:
+cargo xtask preflight
+# After that preflight passes, complete sign-off and close the gate:
 cargo xtask release-prep-guard --version X.Y.Z
+# After creating the signed tag locally, but before pushing it:
 cargo xtask release-guard --tag vX.Y.Z
 ```
 
 The full release execution layer remains
-[Release Runbook](../../method/release-runbook.md). The label contract remains
-[Issue Triage](./triage.md).
+[Release Runbook](../../method/release-runbook.md). The scheduling contract
+remains [Issue Triage](./triage.md).
 
 ## Related
 

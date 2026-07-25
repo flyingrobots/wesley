@@ -20,7 +20,7 @@ load 'vendor/bats-plugins/bats-assert/load'
   run grep -F "git push origin main vX.Y.Z" docs/method/release-runbook.md
   assert_failure
 
-  run grep -F "Sync local main to origin/main after the release commit has landed" docs/method/release-runbook.md
+  run grep -F 'Sync local `main` to `origin/main` after the release commit has landed' docs/method/release-runbook.md
   assert_success
 }
 
@@ -116,10 +116,142 @@ load 'vendor/bats-plugins/bats-assert/load'
   run grep -F "Autotag is not enabled" RELEASE.md
   assert_success
 
-  run grep -F "Release: vX.Y.Z" RELEASE.md
+  run grep -F "Plain \`vX.Y.Z\` milestones are the only release scheduling axis" RELEASE.md
   assert_success
 
   run grep -F "crates.io is the public package registry" RELEASE.md
+  assert_success
+}
+
+@test "release profile uses plain version milestones as the sole schedule" {
+  run grep -F "release_milestone_format: 'v{version}'" .continuum/release.yml
+  assert_success
+
+  run grep -F "post_merge_pre_tag_tracker_clear: cargo xtask release-prep-guard --version {version}" .continuum/release.yml
+  assert_success
+
+  run grep -Eq "^[[:space:]]*prep:" .continuum/release.yml
+  assert_failure
+
+  run rg -n "release_lane_label_format|goalpost_milestone_format" .continuum/release.yml
+  assert_failure
+
+  run rg -n "Goalpost:|Release:" .continuum/release.yml
+  assert_failure
+
+  run grep -F "scheduled_state: 'exactly one milestone named v{version}; no extra milestone or triage:*, retired lane:*, or concrete version label'" .continuum/release.yml
+  assert_success
+
+  run grep -F "unscheduled_state: 'exactly one triage:* label; no milestone, retired lane:*, or concrete version label'" .continuum/release.yml
+  assert_success
+}
+
+@test "scheduling predicates reject every retired scheduling state" {
+  run grep -F "scheduled_state: 'exactly one milestone named v{version}; no extra milestone or triage:*, retired lane:*, or concrete version label'" .continuum/release.yml
+  assert_success
+
+  run grep -F "unscheduled_state: 'exactly one triage:* label; no milestone, retired lane:*, or concrete version label'" .continuum/release.yml
+  assert_success
+
+  run grep -F 'Linked issue has exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`, retired `lane:*`, or concrete-version scheduling label.' .github/pull_request_template.md
+  assert_success
+
+  for path in AGENTS.md docs/topics/contributing/first-pr.md; do
+    run bash -lc "grep -F 'retired \`lane:*\`' '$path' | wc -l"
+    assert_success
+    [ "$output" -ge 2 ]
+  done
+}
+
+@test "classification model keeps priority and status in project fields" {
+  run grep -F "classification_axis: 'type, legend:*, group:*, work:*, and pkg:* labels'" .continuum/release.yml
+  assert_success
+
+  run grep -F "project_fields: 'priority and workflow status'" .continuum/release.yml
+  assert_success
+
+  run grep -F '`priority:*`' docs/topics/contributing/triage.md
+  assert_failure
+
+  run grep -F "Use Project fields for priority and workflow status." docs/topics/contributing/triage.md
+  assert_success
+}
+
+@test "issue and pull request templates preserve the scheduling invariant" {
+  run grep -F 'Linked issue has exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`, retired `lane:*`, or concrete-version scheduling label.' .github/pull_request_template.md
+  assert_success
+
+  run grep -F 'Linked issue is either unscheduled' .github/pull_request_template.md
+  assert_failure
+}
+
+@test "scheduling doctrine scopes invariants to current open work" {
+  local doctrine_paths=(
+    docs/METHOD.md
+    CONTRIBUTING.md
+    docs/BEARING.md
+    docs/governance/RELEASE_POLICY.md
+    docs/method/release-runbook.md
+    docs/governance/RELEASE_CHECKLIST.md
+    docs/method/release.md
+    docs/topics/releases.md
+  )
+
+  for path in "${doctrine_paths[@]}"; do
+    run rg -U "These scheduling invariants govern current open work only\\. Closed issues,[[:space:]]+closed[[:space:]]+milestones, and historical labels remain preserved evidence\\." "$path"
+    assert_success
+  done
+}
+
+@test "triage doctrine defines mutually exclusive scheduled states" {
+  run grep -F 'Unscheduled: exactly one `triage:*` label and no milestone.' docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F 'Scheduled: exactly one plain `vX.Y.Z` milestone and no `triage:*` label.' docs/topics/contributing/triage.md
+  assert_success
+}
+
+@test "triage doctrine requires an atomic live tracker cutover" {
+  run rg -U "Merge the approved governance pull request\\s+before any live tracker mutation\\." docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "immediately before it is" docs/topics/contributing/triage.md
+  assert_failure
+
+  run grep -F "Freeze issue scheduling, milestone edits, release-gate closure, and tag" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "gh api --hostname github.com --paginate 'repos/flyingrobots/wesley/issues?state=open&per_page=100'" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "milestones?state=all&per_page=100" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F -- "--jq '.[] | {number, title, state, open_issues, closed_issues}'" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "For an active \`Release: vX.Y.Z\` milestone with zero closed issue" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "If it has any closed association or the exact milestone already" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "preserve the legacy milestone title, create or reuse the exact" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "Move every open scheduled issue—including each release gate—from active" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "Remove \`triage:*\` and concrete-version labels from scheduled issues" docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "Do not rename, delete, reopen, or rewrite closed" docs/topics/contributing/triage.md
+  assert_success
+
+  run rg -U 'Never\s+move the closed issues that remain historical evidence' docs/topics/contributing/triage.md
+  assert_success
+
+  run grep -F "leave the merged enforcement intact" docs/topics/contributing/triage.md
   assert_success
 }
 
@@ -154,21 +286,118 @@ load 'vendor/bats-plugins/bats-assert/load'
   run grep -F "workflow source checked into the tag is wrong" docs/method/release-runbook.md
   assert_success
 
-  run grep -F "Same-tag reruns are for credentials, permissions" docs/method/release-runbook.md
+  run grep -F "Same-tag reruns are allowed only when the tagged source is correct" docs/method/release-runbook.md
   assert_success
 
-  run grep -F "GitHub Release/API problems" docs/method/release-runbook.md
+  run grep -F "Release/API delivery" docs/method/release-runbook.md
   assert_success
 }
 
-@test "release gate issue template avoids exact version blocker tokens" {
+@test "release gate issue template uses the version milestone directly" {
   run grep -F "# Release gate: vX.Y.Z" docs/method/release.md
-  assert_failure
-
-  run grep -F "# Release gate: current planned release" docs/method/release.md
   assert_success
 
   run grep -F "Keep the open gate issue title/body free of the target tag/version literal" docs/method/release.md
+  assert_failure
+
+  run grep -F "Close the gate issue before creating the signed local tag" docs/method/release.md
+  assert_success
+}
+
+@test "release prep PR tracks the gate without auto-closing it" {
+  run grep -F 'Tracks #<release-gate>' docs/method/release.md
+  assert_success
+
+  run grep -F 'The release-prep PR must not use' docs/method/release.md
+  assert_success
+
+  run grep -F 'The final `release-prep-guard` runs only after this PR lands' docs/method/release.md
+  assert_success
+}
+
+@test "release sequence ordering oracles require every marker" {
+  run grep -E '^[[:space:]]*END \{ exit !\(preflight && gate && prep && refresh && unchanged && tag && tagged && push && workflow && preflight < gate' test/release-governance.bats
+  assert_success
+
+  run grep -E '^[[:space:]]*END \{ exit !\(sync && record && preflight && gate && clear && refresh && unchanged && synced && tag && sync < record' test/release-governance.bats
+  assert_success
+}
+
+@test "release runbook orders pre-tag and tag-specific guards" {
+  run awk '
+    /Run a fresh `cargo xtask preflight`/{preflight=NR}
+    /Complete the human checklist and close the release-gate issue/{gate=NR}
+    /Run `cargo xtask release-prep-guard/{prep=NR}
+    /Fetch `origin` again/{refresh=NR}
+    /`HEAD` still equals both the recorded/{unchanged=NR}
+    /Create the release tag locally/{tag=NR}
+    /Run `cargo xtask release-guard/{tagged=NR}
+    /Push the exact release tag only/{push=NR}
+    /Monitor the tag-triggered workflow/{workflow=NR}
+    END { exit !(preflight && gate && prep && refresh && unchanged && tag && tagged && push && workflow && preflight < gate && gate < prep && prep < refresh && refresh < unchanged && unchanged < tag && tag < tagged && tagged < push && push < workflow) }
+  ' docs/method/release-runbook.md
+  assert_success
+
+  run bash -lc "grep -F 'cargo xtask release-prep-guard --version X.Y.Z' docs/method/release-runbook.md | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run grep -F "run while the release gate remains open" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "git ls-remote --exit-code --tags origin refs/tags/vX.Y.Z" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "If the tag is present remotely, do not delete the local tag and do not reopen" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "If remote state is indeterminate, change neither the tag nor the gate" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "Only when the tag is proven absent may local recovery continue" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "delete only that unpublished tag" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "Reopen the release gate" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "must never be deleted, moved, or recreated" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "Do not create or finalize a competing release manually" docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "Manual recovery must never create," docs/method/release-runbook.md
+  assert_success
+
+  run grep -F "rerun the same tag" docs/method/release-runbook.md
+  assert_success
+
+  run rg -n "Create or verify the GitHub Release|Create the GitHub Release|Recreate or update the GitHub Release" docs/method/release-runbook.md docs/CRATES_IO_RELEASE.md
+  assert_failure
+
+  run grep -F "Verify that the tag workflow creates its draft GitHub Release" docs/CRATES_IO_RELEASE.md
+  assert_success
+}
+
+@test "root release path tags only the validated synced main commit" {
+  run awk '
+    /git merge --ff-only origin\/main/{sync=NR}
+    /validated_head=.*git rev-parse HEAD/{record=NR}
+    /cargo xtask preflight/{preflight=NR}
+    /# Only now: complete human sign-off and close the release gate/{gate=NR}
+    /cargo xtask release-prep-guard/{clear=NR}
+    /git fetch origin --tags --prune/{refresh=NR}
+    /test .*git rev-parse HEAD.*validated_head/{unchanged=NR}
+    /test .*git rev-parse HEAD.*git rev-parse origin\/main/{synced=NR}
+    /git tag -s vX.Y.Z/{tag=NR}
+    END { exit !(sync && record && preflight && gate && clear && refresh && unchanged && synced && tag && sync < record && record < preflight && preflight < gate && gate < clear && clear < refresh && refresh < unchanged && unchanged < synced && synced < tag) }
+  ' RELEASE.md
+  assert_success
+
+  run grep -F "# Only now: complete human sign-off and close the release gate." RELEASE.md
   assert_success
 }
 

@@ -74,33 +74,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: cargo xtask release-guard --tag "$GITHUB_REF_NAME"
 
-      - name: Check for open version issues
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          issue_query() {
-            gh issue list "$@" \
-              --state open \
-              --json number,title,url \
-              --jq '.[] | "#\(.number) \(.title) \(.url)"'
-          }
-          matches="$(
-            {
-              issue_query --search "\"${GITHUB_REF_NAME}\" OR \"${version}\" repo:${GITHUB_REPOSITORY}"
-              issue_query --milestone "${GITHUB_REF_NAME}" 2>/dev/null || true
-              issue_query --milestone "${version}" 2>/dev/null || true
-              issue_query --label "${GITHUB_REF_NAME}" 2>/dev/null || true
-              issue_query --label "${version}" 2>/dev/null || true
-            } | sort -u
-          )"
-          if [ -n "$matches" ]; then
-            echo "Open GitHub issues are associated with ${GITHUB_REF_NAME}:"
-            echo "$matches"
-            exit 1
-          fi
-
       - name: Docs check
         run: cargo xtask docs-check
 

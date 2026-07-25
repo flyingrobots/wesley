@@ -13,20 +13,25 @@ change without a code/docs commit, it belongs in GitHub.
 
 Wesley's live work hierarchy is:
 
-| Concept            | Canonical Surface                                                           |
-| ------------------ | --------------------------------------------------------------------------- |
-| Goalpost           | GitHub Milestone named `Goalpost: ...`                                      |
-| Slice              | GitHub Issue assigned to exactly one goalpost milestone                     |
-| Release            | GitHub Milestone named `Release: vX.Y.Z`                                    |
-| Release gate       | GitHub Issue assigned to the release milestone and linked to goalposts      |
-| Roadmap board      | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) |
-| Lane/legend/status | GitHub Issue labels                                                         |
+| Concept            | Canonical Surface                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| Unscheduled intake | GitHub Issue with exactly one `triage:*` label and no milestone                                  |
+| Scheduled slice    | GitHub Issue in exactly one plain `vX.Y.Z` milestone, with no triage or version scheduling label |
+| Release            | GitHub Milestone named exactly `vX.Y.Z`                                                          |
+| Release gate       | Final pre-tag GitHub Issue assigned to the same version milestone                                |
+| Release outcome    | Narrative grouping in release packets or Project views; never a scheduling authority             |
+| Roadmap board      | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)                      |
+| Classification     | GitHub labels for triage, legend, type, ownership, and optional status                           |
 
-GitHub permits only one milestone per issue. Implementation issues therefore
-stay in goalpost milestones. Versioned release milestones hold release-gate
-issues that link to the goalposts selected for that release.
+A plain version milestone is the sole scheduling authority for named release
+work. All implementation, documentation, preparation, and gate issues for a
+release share that milestone. Before tagging, move or close every other open
+issue in the milestone and close the gate last.
 
-The current formal goalpost and release list is the GitHub milestone list:
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
+
+The current formal release schedule is the GitHub milestone list:
 <https://github.com/flyingrobots/wesley/milestones>.
 
 ## Active Gravity
@@ -116,8 +121,9 @@ fixtures, and comprehensive `docs/topics/` routing.
 Future releases must be cut from signed tags on synced `main`; do not merge
 post-release evidence backfills to `main` after a release boundary.
 
-Versioned release work is tracked by `Release: ...` milestones and release-gate
-issues. The release policy and checklist remain the operational source:
+Versioned release work is tracked by plain `vX.Y.Z` milestones. Each release
+gate is the final pre-tag issue in the same milestone. The release policy and
+checklist remain the operational source:
 
 - [Release Policy](./governance/RELEASE_POLICY.md)
 - [Release Checklist](./governance/RELEASE_CHECKLIST.md)

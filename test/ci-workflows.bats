@@ -282,6 +282,25 @@ load 'vendor/bats-plugins/bats-assert/load'
   [ "$output" -ge 3 ]
 }
 
+@test "repo Bats tests do not nest Cargo builds" {
+  run rg -n '^[[:space:]]*run cargo([[:space:]]|$)' test --glob '*.bats'
+  assert_failure
+}
+
+@test "repo Bats installer provisions command dependencies" {
+  run grep -F "sudo apt-get install -y bats jq ripgrep" .github/actions/install-bats/action.yml
+  assert_success
+
+  run test ! -e .github/workflows/install-bats.yml
+  assert_success
+
+  run grep -F "uses: ./.github/actions/install-bats" docs/ci.md
+  assert_success
+
+  run rg -n "\\.github/workflows/install-bats\\.yml" docs .github
+  assert_failure
+}
+
 @test "cert-shipme certifies only landed target-branch commits" {
   run bash -lc "grep -F 'pull_request:' .github/workflows/cert-shipme.yml | wc -l"
   assert_success
@@ -398,7 +417,8 @@ load 'vendor/bats-plugins/bats-assert/load'
 
 @test "shipme certificate fixture prepares PASS realm and exact evidence" {
   tmp_dir="$(mktemp -d -t wesley-shipme-fixture-XXXXXX)"
-  run bash -lc "cd '$tmp_dir' && node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"version\": \"2.0.0\"' .wesley-cache/scores.json && grep -F '\"commit\": \"abcdef1234567890abcdef1234567890abcdef12\"' .wesley-cache/scores.json && grep -F '\"metadata\"' .wesley-cache/scores.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
+  fixture_sha="abcdef1234567890abcdef1234567890abcdef12"
+  run bash -lc "cd '$tmp_dir' && GITHUB_SHA='$fixture_sha' node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"version\": \"2.0.0\"' .wesley-cache/scores.json && grep -F '\"commit\": \"$fixture_sha\"' .wesley-cache/scores.json && grep -F '\"metadata\"' .wesley-cache/scores.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
   rm -rf "$tmp_dir"
   assert_success
 }
@@ -518,20 +538,53 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
 }
 
-@test "release crates workflow checks version milestones and labels" {
-  run bash -lc "grep -F -- '--milestone' .github/workflows/release-crates.yml | wc -l"
-  assert_success
-  [ "$output" -ge 2 ]
+@test "release crates workflow delegates issue checks to the release guard" {
+  run grep -F 'gh issue list' .github/workflows/release-crates.yml
+  assert_failure
 
-  run bash -lc "grep -F -- '--label' .github/workflows/release-crates.yml | wc -l"
+  run bash -lc "grep -F 'cargo xtask release-guard --tag \"\$GITHUB_REF_NAME\"' .github/workflows/release-crates.yml | wc -l"
   assert_success
-  [ "$output" -ge 2 ]
+  [ "$output" -eq 2 ]
+}
+
+@test "release governance suite is wired into repository checks" {
+  run grep -F 'test/release-governance.bats' .github/workflows/ci.yml
+  assert_success
+
+  run grep -F 'test/release-governance.bats' scripts/smoke/repo-bats-prepush.sh
+  assert_success
+
+  run grep -F 'test/release-governance.bats' scripts/test-ci-locally.sh
+  assert_success
+}
+
+@test "repo Bats checks run unconditionally" {
+  run grep -F 'Detect changes for repo Bats tests' .github/workflows/ci.yml
+  assert_failure
+
+  run grep -F 'RUN_BATS' .github/workflows/ci.yml
+  assert_failure
+
+  run grep -F 'name: Repo Bats tests (unit/docs/ci checks only)' .github/workflows/ci.yml
+  assert_success
+
+  for doc_path in docs/ci.md test/README.md; do
+    run grep -F 'Repository-level Bats suites run unconditionally in CI.' "$doc_path"
+    assert_success
+
+    run rg -n 'RUN_BATS|only run when relevant files change|Repo-level Bats Tests \\(Gated\\)' "$doc_path"
+    assert_failure
+  done
 }
 
 @test "release crates workflow authenticates release guard GitHub API checks" {
   run bash -lc "grep -F 'actions: read' .github/workflows/release-crates.yml | wc -l"
   assert_success
   [ "$output" -ge 2 ]
+
+  run bash -lc "grep -F 'issues: read' .github/workflows/release-crates.yml | wc -l"
+  assert_success
+  [ "$output" -eq 2 ]
 
   run bash -lc "grep -n 'name: Release guard' -A5 .github/workflows/release-crates.yml | grep -F 'GH_TOKEN: \${{ github.token }}' | wc -l"
   assert_success

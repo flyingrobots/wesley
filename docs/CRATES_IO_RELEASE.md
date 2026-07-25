@@ -25,6 +25,13 @@ commands that this procedure must match.
    helper for the first alpha package set; it is not the project release path.
 8. The tagged `main` commit is the repo release boundary. Do not merge manual
    release-truth or publication-evidence backfills to `main` after publishing.
+9. One exact plain `vX.Y.Z` milestone is the sole schedule for all release work,
+   including the release-gate issue. Labels and Project fields do not schedule.
+10. The release gate is the final open milestone issue and must close before
+    the signed local tag is created.
+
+Here `vX.Y.Z` means exact tag-form SemVer. Every prerelease uses its full
+milestone title, such as `v0.3.0-alpha.2`.
 
 A valid release tag looks like one of these:
 
@@ -73,6 +80,10 @@ published. If repo-resident evidence is missing at tag time, treat that as a
 process defect, file follow-up work, and fix the release preparation process
 before the next tag.
 
+Historical release packets remain the evidence that was reviewed for their
+tags. Do not rewrite them to conform retroactively to a newer scheduling model
+or to insert facts that only became available after publication.
+
 ## GitHub Actions Release Shape
 
 The release workflow is tag-triggered:
@@ -94,8 +105,7 @@ The `release-gauntlet` job must verify:
 - every publishable crate has the minimum package file set
 - root `README.md` exists
 - root `CHANGELOG.md` contains release notes for the exact version
-- no open GitHub Issue is associated with the exact tag or version by issue
-  title/body text, milestone, or label
+- the exact plain `vX.Y.Z` milestone exists and has no open issue
 - Rust check, test, clippy, docs, release-check, package sanity, and audit pass
 
 The `publish-crates` job must depend on `release-gauntlet` and must repeat the
@@ -139,6 +149,7 @@ Before mutating anything, determine and report:
 - latest reachable semver tag matching `v*`
 - current branch
 - exact sync state versus `origin/main`
+- exact target `vX.Y.Z` milestone and its release-gate issue
 
 `ABORT` if any item cannot be determined confidently.
 
@@ -156,6 +167,10 @@ policy has been provided.
 7. `ABORT` if local `main` is ahead of or behind `origin/main`.
 8. Verify signed-tag readiness for human-created release tags.
 9. `ABORT` if signing is unavailable or misconfigured.
+10. Query the open-milestones API and verify an exact `vX.Y.Z` title match.
+    `ABORT` if the milestone is missing, closed, or the query fails. Do not
+    treat an empty `gh issue list --milestone` result as existence proof;
+    GitHub CLI also returns that result for a missing milestone.
 
 ### Phase 2: Versioning And Lock-Step Sync
 
@@ -202,17 +217,20 @@ Wesley crates when paired with an exact matching `version`.
 The Rust gauntlet for Wesley is:
 
 ```bash
-cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask preflight
 cargo xtask release-check
 cargo audit
 cargo xtask package-crates --version X.Y.Z
 ```
 
-The release workflow also checks open GitHub issues for the exact tag and
-version using issue title/body text, milestone association, and label
-association. Third-party comments and automatic cross-reference chatter are not
-release-lane ownership. Any matching open issue blocks publication.
+Do not run `release-prep-guard` in this pre-merge gauntlet. Phase 5 runs it
+after the release-prep PR lands and the release gate closes.
+
+The release workflow checks only the exact plain `vX.Y.Z` milestone. Every open
+issue in that milestone blocks publication, including the release gate. A
+missing milestone or failed GitHub query is a hard failure. Version labels,
+Project fields, grouping labels, issue titles, and issue bodies are not release
+scheduling authorities.
 
 For a multi-crate release where later crates depend on earlier Wesley crates,
 the full registry-backed `cargo publish --dry-run` for dependent crates cannot
@@ -237,15 +255,15 @@ Packaging sanity must fail on:
 2. Stage all release-prep changes.
 3. Create exactly one release-prep commit on a release branch:
 
-```bash
-git commit -m "chore(release): vX.Y.Z"
-```
+   ```bash
+   git commit -m "chore(release): vX.Y.Z"
+   ```
 
-For prereleases:
+   For prereleases:
 
-```bash
-git commit -m "chore(release): vX.Y.Z-alpha.1"
-```
+   ```bash
+   git commit -m "chore(release): vX.Y.Z-alpha.1"
+   ```
 
 4. Land the release-prep change through the protected `main` branch.
 5. Fetch `origin/main` and tags.
@@ -253,33 +271,51 @@ git commit -m "chore(release): vX.Y.Z-alpha.1"
 7. Verify `HEAD` equals `origin/main`.
 8. Verify the release commit is already reachable from origin/main before
    creating the tag.
+9. Verify every target-milestone issue except the release gate is closed, moved
+   to another exact version milestone, or explicitly cut.
+10. Run a fresh `cargo xtask preflight` from synced `main` while the gate
+    remains open, and `ABORT` on failure.
+11. Complete human sign-off and close the release-gate issue.
+12. Run `cargo xtask release-prep-guard --version X.Y.Z` and `ABORT` unless the
+    exact milestone exists and has zero open issues.
+13. Fetch `origin` again and `ABORT` unless `HEAD` still equals the validated
+    release commit and refreshed `origin/main`.
 
 ### Phase 6: Tag, Delivery, Release, And Monitoring
 
-1. Create exactly one signed tag on the synced `main` commit:
+1. Confirm the release-gate issue is closed, then create exactly one signed tag
+   on the synced `main` commit:
 
-```bash
-git tag -s vX.Y.Z -m "release: vX.Y.Z"
-```
+   ```bash
+   git tag -s vX.Y.Z -m "release: vX.Y.Z"
+   ```
 
-For prereleases:
+   For prereleases:
 
-```bash
-git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
-```
+   ```bash
+   git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
+   ```
 
 2. Verify the tag points at the synced `main` commit.
 3. Verify the tag signature.
 4. `ABORT` if verification fails.
-5. Run `cargo xtask release-guard --tag vX.Y.Z`.
+5. Run `cargo xtask release-guard --tag vX.Y.Z` and do not push unless it
+   passes. If anything fails after gate closure, follow the runbook to resolve
+   remote tag state. Only a proven-absent tag permits local deletion and gate
+   reopening; present or indeterminate remote state permits neither. Never
+   delete or recreate a remote tag.
 6. Push the exact release tag only.
 7. Let GitHub Actions run the tag-triggered release workflow.
-8. Create or verify the GitHub Release from the versioned changelog notes.
+8. Verify that the tag workflow creates its draft GitHub Release and finalizes
+   that same release from the versioned changelog notes; do not create or
+   finalize a competing release manually.
 9. Monitor every workflow triggered by the release tag.
 10. Do not infer success from queued or in-progress jobs.
 11. Verify crates.io directly for every published crate.
 12. Do not merge manual release-evidence backfills to `main` for the release
     that just published.
+13. Preserve post-publication evidence in the workflow run, finalized GitHub
+    Release, registry records, and direct delivery witness.
 
 `ABORT LOUDLY` if any of these fail:
 
@@ -289,9 +325,26 @@ git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
 - GitHub Release creation
 - registry visibility
 
+## Publication Failure Is Patch-Forward
+
+The public tag and every published crate version are immutable.
+
+- Rerun the same tag only when its source and package inputs are correct and the
+  failure is transient delivery infrastructure, credentials, permissions,
+  registry visibility, or GitHub Release/API state.
+- If source, metadata, package contents, or checked-in workflow logic must
+  change, create a new patch-version milestone, fix `main`, and cut a new tag.
+- If publication partially succeeded, never reuse an already-published crate
+  version for different bytes. A same-tag rerun may publish only missing crates
+  when the tagged source is already correct and the workflow verifies existing
+  versions before continuing.
+- Keep the failed run and the successful rerun or patch-forward outcome in the
+  workflow, GitHub Release, and delivery witness. Do not rewrite the historical
+  release packet or move the tag.
+
 ## Official Commands
 
-Preparation and validation:
+Release-branch preparation and validation:
 
 ```bash
 cargo xtask docs-check
@@ -299,8 +352,21 @@ cargo check --workspace --all-targets
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets -- -D warnings
 cargo xtask release-check
-cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask package-crates --version X.Y.Z
+```
+
+After the release-prep PR lands, repeat preflight from synced `main` while the
+release gate remains open:
+
+```bash
+cargo xtask preflight
+```
+
+After preflight passes, complete human sign-off, close the gate, and clear the
+exact milestone:
+
+```bash
+cargo xtask release-prep-guard --version X.Y.Z
 ```
 
 After creating the signed tag, verify the tag-specific guard:

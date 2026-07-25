@@ -25,6 +25,7 @@ files=(
   test/ir-fixtures.bats
   test/ci-package-manager-policy.bats
   test/ci-workflows.bats
+  test/release-governance.bats
 )
 
 for f in "${files[@]}"; do

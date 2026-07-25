@@ -39,7 +39,7 @@ export BATS_LIB_PATH=test/vendor
 export TERM=xterm
 export BATS_NO_COLOR=1
 bash scripts/setup-bats-plugins.sh
-bats -t test/ci-workflows.bats test/domain-empty-boundary.bats test/docs-whitespace.bats
+bats -t test/ci-workflows.bats test/domain-empty-boundary.bats test/docs-whitespace.bats test/release-governance.bats
 
 echo ""
 echo "✅ Local CI simulation completed successfully!"

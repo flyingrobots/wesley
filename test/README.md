@@ -48,7 +48,7 @@ GitHub Actions runs the relevant subsets:
 
 ### Repo-level Bats tests (server/docs/CI checks)
 
-These small suites are gated in CI and only run when relevant files change. To run locally:
+Repository-level Bats suites run unconditionally in CI. To run them locally:
 
 ```bash
 pnpm run setup:bats-plugins
@@ -57,6 +57,7 @@ BATS_LIB_PATH=test/vendor \
     test/docs-planning-boundary.bats \
     test/domain-empty-boundary.bats \
     test/ir-fixtures.bats \
+    test/release-governance.bats \
     test/ci-*.bats
 ```
 

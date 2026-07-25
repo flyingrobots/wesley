@@ -42,29 +42,7 @@ jobs:
             --schema test/fixtures/examples/ecommerce.graphql \
             --json > "$RUNNER_TEMP/ecommerce-l1.json"
 
-      - name: Detect changes for repo Bats tests (no servers)
-        id: changelog
-        env:
-          EVENT: ${{ github.event_name }}
-          BASE_REF: ${{ github.event.pull_request.base.sha }}
-          BEFORE: ${{ github.event.before }}
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          RANGE="${BEFORE}..${SHA}"
-          if [ "$EVENT" = "pull_request" ] && [ -n "${BASE_REF}" ]; then
-            RANGE="${BASE_REF}..${SHA}"
-          fi
-          echo "Diff range: $RANGE"
-          CHANGED=$(git diff --name-only "$RANGE" || true)
-          echo "$CHANGED" | sed 's/^/ - /'
-          NEED=false
-          # Trigger only on unit/serverless repository checks.
-          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/generate-ir-fixtures\.mjs|test/docs-planning-boundary\.bats|test/domain-empty-boundary\.bats|test/ir-fixtures\.bats|test/ci-)' && NEED=true || true
-          echo "RUN_BATS=$NEED" >> $GITHUB_ENV
-
       - name: Repo Bats tests (unit/docs/ci checks only)
-        if: ${{ env.RUN_BATS == 'true' }}
         env:
           BATS_LIB_PATH: test/vendor
           TERM: xterm
@@ -79,6 +57,7 @@ jobs:
             test/ir-fixtures.bats
             test/ci-package-manager-policy.bats
             test/ci-workflows.bats
+            test/release-governance.bats
           )
           for f in "${files[@]}"; do
             echo "Running Bats: $f"

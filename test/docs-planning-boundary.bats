@@ -19,6 +19,17 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_failure
 }
 
+@test "host planning boundary separates planning surfaces from labels" {
+  run rg -U "Use GitHub Issues, Milestones, and Projects for\\s+live planning state\\." docs/architecture/hosts.md
+  assert_success
+
+  run rg -U "Plain \`vX\\.Y\\.Z\` milestones are the sole release-scheduling\\s+authority\\." docs/architecture/hosts.md
+  assert_success
+
+  run rg -U "Classification labels are work metadata, not planning-state surfaces\\s+or scheduling authority\\." docs/architecture/hosts.md
+  assert_success
+}
+
 @test "repo-owned progress automation is absent" {
   run test ! -e .github/workflows/progress.yml
   assert_success

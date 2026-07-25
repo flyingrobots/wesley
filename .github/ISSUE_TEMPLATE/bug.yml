@@ -9,17 +9,17 @@ body:
   - type: markdown
     attributes:
       value: |
-        GitHub Issues are Wesley's live Method tracker. Labels are canonical
-        tracker metadata; request classification here and maintainers or agents
-        will apply the final scheduling, legend, and work labels.
+        GitHub Issues are Wesley's live Method tracker. A `triage:*` label marks
+        unscheduled intake; a plain `vX.Y.Z` milestone schedules work. Other
+        labels classify the issue.
 
   - type: textarea
     id: requested_classification
     attributes:
       label: Requested classification
-      description: Optional triage request. This does not set canonical labels.
+      description: Optional triage request. This does not change canonical GitHub metadata.
       placeholder: |
-        Suggested scheduling state:
+        Suggested release milestone or triage state:
         Suggested legend:
         Suggested work type:
 

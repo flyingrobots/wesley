@@ -13,24 +13,25 @@ state.
 
 Live work state belongs in GitHub:
 
-| Work State     | Canonical Surface                                                           |
-| -------------- | --------------------------------------------------------------------------- |
-| Raw intake     | GitHub Issue with a `triage:*` label                                        |
-| Goalpost       | GitHub Milestone named `Goalpost: ...`                                      |
-| Slice          | GitHub Issue assigned to one goalpost milestone                             |
-| Release lane   | GitHub label named `vX.Y.Z`                                                 |
-| Release target | GitHub Milestone named `Release: vX.Y.Z`                                    |
-| Release gate   | GitHub Issue assigned to the release milestone                              |
-| Roadmap board  | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18) |
-| Classification | GitHub labels for triage, release lane, legend, work type, package, status  |
+| Work State         | Canonical Surface                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| Unscheduled intake | GitHub Issue with exactly one `triage:*` label and no milestone                                  |
+| Scheduled slice    | GitHub Issue in exactly one plain `vX.Y.Z` milestone, with no triage or version scheduling label |
+| Release target     | GitHub Milestone named exactly `vX.Y.Z`                                                          |
+| Release gate       | Final pre-tag GitHub Issue assigned to the same version milestone                                |
+| Release outcome    | Narrative grouping in a release packet, tracking issue, or Project view                          |
+| Roadmap board      | [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)                      |
+| Classification     | GitHub labels for triage, legend, work type, package, ownership, and optional status             |
 
 Repository docs may link to GitHub state. They must not mirror live counts,
 unchecked work queues, velocity, burn-down, or "next issue" lists.
 
-Because GitHub Issues can have only one milestone, release milestones must not
-steal implementation issues away from their goalpost milestones. A release
-milestone holds release-gate issues; those gate issues link to the goalposts
-selected for that release.
+A plain version milestone is the sole scheduling authority for a named release.
+Labels classify work but never schedule it. Every implementation,
+documentation, preparation, and gate issue committed to a release shares its
+version milestone. Before tagging, move or close every other open issue and
+close the release gate last. Release outcomes remain narrative groupings, not
+parallel schedules.
 
 ## Page Jobs
 
@@ -104,17 +105,22 @@ For each public capability, keep one obvious path to:
 - release or closeout evidence when the behavior shipped recently
 
 The matrix can be implicit in signposts. It must not become a backlog. Missing
-coverage should be filed as GitHub Issues and assigned to a goalpost.
+coverage should be filed as GitHub Issues. Keep it unscheduled with one
+`triage:*` label and no milestone, or schedule it in exactly one plain version
+milestone with no triage or concrete-version scheduling label.
 
 ## Hard Rules
 
 - Do not add new Markdown backlog cards.
 - Do not add progress bars, score tables, live slice ledgers, or unchecked
   roadmap checklists to repo docs.
-- Do not let `triage:*` remain on an issue after it has been scheduled into a
-  named release lane.
-- Do not move implementation issues into release milestones. Link goalposts
-  from release-gate issues instead.
+- Do not let `triage:*` remain on an issue after it has been assigned to a
+  plain version milestone.
+- Do not create or use concrete-version labels, `Goalpost: ...` milestones, or
+  `Release: ...` milestones for scheduling.
+- Do not use labels as a parallel release schedule.
+- Keep every issue committed to a release, including its final pre-tag gate, in
+  that release's one plain version milestone.
 - Do not cite chat as proof. Use code, tests, commits, PRs, releases, workflow
   runs, GitHub Issues, or durable evidence files.
 - Do not create a new signpost unless it has a distinct reader job.

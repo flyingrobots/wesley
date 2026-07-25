@@ -21,7 +21,7 @@ For broader orientation, read these surfaces in order:
 - [docs/design/README.md](docs/design/README.md) for active design packets and boundary doctrine
 - [docs/METHOD.md](docs/METHOD.md) for the workflow contract
 - [docs/topics/README.md](docs/topics/README.md) for contributor and operator task topics
-- [docs/topics/contributing/triage.md](docs/topics/contributing/triage.md) for issue triage and release-lane scheduling
+- [docs/topics/contributing/triage.md](docs/topics/contributing/triage.md) for issue triage and version-milestone scheduling
 - [docs/governance/labels.md](docs/governance/labels.md) for issue and PR label semantics
 - [AGENTS.md](AGENTS.md) for repository-specific automation rules
 
@@ -53,10 +53,19 @@ such as `wesley-postgres`.
 GitHub owns live work state:
 
 - GitHub Issues hold slices and raw intake.
-- GitHub Milestones hold goalposts and release gates.
-- GitHub Projects provide roadmap board views.
-- GitHub labels carry triage state, release scheduling, legend, work-shape,
-  and ownership metadata.
+- GitHub Milestones are the sole scheduling authority for named releases.
+  Every scheduled issue belongs to exactly one plain `vX.Y.Z` milestone.
+- GitHub Projects and release outcomes provide narrative groupings and views
+  over scheduled work; they are not scheduling authorities.
+- GitHub labels classify intake, legend, work shape, ownership, and optional
+  status. Labels never schedule work into a named release.
+
+An unscheduled issue has exactly one `triage:*` label and no milestone. A
+scheduled issue has exactly one plain `vX.Y.Z` milestone and no `triage:*`
+or concrete-version scheduling label.
+
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
 
 Repository files are the evidence ledger. Design packets, witnesses, retros,
 release notes, and signpost docs record stable truth and proof after work is
@@ -72,9 +81,10 @@ backlog files:
 - [Near-term roadmap issue](https://github.com/flyingrobots/wesley/issues/646)
 - [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
 
-Starter issues must have one scheduling-state label such as `v0.3.0`, one
-`Goalpost: ...` milestone, one primary file or tiny file set, and one local
-validation command. If an issue still has a `triage:*` label, it is not a
+Starter issues must belong to exactly one plain future-release milestone such
+as `v0.3.0`, have no `triage:*` or concrete-version scheduling label, name
+one primary file or tiny file set, and provide one local validation command.
+If an issue still has a `triage:*` label, it is unscheduled and is not a
 starter task until a maintainer schedules, splits, moves, or closes it.
 
 Every PR must name at least one GitHub Issue in its body. Use a closing keyword
@@ -137,18 +147,19 @@ See `docs/method/legends/` for the standing questions each legend owns.
 
 ## Default Loop
 
-1. Pull a GitHub Issue with the right goalpost milestone and either a
-   `triage:*` intake label or concrete `vX.Y.Z` release label.
+1. Select a GitHub Issue. Before implementation, confirm it is scheduled in
+   exactly one plain `vX.Y.Z` milestone and carries no `triage:*` or
+   concrete-version scheduling label. If it is still unscheduled, schedule,
+   split, move, or close it first.
 2. Add `work-in-progress` while the slice is active.
-3. If the issue is still under `triage:*`, schedule it into a named release,
-   split it, move it, or close it before implementation.
-4. Write or update the design packet when the work needs durable design context.
-5. Write failing tests from the playback questions or issue acceptance criteria.
-6. Implement.
-7. Produce a reproducible witness.
-8. File follow-up work as GitHub Issues with the right goalpost and either a
-   `triage:*` intake label or concrete release lane.
-9. Update ship surfaces such as `docs/BEARING.md`, `CHANGELOG.md`, and release
+3. Write or update the design packet when the work needs durable design context.
+4. Write failing tests from the playback questions or issue acceptance criteria.
+5. Implement.
+6. Produce a reproducible witness.
+7. File follow-up work in exactly one canonical state: unscheduled with one
+   `triage:*` label and no milestone, or scheduled in one plain version
+   milestone with no triage or concrete-version scheduling label.
+8. Update ship surfaces such as `docs/BEARING.md`, `CHANGELOG.md`, and release
    notes only from merged `main` state.
 
 Review state rides on branches and PRs. GitHub Issues, Milestones, Projects, and

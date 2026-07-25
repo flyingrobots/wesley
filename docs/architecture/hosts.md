@@ -39,5 +39,7 @@ packages are not part of the Rust-native product spine.
 ## Planning Boundary
 
 Host maturity and release scheduling are not tracked by README progress tables
-or filesystem milestone docs. Use GitHub Issues, Milestones, Projects, and
-version labels for live planning state.
+or filesystem milestone docs. Use GitHub Issues, Milestones, and Projects for
+live planning state. Plain `vX.Y.Z` milestones are the sole release-scheduling
+authority. Classification labels are work metadata, not planning-state surfaces
+or scheduling authority.

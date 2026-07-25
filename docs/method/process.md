@@ -8,14 +8,15 @@ direction, and evidence.
 
 ## Rules
 
-- The queue lives in GitHub Issues. Unscheduled intake uses `triage:*` labels;
-  scheduled work uses concrete release labels such as `v0.2.0`.
+- The queue lives in GitHub Issues. Unscheduled intake has exactly one
+  `triage:*` label and no milestone. Scheduled work has exactly one plain
+  `vX.Y.Z` milestone and no `triage:*` or version label.
 - The full triage flow lives in
   [`docs/topics/contributing/triage.md`](../topics/contributing/triage.md).
-- Goalposts live in GitHub Milestones named `Goalpost: ...`.
-- Versioned releases live in GitHub Milestones named `Release: ...`; their
-  release-gate issues link to goalpost milestones because GitHub allows one
-  milestone per issue.
+- Plain version milestones are the sole scheduling authority. Other labels
+  classify work; version labels are retired.
+- Release outcomes are narrative groups inside a release's planning and gate
+  issue, not additional `Goalpost: ...` or `Release: ...` milestones.
 - The roadmap board is the
   [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18).
 - Pulling work into `docs/design/<cycle>/` is commitment.
@@ -46,19 +47,18 @@ direction, and evidence.
 ## Default Loop
 
 1. Pull a GitHub Issue into `docs/design/<cycle>/` when a design packet is
-   needed, assign its goalpost milestone, and add it to the Wesley Roadmap
-   Project if missing.
-   If the issue still has a `triage:*` label, schedule, split, move, or close it
-   before implementation.
+   needed and add it to the Wesley Roadmap Project if missing. Before
+   implementation, assign exactly one plain `vX.Y.Z` milestone and remove all
+   `triage:*` and version labels, or split, move, or close the issue.
 2. Write the design with both human and agent sponsors named.
 3. Write failing tests from the playback questions.
 4. Make the tests pass.
 5. Produce a reproducible playback witness.
 6. Close the cycle packet with a retro in `docs/method/retro/<cycle>/` and a
    `witness/` directory that records playback and verification evidence.
-7. Reconcile GitHub Issue labels, milestone, and Project state; close, move, or
-   label genuinely rejected or retired work in GitHub instead of letting stale
-   repo evidence drift silently.
+7. Reconcile the GitHub Issue's scheduling milestone, classification labels,
+   and Project state; close, move, or label genuinely rejected or retired work
+   in GitHub instead of letting stale repo evidence drift silently.
 8. After merge, update `docs/BEARING.md`, `CHANGELOG.md`, and release notes
    when the merged state changes them.
 

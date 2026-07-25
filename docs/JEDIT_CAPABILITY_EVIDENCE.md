@@ -5,8 +5,8 @@
 This note records Wesley-side evidence for the jedit-shaped capability path. It
 is not a progress tracker.
 
-Live adoption work belongs in GitHub Issues, goalpost milestones, sibling repo
-issues, and the [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18).
+Live adoption work belongs in GitHub Issues, plain version milestones, sibling
+repo issues, and the [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18).
 
 ## Scope
 
