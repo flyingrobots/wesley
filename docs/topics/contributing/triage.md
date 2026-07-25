@@ -80,10 +80,11 @@ inside the plain version milestone.
 
 Topic labels are useful, but they are not scheduling labels.
 
-Use `legend:*`, `group:*`, `pkg:*`, `work:*`, `priority:*`, and ordinary
-work-type labels (`bug`, `feature`, `chore`, `docs`, `tests`, `ci`) to explain
-what kind of work an issue represents. Only `triage:*` marks unscheduled
-intake; scheduled release scope comes from the issue's plain version milestone.
+Use `legend:*`, `group:*`, `pkg:*`, `work:*`, and ordinary work-type labels
+(`bug`, `feature`, `chore`, `docs`, `tests`, `ci`) to explain what kind of work
+an issue represents. Use Project fields for priority and workflow status. Only
+`triage:*` marks unscheduled intake; scheduled release scope comes from the
+issue's plain version milestone.
 
 ## One-Time Live Cutover
 

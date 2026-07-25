@@ -3639,6 +3639,14 @@ mod tests {
                 "exactly one triage:* label; no milestone, retired lane:*, or concrete version label"
             )
         );
+        assert_eq!(
+            yaml_field(issue_model, "classification_axis").and_then(Yaml::as_str),
+            Some("type, legend:*, group:*, work:*, and pkg:* labels")
+        );
+        assert_eq!(
+            yaml_field(issue_model, "project_fields").and_then(Yaml::as_str),
+            Some("priority and workflow status")
+        );
 
         let issue_forms = [
             (

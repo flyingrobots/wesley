@@ -120,7 +120,8 @@ issue_model:
   scheduling_authority: 'plain v{version} milestone'
   scheduled_state: 'exactly one milestone named v{version}; no extra milestone or triage:*, retired lane:*, or concrete version label'
   unscheduled_state: 'exactly one triage:* label; no milestone, retired lane:*, or concrete version label'
-  classification_axis: 'type, status, legend:*, work:*, and pkg:* labels'
+  classification_axis: 'type, legend:*, group:*, work:*, and pkg:* labels'
+  project_fields: 'priority and workflow status'
   release_gate: 'final pre-tag issue in the target version milestone'
 
 release_evidence:

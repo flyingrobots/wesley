@@ -170,6 +170,20 @@ load 'vendor/bats-plugins/bats-assert/load'
   done
 }
 
+@test "classification model keeps priority and status in project fields" {
+  run grep -F "classification_axis: 'type, legend:*, group:*, work:*, and pkg:* labels'" .continuum/release.yml
+  assert_success
+
+  run grep -F "project_fields: 'priority and workflow status'" .continuum/release.yml
+  assert_success
+
+  run grep -F '`priority:*`' docs/topics/contributing/triage.md
+  assert_failure
+
+  run grep -F "Use Project fields for priority and workflow status." docs/topics/contributing/triage.md
+  assert_success
+}
+
 @test "issue and pull request templates preserve the scheduling invariant" {
   run grep -F 'Linked issue has exactly one milestone, named plain `vX.Y.Z`, and no `triage:*`, retired `lane:*`, or concrete-version scheduling label.' .github/pull_request_template.md
   assert_success
