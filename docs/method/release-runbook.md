@@ -23,6 +23,8 @@ names, and verification commands.
   cannot resolve it.
 - Confirm every scheduled issue, including the release gate, uses that milestone
   and no version label or narrative milestone as a second schedule.
+- These scheduling invariants govern current open work only. Closed issues,
+  closed milestones, and historical labels remain preserved evidence.
 - Verify required tools, credentials, signing configuration, CI visibility, and
   registry visibility are available; abort if missing.
 - Ensure every required validation and publish verification step succeeds;

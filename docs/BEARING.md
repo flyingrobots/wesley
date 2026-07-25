@@ -28,6 +28,9 @@ work. All implementation, documentation, preparation, and gate issues for a
 release share that milestone. Before tagging, move or close every other open
 issue in the milestone and close the gate last.
 
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
+
 The current formal release schedule is the GitHub milestone list:
 <https://github.com/flyingrobots/wesley/milestones>.
 

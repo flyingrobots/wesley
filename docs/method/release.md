@@ -45,6 +45,8 @@ A valid Wesley release has all of the following:
    labels, issue titles, and body text may explain work, but they do not
    schedule it. Release guards query only the exact version milestone and fail
    if it is missing.
+   These scheduling invariants govern current open work only. Closed issues,
+   closed milestones, and historical labels remain preserved evidence.
    Here `vX.Y.Z` means exact tag-form SemVer. Every prerelease uses its full
    milestone title, such as `v0.3.0-alpha.2`.
 3. **Honest scope**: must-ship, may-slip, and explicitly-not-included work is

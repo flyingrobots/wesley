@@ -178,6 +178,24 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_failure
 }
 
+@test "scheduling doctrine scopes invariants to current open work" {
+  local doctrine_paths=(
+    docs/METHOD.md
+    CONTRIBUTING.md
+    docs/BEARING.md
+    docs/governance/RELEASE_POLICY.md
+    docs/method/release-runbook.md
+    docs/governance/RELEASE_CHECKLIST.md
+    docs/method/release.md
+    docs/topics/releases.md
+  )
+
+  for path in "${doctrine_paths[@]}"; do
+    run rg -U "These scheduling invariants govern current open work only\\. Closed issues,[[:space:]]+closed[[:space:]]+milestones, and historical labels remain preserved evidence\\." "$path"
+    assert_success
+  done
+}
+
 @test "triage doctrine defines mutually exclusive scheduled states" {
   run grep -F 'Unscheduled: exactly one `triage:*` label and no milestone.' docs/topics/contributing/triage.md
   assert_success

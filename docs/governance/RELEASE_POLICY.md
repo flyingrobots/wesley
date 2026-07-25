@@ -35,6 +35,9 @@ milestone. Project fields, grouping labels, titles, and body text do not
 schedule work. The gate is the final open issue and must close before the
 signed local tag is created.
 
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
+
 Here `vX.Y.Z` means the exact tag-form SemVer. Every prerelease uses its full
 milestone title, such as `v0.3.0-alpha.2`.
 

@@ -28,6 +28,9 @@ work, but they do not schedule it. The release gate is the final open issue in
 the milestone: close it after every other issue is closed, moved, or cut, and
 before creating the signed local tag.
 
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
+
 Here `vX.Y.Z` means exact tag-form SemVer. Every prerelease uses its full
 milestone title, such as `v0.3.0-alpha.2`.
 

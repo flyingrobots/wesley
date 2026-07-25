@@ -64,6 +64,9 @@ An unscheduled issue has exactly one `triage:*` label and no milestone. A
 scheduled issue has exactly one plain `vX.Y.Z` milestone and no `triage:*`
 or concrete-version scheduling label.
 
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
+
 Repository files are the evidence ledger. Design packets, witnesses, retros,
 release notes, and signpost docs record stable truth and proof after work is
 done. The Chronicle files in the repo root are historical archive only.

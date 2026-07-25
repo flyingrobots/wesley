@@ -22,6 +22,9 @@ issue, including the gate, belongs to it. Complete this review after every other
 milestone issue is closed or moved; then close the gate before creating the
 signed local tag.
 
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
+
 See [`RELEASE_POLICY.md`](RELEASE_POLICY.md) for the full enforcement matrix
 and rationale.
 

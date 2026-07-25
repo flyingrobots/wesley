@@ -51,6 +51,9 @@ classify work but never schedule it into a release. All work committed to a
 release shares its version milestone; before tagging, move or close every other
 open issue and close the release gate last.
 
+These scheduling invariants govern current open work only. Closed issues, closed
+milestones, and historical labels remain preserved evidence.
+
 ## GitHub Issue Triage
 
 Use [Issue Triage](./topics/contributing/triage.md) for the label contract.
