@@ -88,11 +88,11 @@ intake; scheduled release scope comes from the issue's plain version milestone.
 ## One-Time Live Cutover
 
 The governance change that establishes this model and the live GitHub metadata
-must cross one controlled boundary. Do not merge the enforcement change while
-open issues still use the retired schedule.
+must cross one controlled boundary. Merge the approved governance pull request
+before any live tracker mutation. The merged doctrine, templates, release
+profile, and guards are the authority for the cutover.
 
-After the governance pull request is approved, but immediately before it is
-merged:
+Immediately after that merge, and before any other planning or release write:
 
 1. Freeze issue scheduling, milestone edits, release-gate closure, and tag
    creation for the duration of the cutover.
@@ -125,10 +125,11 @@ merged:
 8. Repeat the two snapshot queries and verify every open issue satisfies
    exactly one scheduling state, every gate shares its exact version milestone,
    and no retired scheduling label remains assigned to an open issue.
-9. Merge enforcement only while that verification is clean, then lift the
-   freeze. If any mutation or verification fails, stop, leave the pull request
-   unmerged, and keep the release freeze in place until the cutover can be
-   completed and reverified.
+9. Lift the freeze only while that verification is clean. If any mutation or
+   verification fails, stop, leave the merged enforcement intact, record the
+   failure in the migration issue, and keep the release freeze in place until
+   the live metadata is repaired and reverified. Do not restore a partial
+   version of the retired scheduling model.
 
 Retired label definitions may remain for historical search, but after cutover
 they are never assigned to open issues.

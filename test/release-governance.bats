@@ -205,8 +205,11 @@ load 'vendor/bats-plugins/bats-assert/load'
 }
 
 @test "triage doctrine requires an atomic live tracker cutover" {
-  run grep -F "After the governance pull request is approved, but immediately before it is" docs/topics/contributing/triage.md
+  run rg -U "Merge the approved governance pull request\\s+before any live tracker mutation\\." docs/topics/contributing/triage.md
   assert_success
+
+  run grep -F "immediately before it is" docs/topics/contributing/triage.md
+  assert_failure
 
   run grep -F "Freeze issue scheduling, milestone edits, release-gate closure, and tag" docs/topics/contributing/triage.md
   assert_success
@@ -241,7 +244,7 @@ load 'vendor/bats-plugins/bats-assert/load'
   run rg -U 'Never\s+move the closed issues that remain historical evidence' docs/topics/contributing/triage.md
   assert_success
 
-  run grep -F "Merge enforcement only while that verification is clean" docs/topics/contributing/triage.md
+  run grep -F "leave the merged enforcement intact" docs/topics/contributing/triage.md
   assert_success
 }
 
