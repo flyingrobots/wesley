@@ -558,6 +558,14 @@ load 'vendor/bats-plugins/bats-assert/load'
 
   run grep -F 'name: Repo Bats tests (unit/docs/ci checks only)' .github/workflows/ci.yml
   assert_success
+
+  for doc_path in docs/ci.md test/README.md; do
+    run grep -F 'Repository-level Bats suites run unconditionally in CI.' "$doc_path"
+    assert_success
+
+    run rg -n 'RUN_BATS|only run when relevant files change|Repo-level Bats Tests \\(Gated\\)' "$doc_path"
+    assert_failure
+  done
 }
 
 @test "release crates workflow authenticates release guard GitHub API checks" {

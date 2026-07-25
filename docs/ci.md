@@ -4,7 +4,8 @@ This repository uses multiple GitHub Actions workflows to keep the codebase heal
 
 ## Workflows Overview
 
-- `ci.yml` — Main pipeline. Installs deps, runs unit tests, and executes a small set of repository-level Bats tests (server/docs/CI checks) when relevant.
+- `ci.yml` — Main pipeline. Installs dependencies, runs unit tests, and executes
+  the repository-level Bats suites on every covered run.
 - `rust-native.yml` — Rust product preflight for the native compiler kernel and CLI.
 - `preflight.yml` — Repository hygiene checks (docs links, dependency boundaries, ESLint purity, license audit).
 - Package workflows — focused checks for retained non-compiler packages such as Holmes.
@@ -29,7 +30,7 @@ We provide a reusable workflow to install Bats and jq:
 
 Use this anywhere Bats-based tests run (Linux runners).
 
-## Repo-level Bats Tests (Gated)
+## Repo-level Bats Tests
 
 In `ci.yml`, we run a concise set of repository-level Bats suites covering:
 
@@ -37,37 +38,19 @@ In `ci.yml`, we run a concise set of repository-level Bats suites covering:
 - Docs planning-boundary guards
 - CI YAML invariants
 
-To keep CI lean, these tests are gated via a simple diff check and only execute
-when relevant files change (paths matching `scripts/serve-static.mjs`,
-`scripts/generate-ir-fixtures.mjs`, `test/serve-static*`,
-`test/docs-planning-boundary.bats`, `test/domain-empty-boundary.bats`,
-`test/ir-fixtures.bats`, or `test/ci-*`).
-
-Example gating snippet used in `ci.yml`:
-
-```yaml
-- name: Detect changes for repo Bats tests
-  id: changelog
-  run: |
-    RANGE="${{ github.event.before }}..${{ github.sha }}"
-    if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "${{ github.event.pull_request.base.sha }}" ]; then
-      RANGE="${{ github.event.pull_request.base.sha }}..${{ github.sha }}"
-    fi
-    CHANGED=$(git diff --name-only "$RANGE" || true)
-    NEED=false
-    echo "$CHANGED" | grep -E -q '^(scripts/serve-static\\.mjs|test/serve-static|scripts/generate-ir-fixtures\\.mjs|test/docs-planning-boundary\\.bats|test/domain-empty-boundary\\.bats|test/ir-fixtures\\.bats|test/ci-)' && NEED=true || true
-    echo "RUN_BATS=$NEED" >> $GITHUB_ENV
-- name: Repo Bats tests
-  if: ${{ env.RUN_BATS == 'true' }}
-  env:
-    BATS_LIB_PATH: test/vendor
-  run: bats test/serve-static*.bats test/docs-planning-boundary.bats test/domain-empty-boundary.bats test/ir-fixtures.bats test/ci-*.bats
-```
+Repository-level Bats suites run unconditionally in CI. The explicit file list
+and per-file timeout in `.github/workflows/ci.yml` are the canonical execution
+manifest.
 
 ### Run these locally
 
 ```bash
 pnpm run setup:bats-plugins
 BATS_LIB_PATH=test/vendor \
-  bats test/serve-static*.bats test/docs-planning-boundary.bats test/domain-empty-boundary.bats test/ir-fixtures.bats test/ci-*.bats
+  bats test/serve-static*.bats \
+    test/docs-planning-boundary.bats \
+    test/domain-empty-boundary.bats \
+    test/ir-fixtures.bats \
+    test/release-governance.bats \
+    test/ci-*.bats
 ```
