@@ -19,7 +19,6 @@ short path to the authoritative surface.
 | Inspect GraphQL lowering, hashes, or IR.  | [Schema And IR](./schema-ir.md)                 | `docs/reference/cli.md#schema`             |
 | Work with operations and directive args.  | [Operations](./operations.md)                   | `docs/reference/cli.md#operation`          |
 | Use or classify GraphQL directives.       | [Directives](./directives.md)                   | `docs/reference/directives.md`             |
-| Author or validate `weslaw/v1`.           | [Weslaw](./weslaw.md)                           | `docs/design/0019-weslaw-semantic-law-ir/` |
 | Emit Rust, TypeScript, or LE-binary code. | [Emitters](./emitters.md)                       | `docs/reference/cli.md#emit`               |
 | Understand generated files and caches.    | [Artifacts And Cache](./artifacts-and-cache.md) | `docs/build-artifacts.md`                  |
 

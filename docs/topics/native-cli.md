@@ -39,11 +39,9 @@ validating this checkout before a PR or release.
 | ----------- | -------------------------------------------------------------- |
 | `schema`    | Lowering, hashing, operation catalogs, and schema diffs.       |
 | `operation` | Resolving operation selections and directive arguments.        |
-| `law`       | `weslaw/v1` lint, validation, diff, explain, rebind, coverage. |
 | `emit`      | Rust, TypeScript, and LE-binary codec projections.             |
 | `config`    | Project manifest validation, inspection, and changed schemas.  |
 | `target`    | Verify external target descriptors without executing target code. |
-| `init-law`  | Scaffold a `weslaw/v1` authoring file.                         |
 | `normalize-sdl` | Emit canonical normalized GraphQL SDL.                     |
 | `doctor`    | Rust-native health checks for the compiler spine.              |
 

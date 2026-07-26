@@ -1583,14 +1583,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wesley-holmes"
-version = "0.3.0-alpha.1"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "windows-core"
 version = "0.62.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

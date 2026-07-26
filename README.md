@@ -70,12 +70,12 @@ Generate target-neutral Rust or TypeScript projections:
 
 ```bash
 cargo run --bin wesley -- emit rust \
-  --schema test/fixtures/weslaw/contract-bundle-shape.graphql \
+  --schema test/fixtures/extension-generation/schema.graphql \
   --out generated/model.rs \
   --metadata-out generated/model.metadata.json
 
 cargo run --bin wesley -- emit typescript \
-  --schema test/fixtures/weslaw/contract-bundle-shape.graphql \
+  --schema test/fixtures/extension-generation/schema.graphql \
   --out generated/types.ts \
   --metadata-out generated/types.metadata.json
 ```
@@ -116,7 +116,6 @@ Wesley owns domain-free compiler facts:
 - operation selection and directive-argument extraction
 - Rust and TypeScript model and operation bindings
 - TypeScript and Rust LE-binary codec projections
-- `weslaw/v1` authoring, hashing, diffing, rebinding, and coverage metadata
 - deterministic evidence inputs and release checks around those generic
   compiler contracts
 

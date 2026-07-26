@@ -4,12 +4,8 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 use sha2::{Digest, Sha256};
-use yaml_rust2::{Yaml, YamlLoader};
 
-use wesley_core::{
-    build_contract_bundle_manifest_v1, compute_registry_hash, diff_law_ir_v1,
-    list_schema_operations_sdl, load_weslaw_yaml, lower_schema_sdl, to_canonical_law_ir_json,
-};
+use wesley_core::{compute_registry_hash, list_schema_operations_sdl, lower_schema_sdl};
 
 const JSON_SCHEMA_DRAFT_07: &str = "http://json-schema.org/draft-07/schema#";
 const JSON_SCHEMA_DRAFT_2020_12: &str = "https://json-schema.org/draft/2020-12/schema";
@@ -183,48 +179,6 @@ fn assert_schema_invalid(schema_path: &str, artifact_name: &str, artifact: &serd
     );
 }
 
-fn yaml_fixture_to_json(source: &str) -> serde_json::Value {
-    let documents = YamlLoader::load_from_str(source).expect("fixture should parse as YAML");
-    assert_eq!(
-        documents.len(),
-        1,
-        "fixture should contain one YAML document"
-    );
-    yaml_to_json_value(&documents[0])
-}
-
-fn yaml_to_json_value(value: &Yaml) -> serde_json::Value {
-    match value {
-        Yaml::Real(text) => {
-            serde_json::Number::from_f64(text.parse::<f64>().expect("real should parse"))
-                .map(serde_json::Value::Number)
-                .expect("real should be finite")
-        }
-        Yaml::Integer(integer) => serde_json::Value::Number((*integer).into()),
-        Yaml::String(text) => serde_json::Value::String(text.clone()),
-        Yaml::Boolean(value) => serde_json::Value::Bool(*value),
-        Yaml::Array(items) => {
-            serde_json::Value::Array(items.iter().map(yaml_to_json_value).collect())
-        }
-        Yaml::Hash(map) => {
-            let object = map
-                .iter()
-                .map(|(key, value)| {
-                    (
-                        key.as_str()
-                            .expect("fixture object keys should be strings")
-                            .to_string(),
-                        yaml_to_json_value(value),
-                    )
-                })
-                .collect();
-            serde_json::Value::Object(object)
-        }
-        Yaml::Null => serde_json::Value::Null,
-        Yaml::Alias(_) | Yaml::BadValue => panic!("unsupported YAML value in fixture"),
-    }
-}
-
 #[test]
 fn schema_family_declares_supported_draft_boundary() {
     let readme = read_text("schemas/README.md");
@@ -267,22 +221,6 @@ fn schema_family_declares_supported_draft_boundary() {
     }
 }
 
-fn contract_bundle_shape() -> (
-    wesley_core::WesleyIR,
-    Vec<wesley_core::SchemaOperation>,
-    String,
-) {
-    let sdl = read_text("test/fixtures/weslaw/contract-bundle-shape.graphql");
-    let ir = lower_schema_sdl(&sdl).expect("fixture schema should lower");
-    let operations = list_schema_operations_sdl(&sdl).expect("fixture operations should list");
-    let schema_hash = format!(
-        "sha256:{}",
-        compute_registry_hash(&ir).expect("schema hash should compute")
-    );
-
-    (ir, operations, schema_hash)
-}
-
 #[test]
 fn l1_ir_fixtures_satisfy_declared_schema() {
     let fixture_dir = repo_path("test/fixtures/ir-parity");
@@ -318,63 +256,6 @@ fn l1_ir_fixtures_satisfy_declared_schema() {
             &artifact,
         );
     }
-}
-
-#[test]
-fn weslaw_artifact_families_satisfy_declared_schemas() {
-    let law_fixture = "test/fixtures/weslaw/accepted/footprint-replace-range.weslaw.yaml";
-    let law_source = read_text(law_fixture);
-    let authoring_json = yaml_fixture_to_json(&law_source);
-    assert_schema_valid(
-        "schemas/weslaw-v1.schema.json",
-        law_fixture,
-        &authoring_json,
-    );
-
-    let law_ir = load_weslaw_yaml(&law_source).expect("law fixture should lower");
-    let law_ir_json =
-        serde_json::from_str(&to_canonical_law_ir_json(&law_ir).expect("Law IR should serialize"))
-            .expect("Law IR JSON should parse");
-    assert_schema_valid(
-        "schemas/wesley-law-ir-v1.schema.json",
-        "generated Law IR",
-        &law_ir_json,
-    );
-
-    let (ir, operations, _) = contract_bundle_shape();
-    let manifest = build_contract_bundle_manifest_v1(&law_ir, &ir, &operations)
-        .expect("contract bundle manifest should build");
-    let manifest_json =
-        serde_json::to_value(&manifest).expect("contract bundle manifest should serialize");
-    assert_schema_valid(
-        "schemas/wesley-contract-bundle-manifest-v1.schema.json",
-        "generated contract bundle manifest",
-        &manifest_json,
-    );
-
-    for fixture in [
-        "test/fixtures/weslaw/diff/ci-semantic-diff.json",
-        "test/fixtures/weslaw/diff/holmes-blade-binding-broken.json",
-    ] {
-        assert_schema_valid(
-            "schemas/wesley-law-diff-v1.schema.json",
-            fixture,
-            &read_json(fixture),
-        );
-    }
-
-    let old_law = load_weslaw_yaml(&read_text("test/fixtures/weslaw/diff/old.weslaw.yaml"))
-        .expect("old law should lower");
-    let new_law = load_weslaw_yaml(&read_text("test/fixtures/weslaw/diff/new.weslaw.yaml"))
-        .expect("new law should lower");
-    let generated_diff =
-        serde_json::to_value(diff_law_ir_v1(&old_law, &new_law).expect("diff should compute"))
-            .expect("diff should serialize");
-    assert_schema_valid(
-        "schemas/wesley-law-diff-v1.schema.json",
-        "generated law diff",
-        &generated_diff,
-    );
 }
 
 #[test]

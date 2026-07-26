@@ -1,4 +1,4 @@
-//! Canonical input and provenance contracts for external semantic generators.
+//! Canonical input and provenance contracts for external generators.
 //!
 //! The types in this module are deliberately domain-empty. They bind Wesley's
 //! canonical compiler facts to explicit owner declarations and generated
@@ -11,39 +11,35 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 use super::ir::{compute_content_hash_bytes, to_canonical_json, WesleyIR};
-use super::law::{
-    compute_law_hash_v1, to_canonical_law_ir_json, validate_law_ir_v1_bindings,
-    FootprintCardinalityV1, LawEntryBodyV1, LawIrV1, LawStatusV1, WESLEY_LAW_IR_API_VERSION,
-};
 use super::operation::{OperationType, SchemaOperation};
 
-/// API version for [`ExtensionGenerationInputV1`].
+/// API version for [`ExtensionGenerationInputV2`].
 pub const WESLEY_EXTENSION_GENERATION_INPUT_API_VERSION: &str =
-    "wesley.extension-generation-input/v1";
+    "wesley.extension-generation-input/v2";
 
-/// Canonical JSON codec for [`ExtensionGenerationInputV1`].
+/// Canonical JSON codec for [`ExtensionGenerationInputV2`].
 pub const WESLEY_EXTENSION_GENERATION_INPUT_CODEC: &str =
-    "wesley.extension-generation-input.canonical-json.v1";
+    "wesley.extension-generation-input.canonical-json.v2";
 
-/// API version for [`GenerationProvenanceManifestV1`].
+/// API version for [`GenerationProvenanceManifestV2`].
 pub const WESLEY_GENERATION_PROVENANCE_MANIFEST_API_VERSION: &str =
-    "wesley.generation-provenance-manifest/v1";
+    "wesley.generation-provenance-manifest/v2";
 
-/// Canonical JSON codec for [`GenerationProvenanceManifestV1`].
+/// Canonical JSON codec for [`GenerationProvenanceManifestV2`].
 pub const WESLEY_GENERATION_PROVENANCE_MANIFEST_CODEC: &str =
-    "wesley.generation-provenance-manifest.canonical-json.v1";
+    "wesley.generation-provenance-manifest.canonical-json.v2";
 
-/// API version for the derived [`GenerationReviewV1`] projection.
-pub const WESLEY_GENERATION_REVIEW_API_VERSION: &str = "wesley.generation-review/v1";
+/// API version for the derived [`GenerationReviewV2`] projection.
+pub const WESLEY_GENERATION_REVIEW_API_VERSION: &str = "wesley.generation-review/v2";
 
-/// Canonical JSON codec for [`GenerationReviewV1`].
-pub const WESLEY_GENERATION_REVIEW_CODEC: &str = "wesley.generation-review.canonical-json.v1";
+/// Canonical JSON codec for [`GenerationReviewV2`].
+pub const WESLEY_GENERATION_REVIEW_CODEC: &str = "wesley.generation-review.canonical-json.v2";
 
-/// ABI version implemented by external semantic generators consuming this contract.
-pub const WESLEY_EXTENSION_GENERATOR_ABI_VERSION: &str = "wesley.extension-generator/v1";
+/// ABI version implemented by external generators consuming this contract.
+pub const WESLEY_EXTENSION_GENERATOR_ABI_VERSION: &str = "wesley.extension-generator/v2";
 
-const INPUT_HASH_DOMAIN: &str = "wesley.extension-generation-input.digest.v1";
-const PROVENANCE_HASH_DOMAIN: &str = "wesley.generation-provenance-manifest.digest.v1";
+const INPUT_HASH_DOMAIN: &str = "wesley.extension-generation-input.digest.v2";
+const PROVENANCE_HASH_DOMAIN: &str = "wesley.generation-provenance-manifest.digest.v2";
 
 /// One content-addressed source or generated artifact.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -97,22 +93,10 @@ impl GenerationArtifactContentV1 {
     }
 }
 
-/// Canonical, validated Law IR carried into extension generation.
+/// Pure structural input consumed by an external generator.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct GenerationLawInputV1 {
-    /// Path-free, prose-free, normalized active Law IR.
-    pub law_ir: LawIrV1,
-    /// Exact semantic Law IR digest.
-    pub semantic_digest: String,
-    /// Exact canonical digest of the normalized typed Law IR.
-    pub canonical_digest: String,
-}
-
-/// Pure semantic input consumed by an external generator.
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct ExtensionGenerationInputV1 {
+pub struct ExtensionGenerationInputV2 {
     /// Exact input contract version.
     pub api_version: String,
     /// Canonical path-free Wesley Shape IR.
@@ -121,10 +105,7 @@ pub struct ExtensionGenerationInputV1 {
     pub shape_digest: String,
     /// Normalized root operation catalog.
     pub operations: Vec<SchemaOperation>,
-    /// Optional validated semantic Law IR and its exact digests.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub law: Option<GenerationLawInputV1>,
-    /// Exact owner-declaration artifacts outside Wesley Shape and Law IR.
+    /// Exact target-owned declarations outside Wesley Shape IR.
     pub owner_declarations: Vec<GenerationArtifactReferenceV1>,
     /// Digest of explicit generator settings, computed by the caller.
     pub settings_digest: String,
@@ -132,7 +113,7 @@ pub struct ExtensionGenerationInputV1 {
     pub projection_roles: Vec<String>,
 }
 
-impl ExtensionGenerationInputV1 {
+impl ExtensionGenerationInputV2 {
     /// Builds a canonical generation input from explicit in-memory facts.
     ///
     /// This function performs no filesystem, registry, network, clock, process,
@@ -140,7 +121,6 @@ impl ExtensionGenerationInputV1 {
     pub fn new(
         shape_ir: WesleyIR,
         operations: Vec<SchemaOperation>,
-        law_ir: Option<LawIrV1>,
         owner_declarations: Vec<GenerationArtifactReferenceV1>,
         settings_digest: String,
         projection_roles: Vec<String>,
@@ -150,16 +130,12 @@ impl ExtensionGenerationInputV1 {
         let operations = normalize_operations(operations)?;
         let shape_json = canonical_json_bytes(&shape_ir)?;
         let shape_digest = compute_generation_artifact_digest_v1(&shape_json);
-        let law = law_ir
-            .map(|law_ir| normalize_law(law_ir, &shape_ir, &operations, &shape_digest))
-            .transpose()?;
 
         Ok(Self {
             api_version: WESLEY_EXTENSION_GENERATION_INPUT_API_VERSION.to_owned(),
             shape_ir,
             shape_digest,
             operations,
-            law,
             owner_declarations: normalize_references(owner_declarations)?,
             settings_digest,
             projection_roles: normalize_strings(projection_roles, "projectionRoles")?,
@@ -188,7 +164,6 @@ impl ExtensionGenerationInputV1 {
         let normalized = Self::new(
             self.shape_ir.clone(),
             self.operations.clone(),
-            self.law.as_ref().map(|law| law.law_ir.clone()),
             self.owner_declarations.clone(),
             self.settings_digest.clone(),
             self.projection_roles.clone(),
@@ -200,33 +175,6 @@ impl ExtensionGenerationInputV1 {
                 &normalized.shape_digest,
                 &self.shape_digest,
             ));
-        }
-        match (&self.law, &normalized.law) {
-            (Some(actual), Some(expected)) => {
-                if actual.semantic_digest != expected.semantic_digest {
-                    return Err(GenerationContractError::mismatch(
-                        GenerationContractErrorKind::LawDigestMismatch,
-                        "law.semanticDigest",
-                        &expected.semantic_digest,
-                        &actual.semantic_digest,
-                    ));
-                }
-                if actual.canonical_digest != expected.canonical_digest {
-                    return Err(GenerationContractError::mismatch(
-                        GenerationContractErrorKind::LawDigestMismatch,
-                        "law.canonicalDigest",
-                        &expected.canonical_digest,
-                        &actual.canonical_digest,
-                    ));
-                }
-            }
-            (None, None) => {}
-            _ => {
-                return Err(GenerationContractError::new(
-                    GenerationContractErrorKind::LawDigestMismatch,
-                    "law",
-                ));
-            }
         }
         Ok(normalized)
     }
@@ -270,16 +218,16 @@ impl GeneratorIdentityV1 {
 /// Frozen schema and ABI identities used by one provenance manifest.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct GenerationContractVersionsV1 {
+pub struct GenerationContractVersionsV2 {
     /// Extension-generation input schema identity.
     pub input_schema: String,
     /// Generation-provenance manifest schema identity.
     pub provenance_schema: String,
-    /// External semantic-generator ABI identity.
+    /// External generator ABI identity.
     pub generator_abi: String,
 }
 
-impl Default for GenerationContractVersionsV1 {
+impl Default for GenerationContractVersionsV2 {
     fn default() -> Self {
         Self {
             input_schema: WESLEY_EXTENSION_GENERATION_INPUT_API_VERSION.to_owned(),
@@ -292,27 +240,27 @@ impl Default for GenerationContractVersionsV1 {
 /// Provenance for one deterministic external generation invocation.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct GenerationProvenanceManifestV1 {
+pub struct GenerationProvenanceManifestV2 {
     /// Exact manifest contract version.
     pub api_version: String,
     /// Exact generator identity.
     pub generator: GeneratorIdentityV1,
-    /// Digest of the canonical [`ExtensionGenerationInputV1`].
+    /// Digest of the canonical [`ExtensionGenerationInputV2`].
     pub generation_input_digest: String,
     /// Digest of the explicit settings carried by the generation input.
     pub settings_digest: String,
     /// Frozen Wesley schema and generator ABI identities.
-    pub contract_versions: GenerationContractVersionsV1,
+    pub contract_versions: GenerationContractVersionsV2,
     /// Exact owner-declaration source artifacts.
     pub source_artifacts: Vec<GenerationArtifactReferenceV1>,
     /// Exact emitted artifact references.
     pub emitted_artifacts: Vec<GenerationArtifactReferenceV1>,
 }
 
-impl GenerationProvenanceManifestV1 {
+impl GenerationProvenanceManifestV2 {
     /// Builds a provenance manifest from canonical input and explicit outputs.
     pub fn new(
-        input: &ExtensionGenerationInputV1,
+        input: &ExtensionGenerationInputV2,
         generator: GeneratorIdentityV1,
         emitted_artifacts: Vec<GenerationArtifactReferenceV1>,
     ) -> Result<Self, GenerationContractError> {
@@ -329,7 +277,7 @@ impl GenerationProvenanceManifestV1 {
             generator,
             generation_input_digest: input.digest()?,
             settings_digest: input.settings_digest.clone(),
-            contract_versions: GenerationContractVersionsV1::default(),
+            contract_versions: GenerationContractVersionsV2::default(),
             source_artifacts: input.owner_declarations.clone(),
             emitted_artifacts,
         })
@@ -351,11 +299,11 @@ impl GenerationProvenanceManifestV1 {
     /// Verifies the generator and every referenced source and emitted artifact.
     pub fn verify(
         &self,
-        input: &ExtensionGenerationInputV1,
+        input: &ExtensionGenerationInputV2,
         generator_bytes: &[u8],
         source_artifacts: &[GenerationArtifactContentV1],
         emitted_artifacts: &[GenerationArtifactContentV1],
-    ) -> Result<GenerationProvenanceVerificationV1, GenerationContractError> {
+    ) -> Result<GenerationProvenanceVerificationV2, GenerationContractError> {
         let manifest = self.normalized()?;
         let input = input.normalized()?;
         let input_digest = input.digest()?;
@@ -389,7 +337,7 @@ impl GenerationProvenanceManifestV1 {
         verify_materials(&manifest.source_artifacts, source_artifacts)?;
         verify_materials(&manifest.emitted_artifacts, emitted_artifacts)?;
 
-        Ok(GenerationProvenanceVerificationV1 {
+        Ok(GenerationProvenanceVerificationV2 {
             generation_input_digest: input_digest,
             verified_source_count: manifest.source_artifacts.len(),
             verified_output_count: manifest.emitted_artifacts.len(),
@@ -408,7 +356,7 @@ impl GenerationProvenanceManifestV1 {
         self.generator.validate()?;
         validate_digest(&self.generation_input_digest, "generationInputDigest")?;
         validate_digest(&self.settings_digest, "settingsDigest")?;
-        let expected_versions = GenerationContractVersionsV1::default();
+        let expected_versions = GenerationContractVersionsV2::default();
         if self.contract_versions != expected_versions {
             return Err(GenerationContractError::new(
                 GenerationContractErrorKind::ContractVersionMismatch,
@@ -437,7 +385,7 @@ impl GenerationProvenanceManifestV1 {
 /// Receipt proving exact provenance materials were recomputed successfully.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct GenerationProvenanceVerificationV1 {
+pub struct GenerationProvenanceVerificationV2 {
     /// Verified canonical generation-input digest.
     pub generation_input_digest: String,
     /// Number of exact source artifacts verified.
@@ -449,7 +397,7 @@ pub struct GenerationProvenanceVerificationV1 {
 /// Deterministic, derived, non-authoritative review projection.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct GenerationReviewV1 {
+pub struct GenerationReviewV2 {
     /// Exact review projection version.
     pub api_version: String,
     /// Always false: this projection is never an authority artifact.
@@ -481,7 +429,7 @@ where
     Ok(false)
 }
 
-impl GenerationReviewV1 {
+impl GenerationReviewV2 {
     /// Returns false because review projections cannot claim authority.
     pub const fn authoritative(&self) -> bool {
         self.authoritative
@@ -489,8 +437,8 @@ impl GenerationReviewV1 {
 
     /// Derives a non-authoritative review projection from validated input and provenance.
     pub fn from_manifest(
-        input: &ExtensionGenerationInputV1,
-        manifest: &GenerationProvenanceManifestV1,
+        input: &ExtensionGenerationInputV2,
+        manifest: &GenerationProvenanceManifestV2,
     ) -> Result<Self, GenerationContractError> {
         let input = input.normalized()?;
         let manifest = manifest.normalized()?;
@@ -585,10 +533,6 @@ pub enum GenerationContractErrorKind {
     CoordinateDigestConflict,
     /// The claimed Shape IR digest did not match canonical bytes.
     ShapeDigestMismatch,
-    /// Law IR failed strict binding against Shape IR and operations.
-    LawBindingFailed,
-    /// A claimed Law IR digest did not match canonical bytes.
-    LawDigestMismatch,
     /// Frozen input-schema, provenance-schema, or generator-ABI identity changed.
     ContractVersionMismatch,
     /// A provenance manifest selected a different generation input.
@@ -620,8 +564,6 @@ impl GenerationContractErrorKind {
             Self::DuplicateCoordinate => "WESLEY_GENERATION_DUPLICATE_COORDINATE",
             Self::CoordinateDigestConflict => "WESLEY_GENERATION_COORDINATE_DIGEST_CONFLICT",
             Self::ShapeDigestMismatch => "WESLEY_GENERATION_SHAPE_DIGEST_MISMATCH",
-            Self::LawBindingFailed => "WESLEY_GENERATION_LAW_BINDING_FAILED",
-            Self::LawDigestMismatch => "WESLEY_GENERATION_LAW_DIGEST_MISMATCH",
             Self::ContractVersionMismatch => "WESLEY_GENERATION_CONTRACT_VERSION_MISMATCH",
             Self::GenerationInputDigestMismatch => "WESLEY_GENERATION_INPUT_DIGEST_MISMATCH",
             Self::SettingsDigestMismatch => "WESLEY_GENERATION_SETTINGS_DIGEST_MISMATCH",
@@ -747,198 +689,6 @@ fn normalize_operations(
         }
     }
     Ok(operations)
-}
-
-fn normalize_law(
-    mut law_ir: LawIrV1,
-    shape_ir: &WesleyIR,
-    operations: &[SchemaOperation],
-    shape_digest: &str,
-) -> Result<GenerationLawInputV1, GenerationContractError> {
-    if law_ir.api_version != WESLEY_LAW_IR_API_VERSION {
-        return Err(GenerationContractError::mismatch(
-            GenerationContractErrorKind::UnsupportedApiVersion,
-            "law.apiVersion",
-            WESLEY_LAW_IR_API_VERSION,
-            &law_ir.api_version,
-        ));
-    }
-    law_ir.schema_source = None;
-    for resource in &mut law_ir.registries.resources {
-        resource.notes = None;
-    }
-    law_ir
-        .registries
-        .resources
-        .sort_by(|left, right| left.id.cmp(&right.id));
-    reject_duplicate_keys(
-        &law_ir.registries.resources,
-        |resource| resource.id.as_str(),
-        "law.registries.resources",
-    )?;
-    for verifier in &mut law_ir.registries.verifiers {
-        verifier.input_contracts = normalize_strings(
-            std::mem::take(&mut verifier.input_contracts),
-            &format!("law.verifier:{}.inputContracts", verifier.id),
-        )?;
-    }
-    law_ir
-        .registries
-        .verifiers
-        .sort_by(|left, right| left.id.cmp(&right.id));
-    reject_duplicate_keys(
-        &law_ir.registries.verifiers,
-        |verifier| verifier.id.as_str(),
-        "law.registries.verifiers",
-    )?;
-    law_ir.registries.channels.sort_by(|left, right| {
-        (left.name.as_str(), left.version).cmp(&(right.name.as_str(), right.version))
-    });
-    for window in law_ir.registries.channels.windows(2) {
-        if window[0].name == window[1].name && window[0].version == window[1].version {
-            return Err(GenerationContractError::new(
-                GenerationContractErrorKind::DuplicateCoordinate,
-                format!("channel:{}@{}", window[0].name, window[0].version),
-            ));
-        }
-    }
-    for entry in &mut law_ir.entries {
-        if entry.status != LawStatusV1::Active {
-            return Err(GenerationContractError::new(
-                GenerationContractErrorKind::LawBindingFailed,
-                &entry.id,
-            ));
-        }
-        entry.rationale = None;
-        entry.source_index = None;
-        entry.tags = normalize_strings(
-            std::mem::take(&mut entry.tags),
-            &format!("law.entry:{}.tags", entry.id),
-        )?;
-        normalize_law_body(&entry.id, &mut entry.body)?;
-    }
-    law_ir.entries.sort_by(|left, right| left.id.cmp(&right.id));
-    reject_duplicate_keys(&law_ir.entries, |entry| entry.id.as_str(), "law.entries")?;
-
-    validate_law_ir_v1_bindings(&law_ir, shape_ir, operations, shape_digest).map_err(|error| {
-        GenerationContractError::mismatch(
-            GenerationContractErrorKind::LawBindingFailed,
-            error.path.unwrap_or_else(|| "law".to_owned()),
-            "valid bound Law IR",
-            error.code.as_str(),
-        )
-    })?;
-    let semantic_digest = compute_law_hash_v1(&law_ir).map_err(|error| {
-        GenerationContractError::mismatch(
-            GenerationContractErrorKind::LawBindingFailed,
-            error.path.unwrap_or_else(|| "law".to_owned()),
-            "canonical semantic Law IR",
-            error.code.as_str(),
-        )
-    })?;
-    let canonical_json = to_canonical_law_ir_json(&law_ir).map_err(canonicalization_error)?;
-    let canonical_digest = compute_generation_artifact_digest_v1(canonical_json.as_bytes());
-    Ok(GenerationLawInputV1 {
-        law_ir,
-        semantic_digest,
-        canonical_digest,
-    })
-}
-
-fn normalize_law_body(
-    entry_id: &str,
-    body: &mut LawEntryBodyV1,
-) -> Result<(), GenerationContractError> {
-    match body {
-        LawEntryBodyV1::ScalarSemantics(body) => body.forbids.sort(),
-        LawEntryBodyV1::VariantLaw(body) => {
-            for case in &mut body.cases {
-                case.requires = normalize_strings(
-                    std::mem::take(&mut case.requires),
-                    &format!("law.entry:{entry_id}.case:{}.requires", case.value),
-                )?;
-                case.forbids = normalize_strings(
-                    std::mem::take(&mut case.forbids),
-                    &format!("law.entry:{entry_id}.case:{}.forbids", case.value),
-                )?;
-            }
-            body.cases
-                .sort_by(|left, right| left.value.cmp(&right.value));
-            reject_duplicate_keys(
-                &body.cases,
-                |case| case.value.as_str(),
-                &format!("law.entry:{entry_id}.cases"),
-            )?;
-        }
-        LawEntryBodyV1::FootprintLaw(body) => {
-            body.reads = normalize_strings(
-                std::mem::take(&mut body.reads),
-                &format!("law.entry:{entry_id}.reads"),
-            )?;
-            body.writes = normalize_strings(
-                std::mem::take(&mut body.writes),
-                &format!("law.entry:{entry_id}.writes"),
-            )?;
-            body.creates = normalize_strings(
-                std::mem::take(&mut body.creates),
-                &format!("law.entry:{entry_id}.creates"),
-            )?;
-            body.forbids = normalize_strings(
-                std::mem::take(&mut body.forbids),
-                &format!("law.entry:{entry_id}.forbids"),
-            )?;
-            for slot in &mut body.slots {
-                slot.access = normalize_strings(
-                    std::mem::take(&mut slot.access),
-                    &format!("law.entry:{entry_id}.slot:{}.access", slot.name),
-                )?;
-            }
-            body.slots.sort_by(|left, right| left.name.cmp(&right.name));
-            reject_duplicate_keys(
-                &body.slots,
-                |slot| slot.name.as_str(),
-                &format!("law.entry:{entry_id}.slots"),
-            )?;
-            for closure in &mut body.closures {
-                closure.reads = normalize_strings(
-                    std::mem::take(&mut closure.reads),
-                    &format!("law.entry:{entry_id}.closure:{}.reads", closure.name),
-                )?;
-            }
-            body.closures
-                .sort_by(|left, right| left.name.cmp(&right.name));
-            reject_duplicate_keys(
-                &body.closures,
-                |closure| closure.name.as_str(),
-                &format!("law.entry:{entry_id}.closures"),
-            )?;
-            for slot in &mut body.create_slots {
-                slot.cardinality = Some(slot.cardinality.unwrap_or(FootprintCardinalityV1::One));
-            }
-            body.create_slots
-                .sort_by(|left, right| left.name.cmp(&right.name));
-            reject_duplicate_keys(
-                &body.create_slots,
-                |slot| slot.name.as_str(),
-                &format!("law.entry:{entry_id}.createSlots"),
-            )?;
-            for update in &mut body.updates {
-                update.fields = normalize_strings(
-                    std::mem::take(&mut update.fields),
-                    &format!("law.entry:{entry_id}.update:{}.fields", update.slot),
-                )?;
-            }
-            body.updates
-                .sort_by(|left, right| left.slot.cmp(&right.slot));
-            reject_duplicate_keys(
-                &body.updates,
-                |update| update.slot.as_str(),
-                &format!("law.entry:{entry_id}.updates"),
-            )?;
-        }
-        LawEntryBodyV1::ChannelLaw(_) | LawEntryBodyV1::InvariantLaw(_) => {}
-    }
-    Ok(())
 }
 
 fn normalize_references(

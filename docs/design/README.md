@@ -55,24 +55,25 @@ Current packets:
   ending with the
   [final closeout](./0017-rust-native-front-door-and-node-retirement/FINAL_CLOSEOUT.md)
 - [`0018`](./0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md):
-  Holmes assurance hexagon redesign with CLI, API, MCP, and reporting adapters,
-  now backed by the initial `crates/wesley-holmes` Rust foundation
+  historical Holmes assurance hexagon redesign with CLI, API, MCP, and
+  reporting adapters
 - [`0019`](./0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md): `weslaw`
-  semantic Law IR for contract bundles, strict binding, canonical law hashes,
-  semantic diffs, and deferred SDL+ syntax, including the v1
+  semantic Law IR experiment, superseded by
+  [`0023`](./0023-remove-weslaw/SOURCE_remove-weslaw.md), including the retired v1
   [Law IR](./0019-weslaw-semantic-law-ir/LAW_IR_V1.md),
   [coordinate and registry](./0019-weslaw-semantic-law-ir/COORDINATES_AND_REGISTRIES.md),
   and
   [canonicalization and diagnostic](./0019-weslaw-semantic-law-ir/CANONICALIZATION_AND_DIAGNOSTICS.md)
   substrate notes
 - [`0020`](./0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md):
-  completed Holmes `weslaw` assurance PRD and test-plan campaign. Rust Holmes
-  implementation work is tracked by GitHub Issues and goalpost milestones, not
-  packet-local status docs
+  historical Holmes `weslaw` assurance campaign, superseded by
+  [`0023`](./0023-remove-weslaw/SOURCE_remove-weslaw.md)
 - [`0021`](./0021-continuum-yolo-runtime-neutral-edict-sha-lock-assurance/continuum-yolo-runtime-neutral-edict-sha-lock-assurance.md):
   extracted Continuum lawful-autonomous lane and runtime-neutral Edict packet;
   the canonical specs now live in
   [flyingrobots/edict](https://github.com/flyingrobots/edict)
+- [`0023`](./0023-remove-weslaw/SOURCE_remove-weslaw.md): removes the retired
+  Weslaw language, its Rust assurance foundation, and its product surfaces
 - [Module Contract](./wesley-module-contract.md): Generic core boundary versus external module-owned domain surfaces
 - [Module Capability Contract](./wesley-module-capability-contract.md): The capability surfaces external modules should implement
 - [Contract / Artifact / Runtime Boundary](./wesley-contract-family-artifact-runtime-value.md): GraphQL-authored families, Wesley-emitted artifacts, and later runtime values

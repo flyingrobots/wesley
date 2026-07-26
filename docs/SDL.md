@@ -1,15 +1,14 @@
-# SDL, Shape, And Law
+# SDL, Shape, And Semantic Ownership
 
 <!-- docs-truth: status=experimental owner=@flyingrobots -->
 
 This note supports the README. It explains why Wesley starts from GraphQL SDL
-and where the line sits between generic compiler facts and domain-owned law.
+and where the line sits between generic compiler facts and semantics owned by
+other languages and targets.
 
 For runnable commands, use [ENTRYPOINTS.md](./ENTRYPOINTS.md). For the
 domain-free invariant, use [NORTHSTAR.md](./NORTHSTAR.md). For the current
-direction and active tensions, use [BEARING.md](./BEARING.md). For the formal
-semantic-law design, use
-[`weslaw` Semantic Law IR](./design/0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md).
+direction and active tensions, use [BEARING.md](./BEARING.md).
 
 ## Contract Substrate
 
@@ -54,12 +53,12 @@ Generic Wesley can lower this shape into L1 IR, compute hashes, compare schema
 structure, and emit Rust or TypeScript bindings without knowing anything about
 editor runtimes, databases, replication, scheduling, or storage.
 
-## Law-Shaped Data
+## Directive Data
 
-Law answers: what is permitted, required, or forbidden?
-
-GraphQL directives can carry law-shaped data at inspectable schema locations.
-Wesley preserves that data. It does not interpret domain law in generic core.
+GraphQL directives can carry target-owned metadata at inspectable schema
+locations. Wesley preserves directive spelling and arguments as structural
+input. Generic core does not interpret that data as application or runtime
+semantics.
 
 ```graphql
 type Query {
@@ -75,12 +74,9 @@ type Query {
 
 The generic claim is bounded: Wesley can preserve the root operation, argument
 type, result type, directive names, and directive arguments. An Echo-owned
-extension can then decide whether `@wes_footprint` is honest, sufficient, or
-acceptable for Echo runtime law.
-
-The `weslaw` design promotes this preserved law-shaped data into a future
-typed Law IR so semantic laws can be bound, hashed, diffed, and explained
-without making generic Wesley the owner of target runtime meaning.
+target adapter may decide whether `@wes_footprint` has meaning for Echo. Edict
+owns executable language semantics; Wesley does not promote arbitrary
+directives into a second semantic language.
 
 For operation artifacts, `@wes_footprint` is target-evaluation v0 metadata. It
 is legal only on the selected root field, must declare `reads` and `writes`

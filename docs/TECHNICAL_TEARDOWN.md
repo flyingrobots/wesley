@@ -1,18 +1,20 @@
-<!-- docs-truth: status=experimental owner=@flyingrobots -->
+<!-- docs-truth: status=historical owner=@flyingrobots -->
 
 # Wesley Technical Teardown
 
-> Status: release-scoped orientation snapshot.
+> Status: historical `v0.2.0` release snapshot.
 >
-> This document explains the repository state for a release/readiness review.
-> It is not the authoritative architecture map and must not become a roadmap.
-> Use [ARCHITECTURE.md](./ARCHITECTURE.md) for current structure and
-> [BEARING.md](./BEARING.md) for current direction and active tensions.
+> The Weslaw language, Law IR, and Rust Holmes foundation described below were
+> removed by
+> [design packet 0023](./design/0023-remove-weslaw/SOURCE_remove-weslaw.md).
+> They are retained here only as release archaeology. Use
+> [ARCHITECTURE.md](./ARCHITECTURE.md) for current structure,
+> [END_TO_END.md](./END_TO_END.md) for the current execution story, and
+> [BEARING.md](./BEARING.md) for current direction.
 
 This document is an end-to-end technical explanation of the Wesley repository
-as prepared for the `v0.2.0` release on June 26, 2026. The `v0.3.0-alpha.1`
-pre-release carries the same architecture; it is the first 0.3.0-line
-pre-release, cut to unblock downstream consumers.
+as prepared for the `v0.2.0` release on June 26, 2026. It does not describe the
+current product surface.
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the

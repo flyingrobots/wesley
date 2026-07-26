@@ -28,7 +28,6 @@ Commands:
 | --------------------------- | ------------------------------------------------------------ |
 | `normalize-sdl`             | Print the Rust-core normalized SDL view                      |
 | `doctor`                    | Run Rust-native health checks                                |
-| `init-law`                  | Scaffold `weslaw/v1` from known SDL law directives           |
 | `config validate`           | Validate a Wesley project manifest                           |
 | `config inspect`            | Print resolved manifest schema paths and targets             |
 | `config changed-schemas`    | Select schema sets affected by changed files                 |
@@ -37,13 +36,6 @@ Commands:
 | `schema hash`               | Print the Wesley L1 registry hash for GraphQL SDL            |
 | `schema operations`         | List Query/Mutation/Subscription root operations             |
 | `schema diff`               | Compare GraphQL SDL states as Wesley L1 IR                   |
-| `law validate`              | Validate `weslaw` against active GraphQL SDL                 |
-| `law lint`                  | Validate `weslaw` structure without schema binding           |
-| `law diff`                  | Compare `weslaw` semantic Law IR states                      |
-| `law explain`               | Explain active laws bound to one subject                     |
-| `law rebind`                | Re-anchor `weslaw` to an active schema hash                  |
-| `law capabilities`          | Emit report-only footprint capability summaries              |
-| `law coverage`              | Report profile/category-aware law coverage                   |
 | `emit rust`                 | Emit Rust models and operation bindings from GraphQL SDL     |
 | `emit typescript`           | Emit TypeScript declarations and operation bindings from SDL |
 | `emit le-binary-typescript` | Emit TypeScript LE-binary codecs from GraphQL SDL            |
@@ -81,23 +73,6 @@ Options:
 | --------------------- | ---------------- |
 | `--json`              | Emit JSON output |
 | `--format text\|json` | Output format    |
-
-## Init Law
-
-```text
-wesley init-law --schema <path> --family <name> [--out <path>]
-```
-
-`init-law` scaffolds `weslaw/v1` from formally known SDL law directives and
-description-derived suggestions. Draft suggestions are not active law.
-
-Options:
-
-| Option                  | Meaning                                   |
-| ----------------------- | ----------------------------------------- |
-| `-s`, `--schema <path>` | GraphQL SDL file                          |
-| `--family <name>`       | Contract family id for the generated law  |
-| `--out <path>`          | Optional output path; stdout when omitted |
 
 ## Config
 
@@ -169,39 +144,13 @@ Options:
 `schema lower`, `schema hash`, and `schema operations` may omit `--schema` only
 when the discovered project manifest contains exactly one schema path.
 
-## Law
-
-```text
-wesley law lint --law <path> [--json]
-wesley law validate --schema <path> --law <path> [--json]
-wesley law diff --old <path> --new <path> [--schema <path>] [--format markdown|json|summary]
-wesley law explain --law <path> <subject> [--json]
-wesley law rebind --schema <path> --law <path> [--accept --out <path>] [--json]
-wesley law capabilities --law <path> [--json]
-wesley law coverage --schema <path> --law <path> [--profile release|ci-release|local] [--json]
-```
-
-Options:
-
-| Option                  | Meaning                                      |
-| ----------------------- | -------------------------------------------- |
-| `-s`, `--schema <path>` | GraphQL SDL file used to validate new law    |
-| `--law <path>`          | `weslaw/v1` authoring file                   |
-| `--old <path>`          | Old/base `weslaw/v1` authoring file for diff |
-| `--new <path>`          | New/target `weslaw/v1` authoring file        |
-| `--accept`              | Write an explicitly accepted rebind output   |
-| `--out <path>`          | Rebind output path                           |
-| `--profile <name>`      | Coverage profile, default: `release`         |
-| `--json`                | Emit JSON output                             |
-| `--format <format>`     | Output format: `markdown`, `json`, `summary` |
-
 ## Emit
 
 ```text
-wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
-wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
-wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
-wesley emit le-binary-rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
+wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
+wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
+wesley emit le-binary-typescript --schema <path> --out <path> [--metadata-out <path>] [--codec-import <path>]
+wesley emit le-binary-rust --schema <path> --out <path> [--metadata-out <path>] [--codec-import <path>]
 ```
 
 Emit commands write model declarations and root operation bindings when the
@@ -212,7 +161,6 @@ Options:
 | Option                  | Meaning                                                 |
 | ----------------------- | ------------------------------------------------------- |
 | `-s`, `--schema <path>` | GraphQL SDL file                                        |
-| `--law <path>`          | Optional `weslaw/v1` file for bundle hashes             |
 | `--out <path>`          | Output file                                             |
 | `--metadata-out <path>` | Deterministic metadata JSON sidecar                     |
 | `--codec-import <path>` | Writer/Reader/CodecError module specifier for LE-binary |

@@ -101,9 +101,8 @@ artifacts.
 
 All release version sources declared in `.continuum/release.yml` must declare
 the same version as the release tag. Today that means every published crate
-`Cargo.toml` manifest, the unpublished `crates/wesley-holmes/Cargo.toml`
-manifest, and the private root `package.json`. Workspace members are not
-permitted to drift independently.
+`Cargo.toml` manifest and the private root `package.json`. Workspace members
+are not permitted to drift independently.
 
 ### Check 6: Changelog
 

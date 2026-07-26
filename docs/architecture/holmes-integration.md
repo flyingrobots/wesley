@@ -4,7 +4,7 @@
 
 HOLMES is Wesley's assurance sidecar. It consumes explicit evidence artifacts
 and reports on their quality. It does not become the source of truth for
-GraphQL shape, `weslaw`, target semantics, runtime behavior, or product policy.
+GraphQL shape, application semantics, target behavior, or product policy.
 
 The current CI integration is intentionally narrow:
 

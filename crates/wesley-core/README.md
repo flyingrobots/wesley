@@ -7,10 +7,10 @@ operation-selection and directive-argument analysis primitives.
 This crate is intended to be embedded by native Wesley tools and by downstream
 systems that need Wesley's GraphQL semantics without the CLI.
 
-External semantic generators can consume `ExtensionGenerationInputV1` directly
-from Rust. The input combines canonical Shape IR, normalized operations,
-optional bound Law IR, explicit owner-declaration references, a settings digest,
-and requested projection roles. `GenerationProvenanceManifestV1` then binds the
+External generators can consume `ExtensionGenerationInputV2` directly from
+Rust. The input combines canonical Shape IR, normalized operations, explicit
+owner-declaration references, a settings digest, and requested projection
+roles. `GenerationProvenanceManifestV2` then binds the
 exact generator, sources, input, settings, schema/ABI versions, and outputs.
 Verification recomputes every supplied digest without filesystem, registry,
 network, clock, process, or environment access. Target semantics and generated

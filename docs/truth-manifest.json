@@ -237,11 +237,6 @@
       "owner": "@flyingrobots"
     },
     {
-      "path": "docs/topics/weslaw.md",
-      "status": "current",
-      "owner": "@flyingrobots"
-    },
-    {
       "path": "docs/topics/contributing/triage.md",
       "status": "current",
       "owner": "@flyingrobots"

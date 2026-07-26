@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- Versioned the domain-neutral extension-generation input, provenance, and
+  review contracts to v2. The canonical input now contains structural IR,
+  operations, owner declarations, settings, and projection roles without an
+  embedded semantic-law document.
+
+### Removed
+
+- Removed Weslaw authoring, Law IR, semantic-law hashes and diffs, `wesley law`
+  and `wesley init-law`, the emitter `--law` option and generated validators,
+  the Weslaw-specific Rust Holmes foundation, and their schemas and fixtures.
+  Executable semantics belong to Edict; target and runtime semantics belong to
+  their owning adapters rather than generic Wesley.
+
 ## [0.3.0-alpha.1] - 2026-07-15
 
 ### Added

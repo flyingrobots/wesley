@@ -90,9 +90,7 @@ The direct replacements are `wesley schema lower`, `wesley schema hash`,
 `wesley law rebind`, `wesley law capabilities`, `wesley law coverage`,
 `wesley doctor`, and `wesley emit typescript` or `wesley emit rust`.
 Zod and certificate commands are no longer generic compiler-front-door work.
-Holmes-family commands still live under `@wesley/holmes`; the Rust foundation
-for future Holmes law-assurance ingestion lives in `crates/wesley-holmes` and
-does not expose public CLI commands yet. Use the
+Holmes-family commands still live under `@wesley/holmes`. Use the
 [Assurance Capability Matrix](./reference/assurance-capability-matrix.md) for
 the shipped/transitional/foundation/concept status of each assurance surface.
 
