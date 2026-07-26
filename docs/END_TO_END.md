@@ -209,6 +209,23 @@ The repository-level gate is:
 cargo xtask preflight
 ```
 
+That Rust-owned gate composes the compiler, documentation, and retirement
+evidence:
+
+```mermaid
+flowchart TD
+    Change[Proposed change] --> RustPreflight[cargo xtask preflight]
+    RustPreflight --> RustTests[cargo test --workspace]
+    RustPreflight --> NativeHelp[native CLI help smoke]
+    RustPreflight --> DocsTruth[documentation truth and link checks]
+    RustPreflight --> NodeRetirement[Node retirement ledger guard]
+
+    RustTests --> Ready[Review-ready change]
+    NativeHelp --> Ready
+    DocsTruth --> Ready
+    NodeRetirement --> Ready
+```
+
 Focused compiler and external-generation evidence can be checked with:
 
 ```text
