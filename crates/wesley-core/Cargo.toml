@@ -24,7 +24,7 @@ apollo-parser = "0.8"
 ninelives = { version = "0.2" }
 tower = { version = "0.4", features = ["util"] }
 tokio = { version = "1", features = ["full"] }
-yaml-rust2 = { version = "0.11", default-features = false }
+yaml-rust2 = { version = "0.12", default-features = false }
 
 [dev-dependencies]
 jsonschema = { version = "0.47", default-features = false }
