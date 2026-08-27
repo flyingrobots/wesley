@@ -41,7 +41,6 @@ lacks the human sign-off is not a valid release, and vice versa.
 | 6   | `CHANGELOG.md` has a dated entry for this version    | parse          |          |
 | 7   | `CHANGELOG.md` reflects actual diff vs. prior tag    |                | reviewer |
 | 8   | `README.md` version headline matches tag             | grep           |          |
-| 9   | `docs/TECHNICAL_TEARDOWN.md` references tag version  | grep           |          |
 | 10  | `docs/ARCHITECTURE.md` is current                    |                | reviewer |
 | 11  | Guide file paths resolve to existing repo paths      | grep + stat    |          |
 | 12  | Guide cited commit SHAs exist in git history         | git cat-file   |          |
@@ -101,9 +100,8 @@ artifacts.
 
 All release version sources declared in `.continuum/release.yml` must declare
 the same version as the release tag. Today that means every published crate
-`Cargo.toml` manifest, the unpublished `crates/wesley-holmes/Cargo.toml`
-manifest, and the private root `package.json`. Workspace members are not
-permitted to drift independently.
+`Cargo.toml` manifest and the private root `package.json`. Workspace members
+are not permitted to drift independently.
 
 ### Check 6: Changelog
 
@@ -117,14 +115,13 @@ leading `v`). A section heading without a date is rejected.
 If the README still refers to a prior release version in that heading, the
 check fails.
 
-### Check 9: TECHNICAL_TEARDOWN
+### Retired Check 9: Historical Technical Teardown
 
-`docs/TECHNICAL_TEARDOWN.md` must contain `v{version}` as a whole version
-reference (not as a substring of a longer version string). This document is a
-release-scoped orientation snapshot, not architecture authority. A stale
-version reference is a sign the snapshot was not refreshed for the release; a
-claim that conflicts with `docs/ARCHITECTURE.md` or `docs/BEARING.md` must be
-resolved in the authoritative doc first, then summarized in the teardown.
+`docs/TECHNICAL_TEARDOWN.md` is frozen as a historical `v0.2.0` snapshot. It is
+not a current architecture surface or release signpost, and future release
+preparation must not add new version references merely to satisfy a gate. The
+current structural and directional authorities are `docs/ARCHITECTURE.md` and
+`docs/BEARING.md`.
 
 ### Check 11: Guide File Paths
 

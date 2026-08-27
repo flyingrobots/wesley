@@ -87,7 +87,6 @@ Check these durable surfaces at minimum:
 - `docs/GUIDE.md`
 - `docs/ENTRYPOINTS.md`
 - `docs/BEARING.md`
-- `docs/TECHNICAL_TEARDOWN.md`
 - `docs/releases/vX.Y.Z.md`
 - `docs/method/releases/vX.Y.Z/release.md`
 - `docs/method/releases/vX.Y.Z/verification.md`

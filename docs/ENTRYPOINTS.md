@@ -64,11 +64,9 @@ It can:
 - emit TypeScript declarations and operation bindings through a Rust AST/printer path
 - emit Rust and TypeScript little-endian codec helpers from a shared codec plan
 - write deterministic emit metadata sidecars with schema hash, generator
-  identity, generator version, execution mode, and optional law bundle hashes
+  identity, generator version, and execution mode
 - run narrow Rust-native health checks without inspecting legacy Node config,
   plugins, or package state
-- scaffold, lint, validate, diff, explain, rebind, and report coverage for
-  `weslaw/v1` documents
 - resolve GraphQL operation selection paths
 - resolve schema-coordinate selections when schema SDL is available
 - extract arbitrary operation directive arguments as data
@@ -85,18 +83,10 @@ wesley schema hash --schema <path>
 wesley schema operations --schema <path> --json
 wesley schema diff --old <path> --new <path> [--format text|json|summary] [--exit-code]
 wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--exit-code]
-wesley init-law --schema <path> --family <name> [--out <path>]
-wesley law lint --law <law.weslaw.yaml> [--json]
-wesley law validate --schema <schema.graphql> --law <law.weslaw.yaml> [--json]
-wesley law diff --old <old.weslaw.yaml> --new <new.weslaw.yaml> [--schema <path>] [--format markdown|json|summary]
-wesley law explain --law <law.weslaw.yaml> <subject> [--json]
-wesley law rebind --schema <path> --law <law.weslaw.yaml> [--accept --out <path>] [--json]
-wesley law capabilities --law <law.weslaw.yaml> [--json]
-wesley law coverage --schema <path> --law <law.weslaw.yaml> [--profile release|ci-release|local] [--json]
-wesley emit rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
-wesley emit typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>]
-wesley emit le-binary-rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
-wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
+wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
+wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
+wesley emit le-binary-rust --schema <path> --out <path> [--metadata-out <path>] [--codec-import <path>]
+wesley emit le-binary-typescript --schema <path> --out <path> [--metadata-out <path>] [--codec-import <path>]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```

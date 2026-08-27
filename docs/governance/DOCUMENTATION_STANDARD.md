@@ -60,9 +60,10 @@ answering "how far along are we?", move that state to GitHub.
 - `docs/method/retro/`, `docs/method/releases/`, and `docs/releases/`
   preserve closeout and release evidence after the fact.
 - `CHANGELOG.md` records merged behavior. It is not a planning document.
-- `docs/TECHNICAL_TEARDOWN.md` is a release-scoped orientation snapshot,
-  structural audit, and risk map. It must not become a second architecture doc
-  or roadmap. `docs/ARCHITECTURE.md` remains the current structural authority;
+- `docs/TECHNICAL_TEARDOWN.md` is a historical `v0.2.0` orientation snapshot,
+  structural audit, and risk map. It must not be refreshed as a release
+  signpost or become a second architecture doc or roadmap.
+  `docs/ARCHITECTURE.md` remains the current structural authority;
   `docs/BEARING.md` remains the current direction surface.
 - Historical docs may preserve completed context, but any page that reads like
   a current tracker should be collapsed into evidence plus GitHub links.

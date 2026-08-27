@@ -7,9 +7,8 @@ status: 'active'
 supersedes:
   - '0008-holmes-counterfactual-provider-capability'
   - '0018-holmes-assurance-hexagon'
-reconciles:
-  - '0019-weslaw-semantic-law-ir'
-  - '0020-holmes-weslaw-assurance-prd-test-plan'
+amended-by:
+  - '0023-remove-weslaw'
 issues:
   - 'https://github.com/flyingrobots/wesley/issues/448'
   - 'https://github.com/flyingrobots/wesley/issues/542'
@@ -18,7 +17,7 @@ issues:
 owners:
   - '@flyingrobots'
 created: '2026-07-15'
-updated: '2026-07-15'
+updated: '2026-07-25'
 ---
 
 <!-- markdownlint-disable MD025 -->
@@ -58,11 +57,11 @@ lines of JavaScript (`packages/wesley-holmes`) that:
   `GIT_DIR` hook-isolation defect both cost release engineering time in
   practice).
 
-The Rust `crates/wesley-holmes` crate is a hexagonal *domain foundation* with no
-CLI, no report rendering, and no prediction. The four open `v0.3.0` issues are
-already, in effect, the first slices of a Rust rewrite of the evidence-review
-half. This packet defines the whole target so the rewrite builds the extensible
-engine we want rather than reproducing the coupling.
+The former Rust Holmes foundation was removed with design packet `0023`
+because it was coupled to the retired semantic-law subsystem. This packet
+defines a future domain-free evidence-review target. Its implementation must
+begin from these contracts rather than treating the deleted crate as a
+foundation.
 
 ### 1.2 The reframe
 
@@ -125,12 +124,11 @@ stays module-owned and untouched by the kernel.
 
 ### 2.1 Placement
 
-The kernel is a Rust library crate (`wesley-holmes`), a thin CLI surface
-(`wesley holmes …` in `wesley-cli`, or a dedicated `wesley-holmes` bin), and a
-set of adapters. It is pure hexagonal: the domain and engines depend only on
-ports (traits + data contracts); every I/O, clock, subprocess, and domain
-behavior enters through an adapter. This is the `0018` hexagon, made concrete
-for Rust and generalized past Holmes-only.
+The kernel is a future Rust library crate, a thin CLI surface, and a set of
+adapters. Its final crate and command names are intentionally deferred until an
+implementation cycle. It is pure hexagonal: the domain and engines depend only
+on ports (traits + data contracts); every I/O, clock, subprocess, and domain
+behavior enters through an adapter.
 
 The kernel links **no domain crate**. `wesley-postgres`, Echo, Continuum, and
 Edict reach it exclusively as registered providers, discovered through the same
@@ -139,9 +137,9 @@ capability/registration protocol Wesley already uses for `target verify`
 
 ### 2.2 Components
 
-- **Assembler** — merges compiler evidence (`.wesley-cache/bundle.json`, weslaw
-  artifacts) and module-contributed evidence into one `justification-graph/v1`.
-  Pure, deterministic, conflict-detecting (Section 5.4).
+- **Assembler** — merges compiler evidence and module-contributed evidence into
+  one `justification-graph/v1`. Pure, deterministic, conflict-detecting
+  (Section 5.4).
 - **Admissibility Filter** — the kernel floor on which evidence may be
   *considered at all* (distinct from weight). Fail-closed.
 - **HOLMES engine** — establishment via grounded extension (Section 3.4).
@@ -837,9 +835,10 @@ path only at the deletion checkpoint.
 - **`0018` (Holmes Assurance Hexagon, active).** Superseded: the hexagon's ports
   are made concrete as the Section 4.5 traits + out-of-process protocol, and the
   domain-free boundary is stated normatively.
-- **`0019` / `0020` (weslaw law IR + assurance PRD).** Reconciled: weslaw law
-  claims become first-class `Claim`s in the Justification Graph; the PRD's test
-  intent maps onto the fixture-and-content-hash gates in Sections 7–8.
+- **`0019` / `0020` (retired semantic-law experiment).** Superseded by `0023`.
+  No language types, hashes, or assurance artifacts from those packets carry
+  into this kernel. Reusable deterministic test intent must be restated against
+  domain-free evidence contracts.
 
 ## Appendix B — Why grounded semantics
 

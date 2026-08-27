@@ -61,38 +61,23 @@ The historical package CLI is retired. Use the native commands:
 - **Lower**: `wesley schema lower --schema <path> --json`
 - **Hash**: `wesley schema hash --schema <path>`
 - **Diff**: `wesley schema diff --old <old> --new <new> --format summary`
-- **Law scaffold**: `wesley init-law --schema <schema> --family <family> --out <law>`
-- **Law lint**: `wesley law lint --law <law> [--json]`
-- **Law**: `wesley law validate --schema <schema> --law <law> [--json]`
-- **Law Diff**: `wesley law diff --old <old-law> --new <new-law> --json`
-- **Law Explain**: `wesley law explain --law <law> <subject> [--json]`
-- **Law Rebind**: `wesley law rebind --schema <schema> --law <law> [--accept --out <law>]`
-- **Law Capabilities**: `wesley law capabilities --law <law> [--json]`
-- **Law Coverage**: `wesley law coverage --schema <schema> --law <law> [--profile release] [--json]`
 - **Manifest Validate**: `wesley config validate [--config <manifest>] [--json]`
 - **Manifest Inspect**: `wesley config inspect [--config <manifest>] [--json]`
 - **Changed Schemas**: `wesley config changed-schemas [--config <manifest>] [--changed <path> ...] [--changed-file <path>] [--json]`
 
-- **Rust**: `wesley emit rust --schema <path> --out <path> [--law <path>]`
-- **TypeScript**: `wesley emit typescript --schema <path> --out <path> [--law <path>]`
-- **LE Binary Rust**: `wesley emit le-binary-rust --schema <path> --out <path> [--law <path>] [--codec-import <path>]`
-- **LE Binary TypeScript**: `wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--codec-import <path>]`
+- **Rust**: `wesley emit rust --schema <path> --out <path>`
+- **TypeScript**: `wesley emit typescript --schema <path> --out <path>`
+- **LE Binary Rust**: `wesley emit le-binary-rust --schema <path> --out <path> [--codec-import <path>]`
+- **LE Binary TypeScript**: `wesley emit le-binary-typescript --schema <path> --out <path> [--codec-import <path>]`
 - **Emit metadata**: add `--metadata-out <path>` to record schema hash,
-  generator identity, generator version, and `rust-native` execution mode. When
-  `--law <path>` is supplied, metadata also records `schemaHashQualified`,
-  `lawHash`, `lawDocumentHash`, `profileHash`, `bundleHash`, and the Law IR
-  codec.
+  generator identity, generator version, and `rust-native` execution mode.
 
 For legacy migration users still calling `pnpm wesley`, rewrite the caller.
 The direct replacements are `wesley schema lower`, `wesley schema hash`,
-`wesley schema diff`, `wesley init-law`, `wesley law lint`,
-`wesley law validate`, `wesley law diff`, `wesley law explain`,
-`wesley law rebind`, `wesley law capabilities`, `wesley law coverage`,
-`wesley doctor`, and `wesley emit typescript` or `wesley emit rust`.
+`wesley schema diff`, `wesley doctor`, and `wesley emit typescript` or
+`wesley emit rust`.
 Zod and certificate commands are no longer generic compiler-front-door work.
-Holmes-family commands still live under `@wesley/holmes`; the Rust foundation
-for future Holmes law-assurance ingestion lives in `crates/wesley-holmes` and
-does not expose public CLI commands yet. Use the
+Holmes-family commands still live under `@wesley/holmes`. Use the
 [Assurance Capability Matrix](./reference/assurance-capability-matrix.md) for
 the shipped/transitional/foundation/concept status of each assurance surface.
 

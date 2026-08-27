@@ -2,13 +2,19 @@
 title: Holmes weslaw Assurance PRD And Test Plan Campaign
 legend: SPEC
 packet: 0020-holmes-weslaw-assurance-prd-test-plan
-status: complete
+status: superseded
 release: v0.0.8
 ---
 
 # Holmes `weslaw` Assurance PRD And Test Plan Campaign
 
-This packet is closed planning evidence. It is not a live implementation
+> [!IMPORTANT]
+> This packet is historical. Design packet
+> [0023](../0023-remove-weslaw/SOURCE_remove-weslaw.md) removed Weslaw and its
+> Rust assurance foundation. Nothing below describes supported or planned
+> product work.
+
+This packet is superseded planning evidence. It is not a live implementation
 tracker.
 
 Live Holmes and `weslaw` implementation work belongs in GitHub Issues,

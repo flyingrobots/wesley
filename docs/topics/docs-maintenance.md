@@ -44,7 +44,6 @@ decide what Wesley is and what is safe to run:
 - `docs/GUIDE.md`
 - `docs/ENTRYPOINTS.md`
 - `docs/BEARING.md`
-- `docs/TECHNICAL_TEARDOWN.md`
 - the versioned release notes and verification packet
 - every tracked page under `docs/topics/`
 

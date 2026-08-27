@@ -25,7 +25,6 @@ Wesley owns:
 - Preserved directive data.
 - Domain-empty Rust and TypeScript projections.
 - Shared codec planning for Wesley-owned emitted artifacts.
-- `weslaw` authoring, Law IR, coverage, and report-only capability summaries.
 - Generic operation artifacts that describe operation shape, requirements, and
   law claims without executing anything.
 

@@ -52,10 +52,6 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 2 ]
 
-  run bash -lc "grep -F \"'test/fixtures/weslaw/**'\" .github/workflows/rust-native.yml | wc -l"
-  assert_success
-  [ "$output" -eq 2 ]
-
   run bash -lc "grep -F \"'test/fixtures/extension-generation/**'\" .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 2 ]

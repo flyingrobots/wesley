@@ -74,23 +74,21 @@ release surface.
 - Keep Wesley core CI independent of external product and database repos by
   exercising hermetic fixture modules.
 
-### 5. Holmes And `weslaw` Assurance
+### 5. Evidence And Assurance Boundaries
 
-`weslaw` is Wesley's semantic law layer for contract bundles. GraphQL SDL remains
-sovereign over structural shape. `weslaw` becomes sovereign over semantic law.
-The combined, bound, canonical contract bundle is the unit Wesley hashes, diffs,
-emits, explains, validates, and hands to assurance tools.
+GraphQL SDL is Wesley's structural source. Executable semantics belong to Edict,
+and target behavior belongs to the owning target or runtime. Wesley may emit
+content-addressed compiler evidence about exact sources, settings, projections,
+and outputs, but it must not invent a second semantic language.
 
-Holmes should mature as an assurance layer over Wesley-published evidence. It
-may validate, judge, report, publish, and audit that evidence. It must not
-reinterpret GraphQL shape, mutate law, rebind law, invent semantic diffs, or
-become the source of truth for contract bundles.
+Holmes may validate, judge, report, publish, and audit independently owned
+evidence. It must not reinterpret GraphQL shape, become an application-language
+compiler, or become the source of truth for target semantics.
 
 Durable design evidence:
 
 - [0018 Holmes Assurance Hexagon](./design/0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md)
-- [0019 `weslaw` Semantic Law IR](./design/0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md)
-- [0020 Holmes `weslaw` Assurance PRD And Test Plan](./design/0020-holmes-weslaw-assurance-prd-test-plan/holmes-weslaw-assurance-prd-test-plan.md)
+- [0023 Remove Weslaw](./design/0023-remove-weslaw/SOURCE_remove-weslaw.md)
 
 ### 6. Sibling Repo Boundaries
 
@@ -99,8 +97,8 @@ Durable design evidence:
 - Edict owns Edict language/Core IR/canonicalization/target-profile ABI.
 - Echo owns Echo target semantics.
 - Continuum owns participant protocol and admission.
-- Wesley owns GraphQL and `weslaw` source-profile adapters plus compiler
-  evidence integration.
+- Wesley owns GraphQL structural compilation plus generic compiler evidence
+  integration.
 
 Wesley should coordinate through generic module seams, contract artifacts, hashes,
 and evidence, not by absorbing sibling runtime semantics.
@@ -139,9 +137,8 @@ issues. The release policy and checklist remain the operational source:
 - **External Module Gap**: The domain-empty boundary is named; the module seam
   still needs hermetic target-dispatch fixtures, runtime boundary evidence, and
   artifact evidence before external modules can consume it cleanly.
-- **Law Versus Runtime Meaning**: `weslaw` lets Wesley preserve and reason about
-  semantic law. Target meaning and runtime behavior still belong to owning
-  modules and sibling repos.
+- **Semantic Ownership**: Edict owns executable language semantics. Target
+  meaning and runtime behavior belong to owning modules and sibling repos.
 
 ## Durable Closeouts
 
@@ -159,7 +156,8 @@ and GitHub milestones for exact ordering. Product gravity remains:
 
 1. keep the Rust-native compiler and project-manifest platform boring and
    reproducible,
-2. harden the `v0.3.0` evidence truth around Holmes and `weslaw`,
+2. harden the `v0.3.0` evidence truth without coupling compiler evidence to
+   application semantics,
 3. preserve the domain-empty module boundary while external targets consume
    Wesley artifacts, and
 4. cut future releases only from tagged `main` once release-gate issues are

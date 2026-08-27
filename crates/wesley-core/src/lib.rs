@@ -26,7 +26,6 @@ pub use domain::capability::*;
 pub use domain::error::*;
 pub use domain::extension_generation::*;
 pub use domain::ir::*;
-pub use domain::law::*;
 pub use domain::operation::*;
 pub use domain::operation_artifact::*;
 pub use domain::project_manifest::*;

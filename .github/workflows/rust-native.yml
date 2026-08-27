@@ -21,7 +21,6 @@ on:
       - 'schemas/**'
       - 'test/fixtures/extension-generation/**'
       - 'test/fixtures/ir-parity/**'
-      - 'test/fixtures/weslaw/**'
       - 'xtask/**'
   push:
     branches:
@@ -42,7 +41,6 @@ on:
       - 'schemas/**'
       - 'test/fixtures/extension-generation/**'
       - 'test/fixtures/ir-parity/**'
-      - 'test/fixtures/weslaw/**'
       - 'xtask/**'
 
 jobs:

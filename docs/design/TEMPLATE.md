@@ -108,7 +108,7 @@ workaround.
 
 Good:
 
-- "`holmes weslaw assess` exits 0 when an expired suppression overrides a
+- "`holmes assess` exits 0 when an expired suppression overrides a
   non-overridable gate, silently passing a required check."
 
 Bad:
@@ -131,14 +131,14 @@ Non-goals prevent the design from silently expanding while the PR is in flight.
 
 ## Compiler / CLI Contract
 
-Required for new or changed CLI commands, emitter outputs, `weslaw` artifact
-formats, or Wesley crate APIs.
+Required for new or changed CLI commands, emitter outputs, artifact formats,
+or Wesley crate APIs.
 
 Name the software contract and include only relevant subsections:
 
 - exported Rust types, traits, or enums
 - CLI subcommands, flags, and exit codes
-- artifact schema fields (`weslaw/v1`, `wesley.law-diff/v1`, etc.)
+- artifact schema fields and versioned envelopes
 - emitted metadata fields
 - state transitions or validation gate outcomes
 - error behavior and diagnostic codes
@@ -165,8 +165,8 @@ flows.
 
 ## Security / Trust Boundary
 
-Required for module WASM execution, `weslaw` or contract bundle ingestion,
-filesystem or network surfaces, or user-provided content.
+Required for module WASM execution, artifact ingestion, filesystem or network
+surfaces, or user-provided content.
 
 Describe:
 
@@ -325,8 +325,8 @@ Describe what a reviewer can run or inspect.
 Examples:
 
 ```bash
-cargo test -p wesley-holmes -- law_assurance
-wesley law validate --bundle fixtures/clean-bundle.json --json
+cargo test -p wesley-core -- extension_generation
+wesley schema lower --schema fixtures/schema.graphql --json
 ```
 
 If there is a structured JSON output, include the expected shape or a fixture

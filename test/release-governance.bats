@@ -61,33 +61,8 @@ load 'vendor/bats-plugins/bats-assert/load'
   done
 }
 
-@test "release profile names unpublished Holmes as a required version source" {
-  run grep -F "path: crates/wesley-holmes/Cargo.toml" .continuum/release.yml
-  assert_success
-
-  run grep -F "name: wesley-holmes" .continuum/release.yml
-  assert_success
-
-  run bash -lc "awk '
-    /path: crates\\/wesley-holmes\\/Cargo.toml/ { in_block=1 }
-    in_block && /^[[:space:]]*required:[[:space:]]*true$/ { required=1 }
-    in_block && /^[[:space:]]*published:[[:space:]]*false$/ { published=1 }
-    in_block && /^[[:space:]]*-[[:space:]]*path:/ && \$0 !~ /wesley-holmes/ { in_block=0 }
-    END { exit !(required && published) }
-  ' .continuum/release.yml"
-  assert_success
-}
-
-@test "release policy names unpublished Holmes as a version source" {
-  run grep -F "crates/wesley-holmes/Cargo.toml" docs/governance/RELEASE_POLICY.md
-  assert_success
-}
-
 @test "release profile assertions are YAML spacing tolerant" {
   run bash -lc "awk '/@test \"release profile names every published Wesley crate\"/{in_test=1} in_test && /^@test / && !/release profile names every published Wesley crate/{exit} in_test {print}' test/release-governance.bats | grep -F 'grep -Eq'"
-  assert_success
-
-  run bash -lc "awk '/@test \"release profile names unpublished Holmes as a required version source\"/{in_test=1} in_test && /^@test / && !/release profile names unpublished Holmes as a required version source/{exit} in_test {print}' test/release-governance.bats | grep -F 'required=1'"
   assert_success
 }
 

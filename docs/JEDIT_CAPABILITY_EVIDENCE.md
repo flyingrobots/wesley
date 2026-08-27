@@ -58,12 +58,7 @@ The invariant remains Wesley's normal compiler boundary:
   bindings when the schema contains root `Query`, `Mutation`, or `Subscription`
   fields.
 - `--metadata-out <path>` on emit commands writes a deterministic JSON sidecar
-  recording schema, law, profile, bundle, generator, generator-version, and
-  execution-mode identity.
-- `emit_rust_with_operations_and_hashes` embeds `WESLEY_SCHEMA_HASH` and
-  `WESLAW_HASH` provenance constants directly in generated Rust output.
-- `emit_rust_with_operations_and_law` generates law-backed scalar and variant
-  validator types from `LawIrV1` into Rust output.
+  recording schema, generator, generator-version, and execution-mode identity.
 - `emit_le_binary_typescript` generates a little-endian binary encode/decode
   codec for operation variable types, exposed as
   `wesley emit le-binary-typescript`.
@@ -78,8 +73,7 @@ The real jedit contract is more than a data model. Its root `Query` and
 types, and generic directive data.
 
 Wesley has a generic operation catalog for those root fields and projects that
-catalog into Rust and TypeScript operation bindings. Law-backed validators can
-be co-emitted when a `weslaw/v1` file is supplied.
+catalog into Rust and TypeScript operation bindings.
 
 Echo-specific footprint honesty remains external to Wesley core. Wesley
 preserves `@wes_footprint` as generic directive JSON for Echo-owned tooling to
@@ -102,5 +96,3 @@ The generated bindings connect:
 - operation kind, field name, argument object type, result type
 - preserved directive metadata for downstream Echo-owned tooling
 - LE binary encode/decode for operation variable wire serialization
-- `WESLEY_SCHEMA_HASH` and `WESLAW_HASH` provenance anchors in generated Rust
-- law-backed scalar and variant validators when a `weslaw/v1` file is supplied

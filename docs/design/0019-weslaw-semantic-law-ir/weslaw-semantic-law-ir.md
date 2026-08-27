@@ -2,22 +2,26 @@
 title: weslaw Semantic Law IR
 legend: OWN
 packet: 0019-weslaw-semantic-law-ir
-status: active
+status: superseded
 release: v0.0.8
 ---
 
 # weslaw Semantic Law IR
 
+> [!IMPORTANT]
+> This packet is historical. Design packet
+> [0023](../0023-remove-weslaw/SOURCE_remove-weslaw.md) removed Weslaw and its
+> Law IR from Wesley. Nothing below describes a supported product surface.
+
 ## Status
 
-Active design packet.
+Superseded design packet.
 
 Decision posture:
 
 ```text
-ACCEPT:  weslaw as Wesley's semantic law layer.
-ENHANCE: the v1 specification before implementation.
-DEFER:   Wesley SDL+ until Law IR is stable, boring, and useful.
+RETIRED: weslaw as Wesley's semantic law layer.
+RETAIN:  this packet as architecture archaeology.
 ```
 
 ## Question
@@ -136,7 +140,7 @@ specs and fixtures:
 - [Canonicalization And Diagnostics](./CANONICALIZATION_AND_DIAGNOSTICS.md)
   defines canonical byte rules, hash inputs, active versus draft semantics, and
   the v1 diagnostic catalog.
-- [weslaw fixtures](../../../test/fixtures/weslaw/README.md) define accepted
+- the now-removed historical fixture corpus defined accepted
   and rejected substrate examples for scalar, variant, footprint, channel, and
   invariant law.
 

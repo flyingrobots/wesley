@@ -70,8 +70,7 @@ not active Wesley release commitments.
 
 The active design direction is now:
 
-- [Holmes Assurance Hexagon](./design/0018-holmes-assurance-hexagon/holmes-assurance-hexagon.md)
-- [`weslaw` Semantic Law IR](./design/0019-weslaw-semantic-law-ir/weslaw-semantic-law-ir.md)
+- [Remove Weslaw](./design/0023-remove-weslaw/SOURCE_remove-weslaw.md)
 
 The repo already has the important generic building blocks around that
 direction:
