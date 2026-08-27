@@ -61,7 +61,6 @@ docs:
     - docs/ENTRYPOINTS.md
   architecture:
     - docs/ARCHITECTURE.md
-    - docs/TECHNICAL_TEARDOWN.md
   user_docs:
     - docs/GUIDE.md
     - docs/site/

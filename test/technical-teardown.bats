@@ -11,18 +11,29 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_failure
 }
 
-@test "technical teardown is release-scoped, not architecture authority" {
-  run grep -F "Status: release-scoped orientation snapshot." docs/TECHNICAL_TEARDOWN.md
+@test "technical teardown is historical, not architecture authority" {
+  run grep -F 'Status: historical `v0.2.0` release snapshot.' docs/TECHNICAL_TEARDOWN.md
   assert_success
 
-  run grep -F "not the authoritative architecture map" docs/TECHNICAL_TEARDOWN.md
+  run grep -F "retained here only as release archaeology" docs/TECHNICAL_TEARDOWN.md
   assert_success
 
   run grep -F "[ARCHITECTURE.md](./ARCHITECTURE.md)" docs/TECHNICAL_TEARDOWN.md
   assert_success
 
+  run grep -F "[END_TO_END.md](./END_TO_END.md)" docs/TECHNICAL_TEARDOWN.md
+  assert_success
+
   run grep -F "[BEARING.md](./BEARING.md)" docs/TECHNICAL_TEARDOWN.md
   assert_success
+}
+
+@test "historical technical teardown is excluded from release enforcement" {
+  run grep -F "docs/TECHNICAL_TEARDOWN.md" .continuum/release.yml
+  assert_failure
+
+  run rg -n "check_technical_teardown_version|TECHNICAL_TEARDOWN version" xtask/src/main.rs
+  assert_failure
 }
 
 @test "technical teardown does not carry stale pre-merge release blockers" {

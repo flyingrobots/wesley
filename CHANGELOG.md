@@ -20,6 +20,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   the Weslaw-specific Rust Holmes foundation, and their schemas and fixtures.
   Executable semantics belong to Edict; target and runtime semantics belong to
   their owning adapters rather than generic Wesley.
+- Retired `docs/TECHNICAL_TEARDOWN.md` from the release profile and executable
+  release guard after freezing it as historical `v0.2.0` archaeology. Current
+  releases use the architecture, bearing, front-door, topic, and versioned
+  release documents as live signposts.
 
 ## [0.3.0-alpha.1] - 2026-07-15
 

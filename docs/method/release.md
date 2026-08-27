@@ -230,7 +230,6 @@ Update every signpost whose truth changed since the previous public tag:
 - `docs/GUIDE.md`
 - `docs/ENTRYPOINTS.md`
 - `docs/ARCHITECTURE.md`
-- `docs/TECHNICAL_TEARDOWN.md`
 - `docs/site/`
 - `docs/topics/`
 - `docs/reference/`

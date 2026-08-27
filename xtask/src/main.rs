@@ -832,7 +832,6 @@ fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     check_release_required_files(&version)?;
     check_release_tracker_clear(tag, &version)?;
     check_readme_version_headline(&version)?;
-    check_technical_teardown_version(&version)?;
     check_no_wip_fixup_commits(tag)?;
     check_breaking_change_version_bump(tag, &version)?;
     check_guide_file_paths_resolve()?;
@@ -1371,49 +1370,10 @@ fn readme_has_exact_version_headline(readme: &str, version: &str) -> bool {
     readme.lines().any(|line| line.trim_end() == expected)
 }
 
-fn teardown_contains_version(content: &str, version: &str) -> bool {
-    let needle = format!("v{version}");
-    let mut search = content;
-    while let Some(pos) = search.find(&needle) {
-        let before = search[..pos].chars().next_back();
-        let after = &search[pos + needle.len()..];
-        if is_release_version_boundary(before) && is_release_version_boundary(after.chars().next())
-        {
-            return true;
-        }
-        search = &search[pos + 1..];
-    }
-    false
-}
-
 fn is_release_version_boundary(ch: Option<char>) -> bool {
     match ch {
         None => true,
         Some(c) => !c.is_ascii_alphanumeric() && c != '.' && c != '-' && c != '+' && c != '_',
-    }
-}
-
-fn check_technical_teardown_version(version: &str) -> Result<(), Error> {
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let teardown_path = root.join("docs/TECHNICAL_TEARDOWN.md");
-    let content = fs::read_to_string(&teardown_path).map_err(|source| Error::CheckFailed {
-        check: "TECHNICAL_TEARDOWN version".to_string(),
-        failures: vec![format!(
-            "docs/TECHNICAL_TEARDOWN.md is missing or unreadable: {source}"
-        )],
-    })?;
-
-    let v_version = format!("v{version}");
-    if teardown_contains_version(&content, version) {
-        Ok(())
-    } else {
-        Err(Error::CheckFailed {
-            check: "TECHNICAL_TEARDOWN version".to_string(),
-            failures: vec![format!(
-                "docs/TECHNICAL_TEARDOWN.md does not reference {v_version}; update it to describe the {v_version} release state"
-            )],
-        })
     }
 }
 
@@ -4387,41 +4347,5 @@ mod tests {
         let tags = vec!["v0.1.0", "v0.0.5", "v0.0.3"];
         assert_eq!(previous_tag_from_sorted_list(&tags, "v0.0.3"), None);
         assert_eq!(previous_tag_from_sorted_list(&tags, "v99.0.0"), None);
-    }
-
-    // --- teardown_contains_version ---
-
-    #[test]
-    fn teardown_version_check_requires_v_prefix_and_rejects_substrings() {
-        // C-1: bare contains(version) would falsely pass "v0.0.50" for version "0.0.5"
-        assert!(!teardown_contains_version(
-            "The doc covers v0.0.50 changes.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "The doc covers v0.0.5-alpha changes.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "The doc covers v0.0.5+build changes.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "The doc covers av0.0.5 token.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "The doc covers v0.0.5_rc token.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "No version mentioned at all.",
-            "0.0.5"
-        ));
-        // Correct case: doc contains v{version} with v prefix
-        assert!(teardown_contains_version(
-            "Released v0.0.5 on June 5.",
-            "0.0.5"
-        ));
     }
 }
