@@ -64,7 +64,7 @@ It can:
 - emit TypeScript declarations and operation bindings through a Rust AST/printer path
 - emit Rust and TypeScript little-endian codec helpers from a shared codec plan
 - write deterministic emit metadata sidecars with schema hash, generator
-  identity, generator version, execution mode, and optional law bundle hashes
+  identity, generator version, and execution mode
 - run narrow Rust-native health checks without inspecting legacy Node config,
   plugins, or package state
 - resolve GraphQL operation selection paths
@@ -85,8 +85,8 @@ wesley schema diff --old <path> --new <path> [--format text|json|summary] [--exi
 wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--exit-code]
 wesley emit rust --schema <path> --out <path> [--metadata-out <path>]
 wesley emit typescript --schema <path> --out <path> [--metadata-out <path>]
-wesley emit le-binary-rust --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
-wesley emit le-binary-typescript --schema <path> --out <path> [--law <path>] [--metadata-out <path>] [--codec-import <path>]
+wesley emit le-binary-rust --schema <path> --out <path> [--metadata-out <path>] [--codec-import <path>]
+wesley emit le-binary-typescript --schema <path> --out <path> [--metadata-out <path>] [--codec-import <path>]
 wesley operation selections --operation <path> [--schema <path>] [--json]
 wesley operation directive-args --operation <path> --directive <name> --json
 ```

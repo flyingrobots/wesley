@@ -326,7 +326,7 @@ Examples:
 
 ```bash
 cargo test -p wesley-core -- extension_generation
-wesley schema validate --schema fixtures/schema.graphql --json
+wesley schema lower --schema fixtures/schema.graphql --json
 ```
 
 If there is a structured JSON output, include the expected shape or a fixture
