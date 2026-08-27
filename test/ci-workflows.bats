@@ -60,11 +60,11 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 2 ]
 
-  run bash -lc "grep -F 'pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271' .github/workflows/rust-native.yml | wc -l"
+  run bash -lc "grep -F 'pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86' .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -F 'actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e' .github/workflows/rust-native.yml | wc -l"
+  run bash -lc "grep -F 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020' .github/workflows/rust-native.yml | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
@@ -77,11 +77,11 @@ load 'vendor/bats-plugins/bats-assert/load'
 }
 
 @test "release crates provisions pnpm before preflight-backed commands" {
-  run bash -lc "grep -F 'pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271' .github/workflows/release-crates.yml | wc -l"
+  run bash -lc "grep -F 'pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86' .github/workflows/release-crates.yml | wc -l"
   assert_success
   [ "$output" -eq 2 ]
 
-  run bash -lc "grep -F 'actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e' .github/workflows/release-crates.yml | wc -l"
+  run bash -lc "grep -F 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020' .github/workflows/release-crates.yml | wc -l"
   assert_success
   [ "$output" -eq 2 ]
 
@@ -585,7 +585,7 @@ load 'vendor/bats-plugins/bats-assert/load'
 }
 
 @test "wesley-holmes workflow builds PR comments via the Holmes comment builder" {
-  run bash -lc "grep -A80 '^  comment-report:' .github/workflows/wesley-holmes.yml | grep -F 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' | wc -l"
+  run bash -lc "grep -A80 '^  comment-report:' .github/workflows/wesley-holmes.yml | grep -F 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
