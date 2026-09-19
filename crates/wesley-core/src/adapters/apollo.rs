@@ -14,8 +14,10 @@ use crate::domain::operation_artifact::{
     OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
+#[cfg(feature = "resilience")]
 use crate::ports::lowering::LoweringPort;
 use apollo_parser::{cst, Error as ApolloParserError, Parser};
+#[cfg(feature = "resilience")]
 use async_trait::async_trait;
 use indexmap::IndexMap;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -34,6 +36,7 @@ impl ApolloLoweringAdapter {
     }
 }
 
+#[cfg(feature = "resilience")]
 #[async_trait]
 impl LoweringPort for ApolloLoweringAdapter {
     async fn lower_sdl(&self, sdl: &str) -> Result<WesleyIR, WesleyError> {

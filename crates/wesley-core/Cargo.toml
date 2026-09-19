@@ -11,6 +11,14 @@ documentation = "https://docs.rs/wesley-core"
 keywords = ["graphql", "compiler", "schema", "ir"]
 categories = ["compilers", "parser-implementations"]
 
+[features]
+default = ["resilience"]
+# The async `LoweringPort` and the ninelives-backed `ResilientLoweringPort`.
+# The compiler kernel itself is synchronous and pure: a consumer that only
+# lowers or analyses SDL can set `default-features = false` and omit the async
+# runtime stack entirely. `cargo xtask lean-core-check` holds that line.
+resilience = ["dep:async-trait", "dep:ninelives"]
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
@@ -19,14 +27,20 @@ hex = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 indexmap = { version = "2.0", features = ["serde"] }
-async-trait = "0.1"
+async-trait = { version = "0.1", optional = true }
 apollo-parser = "0.8"
-ninelives = { version = "0.2" }
-tower = { version = "0.4", features = ["util"] }
-tokio = { version = "1", features = ["full"] }
+ninelives = { version = "0.2", optional = true }
 yaml-rust2 = { version = "0.11", default-features = false }
 
 [dev-dependencies]
 jsonschema = { version = "0.47", default-features = false }
 pretty_assertions = "1.4"
 tokio = { version = "1", features = ["full", "test-util"] }
+
+[[test]]
+name = "lowering_validation"
+required-features = ["resilience"]
+
+[[test]]
+name = "resilience_policy"
+required-features = ["resilience"]

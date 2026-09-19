@@ -8,6 +8,7 @@
 pub mod adapters;
 pub mod domain;
 pub mod ports;
+#[cfg(feature = "resilience")]
 pub mod resilience;
 
 #[deprecated(since = "0.1.1", note = "use compile_operation_artifact")]
@@ -31,5 +32,7 @@ pub use domain::operation::*;
 pub use domain::operation_artifact::*;
 pub use domain::project_manifest::*;
 pub use domain::schema_delta::*;
+#[cfg(feature = "resilience")]
 pub use ports::lowering::*;
+#[cfg(feature = "resilience")]
 pub use resilience::*;
