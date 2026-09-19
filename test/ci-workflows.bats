@@ -661,18 +661,36 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   run bash -lc "grep -c 'contents: write' $autotag_workflow"
   assert_success
   [ "$output" -eq 1 ]
+
+  # A job-level block sets every unlisted permission to none. The guards list
+  # issues and workflow runs, so the job must be able to read both.
+  run bash -lc "awk '/^  autotag:/{j=1} j&&/^    permissions:/{f=1;next} f&&/^    [a-z]/{exit} f' $autotag_workflow"
+  assert_success
+  assert_output --partial "issues: read"
+  assert_output --partial "actions: read"
+  assert_output --partial "pull-requests: read"
 }
 
 @test "release autotag creates an annotated tag and never forces or moves one" {
-  run bash -lc "grep -F 'git tag -a \"\$tag\" -m \"release: \$tag\"' $autotag_workflow | wc -l"
+  run bash -lc "grep -F 'git tag -a \"\${tag}\" -m \"release: \${tag}\"' $autotag_workflow | wc -l"
   assert_success
   [ "$output" -eq 1 ]
 
-  run bash -lc "grep -nE 'git tag .*(-f|--force)|git push .*(-f|--force|\\+refs)|git tag -d|push --delete|:refs/tags' $autotag_workflow || true"
+  run bash -lc "grep -nE 'git tag .*(-f|--force)|git push .*(-f |--force|\\+refs)|git tag -d|push --delete|\" *:refs/tags' $autotag_workflow || true"
   assert_success
   [ -z "$output" ]
+}
 
-  run bash -lc "grep -F 'git push origin \"refs/tags/\$tag\"' $autotag_workflow | wc -l"
+@test "release autotag pushes its tag atomically, only while main is still the release commit" {
+  # The gates take minutes. Pushing the release commit to main in the same
+  # atomic push is a no-op while main has not moved, and a rejected
+  # non-fast-forward, which takes the tag down with it, once it has.
+  run bash -lc "grep -F 'git push --atomic origin \"\${sha}:refs/heads/main\" \"refs/tags/\${tag}\"' $autotag_workflow | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  # That is the only push in the workflow.
+  run bash -lc "grep -c 'git push' $autotag_workflow"
   assert_success
   [ "$output" -eq 1 ]
 }
@@ -695,19 +713,37 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   [ -z "$output" ]
 }
 
-@test "release autotag runs the pre-tag release gates before it tags, and only for a release-prep merge" {
-  local guard preflight tag
-  guard="$(grep -n 'cargo xtask release-prep-guard --version' "$autotag_workflow" | head -1 | cut -d: -f1)"
-  preflight="$(grep -n 'cargo xtask preflight' "$autotag_workflow" | head -1 | cut -d: -f1)"
+@test "release autotag runs the full release guard on a local tag before anything is pushed" {
+  # A pushed tag is immutable. If release-guard would reject it, the version is
+  # burned, so the guard must pass against a local tag first.
+  local prep tag guard push
+  prep="$(grep -n 'cargo xtask release-prep-guard --version' "$autotag_workflow" | head -1 | cut -d: -f1)"
   tag="$(grep -n 'git tag -a' "$autotag_workflow" | head -1 | cut -d: -f1)"
-  [ -n "$guard" ] && [ -n "$preflight" ] && [ -n "$tag" ]
-  [ "$guard" -lt "$tag" ]
-  [ "$preflight" -lt "$tag" ]
+  guard="$(grep -n 'cargo xtask release-guard --tag' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  push="$(grep -n 'git push --atomic' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  [ -n "$prep" ] && [ -n "$tag" ] && [ -n "$guard" ] && [ -n "$push" ]
+  [ "$prep" -lt "$tag" ]
+  [ "$tag" -lt "$guard" ]
+  [ "$guard" -lt "$push" ]
 
   # Every step after the plan is conditional on the plan saying "tag".
   run bash -lc "grep -c \"if: steps.plan.outputs.decision == 'tag'\" $autotag_workflow"
   assert_success
-  [ "$output" -ge 4 ]
+  [ "$output" -ge 6 ]
+}
+
+@test "release autotag waits, with a deadline, for the other CI runs on the release commit" {
+  # release-guard requires every other run on HEAD to be complete and green, and
+  # they start at the same moment this workflow does.
+  local wait guard
+  wait="$(grep -n 'gh run list --commit' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  guard="$(grep -n 'cargo xtask release-guard --tag' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  [ -n "$wait" ] && [ -n "$guard" ]
+  [ "$wait" -lt "$guard" ]
+
+  run bash -lc "grep -c 'deadline' $autotag_workflow"
+  assert_success
+  [ "$output" -ge 2 ]
 }
 
 @test "release autotag confirms the commit is still origin/main and prints the publish command" {

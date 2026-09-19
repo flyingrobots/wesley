@@ -39,9 +39,10 @@ places:
 - Release guards query exact-version issue references and `vX.Y.Z` labels, not
   release-gate milestones.
 - Autotag is enabled. When a `release/vX.Y.Z` prep PR merges,
-  `.github/workflows/release-autotag.yml` runs the pre-tag guards and creates
-  an annotated tag at exactly that `main` commit. It never publishes and never
-  moves a tag.
+  `.github/workflows/release-autotag.yml` waits for the commit's other CI runs,
+  runs the full release guard against a local annotated tag, and pushes that tag
+  only if `main` is still the release commit. It never publishes and never moves
+  a tag.
 - An autotagged tag is unsigned. Its provenance is the autotag workflow run, not
   a maintainer's key. A manually created fallback tag is signed.
 - Publication runs `.github/workflows/release-crates.yml` from the tag. A tag

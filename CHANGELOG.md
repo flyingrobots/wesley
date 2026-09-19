@@ -9,9 +9,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 
 - Added `.github/workflows/release-autotag.yml`, following the Continuum release
-  runbook. When a `release/vX.Y.Z` prep PR merges to `main`, it runs
-  `release-prep-guard` and `preflight` and creates an annotated `vX.Y.Z` tag at
-  exactly that commit. It never publishes and never moves a tag. The decision is
+  runbook. When a `release/vX.Y.Z` prep PR merges to `main`, it waits for the
+  commit's other CI runs, runs `release-prep-guard`, runs the full
+  `release-guard` against a local annotated `vX.Y.Z` tag, and pushes that tag
+  only if `main` is still the release commit. It never publishes and never moves
+  a tag. The decision is
   `cargo xtask release-autotag-plan`, a pure function that requires the branch,
   the pull request title, and the primary version source to agree.
 - Added a `workflow_dispatch` trigger to `release-crates.yml`, refused unless

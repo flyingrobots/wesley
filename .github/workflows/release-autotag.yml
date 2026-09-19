@@ -23,10 +23,15 @@ concurrency:
 jobs:
   autotag:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The gates wait for this commit's other CI runs, then run the full release
+    # guard, so a release-prep merge can take most of an hour.
+    timeout-minutes: 90
     permissions:
-      contents: write
-      pull-requests: read
+      # A job-level block sets every unlisted permission to none.
+      contents: write # push the tag
+      pull-requests: read # find the merged pull request for the commit
+      issues: read # release guards list open issues for the version
+      actions: read # release guard reads this commit's other CI runs
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920
@@ -86,6 +91,35 @@ jobs:
             exit 1
           fi
 
+      # release-guard requires every other run on HEAD to be complete and green,
+      # and those runs started at the same moment this one did.
+      - name: Wait for the other CI runs on this commit
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          deadline=$((SECONDS + 3000))
+          # Give sibling workflows a moment to be created before the first look.
+          sleep 60
+          while :; do
+            pending="$(gh run list --commit "$GITHUB_SHA" --limit 100 --json databaseId,status \
+              --jq "[.[] | select(.databaseId != ${GITHUB_RUN_ID}) | select(.status != \"completed\")] | length")"
+            if [ "$pending" -eq 0 ]; then
+              break
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "$pending CI run(s) on $GITHUB_SHA had not completed by the deadline; not tagging."
+              exit 1
+            fi
+            echo "Waiting for $pending other CI run(s) on $GITHUB_SHA."
+            sleep 30
+          done
+
+      - name: Install cargo-audit
+        if: steps.plan.outputs.decision == 'tag'
+        run: cargo install cargo-audit --locked
+
       - name: Release prep guard
         if: steps.plan.outputs.decision == 'tag'
         env:
@@ -96,21 +130,36 @@ jobs:
           tag="$AUTOTAG_TAG"
           cargo xtask release-prep-guard --version "${tag#v}"
 
-      - name: Final preflight from the release commit
-        if: steps.plan.outputs.decision == 'tag'
-        run: cargo xtask preflight
-
-      - name: Create the annotated release tag
+      # A pushed tag is immutable. The full release guard, which the publish
+      # workflow runs again, must pass against a local tag before anything is
+      # pushed; otherwise a tag the guard rejects would burn the version.
+      - name: Create the annotated tag locally and run the full release guard
         if: steps.plan.outputs.decision == 'tag'
         env:
+          GH_TOKEN: ${{ github.token }}
           AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
         run: |
           set -euo pipefail
           tag="$AUTOTAG_TAG"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$tag" -m "release: $tag"
-          git push origin "refs/tags/$tag"
+          git tag -a "${tag}" -m "release: ${tag}"
+          git fetch origin main --prune
+          cargo xtask release-guard --tag "${tag}"
+
+      # The gates above take minutes, so main may have moved. Pushing the release
+      # commit to main in the same atomic push sends nothing for main while main
+      # has not moved. Once it has, that ref is a rejected non-fast-forward and
+      # the atomic push takes the tag down with it. Nothing is ever forced.
+      - name: Push the tag, only while main is still the release commit
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$AUTOTAG_TAG"
+          sha="$(git rev-parse HEAD)"
+          git push --atomic origin "${sha}:refs/heads/main" "refs/tags/${tag}"
 
       - name: Print the publish command
         if: steps.plan.outputs.decision == 'tag'
@@ -122,6 +171,7 @@ jobs:
           {
             echo "## Tagged \`$tag\`"
             echo
+            echo "The full release guard passed against this tag before it was pushed."
             echo "Publish from the tag:"
             echo
             echo '```bash'

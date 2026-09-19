@@ -256,9 +256,30 @@ git commit -m "chore(release): vX.Y.Z-alpha.1"
 
 ### Phase 6: Tag, Delivery, Release, And Monitoring
 
-1. Autotag creates exactly one annotated tag on the synced `main` commit when
-   the release-prep PR merges, and prints the publish command. If autotag
-   cannot run, create exactly one signed tag by hand:
+There are two ways to reach a published tag. Use the autotag path. Use the
+manual fallback only when autotag cannot run, and never to bypass a failed gate.
+
+**Autotag path.** Merging the release-prep PR starts
+`.github/workflows/release-autotag.yml`. It waits for the other CI runs on the
+release commit, runs `release-prep-guard`, creates the annotated tag locally,
+runs the full `release-guard` against that local tag, and pushes the tag only
+if `main` is still the release commit. Nothing is pushed unless the full guard
+has passed.
+
+1. Wait for the autotag run to finish, and read its summary.
+2. Verify the tag points at the synced `main` release commit.
+3. Verify the tag's provenance: the autotag workflow run that created it.
+4. `ABORT` if verification fails.
+5. Publish from the tag. A tag pushed with a workflow's `GITHUB_TOKEN` does not
+   trigger the tag-push workflow, so this dispatch is required:
+
+```bash
+gh workflow run release-crates.yml --ref vX.Y.Z
+```
+
+**Manual fallback.**
+
+1. Create exactly one signed tag on the synced `main` commit:
 
 ```bash
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
@@ -271,12 +292,14 @@ git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
 ```
 
 2. Verify the tag points at the synced `main` commit.
-3. Verify the tag's provenance: for an autotagged release, the autotag workflow
-   run that created it; for a manual tag, its signature.
+3. Verify the tag signature.
 4. `ABORT` if verification fails.
 5. Run `cargo xtask release-guard --tag vX.Y.Z`.
 6. Push the exact release tag only.
 7. Let GitHub Actions run the tag-triggered release workflow.
+
+**Both paths continue:**
+
 8. Create or verify the GitHub Release from the versioned changelog notes.
 9. Monitor every workflow triggered by the release tag.
 10. Do not infer success from queued or in-progress jobs.
