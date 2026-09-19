@@ -174,8 +174,10 @@ time indicate the tag does not represent a clean, reproducible state.
 ### Check 18: Tagged main release boundary
 
 The release tag points at the synced `main` release commit. Autotag creates it
-in CI on the release-prep merge commit and pushes it only while `origin/main`
-is still that commit. A maintainer creating the fallback tag by hand must do so
+in CI on the release-prep merge commit and refuses to push it if `origin/main`
+had already moved past that commit when the push began. That narrows the race
+with a concurrent merge; it does not close it, and the tag stays on the
+release commit either way. A maintainer creating the fallback tag by hand must do so
 from local `main` after fetching `origin/main` and verifying local `HEAD`
 equals `origin/main`, and must sign it. The tag's commit must remain
 reachable from `origin/main` in CI (`git merge-base --is-ancestor`), but

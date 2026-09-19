@@ -41,8 +41,10 @@ places:
 - Autotag is enabled. When a `release/vX.Y.Z` prep PR merges,
   `.github/workflows/release-autotag.yml` waits for the commit's other CI runs,
   runs the full release guard against a local annotated tag, and pushes that tag
-  only if `main` is still the release commit. It never publishes and never moves
-  a tag.
+  together with a check that `main` has not moved past the release commit. The
+  push is refused if `main` had already moved when it began. That narrows the
+  race with a concurrent merge; it does not close it. It never publishes and
+  never moves a tag.
 - An autotagged tag is unsigned. Its provenance is the autotag workflow run, not
   a maintainer's key. A manually created fallback tag is signed.
 - Publication runs `.github/workflows/release-crates.yml` from the tag. A tag

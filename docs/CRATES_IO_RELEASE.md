@@ -266,8 +266,10 @@ manual fallback only when autotag cannot run, and never to bypass a failed gate.
 `.github/workflows/release-autotag.yml`. It waits for the other CI runs on the
 release commit, runs `release-prep-guard` and `release-check`, creates the
 annotated tag locally, runs the full `release-guard` against that local tag,
-and pushes the tag only if `main` is still the release commit. Nothing is pushed unless the full guard
-has passed.
+and pushes the tag together with a check that `main` has not moved past the
+release commit. The push is refused if `main` had already moved when it began;
+that narrows the race with a concurrent merge but does not close it. Nothing is
+pushed unless the full guard has passed.
 
 1. Wait for the autotag run to finish, and read its summary.
 2. Verify the tag points at the synced `main` release commit.

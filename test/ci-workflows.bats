@@ -681,7 +681,7 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   [ -z "$output" ]
 }
 
-@test "release autotag pushes its tag atomically, only while main is still the release commit" {
+@test "release autotag pushes its tag atomically, with a check that main had not already moved" {
   # The gates take minutes. Naming the release commit for main in the same
   # atomic push is a no-op while main has not moved, and a refused
   # non-fast-forward, which takes the tag down with it, once it has. It narrows

@@ -55,8 +55,8 @@ BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
 - The release autotag workflow runs on pushes to `main`. It tags only a merged
   `release/vX.Y.Z` PR whose title and primary version source name the same
   version. It waits for the commit's other CI runs, runs the full
-  `release-guard` against a local tag, pushes the tag only if `main` has not
-  moved, and never publishes. A rerun skips when the annotated tag is already
+  `release-guard` against a local tag, refuses to push the tag if `main` had
+  already moved when the push began, and never publishes. A rerun skips when the annotated tag is already
   on the release commit; a tag on another commit, or a lightweight tag, fails
   the run. Its tag does not trigger the publish workflow, because GitHub does
   not start workflows from a `GITHUB_TOKEN` push; publish with
