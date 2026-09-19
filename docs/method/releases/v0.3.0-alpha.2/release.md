@@ -22,6 +22,21 @@ behavior, and no emitted artifact.
 - `cargo xtask lean-core-check`, wired into `cargo xtask preflight`.
 - `crates/wesley-core/tests/lean_core.rs`, which runs in both configurations.
 
+## Scope
+
+This release uses the shorter thesis the release policy allows for patch-style
+releases: a recorded reason, validation evidence, post-publication
+verification, and a fallout path. It names no goalposts because it completes
+none; it carries one fix that a downstream consumer is waiting on.
+
+- **Must ship:** the `resilience` feature, the removal of `tower` and the normal
+  `tokio` dependency, and `lean-core-check` in preflight. Without all three the
+  release has no reason to exist.
+- **May slip:** nothing. There is no second item to defer.
+- **Explicitly not included:** turning `resilience` off by default, any further
+  reduction of the remaining 44 crates, and anything else merged to `main` after
+  #804 that is not release prep.
+
 ## Sponsored Users
 
 - A downstream build-time tool that calls only `lower_schema_sdl` and
@@ -55,3 +70,11 @@ The stable `0.3.0` is not claimed.
   `async-trait`, `ninelives`, `tokio`, or `tower`.
 - `cargo xtask release-prep-guard --version 0.3.0-alpha.2` passes.
 - The default-feature public API is unchanged.
+
+## Evidence And Fallout
+
+- Pre-release evidence and the publish verification plan:
+  [`verification.md`](./verification.md).
+- If a published crate is wrong, patch forward with `0.3.0-alpha.3`; do not move
+  the tag. File the defect as a GitHub issue labelled `v0.3.0` and link it from
+  #803.
