@@ -178,7 +178,9 @@ policy has been provided.
     dependencies after dry-run validation.
 
 For Wesley Rust crates, local `path` dependencies are allowed only for sibling
-Wesley crates when paired with an exact matching `version`.
+Wesley crates when paired with an exact requirement on the release version,
+written `version = "=X.Y.Z"`. A bare `"X.Y.Z"` is a caret requirement and is
+refused by `cargo xtask release-prep-guard`.
 
 ### Phase 3: Documentation
 

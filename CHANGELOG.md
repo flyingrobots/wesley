@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- Published crates now pin their sibling crates exactly (`version = "=X.Y.Z"`).
+  The bare requirement used until now is a caret requirement, so an unlocked
+  install of an older pre-release could resolve newer siblings once a later
+  release of the same line was published. `cargo xtask release-prep-guard`
+  refuses any other form. Releases already on crates.io keep their caret
+  requirements; published crates are immutable.
+
 ### Added
 
 - Added `.github/workflows/release-autotag.yml`, following the Continuum release

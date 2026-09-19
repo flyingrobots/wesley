@@ -107,6 +107,11 @@ the same version as the release tag. Today that means every published crate
 manifest, and the private root `package.json`. Workspace members are not
 permitted to drift independently.
 
+A published crate pins each sibling crate exactly, as `version = "=X.Y.Z"`. A
+bare `"X.Y.Z"` is a caret requirement. For a pre-release it admits every later
+release of the same line, so an unlocked install of an older release could
+resolve newer siblings. `cargo xtask release-prep-guard` refuses any other form.
+
 ### Check 6: Changelog
 
 `CHANGELOG.md` must contain a section heading of the form
