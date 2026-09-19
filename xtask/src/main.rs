@@ -1202,6 +1202,39 @@ fn check_root_package_version(root: &Path, version: &str, failures: &mut Vec<Str
     }
 }
 
+const DEPENDENCY_SECTIONS: [&str; 3] = ["dependencies", "dev-dependencies", "build-dependencies"];
+
+/// The dependency sections declared directly in `scope`, which is a manifest or
+/// one `[target.<spec>]` table. `prefix` labels them for reporting.
+fn dependency_sections_of<'a>(
+    scope: &'a toml::Value,
+    prefix: &str,
+) -> Vec<(String, &'a toml::value::Table)> {
+    DEPENDENCY_SECTIONS
+        .iter()
+        .filter_map(|section_name| {
+            let table = scope.get(section_name)?.as_table()?;
+            Some((format!("{prefix}{section_name}"), table))
+        })
+        .collect()
+}
+
+/// Every dependency table a manifest can declare, with the label used to report
+/// it: the three top-level sections, and the same three under each
+/// `[target.<spec>]`.
+fn dependency_tables(manifest: &toml::Value) -> Vec<(String, &toml::value::Table)> {
+    let mut tables = dependency_sections_of(manifest, "");
+    if let Some(targets) = manifest.get("target").and_then(toml::Value::as_table) {
+        for (target_spec, target) in targets {
+            tables.extend(dependency_sections_of(
+                target,
+                &format!("target.{target_spec}."),
+            ));
+        }
+    }
+    tables
+}
+
 fn check_dependency_hygiene(
     publish_crate: &PublishCrate,
     manifest: &toml::Value,
@@ -1214,13 +1247,15 @@ fn check_dependency_hygiene(
     // admits every later `X.Y` release, and an unlocked install of an older
     // release would then resolve newer siblings.
     let sibling_requirement = format!("={version}");
-    for section_name in ["dependencies", "dev-dependencies", "build-dependencies"] {
-        let Some(dependencies) = manifest.get(section_name).and_then(toml::Value::as_table) else {
-            continue;
-        };
-
+    for (section_name, dependencies) in dependency_tables(manifest) {
         for (dependency_name, dependency) in dependencies {
-            let is_sibling = publish_crate_names.contains(&dependency_name.as_str());
+            // A dependency's key may be an alias; `package` names the crate
+            // Cargo resolves, so sibling identity comes from there.
+            let package_name = dependency
+                .get("package")
+                .and_then(toml::Value::as_str)
+                .unwrap_or(dependency_name);
+            let is_sibling = publish_crate_names.contains(&package_name);
             // Cargo accepts a requirement as a bare string or as the `version`
             // key of a table; both forms are read so neither escapes the check.
             let requirement = dependency
@@ -4507,17 +4542,13 @@ mod tests {
     // --- sibling requirements ---
 
     /// Failures `check_dependency_hygiene` reports for a `wesley-cli` manifest
-    /// whose `wesley-core` requirement is `requirement`.
-    fn sibling_requirement_failures(requirement: &str) -> Vec<String> {
+    /// with this body, when the release version is `1.2.3-alpha.2`.
+    fn dependency_hygiene_failures(manifest: &str) -> Vec<String> {
         let cli = PUBLISH_CRATES
             .iter()
             .find(|publish_crate| publish_crate.name == "wesley-cli")
             .expect("wesley-cli should be a published crate");
-        let manifest: toml::Value = format!(
-            "[dependencies]\nwesley-core = {{ path = \"../wesley-core\", version = \"{requirement}\" }}\n"
-        )
-        .parse()
-        .expect("fixture manifest should parse");
+        let manifest: toml::Value = manifest.parse().expect("fixture manifest should parse");
         let mut failures = Vec::new();
         check_dependency_hygiene(
             cli,
@@ -4527,6 +4558,19 @@ mod tests {
             &mut failures,
         );
         failures
+    }
+
+    /// The same, for a `wesley-core` path dependency with this requirement.
+    fn sibling_requirement_failures(requirement: &str) -> Vec<String> {
+        dependency_hygiene_failures(&format!(
+            "[dependencies]\nwesley-core = {{ path = \"../wesley-core\", version = \"{requirement}\" }}\n"
+        ))
+    }
+
+    fn expects_exact_pin(failures: &[String]) -> bool {
+        failures
+            .iter()
+            .any(|failure| failure.contains("expected `=1.2.3-alpha.2`"))
     }
 
     #[test]
@@ -4590,6 +4634,55 @@ mod tests {
                 .any(|failure| failure.contains("expected `=1.2.3-alpha.2`")),
             "{failures:?}"
         );
+    }
+
+    #[test]
+    fn target_specific_sibling_requirement_is_refused() {
+        for section in ["dependencies", "dev-dependencies", "build-dependencies"] {
+            let failures = dependency_hygiene_failures(&format!(
+                "[target.'cfg(unix)'.{section}]\nwesley-core = {{ path = \"../wesley-core\", version = \"1.2.3-alpha.2\" }}\n"
+            ));
+
+            assert!(expects_exact_pin(&failures), "{section}: {failures:?}");
+        }
+    }
+
+    #[test]
+    fn target_specific_sibling_pinned_exactly_passes() {
+        let failures = dependency_hygiene_failures(
+            "[target.'cfg(unix)'.dependencies]\nwesley-core = { path = \"../wesley-core\", version = \"=1.2.3-alpha.2\" }\n",
+        );
+
+        assert_eq!(failures, Vec::<String>::new());
+    }
+
+    #[test]
+    fn renamed_sibling_requirement_is_refused() {
+        // The key is an alias; `package` names the crate Cargo resolves.
+        let failures = dependency_hygiene_failures(
+            "[dependencies]\ncore = { package = \"wesley-core\", version = \"1.2.3-alpha.2\" }\n",
+        );
+
+        assert!(expects_exact_pin(&failures), "{failures:?}");
+    }
+
+    #[test]
+    fn renamed_sibling_pinned_exactly_passes() {
+        let failures = dependency_hygiene_failures(
+            "[dependencies]\ncore = { package = \"wesley-core\", path = \"../wesley-core\", version = \"=1.2.3-alpha.2\" }\n",
+        );
+
+        assert_eq!(failures, Vec::<String>::new());
+    }
+
+    #[test]
+    fn a_dependency_that_only_shares_a_sibling_alias_is_not_a_sibling() {
+        // `wesley-core` here is an alias for an unrelated registry crate.
+        let failures = dependency_hygiene_failures(
+            "[dependencies]\nwesley-core = { package = \"serde\", version = \"1\" }\n",
+        );
+
+        assert_eq!(failures, Vec::<String>::new());
     }
 
     // --- looks_like_file_path ---
