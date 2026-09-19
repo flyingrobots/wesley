@@ -96,6 +96,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         "bench-ir" => run_bench_ir(&args[1..]),
         "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
+        "lean-core-check" => run_lean_core_check(),
         "package-crates" => run_package_crates(&args[1..]),
         "publish-alpha" => {
             run_publish_crates(&args[1..], Some(ALPHA_VERSION), "publish-alpha", true)
@@ -132,6 +133,7 @@ fn run_preflight() -> Result<(), Error> {
     // Rust-native compiler preflight should not depend on npm registry health.
     run_docs_check()?;
     run_command("cargo", &["test", "--workspace"])?;
+    run_lean_core_check()?;
     run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
 }
 
@@ -3107,6 +3109,68 @@ fn display_path(root: &Path, path: &Path) -> String {
         .replace('\\', "/")
 }
 
+/// Crates a `wesley-core` build without default features must not pull in.
+///
+/// The compiler kernel is synchronous and pure. The async runtime stack belongs
+/// to the optional `resilience` feature, so a consumer that only lowers SDL
+/// does not pay for it.
+const LEAN_CORE_FORBIDDEN_DEPENDENCIES: &[&str] = &["async-trait", "ninelives", "tokio", "tower"];
+
+/// Returns the forbidden crates named in `cargo tree --prefix none` output.
+fn lean_core_forbidden_dependencies(tree: &str) -> Vec<String> {
+    let mut found: Vec<String> = tree
+        .lines()
+        .filter_map(|line| line.split_whitespace().next())
+        .filter(|name| LEAN_CORE_FORBIDDEN_DEPENDENCIES.contains(name))
+        .map(str::to_string)
+        .collect();
+    found.sort();
+    found.dedup();
+    found
+}
+
+/// Proves the compiler kernel builds, passes its tests, and stays free of the
+/// async runtime stack when built without default features.
+fn run_lean_core_check() -> Result<(), Error> {
+    run_command(
+        "cargo",
+        &["test", "-p", "wesley-core", "--no-default-features"],
+    )?;
+
+    let args = [
+        "tree",
+        "-p",
+        "wesley-core",
+        "--no-default-features",
+        "-e",
+        "normal",
+        "--prefix",
+        "none",
+    ];
+    let label = command_label("cargo", &args);
+    println!("xtask: {label}");
+    let output = Command::new("cargo")
+        .args(args)
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+    if !output.status.success() {
+        return Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+
+    let failures = lean_core_forbidden_dependencies(&String::from_utf8_lossy(&output.stdout));
+    if failures.is_empty() {
+        Ok(())
+    } else {
+        Err(Error::CheckFailed {
+            check: "lean wesley-core must not depend on the async runtime stack".to_string(),
+            failures,
+        })
+    }
+}
+
 fn run_command(program: &str, args: &[&str]) -> Result<(), Error> {
     let label = command_label(program, args);
     println!("xtask: {label}");
@@ -3154,6 +3218,7 @@ Commands:
   test              Run Rust workspace tests
   bench-ir          Run advisory Rust-native IR lowering benchmarks
   docs-check        Run Rust-native documentation hygiene checks
+  lean-core-check   Prove wesley-core without default features omits the async stack
   preflight         Run the strict pre-PR/release quality gate
   strict-preflight  Alias for preflight
   package-crates    Check package file sets for the crates.io release set
@@ -3536,6 +3601,35 @@ mod tests {
 
     fn os_args(args: &[&str]) -> Vec<OsString> {
         args.iter().map(OsString::from).collect()
+    }
+
+    #[test]
+    fn lean_core_check_names_each_forbidden_crate_once_in_sorted_order() {
+        let tree = "wesley-core v0.3.0-alpha.2 (/repo/crates/wesley-core)\n\
+                    tokio v1.47.1\n\
+                    serde v1.0.229\n\
+                    tokio v1.47.1 (*)\n\
+                    async-trait v0.1.89 (proc-macro)\n";
+
+        assert_eq!(
+            lean_core_forbidden_dependencies(tree),
+            vec!["async-trait".to_string(), "tokio".to_string()]
+        );
+    }
+
+    #[test]
+    fn lean_core_check_matches_whole_crate_names_only() {
+        let tree =
+            "tokio-util v0.7.16\ntower-layer v0.3.3\nasync-trait-fn v0.1.0\nserde v1.0.229\n";
+
+        assert!(lean_core_forbidden_dependencies(tree).is_empty());
+    }
+
+    #[test]
+    fn lean_core_check_passes_a_tree_without_the_async_stack() {
+        let tree = "wesley-core v0.3.0-alpha.2\napollo-parser v0.8.4\nserde_json v1.0.145\n";
+
+        assert!(lean_core_forbidden_dependencies(tree).is_empty());
     }
 
     #[test]

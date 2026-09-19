@@ -21,6 +21,19 @@ port with `ResilientLoweringPort` and a `ResiliencePolicy`. The wrapper uses
 `ninelives` for Rust-side cooperative timeout policy while leaving ordinary
 deterministic parse and semantic errors as compiler errors.
 
+That wrapper and the async `LoweringPort` it wraps live behind the `resilience`
+feature, which is on by default. The kernel itself — `lower_schema_sdl`,
+`normalize_schema_sdl`, `diff_schema_sdl`, the hashing functions, and operation
+analysis — is synchronous and pure. A consumer that only needs the kernel can
+omit the async runtime stack:
+
+```toml
+wesley-core = { version = "0.3.0-alpha.2", default-features = false }
+```
+
+`cargo xtask lean-core-check` keeps that build free of `async-trait`,
+`ninelives`, `tokio`, and `tower`.
+
 Rust-native module planning can use `ModuleTargetRegistry`,
 `ModuleTargetDescriptor`, `HostCapabilityContract`, `HostFunctionPolicy`,
 `RuntimeResourcePolicy`, and `HermeticCapabilityFixture` to model target
