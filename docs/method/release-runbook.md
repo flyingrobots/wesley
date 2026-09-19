@@ -113,19 +113,41 @@ CI state.
 
 1. Review the final diff.
 2. Stage the release changes.
-3. Create the release commit on a release branch.
-4. Land the release commit through the protected `main` branch.
-5. Sync local main to origin/main after the release commit has landed.
-6. Create the release tag on the synced `main` commit.
-7. Verify the tag points at the release commit and satisfies signing
-   requirements where applicable.
+3. Create the release commit on a `release/vX.Y.Z` branch.
+4. Complete the human sign-off on the release PR. Merging it authorizes the tag.
+5. Land the release commit through the protected `main` branch.
+
+Then follow exactly one of the two tagging paths.
+
+### Autotag path (normal)
+
+6. Watch the `release-autotag` run for the merge commit. It waits for that
+   commit's other CI runs, runs `release-prep-guard`, `release-check`, and the
+   full `release-guard` against a local annotated tag, and pushes the tag only
+   if `main` is still the release commit. Do not create or push a tag by hand
+   while it runs.
+7. If the run fails, no tag exists. Fix the cause on `main` through a new PR;
+   do not fall back to a manual tag to get around a failed guard.
+8. Verify the pushed tag is annotated and points at the release commit.
+9. Dispatch the publish workflow from the tag. A tag pushed with a workflow's
+   `GITHUB_TOKEN` does not start it:
+   `gh workflow run release-crates.yml --ref vX.Y.Z`.
+
+### Manual fallback (only when autotag cannot run)
+
+6. Sync local main to origin/main after the release commit has landed.
+7. Create the signed release tag on the synced `main` commit:
+   `git tag -s vX.Y.Z -m "release: vX.Y.Z"`.
 8. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally.
-9. Push the exact release tag only, for example: `git push origin vX.Y.Z`.
-10. Create the GitHub Release or equivalent forge release using the versioned
-    release notes.
-11. Monitor triggered workflows to completion.
-12. Verify registries directly before claiming publication succeeded.
-13. Record release evidence and retrospective before starting the next planned
+9. Push the exact release tag only: `git push origin vX.Y.Z`. A tag pushed by a
+   maintainer starts the publish workflow; no dispatch is needed.
+
+### Both paths
+
+10. Monitor the publish workflow to completion. It creates the GitHub Release
+    from the versioned changelog section.
+11. Verify registries directly before claiming publication succeeded.
+12. Record release evidence and retrospective before starting the next planned
     release train.
 
 ## Idempotency And Failure Handling
