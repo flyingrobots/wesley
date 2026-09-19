@@ -65,10 +65,23 @@ cargo xtask package-crates --version 0.3.0-alpha.2
 `Cargo.lock`, and reported no vulnerabilities and no warnings. `release-check`
 built and smoked the optimized CLI and packaged every published crate;
 `package-crates` listed the contents of all five. The commit that records this
-evidence changes Markdown only. A later merge from `main` is covered by CI on
-#805 and by the autotag workflow, which reruns `release-prep-guard`,
-`release-check`, and the full `release-guard`, including `cargo audit`, on the
-release commit itself before it creates the tag.
+evidence changes Markdown only.
+
+That evidence is for `85ae3bd3`, not for the release commit. The same seven
+commands must exit 0 on the final synced `main` release commit before
+`v0.3.0-alpha.2` exists, because a failure found after tagging cannot be fixed
+on an immutable tag. Who reruns them depends on what `main` contains at that
+point:
+
+- If the autotag workflow from #807 has landed, it waits for the release
+  commit's CI, which runs `legacy-preflight`, then reruns `release-prep-guard`,
+  `release-check`, and the full `release-guard` on that commit, and creates the
+  tag only if they pass. `release-guard` runs `preflight`, which includes
+  `docs-check`, and `cargo audit`; `release-check` packages every published
+  crate.
+- If it has not, the maintainer reruns all seven by hand on synced `main`
+  before creating the signed tag, as `docs/CRATES_IO_RELEASE.md` Phase 4
+  requires.
 
 `cargo xtask preflight` includes `lean-core-check`, which tests `wesley-core`
 without default features and fails if that build's dependency tree names
@@ -90,7 +103,7 @@ artifact from `lower_schema_sdl` and `compute_registry_hash`.
 
 - #804: all CI checks passed; CodeRabbit and Codex raised no findings.
 - #805: Codex raised three findings on the first pass, two on the second, and
-  four on the third. All nine were checked against the repository and are
+  four on the third, and two on the fourth. All eleven were checked against the repository and are
   addressed on the PR.
 
 ## Publish Verification Plan
