@@ -104,7 +104,11 @@ workflows:
   autotag: .github/workflows/release-autotag.yml
 
 publish:
-  manual_dispatch_required: false
+  # True for the normal path: autotag pushes its tag with GITHUB_TOKEN, which
+  # does not start the publish workflow, so a maintainer dispatches it from the
+  # tag. A tag pushed by hand on the manual fallback starts it without a
+  # dispatch.
+  manual_dispatch_required: true
   github_release: true
   source_ref: 'v{version}'
   registries:

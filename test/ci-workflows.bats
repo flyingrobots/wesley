@@ -772,3 +772,28 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   assert_success
   [ "$output" -ge 1 ]
 }
+
+@test "release autotag gives each pushed commit its own concurrency slot" {
+  # A concurrency group keeps one running and one pending run; a newer pending
+  # run replaces an older one. With one group for every push to main, a burst of
+  # merges could discard the only run that would recognize the release-prep
+  # merge. Keying the group by commit means no run displaces another.
+  run bash -lc "grep -A2 '^concurrency:' $autotag_workflow | grep -Ec 'group: release-autotag-\\$\\{\\{ github\\.sha \\}\\}'"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -A2 '^concurrency:' $autotag_workflow | grep -c 'cancel-in-progress: false'"
+  assert_success
+  [ "$output" -eq 1 ]
+}
+
+@test "release profile records that the autotag path needs a publish dispatch" {
+  # A tag pushed with GITHUB_TOKEN does not start release-crates.yml, so on the
+  # normal path publication does require a manual dispatch. A profile that says
+  # otherwise tells an operator or a tool that the release publishes itself.
+  run grep -E '^  autotag: \.github/workflows/release-autotag\.yml$' .continuum/release.yml
+  assert_success
+
+  run grep -E '^  manual_dispatch_required: true$' .continuum/release.yml
+  assert_success
+}

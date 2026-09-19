@@ -16,8 +16,13 @@ on:
 permissions:
   contents: read
 
+# One slot per pushed commit. A shared group keeps one running and one pending
+# run, and a newer pending run replaces an older one, so a burst of merges could
+# discard the run for the release-prep merge. Two runs for different commits
+# cannot create the same tag: the planner refuses a tag that already exists
+# elsewhere, and the push is atomic.
 concurrency:
-  group: release-autotag
+  group: release-autotag-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
