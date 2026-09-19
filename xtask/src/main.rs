@@ -1209,6 +1209,11 @@ fn check_dependency_hygiene(
     publish_crate_names: &[&str],
     failures: &mut Vec<String>,
 ) {
+    // Published crates are versioned in lockstep, so a sibling is pinned
+    // exactly. A bare `"X.Y.Z"` is a caret requirement: for a pre-release it
+    // admits every later `X.Y` release, and an unlocked install of an older
+    // release would then resolve newer siblings.
+    let sibling_requirement = format!("={version}");
     for section_name in ["dependencies", "dev-dependencies", "build-dependencies"] {
         let Some(dependencies) = manifest.get(section_name).and_then(toml::Value::as_table) else {
             continue;
@@ -1238,7 +1243,7 @@ fn check_dependency_hygiene(
                     .and_then(toml::Value::as_str)
                     .unwrap_or_default();
                 if !publish_crate_names.contains(&dependency_name.as_str())
-                    || dependency_version != version
+                    || dependency_version != sibling_requirement
                 {
                     failures.push(format!(
                         "{} {section_name}.{dependency_name} has registry-incompatible path dependency",
@@ -1252,9 +1257,9 @@ fn check_dependency_hygiene(
                     .get("version")
                     .and_then(toml::Value::as_str)
                     .unwrap_or_default();
-                if dependency_version != version {
+                if dependency_version != sibling_requirement {
                     failures.push(format!(
-                        "{} {section_name}.{dependency_name} version is `{dependency_version}`, expected `{version}`",
+                        "{} {section_name}.{dependency_name} version requirement is `{dependency_version}`, expected `{sibling_requirement}`",
                         publish_crate.path
                     ));
                 }
@@ -4401,7 +4406,7 @@ mod tests {
             let mut dependency_lines = String::new();
             for dependency in publish_crate.dependencies {
                 dependency_lines.push_str(&format!(
-                    "{dependency} = {{ path = \"../{dependency}\", version = \"1.2.3\" }}\n"
+                    "{dependency} = {{ path = \"../{dependency}\", version = \"=1.2.3\" }}\n"
                 ));
             }
             fs::write(
@@ -4469,7 +4474,7 @@ mod tests {
             let mut dependency_lines = String::new();
             for dependency in publish_crate.dependencies {
                 dependency_lines.push_str(&format!(
-                    "{dependency} = {{ path = \"../{dependency}\", version = \"1.2.3\" }}\n"
+                    "{dependency} = {{ path = \"../{dependency}\", version = \"=1.2.3\" }}\n"
                 ));
             }
             fs::write(
@@ -4504,6 +4509,65 @@ mod tests {
         }
 
         fs::remove_dir_all(root).expect("temp root should be removed");
+    }
+
+    // --- sibling requirements ---
+
+    /// Failures `check_dependency_hygiene` reports for a `wesley-cli` manifest
+    /// whose `wesley-core` requirement is `requirement`.
+    fn sibling_requirement_failures(requirement: &str) -> Vec<String> {
+        let cli = PUBLISH_CRATES
+            .iter()
+            .find(|publish_crate| publish_crate.name == "wesley-cli")
+            .expect("wesley-cli should be a published crate");
+        let manifest: toml::Value = format!(
+            "[dependencies]\nwesley-core = {{ path = \"../wesley-core\", version = \"{requirement}\" }}\n"
+        )
+        .parse()
+        .expect("fixture manifest should parse");
+        let mut failures = Vec::new();
+        check_dependency_hygiene(
+            cli,
+            &manifest,
+            "1.2.3-alpha.2",
+            &["wesley-core"],
+            &mut failures,
+        );
+        failures
+    }
+
+    #[test]
+    fn sibling_requirement_pinned_exactly_passes() {
+        assert_eq!(
+            sibling_requirement_failures("=1.2.3-alpha.2"),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn bare_sibling_requirement_is_refused_because_cargo_reads_it_as_caret() {
+        // `"1.2.3-alpha.2"` admits `1.2.3-alpha.3` and `1.2.3`, so an unlocked
+        // install of an older release can resolve newer siblings.
+        let failures = sibling_requirement_failures("1.2.3-alpha.2");
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("expected `=1.2.3-alpha.2`")),
+            "{failures:?}"
+        );
+    }
+
+    #[test]
+    fn caret_sibling_requirement_is_refused() {
+        let failures = sibling_requirement_failures("^1.2.3-alpha.2");
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("expected `=1.2.3-alpha.2`")),
+            "{failures:?}"
+        );
     }
 
     // --- looks_like_file_path ---
