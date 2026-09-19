@@ -682,9 +682,11 @@ autotag_workflow=".github/workflows/release-autotag.yml"
 }
 
 @test "release autotag pushes its tag atomically, only while main is still the release commit" {
-  # The gates take minutes. Pushing the release commit to main in the same
-  # atomic push is a no-op while main has not moved, and a rejected
-  # non-fast-forward, which takes the tag down with it, once it has.
+  # The gates take minutes. Naming the release commit for main in the same
+  # atomic push is a no-op while main has not moved, and a refused
+  # non-fast-forward, which takes the tag down with it, once it has. It narrows
+  # the race from minutes to the push itself; it is not a server-side
+  # compare-and-swap, and the workflow says so.
   run bash -lc "grep -F 'git push --atomic origin \"\${sha}:refs/heads/main\" \"refs/tags/\${tag}\"' $autotag_workflow | wc -l"
   assert_success
   [ "$output" -eq 1 ]
@@ -716,20 +718,22 @@ autotag_workflow=".github/workflows/release-autotag.yml"
 @test "release autotag runs the full release guard on a local tag before anything is pushed" {
   # A pushed tag is immutable. If release-guard would reject it, the version is
   # burned, so the guard must pass against a local tag first.
-  local prep tag guard push
+  local prep check tag guard push
   prep="$(grep -n 'cargo xtask release-prep-guard --version' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  check="$(grep -n 'run: cargo xtask release-check' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  [ -n "$check" ] && [ "$prep" -lt "$check" ]
   tag="$(grep -n 'git tag -a' "$autotag_workflow" | head -1 | cut -d: -f1)"
   guard="$(grep -n 'cargo xtask release-guard --tag' "$autotag_workflow" | head -1 | cut -d: -f1)"
   push="$(grep -n 'git push --atomic' "$autotag_workflow" | head -1 | cut -d: -f1)"
   [ -n "$prep" ] && [ -n "$tag" ] && [ -n "$guard" ] && [ -n "$push" ]
-  [ "$prep" -lt "$tag" ]
+  [ "$check" -lt "$tag" ]
   [ "$tag" -lt "$guard" ]
   [ "$guard" -lt "$push" ]
 
   # Every step after the plan is conditional on the plan saying "tag".
   run bash -lc "grep -c \"if: steps.plan.outputs.decision == 'tag'\" $autotag_workflow"
   assert_success
-  [ "$output" -ge 6 ]
+  [ "$output" -ge 7 ]
 }
 
 @test "release autotag waits, with a deadline, for the other CI runs on the release commit" {

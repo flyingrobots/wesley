@@ -261,9 +261,9 @@ manual fallback only when autotag cannot run, and never to bypass a failed gate.
 
 **Autotag path.** Merging the release-prep PR starts
 `.github/workflows/release-autotag.yml`. It waits for the other CI runs on the
-release commit, runs `release-prep-guard`, creates the annotated tag locally,
-runs the full `release-guard` against that local tag, and pushes the tag only
-if `main` is still the release commit. Nothing is pushed unless the full guard
+release commit, runs `release-prep-guard` and `release-check`, creates the
+annotated tag locally, runs the full `release-guard` against that local tag,
+and pushes the tag only if `main` is still the release commit. Nothing is pushed unless the full guard
 has passed.
 
 1. Wait for the autotag run to finish, and read its summary.

@@ -3128,8 +3128,10 @@ struct AutotagInput<'a> {
     head_branch: Option<&'a str>,
     /// The title of that pull request.
     pr_title: Option<&'a str>,
-    /// Tags that already exist.
-    existing_tags: &'a [&'a str],
+    /// The commit being considered: `HEAD` of the pushed `main`.
+    head_commit: &'a str,
+    /// The commit the expected tag already points at, if that tag exists.
+    existing_tag_commit: Option<&'a str>,
 }
 
 /// Decides whether a push to `main` is a release-prep merge that earns a tag.
@@ -3172,10 +3174,25 @@ fn autotag_decision(input: &AutotagInput<'_>) -> Result<AutotagDecision, Error> 
         });
     }
 
-    if input.existing_tags.contains(&tag.as_str()) {
-        return Ok(AutotagDecision::Skip(format!(
-            "tag `{tag}` already exists and public tags are never moved"
-        )));
+    match input.existing_tag_commit {
+        None => {}
+        // A rerun on the commit that is already tagged: nothing to do.
+        Some(commit) if commit == input.head_commit => {
+            return Ok(AutotagDecision::Skip(format!(
+                "tag `{tag}` already points at this commit"
+            )));
+        }
+        // The version is attached to other source. Public tags are never moved,
+        // so this cannot be repaired here; it must not pass as a green skip.
+        Some(commit) => {
+            return Err(Error::CheckFailed {
+                check: "autotag existing tag".to_string(),
+                failures: vec![format!(
+                    "tag `{tag}` already exists at `{commit}`, not at the release commit `{}`",
+                    input.head_commit
+                )],
+            });
+        }
     }
     Ok(AutotagDecision::Tag(tag))
 }
@@ -3192,6 +3209,24 @@ fn title_names_tag(title: &str, tag: &str) -> bool {
     title
         .split(|ch: char| !is_version_char(ch))
         .any(|word| word.trim_end_matches('.') == tag)
+}
+
+/// The commit a tag points at, or `None` when the tag does not exist.
+fn commit_of_tag(tag: &str) -> Result<Option<String>, Error> {
+    let reference = format!("refs/tags/{tag}^{{commit}}");
+    let args = ["rev-parse", "--verify", "--quiet", reference.as_str()];
+    let label = command_label("git", &args);
+    let output = Command::new("git")
+        .args(args)
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+    // `--verify --quiet` exits 1 with no output when the ref does not exist.
+    if !output.status.success() {
+        return Ok(None);
+    }
+    Ok(Some(
+        String::from_utf8_lossy(&output.stdout).trim().to_string(),
+    ))
 }
 
 /// Prints the autotag decision for the checked-out commit as `key=value` lines
@@ -3220,19 +3255,9 @@ fn run_release_autotag_plan() -> Result<(), Error> {
         )));
     };
 
-    let label = command_label("git", &["tag", "--list"]);
-    let output = Command::new("git")
-        .args(["tag", "--list"])
-        .output()
-        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
-    if !output.status.success() {
-        return Err(Error::CommandFailed {
-            command: label,
-            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
-        });
-    }
-    let tags = String::from_utf8_lossy(&output.stdout);
-    let existing_tags: Vec<&str> = tags.lines().map(str::trim).collect();
+    let head_commit = git_output(&["rev-parse", "HEAD"])?;
+    let expected_tag = format!("v{}", version_from_release_arg(version)?);
+    let existing_tag_commit = commit_of_tag(&expected_tag)?;
 
     let head_branch = env::var("AUTOTAG_HEAD_BRANCH")
         .ok()
@@ -3244,7 +3269,8 @@ fn run_release_autotag_plan() -> Result<(), Error> {
         version,
         head_branch: head_branch.as_deref(),
         pr_title: pr_title.as_deref(),
-        existing_tags: &existing_tags,
+        head_commit: head_commit.trim(),
+        existing_tag_commit: existing_tag_commit.as_deref(),
     })?;
     match decision {
         AutotagDecision::Tag(tag) => println!("decision=tag\ntag={tag}"),
@@ -3748,17 +3774,21 @@ mod tests {
         args.iter().map(OsString::from).collect()
     }
 
+    const AUTOTAG_HEAD: &str = "1111111111111111111111111111111111111111";
+    const AUTOTAG_ELSEWHERE: &str = "2222222222222222222222222222222222222222";
+
     fn autotag_input<'a>(
         version: &'a str,
         head_branch: Option<&'a str>,
         pr_title: Option<&'a str>,
-        existing_tags: &'a [&'a str],
+        existing_tag_commit: Option<&'a str>,
     ) -> AutotagInput<'a> {
         AutotagInput {
             version,
             head_branch,
             pr_title,
-            existing_tags,
+            head_commit: AUTOTAG_HEAD,
+            existing_tag_commit,
         }
     }
 
@@ -3768,7 +3798,7 @@ mod tests {
             "0.3.0-alpha.2",
             Some("release/v0.3.0-alpha.2"),
             Some("chore(release): prepare v0.3.0-alpha.2"),
-            &["v0.2.0", "v0.3.0-alpha.1"],
+            None,
         );
 
         assert_eq!(
@@ -3783,7 +3813,7 @@ mod tests {
             "0.3.0-alpha.2",
             Some("core/803-lean-core-resilience-feature"),
             Some("feat(core): put the async lowering port behind a `resilience` feature"),
-            &["v0.3.0-alpha.1"],
+            None,
         );
 
         assert!(matches!(
@@ -3794,7 +3824,7 @@ mod tests {
 
     #[test]
     fn autotag_skips_a_push_with_no_pull_request() {
-        let input = autotag_input("0.3.0-alpha.2", None, None, &[]);
+        let input = autotag_input("0.3.0-alpha.2", None, None, None);
 
         assert!(matches!(
             autotag_decision(&input).unwrap(),
@@ -3803,18 +3833,32 @@ mod tests {
     }
 
     #[test]
-    fn autotag_never_moves_a_tag_that_already_exists() {
+    fn autotag_skips_a_rerun_when_the_tag_already_points_at_this_commit() {
         let input = autotag_input(
             "0.3.0-alpha.1",
             Some("release/v0.3.0-alpha.1"),
             Some("chore(release): prepare v0.3.0-alpha.1"),
-            &["v0.3.0-alpha.1"],
+            Some(AUTOTAG_HEAD),
         );
 
         assert!(matches!(
             autotag_decision(&input).unwrap(),
-            AutotagDecision::Skip(reason) if reason.contains("already exists")
+            AutotagDecision::Skip(reason) if reason.contains("already points at this commit")
         ));
+    }
+
+    #[test]
+    fn autotag_fails_loudly_when_the_tag_exists_on_another_commit() {
+        // A green skip here would hide that an immutable version is attached to
+        // the wrong source.
+        let input = autotag_input(
+            "0.3.0-alpha.1",
+            Some("release/v0.3.0-alpha.1"),
+            Some("chore(release): prepare v0.3.0-alpha.1"),
+            Some(AUTOTAG_ELSEWHERE),
+        );
+
+        assert!(autotag_decision(&input).is_err());
     }
 
     #[test]
@@ -3823,7 +3867,7 @@ mod tests {
             "0.3.0-alpha.1",
             Some("release/v0.3.0-alpha.2"),
             Some("chore(release): prepare v0.3.0-alpha.2"),
-            &[],
+            None,
         );
 
         assert!(autotag_decision(&input).is_err());
@@ -3835,7 +3879,7 @@ mod tests {
             "0.3.0-alpha.2",
             Some("release/v0.3.0-alpha.2"),
             Some("chore(release): prepare v0.3.0-alpha.3"),
-            &[],
+            None,
         );
 
         assert!(autotag_decision(&input).is_err());
@@ -3847,7 +3891,7 @@ mod tests {
             "0.3.0",
             Some("release/v0.3.0"),
             Some("chore(release): prepare v0.3.0-alpha.2"),
-            &[],
+            None,
         );
 
         assert!(autotag_decision(&input).is_err());
@@ -3859,7 +3903,7 @@ mod tests {
             "0.3.0+build.7",
             Some("release/v0.3.0+build.7"),
             Some("chore(release): prepare v0.3.0+build.7"),
-            &[],
+            None,
         );
 
         assert!(autotag_decision(&input).is_err());

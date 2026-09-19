@@ -130,6 +130,13 @@ jobs:
           tag="$AUTOTAG_TAG"
           cargo xtask release-prep-guard --version "${tag#v}"
 
+      # The publish workflow builds and smoke-tests the optimized release
+      # artifacts only after the tag exists. A failure knowable now must not be
+      # discovered then.
+      - name: Release check
+        if: steps.plan.outputs.decision == 'tag'
+        run: cargo xtask release-check
+
       # A pushed tag is immutable. The full release guard, which the publish
       # workflow runs again, must pass against a local tag before anything is
       # pushed; otherwise a tag the guard rejects would burn the version.
@@ -147,10 +154,20 @@ jobs:
           git fetch origin main --prune
           cargo xtask release-guard --tag "${tag}"
 
-      # The gates above take minutes, so main may have moved. Pushing the release
-      # commit to main in the same atomic push sends nothing for main while main
-      # has not moved. Once it has, that ref is a rejected non-fast-forward and
-      # the atomic push takes the tag down with it. Nothing is ever forced.
+      # The gates above take minutes, so main may have moved. Naming the release
+      # commit for main in the same push makes git compare it with the main the
+      # server advertises at push time: if main has moved, that ref is a
+      # non-fast-forward, the push is refused, and --atomic takes the tag down
+      # with it. Nothing is ever forced.
+      #
+      # This is not a server-side compare-and-swap. When main has not moved git
+      # sends no command for it, so main is not part of the receive transaction,
+      # and a commit landing between the advertisement and the receive, a window
+      # of milliseconds rather than the minutes of the gates, is not caught. Git
+      # has no cross-ref condition and GitHub has no ref lock. The residue is
+      # benign: the tag would still sit on the release-prep merge commit that
+      # passed every guard, and that commit is still on main, which is what
+      # release-guard requires. Only "is the tip of main" would be untrue.
       - name: Push the tag, only while main is still the release commit
         if: steps.plan.outputs.decision == 'tag'
         env:
