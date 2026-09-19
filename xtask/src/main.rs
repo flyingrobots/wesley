@@ -1220,30 +1220,29 @@ fn check_dependency_hygiene(
         };
 
         for (dependency_name, dependency) in dependencies {
-            let Some(dependency_table) = dependency.as_table() else {
-                continue;
-            };
+            let is_sibling = publish_crate_names.contains(&dependency_name.as_str());
+            // Cargo accepts a requirement as a bare string or as the `version`
+            // key of a table; both forms are read so neither escapes the check.
+            let requirement = dependency
+                .as_str()
+                .or_else(|| dependency.get("version").and_then(toml::Value::as_str))
+                .unwrap_or_default();
 
-            if dependency_table.contains_key("git") {
-                failures.push(format!(
-                    "{} {section_name}.{dependency_name} uses a git dependency",
-                    publish_crate.path
-                ));
-            }
-            if dependency_table.contains_key("workspace") {
-                failures.push(format!(
-                    "{} {section_name}.{dependency_name} uses a workspace dependency",
-                    publish_crate.path
-                ));
-            }
-
-            if dependency_table.contains_key("path") {
-                let dependency_version = dependency_table
-                    .get("version")
-                    .and_then(toml::Value::as_str)
-                    .unwrap_or_default();
-                if !publish_crate_names.contains(&dependency_name.as_str())
-                    || dependency_version != sibling_requirement
+            if let Some(dependency_table) = dependency.as_table() {
+                if dependency_table.contains_key("git") {
+                    failures.push(format!(
+                        "{} {section_name}.{dependency_name} uses a git dependency",
+                        publish_crate.path
+                    ));
+                }
+                if dependency_table.contains_key("workspace") {
+                    failures.push(format!(
+                        "{} {section_name}.{dependency_name} uses a workspace dependency",
+                        publish_crate.path
+                    ));
+                }
+                if dependency_table.contains_key("path")
+                    && (!is_sibling || requirement != sibling_requirement)
                 {
                     failures.push(format!(
                         "{} {section_name}.{dependency_name} has registry-incompatible path dependency",
@@ -1252,17 +1251,11 @@ fn check_dependency_hygiene(
                 }
             }
 
-            if publish_crate_names.contains(&dependency_name.as_str()) {
-                let dependency_version = dependency_table
-                    .get("version")
-                    .and_then(toml::Value::as_str)
-                    .unwrap_or_default();
-                if dependency_version != sibling_requirement {
-                    failures.push(format!(
-                        "{} {section_name}.{dependency_name} version requirement is `{dependency_version}`, expected `{sibling_requirement}`",
-                        publish_crate.path
-                    ));
-                }
+            if is_sibling && requirement != sibling_requirement {
+                failures.push(format!(
+                    "{} {section_name}.{dependency_name} version requirement is `{requirement}`, expected `{sibling_requirement}`",
+                    publish_crate.path
+                ));
             }
         }
     }
@@ -4561,6 +4554,35 @@ mod tests {
     #[test]
     fn caret_sibling_requirement_is_refused() {
         let failures = sibling_requirement_failures("^1.2.3-alpha.2");
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("expected `=1.2.3-alpha.2`")),
+            "{failures:?}"
+        );
+    }
+
+    #[test]
+    fn shorthand_sibling_requirement_is_refused_too() {
+        // `wesley-core = "1.2.3-alpha.2"` is valid Cargo and is the same caret
+        // requirement; a check that reads only dependency tables never sees it.
+        let cli = PUBLISH_CRATES
+            .iter()
+            .find(|publish_crate| publish_crate.name == "wesley-cli")
+            .expect("wesley-cli should be a published crate");
+        let manifest: toml::Value = "[dependencies]\nwesley-core = \"1.2.3-alpha.2\"\n"
+            .parse()
+            .expect("fixture manifest should parse");
+        let mut failures = Vec::new();
+
+        check_dependency_hygiene(
+            cli,
+            &manifest,
+            "1.2.3-alpha.2",
+            &["wesley-core"],
+            &mut failures,
+        );
 
         assert!(
             failures
