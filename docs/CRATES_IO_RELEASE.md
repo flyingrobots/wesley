@@ -60,7 +60,7 @@ wesley --help
 
 ## Tagged Main Boundary
 
-The signed tag on synced `main` is the source of truth for a release. Every
+The release tag on synced `main` is the source of truth for a release. Every
 repo-resident fact humans intend to ship with the release must already be on
 `origin/main` before the tag is created: version bumps, changelog entries,
 README copy, release notes, release packets, runbook changes, and any
@@ -256,7 +256,9 @@ git commit -m "chore(release): vX.Y.Z-alpha.1"
 
 ### Phase 6: Tag, Delivery, Release, And Monitoring
 
-1. Create exactly one signed tag on the synced `main` commit:
+1. Autotag creates exactly one annotated tag on the synced `main` commit when
+   the release-prep PR merges, and prints the publish command. If autotag
+   cannot run, create exactly one signed tag by hand:
 
 ```bash
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
@@ -269,7 +271,8 @@ git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
 ```
 
 2. Verify the tag points at the synced `main` commit.
-3. Verify the tag signature.
+3. Verify the tag's provenance: for an autotagged release, the autotag workflow
+   run that created it; for a manual tag, its signature.
 4. `ABORT` if verification fails.
 5. Run `cargo xtask release-guard --tag vX.Y.Z`.
 6. Push the exact release tag only.
@@ -303,7 +306,7 @@ cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask package-crates --version X.Y.Z
 ```
 
-After creating the signed tag, verify the tag-specific guard:
+After the release tag exists, verify the tag-specific guard:
 
 ```bash
 cargo xtask release-guard --tag vX.Y.Z

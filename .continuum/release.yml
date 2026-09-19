@@ -100,8 +100,8 @@ validation:
 
 workflows:
   publish: .github/workflows/release-crates.yml
-  publish_trigger: tag-push
-  autotag: none
+  publish_trigger: tag-push-or-dispatch
+  autotag: .github/workflows/release-autotag.yml
 
 publish:
   manual_dispatch_required: false

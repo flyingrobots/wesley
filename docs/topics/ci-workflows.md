@@ -20,7 +20,8 @@ diff or running focused checks before a PR.
 | Security posture             | Advisory gates, scanner fit, and false positives.  |
 | HOLMES workflow              | Schema-selected assurance reports and PR comments. |
 | SHIPME certificate           | Post-merge evidence for the landed `main` SHA.     |
-| Crates release publishing    | Signed-tag crate publish and GitHub release cut.   |
+| Release autotag              | Annotated tag when a release-prep PR merges.       |
+| Crates release publishing    | Crate publish and GitHub release cut from a tag.   |
 
 ## Local Mirrors
 
@@ -51,6 +52,12 @@ BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
 - Browser, Bun, and Deno host experiment workflows are retired from Wesley.
 - Required checks should name the Rust product or repository hygiene surface
   they protect.
+- The release autotag workflow runs on pushes to `main`. It tags only a merged
+  `release/vX.Y.Z` PR whose title and primary version source name the same
+  version, after `release-prep-guard` and `preflight` pass, and it never
+  publishes. Its tag does not trigger the publish workflow, because GitHub does
+  not start workflows from a `GITHUB_TOKEN` push; publish with
+  `gh workflow run release-crates.yml --ref vX.Y.Z`.
 - The crates release workflow classifies the tag channel from its SemVer
   suffix: pre-release tags (for example `v0.3.0-alpha.1`) publish as GitHub
   pre-releases and are not marked `latest`; stable tags publish as `latest`.

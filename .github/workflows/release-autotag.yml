@@ -1,0 +1,130 @@
+name: Release Autotag
+
+# Continuum release runbook, sections 16 and 30.2. When a release-prep pull
+# request merges to main, create the annotated release tag at exactly that
+# commit. This workflow never publishes and never moves a tag.
+#
+# A tag pushed with this workflow's GITHUB_TOKEN does not trigger on-push-tag
+# workflows, by GitHub's design. Publication is therefore a deliberate dispatch
+# of release-crates.yml from the new tag; the last step prints the command.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-autotag
+  cancel-in-progress: false
+
+jobs:
+  autotag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920
+        with:
+          egress-policy: audit
+
+      - name: Checkout pushed commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+
+      - name: Verify Rust toolchain
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Find the merged pull request for this commit
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pulls="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls")"
+          merged="$(jq -c '[.[] | select(.merged_at != null and .base.ref == "main")] | first // empty' <<<"$pulls")"
+          if [ -z "$merged" ]; then
+            echo "No merged pull request is associated with ${GITHUB_SHA}."
+            exit 0
+          fi
+          # Written with a heredoc delimiter so the title stays one opaque value.
+          {
+            echo "head_branch=$(jq -r '.head.ref' <<<"$merged")"
+            echo "title<<AUTOTAG_TITLE_END"
+            jq -r '.title' <<<"$merged"
+            echo "AUTOTAG_TITLE_END"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Decide whether this commit earns a tag
+        id: plan
+        env:
+          AUTOTAG_HEAD_BRANCH: ${{ steps.pr.outputs.head_branch }}
+          AUTOTAG_PR_TITLE: ${{ steps.pr.outputs.title }}
+        run: |
+          set -euo pipefail
+          git fetch origin --tags --prune
+          cargo xtask release-autotag-plan | tee -a "$GITHUB_OUTPUT"
+
+      - name: Confirm the commit is still origin/main
+        if: steps.plan.outputs.decision == 'tag'
+        run: |
+          set -euo pipefail
+          git fetch origin main --prune
+          head_commit="$(git rev-parse HEAD)"
+          main_commit="$(git rev-parse origin/main)"
+          if [ "$head_commit" != "$main_commit" ]; then
+            echo "main moved to $main_commit after $head_commit was pushed."
+            echo "Refusing to autotag a commit that is no longer the tip of main; tag manually after the release guards pass."
+            exit 1
+          fi
+
+      - name: Release prep guard
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$AUTOTAG_TAG"
+          cargo xtask release-prep-guard --version "${tag#v}"
+
+      - name: Final preflight from the release commit
+        if: steps.plan.outputs.decision == 'tag'
+        run: cargo xtask preflight
+
+      - name: Create the annotated release tag
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$AUTOTAG_TAG"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "release: $tag"
+          git push origin "refs/tags/$tag"
+
+      - name: Print the publish command
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$AUTOTAG_TAG"
+          {
+            echo "## Tagged \`$tag\`"
+            echo
+            echo "Publish from the tag:"
+            echo
+            echo '```bash'
+            echo "gh workflow run release-crates.yml --ref $tag"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

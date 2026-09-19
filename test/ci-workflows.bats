@@ -637,3 +637,98 @@ load 'vendor/bats-plugins/bats-assert/load'
   assert_success
   [ "$output" -eq 0 ]
 }
+
+# --- release autotag (Continuum release runbook, sections 16 and 30.2) -------
+
+autotag_workflow=".github/workflows/release-autotag.yml"
+
+@test "release autotag runs only on pushes to main" {
+  run bash -lc "awk '/^on:/{f=1;next} f&&/^[a-z]/{exit} f' $autotag_workflow"
+  assert_success
+  assert_output --partial "push:"
+  assert_output --partial "- main"
+  refute_output --partial "pull_request"
+  refute_output --partial "tags:"
+}
+
+@test "release autotag holds write permission only on the job that tags" {
+  # The workflow default must be read-only; one job may write contents.
+  run bash -lc "awk '/^permissions:/{f=1;next} f&&/^[a-z]/{exit} f' $autotag_workflow"
+  assert_success
+  assert_output --partial "contents: read"
+  refute_output --partial "write"
+
+  run bash -lc "grep -c 'contents: write' $autotag_workflow"
+  assert_success
+  [ "$output" -eq 1 ]
+}
+
+@test "release autotag creates an annotated tag and never forces or moves one" {
+  run bash -lc "grep -F 'git tag -a \"\$tag\" -m \"release: \$tag\"' $autotag_workflow | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -nE 'git tag .*(-f|--force)|git push .*(-f|--force|\\+refs)|git tag -d|push --delete|:refs/tags' $autotag_workflow || true"
+  assert_success
+  [ -z "$output" ]
+
+  run bash -lc "grep -F 'git push origin \"refs/tags/\$tag\"' $autotag_workflow | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+}
+
+@test "release autotag never publishes" {
+  run bash -lc "grep -nE 'cargo publish|publish-crates|publish-alpha|gh release (create|edit)|CARGO_REGISTRY_TOKEN' $autotag_workflow || true"
+  assert_success
+  [ -z "$output" ]
+}
+
+@test "release autotag passes pull request text through the environment, never a command line" {
+  # A pull request title is text a contributor chose. It may appear under an
+  # env: key, and must never be interpolated into a run: script.
+  run bash -lc "grep -c 'AUTOTAG_PR_TITLE: \${{ steps.pr.outputs.title }}' $autotag_workflow"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "awk '/run: \\|/{r=1;next} r&&/^      - name:/{r=0} r' $autotag_workflow | grep -nE '\\\$\\{\\{ *(steps\\.pr|github\\.event)' || true"
+  assert_success
+  [ -z "$output" ]
+}
+
+@test "release autotag runs the pre-tag release gates before it tags, and only for a release-prep merge" {
+  local guard preflight tag
+  guard="$(grep -n 'cargo xtask release-prep-guard --version' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  preflight="$(grep -n 'cargo xtask preflight' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  tag="$(grep -n 'git tag -a' "$autotag_workflow" | head -1 | cut -d: -f1)"
+  [ -n "$guard" ] && [ -n "$preflight" ] && [ -n "$tag" ]
+  [ "$guard" -lt "$tag" ]
+  [ "$preflight" -lt "$tag" ]
+
+  # Every step after the plan is conditional on the plan saying "tag".
+  run bash -lc "grep -c \"if: steps.plan.outputs.decision == 'tag'\" $autotag_workflow"
+  assert_success
+  [ "$output" -ge 4 ]
+}
+
+@test "release autotag confirms the commit is still origin/main and prints the publish command" {
+  run bash -lc "grep -F 'git rev-parse origin/main' $autotag_workflow | wc -l"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  run bash -lc "grep -F 'gh workflow run release-crates.yml --ref' $autotag_workflow | wc -l"
+  assert_success
+  [ "$output" -eq 1 ]
+}
+
+@test "release crates workflow can be dispatched from a tag, and only from a tag" {
+  # A tag pushed with a workflow's GITHUB_TOKEN does not trigger on-push-tag
+  # workflows, so an autotagged release is published by explicit dispatch.
+  run bash -lc "awk '/^on:/{f=1;next} f&&/^[a-z]/{exit} f' .github/workflows/release-crates.yml"
+  assert_success
+  assert_output --partial "workflow_dispatch:"
+  assert_output --partial "tags:"
+
+  run bash -lc "grep -c \"github.ref_type\" .github/workflows/release-crates.yml"
+  assert_success
+  [ "$output" -ge 1 ]
+}

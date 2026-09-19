@@ -75,8 +75,9 @@ pre-release, cut to unblock downstream consumers.
 
 ## Pre-Tag Launch Pass
 
-After the release-prep PR lands on `main` but before creating the signed tag,
-run one last docs/signpost audit. The goal is not to create a progress tracker;
+Autotag creates the release tag as soon as the release-prep PR lands on `main`,
+so the last docs/signpost audit belongs on the release-prep PR, before it
+merges. Run it there. The goal is not to create a progress tracker;
 it is to make sure the tagged commit tells the truth without a post-release
 backfill.
 
@@ -95,7 +96,7 @@ Check these durable surfaces at minimum:
 
 Pre-publication install wording must be honest. It may show the target
 `cargo install wesley-cli --version X.Y.Z` command, but it must not claim the
-version is already published until the signed tag workflow has actually
+version is already published until the publish workflow has actually
 published it.
 
 ## Command Sequence
@@ -113,8 +114,8 @@ cargo xtask release-check
 cargo xtask release-guard --tag vX.Y.Z
 ```
 
-Run `release-guard` only after the signed tag exists locally and points at the
-synced `main` release commit.
+Run `release-guard` only after the release tag exists locally and points at the
+synced `main` release commit. The publish workflow runs it for you.
 
 ## Related Authority
 

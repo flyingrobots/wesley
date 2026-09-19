@@ -167,9 +167,10 @@ If a published artifact is bad:
    impact make that the right move.
 4. File fallout issues and record the patch-forward decision.
 
-Manual tagging is not an emergency bypass in Wesley. It is the normal mechanism
-because the release profile declares `autotag: none`. It still must happen only
-after final guards pass from clean, fetched, synced `main`.
+Autotag is the normal mechanism: the release profile names
+`.github/workflows/release-autotag.yml`. Manual tagging is the fallback for when
+autotag cannot run. It is not an emergency bypass, and it must happen only after
+final guards pass from clean, fetched, synced `main`.
 
 ## Phase 5: Retrospective And Closeout
 

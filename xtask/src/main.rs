@@ -97,6 +97,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
         "lean-core-check" => run_lean_core_check(),
+        "release-autotag-plan" => run_release_autotag_plan(),
         "package-crates" => run_package_crates(&args[1..]),
         "publish-alpha" => {
             run_publish_crates(&args[1..], Some(ALPHA_VERSION), "publish-alpha", true)
@@ -3109,6 +3110,149 @@ fn display_path(root: &Path, path: &Path) -> String {
         .replace('\\', "/")
 }
 
+/// What the autotag workflow should do with one push to `main`.
+#[derive(Debug, PartialEq, Eq)]
+enum AutotagDecision {
+    /// Create this annotated tag at the pushed commit.
+    Tag(String),
+    /// Create nothing, for this reason. Skipping is the normal outcome: most
+    /// pushes to `main` are not release-prep merges.
+    Skip(String),
+}
+
+/// The facts about one push to `main` that decide whether it is tagged.
+struct AutotagInput<'a> {
+    /// The version the primary version source declares at the pushed commit.
+    version: &'a str,
+    /// The head branch of the merged pull request, if the commit has one.
+    head_branch: Option<&'a str>,
+    /// The title of that pull request.
+    pr_title: Option<&'a str>,
+    /// Tags that already exist.
+    existing_tags: &'a [&'a str],
+}
+
+/// Decides whether a push to `main` is a release-prep merge that earns a tag.
+///
+/// Follows the Continuum release runbook, section 16: a branch name is useful
+/// but is not the only line of defense, so the pull request's title must name
+/// the same version its branch does. A push that is not a release-prep merge is
+/// skipped. A push that *claims* to be one and disagrees with itself is an
+/// error, because tagging the wrong commit cannot be undone.
+fn autotag_decision(input: &AutotagInput<'_>) -> Result<AutotagDecision, Error> {
+    let version = version_from_release_arg(input.version)?;
+    let tag = format!("v{version}");
+
+    let (Some(head_branch), Some(pr_title)) = (input.head_branch, input.pr_title) else {
+        return Ok(AutotagDecision::Skip(
+            "the pushed commit has no merged pull request".to_string(),
+        ));
+    };
+    let Some(branch_version) = head_branch.strip_prefix(AUTOTAG_RELEASE_BRANCH_PREFIX) else {
+        return Ok(AutotagDecision::Skip(format!(
+            "`{head_branch}` is not a release-prep branch"
+        )));
+    };
+
+    let mut failures = Vec::new();
+    if branch_version != version {
+        failures.push(format!(
+            "branch `{head_branch}` names `{branch_version}`, but {AUTOTAG_VERSION_SOURCE} declares `{version}`"
+        ));
+    }
+    if !title_names_tag(pr_title, &tag) {
+        failures.push(format!(
+            "pull request title `{pr_title}` does not name `{tag}`"
+        ));
+    }
+    if !failures.is_empty() {
+        return Err(Error::CheckFailed {
+            check: "autotag release-prep agreement".to_string(),
+            failures,
+        });
+    }
+
+    if input.existing_tags.contains(&tag.as_str()) {
+        return Ok(AutotagDecision::Skip(format!(
+            "tag `{tag}` already exists and public tags are never moved"
+        )));
+    }
+    Ok(AutotagDecision::Tag(tag))
+}
+
+/// The branch prefix a release-prep pull request is opened from.
+const AUTOTAG_RELEASE_BRANCH_PREFIX: &str = "release/v";
+/// The primary version source, first in `.continuum/release.yml`.
+const AUTOTAG_VERSION_SOURCE: &str = "crates/wesley-core/Cargo.toml";
+
+/// Whether a title names exactly this tag as a whole word, so that `v0.3.0`
+/// does not match inside `v0.3.0-alpha.2`.
+fn title_names_tag(title: &str, tag: &str) -> bool {
+    let is_version_char = |ch: char| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | '+');
+    title
+        .split(|ch: char| !is_version_char(ch))
+        .any(|word| word.trim_end_matches('.') == tag)
+}
+
+/// Prints the autotag decision for the checked-out commit as `key=value` lines
+/// suitable for `$GITHUB_OUTPUT`.
+///
+/// The pull request's head branch and title arrive through the
+/// `AUTOTAG_HEAD_BRANCH` and `AUTOTAG_PR_TITLE` environment variables rather
+/// than arguments: a title is text a contributor chose, and a workflow must
+/// never interpolate it into a command line.
+fn run_release_autotag_plan() -> Result<(), Error> {
+    let manifest = fs::read_to_string(AUTOTAG_VERSION_SOURCE).map_err(|source| {
+        Error::Usage(format!("failed to read {AUTOTAG_VERSION_SOURCE}: {source}"))
+    })?;
+    let manifest: toml::Value = manifest.parse().map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse {AUTOTAG_VERSION_SOURCE}: {source}"
+        ))
+    })?;
+    let Some(version) = manifest
+        .get("package")
+        .and_then(|package| package.get("version"))
+        .and_then(toml::Value::as_str)
+    else {
+        return Err(Error::Usage(format!(
+            "{AUTOTAG_VERSION_SOURCE} declares no package.version"
+        )));
+    };
+
+    let label = command_label("git", &["tag", "--list"]);
+    let output = Command::new("git")
+        .args(["tag", "--list"])
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+    if !output.status.success() {
+        return Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+    let tags = String::from_utf8_lossy(&output.stdout);
+    let existing_tags: Vec<&str> = tags.lines().map(str::trim).collect();
+
+    let head_branch = env::var("AUTOTAG_HEAD_BRANCH")
+        .ok()
+        .filter(|value| !value.is_empty());
+    let pr_title = env::var("AUTOTAG_PR_TITLE")
+        .ok()
+        .filter(|value| !value.is_empty());
+    let decision = autotag_decision(&AutotagInput {
+        version,
+        head_branch: head_branch.as_deref(),
+        pr_title: pr_title.as_deref(),
+        existing_tags: &existing_tags,
+    })?;
+    match decision {
+        AutotagDecision::Tag(tag) => println!("decision=tag\ntag={tag}"),
+        AutotagDecision::Skip(reason) => println!("decision=skip\nreason={reason}"),
+    }
+    Ok(())
+}
+
 /// Crates a `wesley-core` build without default features must not pull in.
 ///
 /// The compiler kernel is synchronous and pure. The async runtime stack belongs
@@ -3226,6 +3370,7 @@ Commands:
   publish-crates    Publish crates.io package set for a release tag
   release-prep-guard Verify release prep before a tag exists
   release-guard     Verify that a release tag is eligible to publish
+  release-autotag-plan Decide whether the checked-out main commit earns a release tag
   release-check     Run strict preflight, then build and package release artifacts
   legacy-preflight  Run the historical pnpm package preflight for legacy changes
   help              Show help
@@ -3601,6 +3746,123 @@ mod tests {
 
     fn os_args(args: &[&str]) -> Vec<OsString> {
         args.iter().map(OsString::from).collect()
+    }
+
+    fn autotag_input<'a>(
+        version: &'a str,
+        head_branch: Option<&'a str>,
+        pr_title: Option<&'a str>,
+        existing_tags: &'a [&'a str],
+    ) -> AutotagInput<'a> {
+        AutotagInput {
+            version,
+            head_branch,
+            pr_title,
+            existing_tags,
+        }
+    }
+
+    #[test]
+    fn autotag_tags_a_merged_release_prep_pull_request() {
+        let input = autotag_input(
+            "0.3.0-alpha.2",
+            Some("release/v0.3.0-alpha.2"),
+            Some("chore(release): prepare v0.3.0-alpha.2"),
+            &["v0.2.0", "v0.3.0-alpha.1"],
+        );
+
+        assert_eq!(
+            autotag_decision(&input).unwrap(),
+            AutotagDecision::Tag("v0.3.0-alpha.2".to_string())
+        );
+    }
+
+    #[test]
+    fn autotag_skips_an_ordinary_merge_to_main() {
+        let input = autotag_input(
+            "0.3.0-alpha.2",
+            Some("core/803-lean-core-resilience-feature"),
+            Some("feat(core): put the async lowering port behind a `resilience` feature"),
+            &["v0.3.0-alpha.1"],
+        );
+
+        assert!(matches!(
+            autotag_decision(&input).unwrap(),
+            AutotagDecision::Skip(reason) if reason.contains("not a release-prep")
+        ));
+    }
+
+    #[test]
+    fn autotag_skips_a_push_with_no_pull_request() {
+        let input = autotag_input("0.3.0-alpha.2", None, None, &[]);
+
+        assert!(matches!(
+            autotag_decision(&input).unwrap(),
+            AutotagDecision::Skip(reason) if reason.contains("no merged pull request")
+        ));
+    }
+
+    #[test]
+    fn autotag_never_moves_a_tag_that_already_exists() {
+        let input = autotag_input(
+            "0.3.0-alpha.1",
+            Some("release/v0.3.0-alpha.1"),
+            Some("chore(release): prepare v0.3.0-alpha.1"),
+            &["v0.3.0-alpha.1"],
+        );
+
+        assert!(matches!(
+            autotag_decision(&input).unwrap(),
+            AutotagDecision::Skip(reason) if reason.contains("already exists")
+        ));
+    }
+
+    #[test]
+    fn autotag_refuses_a_release_branch_that_disagrees_with_the_manifest() {
+        let input = autotag_input(
+            "0.3.0-alpha.1",
+            Some("release/v0.3.0-alpha.2"),
+            Some("chore(release): prepare v0.3.0-alpha.2"),
+            &[],
+        );
+
+        assert!(autotag_decision(&input).is_err());
+    }
+
+    #[test]
+    fn autotag_refuses_a_release_branch_whose_title_names_another_version() {
+        let input = autotag_input(
+            "0.3.0-alpha.2",
+            Some("release/v0.3.0-alpha.2"),
+            Some("chore(release): prepare v0.3.0-alpha.3"),
+            &[],
+        );
+
+        assert!(autotag_decision(&input).is_err());
+    }
+
+    #[test]
+    fn autotag_does_not_mistake_a_longer_version_in_the_title_for_a_match() {
+        let input = autotag_input(
+            "0.3.0",
+            Some("release/v0.3.0"),
+            Some("chore(release): prepare v0.3.0-alpha.2"),
+            &[],
+        );
+
+        assert!(autotag_decision(&input).is_err());
+    }
+
+    #[test]
+    fn autotag_refuses_a_version_with_build_metadata() {
+        let input = autotag_input(
+            "0.3.0+build.7",
+            Some("release/v0.3.0+build.7"),
+            Some("chore(release): prepare v0.3.0+build.7"),
+            &[],
+        );
+
+        assert!(autotag_decision(&input).is_err());
     }
 
     #[test]

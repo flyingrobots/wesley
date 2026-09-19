@@ -8,6 +8,25 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- Added `.github/workflows/release-autotag.yml`, following the Continuum release
+  runbook. When a `release/vX.Y.Z` prep PR merges to `main`, it runs
+  `release-prep-guard` and `preflight` and creates an annotated `vX.Y.Z` tag at
+  exactly that commit. It never publishes and never moves a tag. The decision is
+  `cargo xtask release-autotag-plan`, a pure function that requires the branch,
+  the pull request title, and the primary version source to agree.
+- Added a `workflow_dispatch` trigger to `release-crates.yml`, refused unless
+  dispatched from a tag. A tag pushed with a workflow's `GITHUB_TOKEN` does not
+  trigger on-push-tag workflows, so an autotagged release is published with
+  `gh workflow run release-crates.yml --ref vX.Y.Z`.
+
+### Changed
+
+- Autotagged release tags are annotated and unsigned; their provenance is the
+  autotag workflow run. Signed manual tagging remains the documented fallback
+  for when autotag cannot run.
+
+### Added
+
 - Added a default-on `resilience` feature to `wesley-core`. It carries the
   async `LoweringPort` and the ninelives-backed `ResilientLoweringPort`. A
   consumer that only lowers, hashes, or diffs SDL can now depend on
