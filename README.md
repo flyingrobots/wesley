@@ -141,6 +141,19 @@ extension consumes Wesley IR independently and emits its own artifacts.
 | Echo          | Echo-owned integration            | Runtime law, footprints, observation semantics        |
 | Continuum     | Continuum-owned module/repo       | Deferred protocol generation                          |
 
+## What's New in v0.3.0-alpha.2
+
+`0.3.0-alpha.2` makes `wesley-core` cheap to embed. The compiler kernel is
+synchronous and pure, but every consumer used to inherit an async runtime
+stack. Two of those dependencies were unused and are gone, and the async
+`LoweringPort` with its `ninelives`-backed resilient wrapper now sits behind a
+default-on `resilience` feature. A consumer that only lowers, hashes, or diffs
+SDL can set `default-features = false`: `wesley-core`'s normal dependency tree
+drops from 90 crates to 44. Default-feature consumers see the same public API.
+`cargo xtask lean-core-check`, part of preflight, holds that line. As a
+pre-release, APIs, CLI surface, and emitted artifacts remain unstable and may
+change before the stable `0.3.0`; see the changelog for the complete list.
+
 ## What's New in v0.3.0-alpha.1
 
 `0.3.0-alpha.1` is the first pre-release of the 0.3.0 line, cut to unblock

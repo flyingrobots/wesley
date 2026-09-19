@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.3.0-alpha.2] - 2026-09-19
+
 ### Added
 
 - Added a default-on `resilience` feature to `wesley-core`. It carries the
