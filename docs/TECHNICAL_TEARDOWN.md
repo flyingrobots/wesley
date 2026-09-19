@@ -13,9 +13,10 @@ This document is an end-to-end technical explanation of the Wesley repository
 as prepared for the `v0.2.0` release on June 26, 2026. The `v0.3.0-alpha.1`
 pre-release carries the same architecture; it is the first 0.3.0-line
 pre-release, cut to unblock downstream consumers. `v0.3.0-alpha.2` follows it
-and changes no architecture: it moves `wesley-core`'s async lowering port
-behind a default-on `resilience` feature so kernel-only consumers can omit the
-async runtime stack.
+with one structural change: `wesley-core`'s async `LoweringPort` and its
+resilient wrapper now sit behind a default-on `resilience` feature, so the ports
+layer is optional and kernel-only consumers can omit the async runtime stack.
+The synchronous kernel, the IR, and the pipeline are unchanged.
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the

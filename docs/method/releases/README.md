@@ -4,6 +4,7 @@ Store internal release artifacts here.
 
 ## Available Releases
 
+- [Wesley v0.3.0-alpha.2](./v0.3.0-alpha.2/release.md)
 - [Wesley v0.2.0](./v0.2.0/release.md)
 - [Wesley v0.1.0](./v0.1.0/release.md)
 - [Wesley v0.0.6 superseded planning packet](./v0.0.6/release.md)
