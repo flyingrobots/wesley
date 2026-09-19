@@ -36,8 +36,9 @@ the actual release diff.
 
 ## Pre-Tag Signpost Pass
 
-Before a signed release tag is created, audit the docs that most readers use to
-decide what Wesley is and what is safe to run:
+Before the release-prep PR merges, audit the docs that most readers use to
+decide what Wesley is and what is safe to run. Autotag creates the release tag
+on that merge, so the pass cannot wait until afterwards:
 
 - `README.md`
 - `docs/README.md`
