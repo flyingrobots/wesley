@@ -36,16 +36,39 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 | `Cargo.lock` change               | Exactly six version lines, `0.3.0-alpha.1` to `0.3.0-alpha.2`.                                      |
 | Public API change                 | None with default features. `--no-default-features` now removes the async lowering port.            |
 
+## Docs Topics Audit
+
+| Item           | Result                                                                                                                                                                                                                                   |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope          | Every tracked file under `docs/topics/` (24 files), searched for claims this release can change: `wesley-core` features and dependencies, what `cargo xtask preflight` runs, install and version pins, and the release command sequence. |
+| Performed by   | The agent that prepared this release. Check 23 requires a human reviewer; that sign-off is the release checklist item on #805 and is not claimed here.                                                                                   |
+| Accuracy score | 2 stale claims found among the release-relevant claims, both corrected in this PR, so 100% after correction. `validation.md` and `security-tooling.md` each listed what preflight runs and omitted the lean-core dependency check.       |
+| Coverage score | 1 gap found and closed, so 100% after correction: no topic told a contributor changing `wesley-core` dependencies or features to run `cargo xtask lean-core-check`. `validation.md` now has that row.                                    |
+| Not in scope   | Topic claims about how the release tag is created. #807 changes that procedure and updates those topics in the same PR.                                                                                                                  |
+
 ## Local Evidence
 
-Run on 2026-09-19 from the prep branch, each exiting 0:
+Run on 2026-09-19 from the prep branch at `85ae3bd3` with a clean tree, each
+exiting 0:
 
 ```bash
 cargo xtask release-prep-guard --version 0.3.0-alpha.2
 cargo xtask preflight
 cargo xtask legacy-preflight
 cargo xtask docs-check
+cargo xtask release-check
+cargo audit
+cargo xtask package-crates --version 0.3.0-alpha.2
 ```
+
+`cargo audit` loaded 1,251 advisories, scanned 189 crate dependencies in
+`Cargo.lock`, and reported no vulnerabilities and no warnings. `release-check`
+built and smoked the optimized CLI and packaged every published crate;
+`package-crates` listed the contents of all five. The commit that records this
+evidence changes Markdown only. A later merge from `main` is covered by CI on
+#805 and by the autotag workflow, which reruns `release-prep-guard`,
+`release-check`, and the full `release-guard`, including `cargo audit`, on the
+release commit itself before it creates the tag.
 
 `cargo xtask preflight` includes `lean-core-check`, which tests `wesley-core`
 without default features and fails if that build's dependency tree names
@@ -66,8 +89,9 @@ artifact from `lower_schema_sdl` and `compute_registry_hash`.
 ## Review Evidence
 
 - #804: all CI checks passed; CodeRabbit and Codex raised no findings.
-- #805: Codex raised three findings on the first pass and two on the second.
-  All five were checked against the repository and are addressed on the PR.
+- #805: Codex raised three findings on the first pass, two on the second, and
+  four on the third. All nine were checked against the repository and are
+  addressed on the PR.
 
 ## Publish Verification Plan
 
@@ -93,8 +117,10 @@ done
 wesley-core = { version = "=0.3.0-alpha.2", default-features = false }
 ```
 
-and that `cargo tree -e normal` for that consumer names none of
-`async-trait`, `ninelives`, `tokio`, or `tower`. 6. Close #803.
+`cargo tree -e normal` for that consumer must name none of `async-trait`,
+`ninelives`, `tokio`, or `tower`.
+
+6. Close #803.
 
 ## Publish Evidence
 
