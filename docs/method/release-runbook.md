@@ -47,7 +47,8 @@ Run these in order:
 2. Verify the current branch is `main`.
 3. Fetch `origin/main` and tags.
 4. Verify `HEAD` exactly matches `origin/main`.
-5. Verify tag-signing requirements if the repository requires signed tags.
+5. For a maintainer-created tag, verify that tag signing works. Autotag's tag
+   is unsigned by design and needs no signing setup.
 
 Do not continue past the first failed guard.
 

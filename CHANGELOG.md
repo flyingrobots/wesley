@@ -26,6 +26,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Autotagged release tags are annotated and unsigned; their provenance is the
   autotag workflow run. Signed manual tagging remains the documented fallback
   for when autotag cannot run.
+- Replaced the rule that every release is cut from a signed tag. Releases are
+  cut from immutable annotated tags on synced `main`; `docs/BEARING.md`, the
+  release policy, the release runbooks, the guide, and the README now say so.
+  Because autotag creates the tag when the release PR merges, the release policy
+  now requires the human sign-off to be complete before that merge.
 
 ### Added
 

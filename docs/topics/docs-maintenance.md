@@ -50,8 +50,8 @@ decide what Wesley is and what is safe to run:
 
 The pass should distinguish release-target facts from publication facts. A
 release-prep commit may contain the future install command, but it must not
-claim crates.io or GitHub Release publication before the signed tag workflow
-has completed.
+claim crates.io or GitHub Release publication before the release tag's publish
+workflow has completed.
 
 ## Topic Coverage Standard
 

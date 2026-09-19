@@ -154,8 +154,9 @@ policy has been provided.
 5. Run `git fetch origin main --tags --prune`.
 6. Verify `HEAD` equals `origin/main`.
 7. `ABORT` if local `main` is ahead of or behind `origin/main`.
-8. Verify signed-tag readiness for human-created release tags.
-9. `ABORT` if signing is unavailable or misconfigured.
+8. For the manual fallback only, verify signed-tag readiness. Autotag's tag is
+   unsigned by design; its provenance is the workflow run.
+9. `ABORT` a manual tag if signing is unavailable or misconfigured.
 
 ### Phase 2: Versioning And Lock-Step Sync
 

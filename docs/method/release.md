@@ -48,8 +48,9 @@ A valid Wesley release has all of the following:
    recorded before release prep.
 4. **A reviewed source commit**: the release tag points at the exact `main`
    commit that passed release prep.
-5. **An immutable public tag**: signed public tags are not moved. Bad releases
-   are fixed by patching forward.
+5. **An immutable public tag**: public tags are not moved, whether autotag
+   created them or a maintainer signed them. Bad releases are fixed by patching
+   forward.
 6. **Synchronized metadata**: every version source declared in the release
    profile agrees.
 7. **Updated signposts**: changelog, README, guide, architecture, topics,
