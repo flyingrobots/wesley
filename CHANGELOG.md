@@ -15,7 +15,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   only if `main` is still the release commit. It never publishes and never moves
   a tag. The decision is
   `cargo xtask release-autotag-plan`, a pure function that requires the branch,
-  the pull request title, and the primary version source to agree.
+  the pull request title, and the primary version source to agree. A rerun
+  skips only when the annotated tag is already on the release commit; an
+  existing tag on another commit, or a lightweight tag, fails the run.
 - Added a `workflow_dispatch` trigger to `release-crates.yml`, refused unless
   dispatched from a tag. A tag pushed with a workflow's `GITHUB_TOKEN` does not
   trigger on-push-tag workflows, so an autotagged release is published with

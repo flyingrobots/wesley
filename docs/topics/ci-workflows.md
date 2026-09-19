@@ -56,7 +56,9 @@ BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
   `release/vX.Y.Z` PR whose title and primary version source name the same
   version. It waits for the commit's other CI runs, runs the full
   `release-guard` against a local tag, pushes the tag only if `main` has not
-  moved, and never publishes. Its tag does not trigger the publish workflow, because GitHub does
+  moved, and never publishes. A rerun skips when the annotated tag is already
+  on the release commit; a tag on another commit, or a lightweight tag, fails
+  the run. Its tag does not trigger the publish workflow, because GitHub does
   not start workflows from a `GITHUB_TOKEN` push; publish with
   `gh workflow run release-crates.yml --ref vX.Y.Z`.
 - The crates release workflow classifies the tag channel from its SemVer

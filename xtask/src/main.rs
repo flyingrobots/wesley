@@ -3130,8 +3130,17 @@ struct AutotagInput<'a> {
     pr_title: Option<&'a str>,
     /// The commit being considered: `HEAD` of the pushed `main`.
     head_commit: &'a str,
-    /// The commit the expected tag already points at, if that tag exists.
-    existing_tag_commit: Option<&'a str>,
+    /// The expected tag, if it already exists.
+    existing_tag: Option<ExistingTag<'a>>,
+}
+
+/// A release tag that already exists in the repository.
+#[derive(Clone, Copy)]
+struct ExistingTag<'a> {
+    /// The commit the tag peels to.
+    commit: &'a str,
+    /// Whether the ref names a tag object rather than the commit itself.
+    annotated: bool,
 }
 
 /// Decides whether a push to `main` is a release-prep merge that earns a tag.
@@ -3174,27 +3183,33 @@ fn autotag_decision(input: &AutotagInput<'_>) -> Result<AutotagDecision, Error> 
         });
     }
 
-    match input.existing_tag_commit {
-        None => {}
-        // A rerun on the commit that is already tagged: nothing to do.
-        Some(commit) if commit == input.head_commit => {
-            return Ok(AutotagDecision::Skip(format!(
-                "tag `{tag}` already points at this commit"
-            )));
-        }
-        // The version is attached to other source. Public tags are never moved,
-        // so this cannot be repaired here; it must not pass as a green skip.
-        Some(commit) => {
-            return Err(Error::CheckFailed {
-                check: "autotag existing tag".to_string(),
-                failures: vec![format!(
-                    "tag `{tag}` already exists at `{commit}`, not at the release commit `{}`",
-                    input.head_commit
-                )],
-            });
-        }
+    let Some(existing) = input.existing_tag else {
+        return Ok(AutotagDecision::Tag(tag));
+    };
+    // Public tags are never moved, so neither defect below can be repaired
+    // here, and neither may pass as a green skip.
+    let mut failures = Vec::new();
+    if existing.commit != input.head_commit {
+        failures.push(format!(
+            "tag `{tag}` already exists at `{}`, not at the release commit `{}`",
+            existing.commit, input.head_commit
+        ));
     }
-    Ok(AutotagDecision::Tag(tag))
+    if !existing.annotated {
+        failures.push(format!(
+            "tag `{tag}` is a lightweight tag; release tags are annotated"
+        ));
+    }
+    if !failures.is_empty() {
+        return Err(Error::CheckFailed {
+            check: "autotag existing tag".to_string(),
+            failures,
+        });
+    }
+    // A rerun on the commit that is already tagged: nothing to do.
+    Ok(AutotagDecision::Skip(format!(
+        "tag `{tag}` already points at this commit"
+    )))
 }
 
 /// The branch prefix a release-prep pull request is opened from.
@@ -3209,6 +3224,13 @@ fn title_names_tag(title: &str, tag: &str) -> bool {
     title
         .split(|ch: char| !is_version_char(ch))
         .any(|word| word.trim_end_matches('.') == tag)
+}
+
+/// Whether `refs/tags/<tag>` names a tag object. A lightweight tag names the
+/// commit directly, so `git cat-file -t` reports `commit` for it.
+fn tag_is_annotated(tag: &str) -> Result<bool, Error> {
+    let reference = format!("refs/tags/{tag}");
+    Ok(git_output(&["cat-file", "-t", reference.as_str()])?.trim() == "tag")
 }
 
 /// The commit a tag points at, or `None` when the tag does not exist.
@@ -3258,6 +3280,13 @@ fn run_release_autotag_plan() -> Result<(), Error> {
     let head_commit = git_output(&["rev-parse", "HEAD"])?;
     let expected_tag = format!("v{}", version_from_release_arg(version)?);
     let existing_tag_commit = commit_of_tag(&expected_tag)?;
+    let existing_tag = match existing_tag_commit.as_deref() {
+        None => None,
+        Some(commit) => Some(ExistingTag {
+            commit,
+            annotated: tag_is_annotated(&expected_tag)?,
+        }),
+    };
 
     let head_branch = env::var("AUTOTAG_HEAD_BRANCH")
         .ok()
@@ -3270,7 +3299,7 @@ fn run_release_autotag_plan() -> Result<(), Error> {
         head_branch: head_branch.as_deref(),
         pr_title: pr_title.as_deref(),
         head_commit: head_commit.trim(),
-        existing_tag_commit: existing_tag_commit.as_deref(),
+        existing_tag,
     })?;
     match decision {
         AutotagDecision::Tag(tag) => println!("decision=tag\ntag={tag}"),
@@ -3781,14 +3810,21 @@ mod tests {
         version: &'a str,
         head_branch: Option<&'a str>,
         pr_title: Option<&'a str>,
-        existing_tag_commit: Option<&'a str>,
+        existing_tag: Option<ExistingTag<'a>>,
     ) -> AutotagInput<'a> {
         AutotagInput {
             version,
             head_branch,
             pr_title,
             head_commit: AUTOTAG_HEAD,
-            existing_tag_commit,
+            existing_tag,
+        }
+    }
+
+    const fn annotated_at(commit: &str) -> ExistingTag<'_> {
+        ExistingTag {
+            commit,
+            annotated: true,
         }
     }
 
@@ -3838,12 +3874,34 @@ mod tests {
             "0.3.0-alpha.1",
             Some("release/v0.3.0-alpha.1"),
             Some("chore(release): prepare v0.3.0-alpha.1"),
-            Some(AUTOTAG_HEAD),
+            Some(annotated_at(AUTOTAG_HEAD)),
         );
 
         assert!(matches!(
             autotag_decision(&input).unwrap(),
             AutotagDecision::Skip(reason) if reason.contains("already points at this commit")
+        ));
+    }
+
+    #[test]
+    fn autotag_refuses_a_lightweight_tag_even_at_the_release_commit() {
+        // Release tags are annotated. A lightweight tag at HEAD peels to the
+        // same commit, so a green skip would let the publish dispatch run from
+        // a tag this workflow would never have created.
+        let input = autotag_input(
+            "0.3.0-alpha.1",
+            Some("release/v0.3.0-alpha.1"),
+            Some("chore(release): prepare v0.3.0-alpha.1"),
+            Some(ExistingTag {
+                commit: AUTOTAG_HEAD,
+                annotated: false,
+            }),
+        );
+
+        assert!(matches!(
+            autotag_decision(&input),
+            Err(Error::CheckFailed { failures, .. })
+                if failures.iter().any(|failure| failure.contains("lightweight"))
         ));
     }
 
@@ -3855,7 +3913,7 @@ mod tests {
             "0.3.0-alpha.1",
             Some("release/v0.3.0-alpha.1"),
             Some("chore(release): prepare v0.3.0-alpha.1"),
-            Some(AUTOTAG_ELSEWHERE),
+            Some(annotated_at(AUTOTAG_ELSEWHERE)),
         );
 
         assert!(autotag_decision(&input).is_err());
