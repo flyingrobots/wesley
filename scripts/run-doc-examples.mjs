@@ -3,7 +3,8 @@
 // CLI really does with what the page says it does.
 //
 // Annotations, written in the Markdown directly before a fenced block:
-//   <!-- file: NAME -->          write the block to NAME in the scratch directory
+//   <!-- file: NAME -->          write the block to NAME in the scratch directory;
+//                                a fixture is never run or compared
 //   <!-- exit: N -->             bash only: its wesley commands exit N
 //   <!-- norun: WHY -->          bash only: shown, not run; names still checked
 //   <!-- shows: NAME -->         the block is a contiguous excerpt of the file
@@ -236,6 +237,8 @@ function replay(doc, registered) {
         const target = inside(dir, block.file);
         if (!target) return fail(`\`file: ${block.file}\` is outside the scratch directory`);
         writeFileSync(target, `${block.lines.join('\n')}\n`);
+        // A fixture is only a fixture: never a command to run or output to compare.
+        return undefined;
       }
 
       if (block.shows) {
@@ -331,7 +334,7 @@ function replay(doc, registered) {
       }
 
       const next = blocks[index + 1];
-      const isText = next && next.lang === 'text' && !next.shows;
+      const isText = next && next.lang === 'text' && !next.shows && !next.file;
       const isJson = next && next.stdout === 'json-subset';
       if (isText) {
         witness.compared += 1;

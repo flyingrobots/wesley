@@ -245,3 +245,11 @@ replay() {
   replay
   assert_success
 }
+
+@test "a fixture block is never read as a command's output" {
+  write_page
+  printf '\n```bash\nwesley emit rust --schema s.graphql --out t.rs\n```\n\n<!-- file: notes.txt -->\n\n```text\na note\n```\n' >> "$PAGE"
+  replay
+  assert_success
+  assert_output --regexp 'ran 4, compared 3$'
+}

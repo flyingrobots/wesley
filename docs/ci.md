@@ -90,7 +90,8 @@ The replay reads these annotations from the Markdown:
 
 A block takes one annotation, so none can switch another's check off. `shows`
 accepts only a file that a replayed command created or changed: a fixture the
-page wrote itself with `file` proves nothing about a command.
+page wrote itself with `file` proves nothing about a command. A `file` block is
+only a fixture: whatever its language, it is never run and never compared.
 
 A `text` block directly after a `bash` block is that block's exact output. A
 stream the page does not show must be empty: a command that prints a warning the
