@@ -189,7 +189,12 @@ export const queryProductOperation = {
 
 Both listings are excerpts: each file continues with the `products` operation.
 
-The generated Rust uses `serde`; add it to the crate that includes the file.
+The generated Rust derives `serde::Serialize` and `serde::Deserialize`, so the
+crate that includes the file needs `serde` with its `derive` feature:
+
+```toml
+serde = { version = "1", features = ["derive"] }
+```
 
 ## 6. Catch a breaking change
 

@@ -90,6 +90,14 @@ The replay reads these annotations from the Markdown:
 A `text` block directly after a `bash` block is that block's exact output. A
 stream the page does not show must be empty: a command that prints a warning the
 page omits fails the replay.
+
+The replay fails closed. An annotation it does not know, or one not directly
+before a block; a fence left open; an indented `wesley` line, which would not
+run; an output block with no command before it; a comparison that compares
+nothing; a file path outside the scratch directory; and a command that does not
+finish within ten seconds are all failures, not things it skips.
+`test/docs-replay-refusals.bats` gives it one broken page per rule and requires
+each to be refused with a message that names the problem.
 Prettier does not reformat code inside Markdown here, because an excerpt has to
 stay byte for byte what the tool printed.
 

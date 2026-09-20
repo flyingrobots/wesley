@@ -50,8 +50,17 @@ On a branch named `release/vX.Y.Z`:
    ```
 
    `release-prep-guard` checks the versions, the sibling pins, the changelog
-   section, and that no open GitHub issue mentions the version. `release-check`
-   runs the full preflight, builds the optimized CLI, and packages every crate.
+   section, that no open GitHub issue mentions the version, and, for each of the
+   five crates, that the files it would package are the expected set.
+   `release-check` runs the full preflight, builds the optimized CLI and runs
+   it, and packages `wesley-core`.
+
+   Only `wesley-core` is packaged before the tag. The other four pin siblings at
+   the new version, which is not on crates.io yet, so `cargo package` cannot
+   resolve them until the publish job has uploaded the crates they depend on. A
+   packaging failure in an emitter or the CLI would therefore surface during
+   publishing, after the tag exists, and would be fixed by releasing the next
+   version.
 
 5. Open a pull request whose title names the tag, for example
    `chore(release): prepare vX.Y.Z`. The autotag workflow requires the branch
