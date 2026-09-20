@@ -24,8 +24,7 @@ const FORBIDDEN_GIT_IDENTITIES: &[&str] = &[
     "CI Test",
     "test@ci.com",
 ];
-const NODE_RETIREMENT_LEDGER: &str =
-    "docs/design/0017-rust-native-front-door-and-node-retirement/node-retirement-ledger.json";
+const NODE_RETIREMENT_LEDGER: &str = "xtask/node-retirement-ledger.json";
 const PUBLISH_CRATES: &[PublishCrate] = &[
     PublishCrate {
         name: "wesley-core",

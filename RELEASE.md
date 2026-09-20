@@ -1,99 +1,118 @@
-<!-- docs-truth: status=current owner=@flyingrobots -->
+# Releasing
 
-# Release Process
+A release is a version bump merged through a pull request, a tag made by a
+workflow, and a publish job started by a maintainer. This page is the whole
+procedure.
 
-Wesley follows the Continuum release lifecycle, adapted to this repository's
-actual shape: a domain-free Rust compiler/toolchain that publishes crates from
-immutable release tags on synced `main`.
+Tags are immutable. A release that turns out to be wrong is fixed by releasing
+the next version, never by moving a tag.
 
-The rule is:
+## What gets released
 
-```text
-plan deliberately -> merge reviewed main -> tag immutably -> publish from tag -> verify publicly -> record evidence
-```
+Five crates, published to crates.io in dependency order: `wesley-core`,
+`wesley-emit-codec`, `wesley-emit-rust`, `wesley-emit-typescript`,
+`wesley-cli`. They share one version and pin each other exactly (`=X.Y.Z`).
+`wesley-holmes` and the root `package.json` carry the same version but are not
+published.
 
-## Repo Profile
+A version with a hyphen (`0.3.0-alpha.2`) is a pre-release. It is published to
+crates.io, where it must be asked for by exact version, and its GitHub Release
+is marked as a pre-release and not as `latest`.
 
-Repo-specific mechanics live in [`.continuum/release.yml`](.continuum/release.yml).
-That profile declares:
+## 1. Prepare
 
-- version sources
-- published crates
-- release signposts
-- validation commands
-- publish workflow
-- GitHub issue model
-- release evidence paths
+On a branch named `release/vX.Y.Z`:
 
-Do not duplicate those facts in prose unless the profile changes too.
+1. Set the version in the six crate manifests and in `package.json`. Set every
+   sibling requirement to `=X.Y.Z`. Then run `cargo check`, which rewrites the
+   workspace entries in `Cargo.lock`.
+2. In `CHANGELOG.md`, move the entries under `## [Unreleased]` into a new
+   `## [X.Y.Z] - YYYY-MM-DD` section. Use the UTC date. The publish workflow
+   copies this section into the GitHub Release, so it is the release notes.
+3. Run the checks:
 
-## Wesley Shape
+   ```bash
+   cargo xtask release-prep-guard --version X.Y.Z
+   cargo xtask release-check
+   ```
 
-Wesley intentionally differs from the generic Continuum template in these
-places:
+   `release-prep-guard` checks the versions, the sibling pins, the changelog
+   section, and that no open GitHub issue mentions the version. `release-check`
+   runs the full preflight, builds the optimized CLI, and packages every crate.
 
-- Implementation work stays in `Goalpost: ...` GitHub milestones.
-- Version scheduling uses concrete `vX.Y.Z` labels because GitHub issues can
-  have only one milestone.
-- `Release: vX.Y.Z` milestones hold release-gate and closeout issues only.
-- Release guards query exact-version issue references and `vX.Y.Z` labels, not
-  release-gate milestones.
-- Autotag is enabled. When a `release/vX.Y.Z` prep PR merges,
-  `.github/workflows/release-autotag.yml` waits for the commit's other CI runs,
-  runs the full release guard against a local annotated tag, and pushes that tag
-  together with a check that `main` has not moved past the release commit. The
-  push is refused if `main` had already moved when it began. That narrows the
-  race with a concurrent merge; it does not close it. It never publishes and
-  never moves a tag.
-- An autotagged tag is unsigned. Its provenance is the autotag workflow run, not
-  a maintainer's key. A manually created fallback tag is signed.
-- Publication runs `.github/workflows/release-crates.yml` from the tag. A tag
-  pushed with a workflow's `GITHUB_TOKEN` does not trigger on-push-tag
-  workflows, so an autotagged release is published by dispatching that workflow
-  from the tag. A manually pushed tag still triggers it directly.
-- crates.io is the public package registry. npm/JSR dist-tag policy does not
-  apply to Wesley's current release surface.
+4. Open a pull request whose title names the tag, for example
+   `chore(release): prepare vX.Y.Z`. The autotag workflow requires the branch
+   name, the title, and the manifest version to agree.
 
-## Commands
+## 2. Merge
 
-Prepare:
+Merging the pull request is the decision to release. It starts
+`release-autotag.yml` on the merge commit, which:
 
-```bash
-cargo xtask release-prep-guard --version X.Y.Z
-cargo xtask preflight
-cargo xtask release-check
-cargo xtask package-crates --version X.Y.Z
-```
+1. waits for the commit's other CI runs to finish,
+2. runs `release-prep-guard` and `release-check`,
+3. creates the annotated tag `vX.Y.Z` locally and runs
+   `cargo xtask release-guard --tag vX.Y.Z` against it,
+4. pushes the tag, unless `main` had already moved past the release commit.
 
-Merge the release-prep PR. Autotag creates `vX.Y.Z` and prints the publish
-command:
+The tag is unsigned. Its provenance is the workflow run that created it.
+
+If the run fails, check first whether the tag exists:
+`git ls-remote --tags origin vX.Y.Z`. A run that is cancelled after the push
+reports failure although the tag was made. If the tag exists and points at the
+release commit, continue. If it does not, nothing was released: fix the cause
+through a new pull request. If `main` moved before the push, do not tag either
+commit by hand; prepare the release again.
+
+## 3. Publish
+
+A tag pushed by a workflow does not start other workflows, so start the publish
+job yourself:
 
 ```bash
 gh workflow run release-crates.yml --ref vX.Y.Z
 ```
 
-The publish workflow runs `release-guard` against the tag, then publishes the
-crates and the GitHub Release from the immutable tag.
+It runs `release-guard` again, creates a draft GitHub Release from the changelog
+section, publishes the five crates, and then finalizes the Release. It refuses
+to run from anything but a tag.
 
-Manual fallback, only when autotag cannot run, and never to bypass a failed
-gate. Tag from synced `main`:
+The job needs the `CARGO_REGISTRY_TOKEN` secret: a crates.io token, owned by an
+owner of the crates, with the `publish-update` scope. If crates.io rejects the
+token the job stops at the first upload with nothing published. Replace the
+secret and re-run the failed job; the tag does not change.
 
 ```bash
-git switch main
-git pull --ff-only
-git fetch origin --tags
+gh secret set CARGO_REGISTRY_TOKEN --repo flyingrobots/wesley
+```
+
+Run that in a terminal, where it prompts for the value. Without a terminal it
+reads standard input, and an empty standard input stores an empty secret.
+
+## 4. Verify
+
+Ask the registry, not a checkout. Inside this repository `cargo info` reports
+the local crate unless told otherwise:
+
+```bash
+for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
+  cargo info "${crate}@X.Y.Z" --registry crates-io
+done
+gh release view vX.Y.Z
+```
+
+## If autotag cannot run
+
+Only when the workflow itself is unavailable, and never to get around a check
+that failed: on `main`, synced with `origin/main`, at the release commit,
+
+```bash
+cargo xtask release-prep-guard --version X.Y.Z
+cargo xtask release-check
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
 cargo xtask release-guard --tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-## Canonical Docs
-
-- [Release doctrine](docs/method/release.md)
-- [Execution runbook](docs/method/release-runbook.md)
-- [Release policy](docs/governance/RELEASE_POLICY.md)
-- [Human checklist](docs/governance/RELEASE_CHECKLIST.md)
-- [Crates.io procedure](docs/CRATES_IO_RELEASE.md)
-- [Release topic](docs/topics/releases.md)
-
-Do not move public tags. If a public release is wrong, patch forward.
+A tag pushed by a person starts `release-crates.yml` by itself. Do not dispatch
+it as well.

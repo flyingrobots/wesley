@@ -1,52 +1,52 @@
 # wesley-core
 
-`wesley-core` is Wesley's Rust compiler kernel. It parses GraphQL SDL into
-domain-empty Level 1 IR, computes schema hashes and schema deltas, and exposes
-operation-selection and directive-argument analysis primitives.
-
-This crate is intended to be embedded by native Wesley tools and by downstream
-systems that need Wesley's GraphQL semantics without the CLI.
-
-External semantic generators can consume `ExtensionGenerationInputV1` directly
-from Rust. The input combines canonical Shape IR, normalized operations,
-optional bound Law IR, explicit owner-declaration references, a settings digest,
-and requested projection roles. `GenerationProvenanceManifestV1` then binds the
-exact generator, sources, input, settings, schema/ABI versions, and outputs.
-Verification recomputes every supplied digest without filesystem, registry,
-network, clock, process, or environment access. Target semantics and generated
-output schemas remain owned by the external generator's repository.
-
-Execution boundaries that need explicit resilience policy can wrap a lowering
-port with `ResilientLoweringPort` and a `ResiliencePolicy`. The wrapper uses
-`ninelives` for Rust-side cooperative timeout policy while leaving ordinary
-deterministic parse and semantic errors as compiler errors.
-
-That wrapper and the async `LoweringPort` it wraps live behind the `resilience`
-feature, which is on by default. The kernel itself — `lower_schema_sdl`,
-`normalize_schema_sdl`, `diff_schema_sdl`, the hashing functions, and operation
-analysis — is synchronous and pure. A consumer that only needs the kernel can
-omit the async runtime stack:
+The compiler kernel of [Wesley](https://github.com/flyingrobots/wesley#readme). It parses GraphQL SDL, lowers it
+to Wesley's L1 IR, hashes it, lists its operations, and classifies the
+differences between two schemas. It is synchronous and performs no I/O.
 
 ```toml
 wesley-core = { version = "=0.3.0-alpha.2", default-features = false }
 ```
 
-`cargo xtask lean-core-check` keeps that build free of `async-trait`,
-`ninelives`, `tokio`, and `tower`.
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let sdl = "type Product { id: ID! name: String! } type Query { product(id: ID!): Product }";
 
-Rust-native module planning can use `ModuleTargetRegistry`,
-`ModuleTargetDescriptor`, `HostCapabilityContract`, `HostFunctionPolicy`,
-`RuntimeResourcePolicy`, and `HermeticCapabilityFixture` to model target
-selection, execution mode, portability floor, ABI compatibility, stateless
-runtime policy, requested/granted/denied capabilities, and deny-by-default host
-imports before any dynamic module or WASM execution hook exists.
+    let ir = wesley_core::lower_schema_sdl(sdl)?;
+    let hash = wesley_core::compute_registry_hash(&ir)?;
+    let operations = wesley_core::list_schema_operations_sdl(sdl)?;
+    println!("{} types, {} operations, hash {hash}", ir.types.len(), operations.len());
 
-The timeout observes async cancellation points. It does not preempt
-synchronous CPU-bound parser or lowering work that runs to completion inside a
-single future poll; lowerers that need hard deadlines should run behind a
-process, thread, or runtime boundary that can be cancelled independently.
+    let narrower = "type Product { id: ID! } type Query { product(id: ID!): Product }";
+    let delta = wesley_core::diff_schema_sdl(sdl, narrower)?;
+    println!("{} types modified", delta.modified_types.len());
+    Ok(())
+}
+```
 
-See the repository
-[README](https://github.com/flyingrobots/wesley#readme) and
-[architecture guide](https://github.com/flyingrobots/wesley/blob/main/docs/ARCHITECTURE.md)
-for the full project context.
+## Entry points
+
+| Function                                                           | Gives you                                |
+| ------------------------------------------------------------------ | ---------------------------------------- |
+| `lower_schema_sdl`                                                 | the L1 IR for a schema                   |
+| `normalize_schema_sdl`                                             | a canonical SDL rendering                |
+| `compute_registry_hash`, `compute_content_hash`                    | SHA-256 hashes of an IR or of text       |
+| `list_schema_operations_sdl`                                       | the Query, Mutation, Subscription fields |
+| `diff_schema_sdl`                                                  | added, removed, and modified types       |
+| `resolve_operation_selections`, `extract_operation_directive_args` | facts about a GraphQL operation          |
+
+Directives are lowered as data, a name and its arguments. The core does not
+interpret them.
+
+## The `resilience` feature
+
+On by default. It adds an async `LoweringPort` and `ResilientLoweringPort`,
+which applies a cooperative timeout through the `ninelives` crate. The timeout
+observes async cancellation points; it cannot interrupt synchronous parsing
+already under way.
+
+With `default-features = false` the crate compiles without `tokio`, `tower`,
+`ninelives`, or `async-trait`.
+
+Wesley is pre-1.0. APIs may change between releases; pin an exact version.
+Apache-2.0.

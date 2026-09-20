@@ -8,6 +8,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- Replaced the documentation. 271 Markdown files under `docs/` are deleted,
+  including the design packets, release packets, audits, and the archive; Git
+  is the archive. In their place: a rewritten README, getting-started guide, CLI
+  reference generated from `wesley --help`, architecture, CI, RELEASE,
+  CONTRIBUTING, SECURITY, SUPPORT, AGENTS, and crate READMEs, each claim taken
+  from the code or from captured command output. The node retirement ledger
+  moved to `xtask/node-retirement-ledger.json`, and `mkdocs.yml` is removed.
+- Adopted two binding standards, each with a compliance ledger of inherited
+  gaps and a ratchet: `docs/rust-standard.md`, Wesley's profile of the Keep Rust
+  Engineering Standard, and `docs/testing-standard.md`, its profile of the
+  portable Testing Standards. The pull request template now requires the kind
+  of change and the sections the Rust standard asks for.
 - Tests now assert runtime behavior only. 112 bats tests that searched
   documentation, workflow YAML, or source text for strings are removed, along
   with eight suites that contained nothing else; the 16 that execute code remain.

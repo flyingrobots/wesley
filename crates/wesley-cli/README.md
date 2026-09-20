@@ -1,27 +1,26 @@
 # wesley-cli
 
-`wesley-cli` installs the native `wesley` command. The CLI exposes Wesley's
-Rust compiler kernel, schema inspection commands, schema diffing, and Rust or
-TypeScript emitter commands.
+Installs `wesley`, the command-line front end of [Wesley](https://github.com/flyingrobots/wesley#readme), a
+compiler for GraphQL schemas.
 
-Use `wesley doctor` to run narrow Rust-native health checks for the native CLI,
-Rust lowerer, normalized SDL hash evidence, and Rust emitter crates. It does
-not inspect legacy Node config, plugins, or package state.
+```bash
+cargo install wesley-cli --version 0.3.0-alpha.2
+wesley doctor
+```
 
-Use `wesley normalize-sdl --schema <path>` to print the deterministic,
-extension-folded SDL view produced from Rust compiler facts, or
-`wesley normalize-sdl --schema <path> --hash` to print its SHA-256 evidence
-hash.
+```bash
+wesley schema hash --schema shop.graphql
+wesley schema diff --old shop.graphql --new shop-v2.graphql --exit-code
+wesley emit rust --schema shop.graphql --out shop.rs
+wesley emit typescript --schema shop.graphql --out shop.ts
+```
 
-Use `wesley emit rust --schema <path> --out <path> --metadata-out <path>` or
-`wesley emit typescript --schema <path> --out <path> --metadata-out <path>` to
-write a deterministic sidecar with schema hash, generator identity, generator
-version, and `rust-native` execution mode.
+`wesley --help` lists every command. The
+[getting-started guide](https://github.com/flyingrobots/wesley/blob/main/docs/getting-started.md) walks through
+them, and the [CLI reference](https://github.com/flyingrobots/wesley/blob/main/docs/cli.md) is the help output in
+full.
 
-The crate is named `wesley-cli` because the bare `wesley` crate name is already
-occupied on crates.io.
+The crate is called `wesley-cli` because `wesley` was already taken on
+crates.io. The binary it installs is `wesley`.
 
-See the repository
-[README](https://github.com/flyingrobots/wesley#readme) and
-[architecture guide](https://github.com/flyingrobots/wesley/blob/main/docs/ARCHITECTURE.md)
-for the full project context.
+Wesley is pre-1.0. Commands and output may change between releases. Apache-2.0.

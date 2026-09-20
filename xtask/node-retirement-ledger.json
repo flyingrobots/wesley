@@ -153,15 +153,6 @@
       "disposition": "extract-or-delete"
     }
   ],
-  "frontDoorDocs": ["README.md", "docs/GUIDE.md", "docs/ENTRYPOINTS.md", "docs/END_TO_END.md"],
-  "pnpmWesleyCompatibilityContext": [
-    "legacy",
-    "historical",
-    "compatibility",
-    "old",
-    "retir",
-    "migration"
-  ],
   "legacyCoreAuthorityPaths": [],
   "legacyCoreAuthorityAllowedChanges": [],
   "ciLaneLabels": {

@@ -1,207 +1,81 @@
-# Contributing to Wesley
+# Contributing
 
-Wesley is a local-first, domain-free GraphQL-to-IR compiler and assurance
-toolchain with durable compiler truth, evidence-backed judgment, and explicit
-extension boundaries.
+## Before you start
 
-This repo now uses METHOD for workflow. Wesley's product doctrine remains
-Wesley's. METHOD defines how work is queued, pulled, proved, and closed.
+Every pull request names a GitHub issue. If there is no issue for the change,
+open one first; it is where the problem and the chosen approach are agreed.
 
-## Start Here
+- Use `Closes #123` for an issue the pull request fully resolves, so that merging
+  closes it.
+- Use `Refs #123` for one it only advances, and say what remains.
 
-For a first small PR, start with
-[First PR](docs/topics/contributing/first-pr.md). It gives the shortest path
-from a scoped GitHub issue to a local validation command and PR body.
+Issues carry either a `triage:*` label, for work that is not scheduled, or a
+`vX.Y.Z` label, for work scheduled into a release.
 
-For broader orientation, read these surfaces in order:
-
-- [README.md](README.md) for doctrine and repo shape
-- [docs/BEARING.md](docs/BEARING.md) for current direction and tensions
-- [docs/VISION.md](docs/VISION.md) for a bounded executive synthesis
-- [docs/design/README.md](docs/design/README.md) for active design packets and boundary doctrine
-- [docs/METHOD.md](docs/METHOD.md) for the workflow contract
-- [docs/topics/README.md](docs/topics/README.md) for contributor and operator task topics
-- [docs/topics/contributing/triage.md](docs/topics/contributing/triage.md) for issue triage and release-lane scheduling
-- [docs/governance/labels.md](docs/governance/labels.md) for issue and PR label semantics
-- [AGENTS.md](AGENTS.md) for repository-specific automation rules
-
-## Repository Doctrine
-
-Wesley exists to make schema-authored structural change trustworthy while
-letting external owners assign domain semantics.
-
-That means:
-
-- GraphQL SDL is the source contract
-- Wesley owns compiler truth, generic module contracts, and evidence plumbing
-- external modules own target semantics, product behavior, runtime law, and
-  database behavior
-- runtime truth beats convenience
-- evidence beats assertion
-- replayability beats magic
-- boring operator workflows beat impressive internals
-- governed behavior beats advisory theater
-- local-first operation beats unnecessary network dependence
-
-Wesley is not a database product, runtime, scheduler, or hidden platform for
-product policy. It extracts GraphQL structure into deterministic IR and
-evidence; the domain side must enter through explicit modules or owning repos
-such as `wesley-postgres`.
-
-## Repo Queue
-
-GitHub owns live work state:
-
-- GitHub Issues hold slices and raw intake.
-- GitHub Milestones hold goalposts and release gates.
-- GitHub Projects provide roadmap board views.
-- GitHub labels carry triage state, release scheduling, legend, work-shape,
-  and ownership metadata.
-
-Repository files are the evidence ledger. Design packets, witnesses, retros,
-release notes, and signpost docs record stable truth and proof after work is
-done. The Chronicle files in the repo root are historical archive only.
-
-## Contributor Onramp
-
-New contributors should start from scoped GitHub Issues, not from repo-local
-backlog files:
-
-- [First PR path](docs/topics/contributing/first-pr.md)
-- [Good first issues](https://github.com/flyingrobots/wesley/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22)
-- [Near-term roadmap issue](https://github.com/flyingrobots/wesley/issues/646)
-- [Wesley Roadmap Project](https://github.com/users/flyingrobots/projects/18)
-
-Starter issues must have one scheduling-state label such as `v0.3.0`, one
-`Goalpost: ...` milestone, one primary file or tiny file set, and one local
-validation command. If an issue still has a `triage:*` label, it is not a
-starter task until a maintainer schedules, splits, moves, or closes it.
-
-Every PR must name at least one GitHub Issue in its body. Use a closing keyword
-such as `Closes #123`, `Fixes #123`, or `Resolves #123` for every issue the PR
-fully resolves so GitHub auto-closes it on merge. If the PR only advances an
-issue, use a non-closing reference such as `Refs #123` or `Tracks #123` and
-state the remaining work explicitly.
-
-The normal first-contribution lanes are docs-only PRs, fixture-only PRs,
-emitter-test PRs, and CLI bug PRs. Advanced architecture, assurance, and
-release docs are background for these lanes, not required reading unless the
-issue says otherwise.
-
-## Design Requirements
-
-Every non-trivial cycle packet under `docs/design/<cycle>/` must name:
-
-- sponsor human
-- sponsor agent
-- hill
-- playback questions
-- accessibility / assistive reading posture
-- localization / directionality posture
-- agent inspectability / explainability posture
-- non-goals
-
-If a posture is not relevant, say so explicitly. Silence is not a position.
-
-Playback questions are the contract. Tests are the executable spec.
-
-## Wesley Invariants
-
-Wesley's standing invariants live under `docs/invariants/`:
-
-- [schema-source-of-truth](docs/invariants/schema-source-of-truth.md)
-- [ledger-truth](docs/invariants/ledger-truth.md)
-- [evidence-truth](docs/invariants/evidence-truth.md)
-- [provenance-visibility](docs/invariants/provenance-visibility.md)
-- [local-first-operation](docs/invariants/local-first-operation.md)
-- [governance-boundaries](docs/invariants/governance-boundaries.md)
-- [docs-runtime-honesty](docs/invariants/docs-runtime-honesty.md)
-
-Every cycle should preserve them. If a cycle changes one intentionally, name
-that change explicitly in the design and witness.
-
-## Legends
-
-Wesley currently uses four METHOD legends:
-
-- `SOURCE` for schema semantics, directives, parser/IR meaning, and ops
-  contracts
-- `TRANSMUTE` for transmutation declarations, generators, and output-domain
-  expansion
-- `RUNTIME` for lifecycle orchestration, run-model truth, hosts, and operator
-  flows
-- `EVIDENCE` for evidence maps, provenance, Holmes-family tools, certs, and
-  judgment surfaces
-
-See `docs/method/legends/` for the standing questions each legend owns.
-
-## Default Loop
-
-1. Pull a GitHub Issue with the right goalpost milestone and either a
-   `triage:*` intake label or concrete `vX.Y.Z` release label.
-2. Add `work-in-progress` while the slice is active.
-3. If the issue is still under `triage:*`, schedule it into a named release,
-   split it, move it, or close it before implementation.
-4. Write or update the design packet when the work needs durable design context.
-5. Write failing tests from the playback questions or issue acceptance criteria.
-6. Implement.
-7. Produce a reproducible witness.
-8. File follow-up work as GitHub Issues with the right goalpost and either a
-   `triage:*` intake label or concrete release lane.
-9. Update ship surfaces such as `docs/BEARING.md`, `CHANGELOG.md`, and release
-   notes only from merged `main` state.
-
-Review state rides on branches and PRs. GitHub Issues, Milestones, Projects, and
-labels are the live queue.
-
-## Wesley-Specific Closeout Rules
-
-- Do not append new Chronicle entries. Close the loop in GitHub Issues, design
-  packets, retros, witnesses, and signpost files instead.
-- If docs contradict runtime behavior, fix the docs.
-- If a claimed result cannot be reproduced from committed commands, tests,
-  fixtures, or witness artifacts, it is not done.
-- Keep generated runtime state in `.wesley-cache/`. It is output, not source.
-- Respect `.llmignore`. It guards attention, not just tooling.
-
-## Development Setup
+## Set up
 
 ```bash
+git clone https://github.com/flyingrobots/wesley
+cd wesley
 corepack enable
-corepack prepare pnpm@9.15.9 --activate
-pnpm install
-pnpm run bootstrap
+pnpm install --frozen-lockfile
+bash scripts/install-hooks.sh
 ```
 
-## Package Manager And Lockfile Policy
+You need stable Rust and Node 22 or later. `pnpm` comes from Corepack at the
+version `package.json` names.
 
-`package.json` is the package-manager source of truth:
-`"packageManager": "pnpm@9.15.9"`. Use Corepack to activate that exact pnpm
-version before installing dependencies.
+## Make the change
 
-Wesley has one JavaScript lockfile: the root `pnpm-lock.yaml`. Do not commit
-`package-lock.json`, `yarn.lock`, nested `pnpm-lock.yaml`, `bun.lock`,
-`bun.lockb`, `deno.lock`, or `npm-shrinkwrap.json`. `cargo xtask
-legacy-preflight` runs `scripts/check-package-manager-policy.mjs`, which checks
-the pnpm version and tracked lockfile set before running package hygiene.
+Two standards bind every change: the [Rust standard](docs/rust-standard.md) and
+the [testing standard](docs/testing-standard.md). Read them before your first
+pull request. Both carry a ledger of where the existing code falls short; new
+and changed code is held to them in full.
 
-GitHub workflows and composite actions must install with
-`pnpm install --frozen-lockfile` and immediately verify
-`git diff --exit-code -- pnpm-lock.yaml`. Local commits use the tracked
-`.githooks/pre-commit` hook: when staged `package.json` or
-`pnpm-workspace.yaml` changes affect dependency resolution, it runs
-`pnpm install --lockfile-only` and stages the updated `pnpm-lock.yaml`.
+Write the test first and watch it fail for the reason you expect.
 
-Useful commands:
+A test executes something and checks what happened. Do not add a test that
+searches documentation, a workflow file, or source code for a string: it breaks
+when someone rewords a sentence and proves nothing about behavior.
+
+Then run the gate:
 
 ```bash
-pnpm lint
-pnpm test
 cargo xtask preflight
-node scripts/pre-push-sanity.mjs --dry-run --files <changed-file> ...
-cargo test -p wesley-core
-cargo test -p wesley-cli
-cargo run --bin wesley -- --help
 ```
 
-For autonomous contributors, see [AGENTS.md](AGENTS.md).
+That is formatting, clippy with warnings denied, the documentation checks, the
+workspace tests, the lean-core check, and a CLI smoke run. A change to the Node
+package or the lockfile also needs `cargo xtask legacy-preflight`. [CI](docs/ci.md)
+lists everything that runs on a pull request.
+
+## Commits and history
+
+- Use conventional commit messages: `fix(core): ...`, `feat(cli): ...`,
+  `docs: ...`.
+- Say what was wrong and how you know it is fixed. "Tests pass" is not evidence;
+  the failing test that now passes is.
+- Never amend, rebase, squash, or force-push. Fix a mistake with a new commit.
+- Do not push to `main`. Changes land through pull requests, merged with a merge
+  commit.
+
+## Documentation
+
+Documentation describes; it is not tested, and no check reads its prose. Two
+things about it are checked, because both can be executed: links must resolve,
+and a `wesley` command shown in the docs must be one the CLI registers.
+
+When behavior changes, change the page that describes it in the same pull
+request, and add an entry under `## [Unreleased]` in `CHANGELOG.md`. Take every
+claim from the code or from real command output. `docs/cli.md` is generated from
+`wesley --help`; regenerate it, do not edit it.
+
+## Dependencies
+
+Wesley is Apache-2.0. A new dependency must be compatible with that, maintained,
+and worth what it brings into the tree. `wesley-core` with default features off
+must stay free of an async runtime; `cargo xtask lean-core-check` enforces it.
+
+## Releases
+
+See [RELEASE.md](RELEASE.md).
