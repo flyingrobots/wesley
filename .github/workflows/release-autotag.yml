@@ -175,7 +175,7 @@ jobs:
       # benign: the tag would still sit on the release-prep merge commit that
       # passed every guard, and that commit is still on main, which is what
       # release-guard requires. Only "is the tip of main" would be untrue.
-      - name: Push the tag, only while main is still the release commit
+      - name: Push the tag, unless main had already moved
         if: steps.plan.outputs.decision == 'tag'
         env:
           AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}

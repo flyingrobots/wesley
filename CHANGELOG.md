@@ -8,6 +8,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- `cargo xtask release-guard` now refuses a lightweight release tag. It only
+  peeled the tag to a commit before, so a hand-pushed lightweight tag passed
+  every tag check and could publish. `release-crates.yml` force-fetches the tag
+  before each guard run. Today's full-depth checkout fetches tags intact, but a
+  shallow checkout of a tag ref would leave a lightweight copy, and the guard
+  would then refuse a legitimate release.
 - The publish workflow's crates.io visibility check now asks the registry. It ran
   `cargo info crate@version` inside the checkout, where every published crate
   exists at that version, so it reported the workspace member and passed whether

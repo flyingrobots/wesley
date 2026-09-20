@@ -179,7 +179,9 @@ had already moved past that commit when the push began. That narrows the race
 with a concurrent merge; it does not close it, and the tag stays on the
 release commit either way. A maintainer creating the fallback tag by hand must do so
 from local `main` after fetching `origin/main` and verifying local `HEAD`
-equals `origin/main`, and must sign it. The tag's commit must remain
+equals `origin/main`, and must sign it. Either way the tag is an annotated tag:
+`release-guard` refuses a lightweight one, because it peels to the same commit
+and every other tag check would pass it. The tag's commit must remain
 reachable from `origin/main` in CI (`git merge-base --is-ancestor`), but
 reachability alone is not enough for human release preparation. Releases from
 feature branches are not permitted, and humans must not merge manual

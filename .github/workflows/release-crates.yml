@@ -69,6 +69,12 @@ jobs:
       - name: Verify tag is on main
         run: |
           set -euo pipefail
+          # release-guard checks that the tag is annotated. With fetch-depth 0,
+          # checkout fetches every tag intact. A shallow checkout of a tag ref
+          # would instead leave refs/tags/<tag> pointing straight at the commit.
+          # Fetch the real tag object first: with that lightweight copy in
+          # place, the plain --tags fetch below is rejected and exits 1.
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
           git fetch origin main --tags --prune
           tag_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
           head_commit="$(git rev-parse HEAD)"
@@ -191,6 +197,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # Same order as in release-gauntlet, for the same reason.
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
           git fetch origin main --tags --prune
           cargo xtask release-guard --tag "$GITHUB_REF_NAME"
 
