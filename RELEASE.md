@@ -30,8 +30,7 @@ On a branch named `release/vX.Y.Z`:
    replays the documented sessions, so a bump that skips this fails the build:
 
    ```bash
-   cargo build --bin wesley
-   node scripts/generate-cli-reference.mjs --wesley target/debug/wesley
+   node scripts/generate-cli-reference.mjs --wesley "$(cargo xtask built-cli)"
    cargo xtask docs-replay
    ```
 
