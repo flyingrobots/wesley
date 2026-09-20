@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve('.');
-const docs = ['README.md', 'docs/getting-started.md', 'docs/cli.md'];
+const docs = ['README.md', 'docs/getting-started.md'];
 const cliSourcePath = 'crates/wesley-cli/src/main.rs';
 
 function fail(message) {

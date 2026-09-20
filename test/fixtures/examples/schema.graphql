@@ -1,7 +1,7 @@
 # Stable current-path Wesley example schema.
 #
-# This fixture intentionally uses only directives that
-# docs/reference/directives.md marks current on the Rust-native SDL hot path.
+# This fixture intentionally uses only directives in current use, as declared
+# in schemas/directives.graphql.
 # It is copied by HOLMES smoke tests and should stay boring.
 
 scalar DateTime

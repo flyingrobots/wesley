@@ -16,11 +16,31 @@ version. Older versions are not patched.
 
 ## What Wesley does with its input
 
-Wesley reads GraphQL SDL, law files, and project manifests from paths you give
-it, and writes generated source to a path you give it. It does not execute the
-schema, fetch anything over the network, or run the code it generates. Treat
-generated code as you would any code you did not write: review it before you
-ship it.
+The `wesley` CLI and the Rust crates read GraphQL SDL, law files, and project
+manifests from paths you give them, and write generated source to a path you
+give them. They treat all of it as data: they do not execute the schema, fetch
+anything over the network, or run the code they generate. Treat generated code
+as you would any code you did not write: review it before you ship it.
+
+## Holmes loads and runs code
+
+The Node package `@wesley/holmes` is different. When one of its commands runs in
+a directory that has a `wesley.config.mjs`, or one named by `WESLEY_CONFIG`, it
+**imports that file and every module the file enables**. Those are executable,
+trusted inputs, not data. Running Holmes in a checkout you do not trust runs
+that checkout's code with your permissions.
+
+Two environment variables control this:
+
+- `WESLEY_MODULE_ALLOWLIST`: a list of the config and module specifiers that may
+  load. Anything not listed is refused. **When it is empty or unset, everything
+  is allowed.**
+- `WESLEY_DISABLE_MODULES`: set to `1`, `true`, `yes`, or `on` to load no
+  modules at all.
+
+In CI, or anywhere Holmes runs over code from a pull request, set one of them.
+Review a module before you add it to the allowlist as you would review any
+dependency.
 
 ## How the repository is checked
 
