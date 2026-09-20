@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- `actionlint` runs over every workflow in `pnpm run legacy-preflight`, and so
+  on every pull request through `preflight.yml`, which installs a pinned
+  version. It was configured for pre-commit, which the installed hooks never
+  ran, so nothing linted the workflows. In CI a missing `actionlint` is a
+  failure; locally it is a warning that says the workflows were not linted. Its
+  `shellcheck` and `pyflakes` integrations are off, so the verdict does not
+  depend on what else a machine has installed.
+
 ### Fixed
 
 - `wesley schema --help` now documents `--config`. `schema lower`, `schema hash`,
