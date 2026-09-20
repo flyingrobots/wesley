@@ -12,6 +12,8 @@ publish = false
 [dependencies]
 # `f64::round` is not in `core`. libm is the rust-lang math library: pure
 # computation, `no_std`, and no dependencies of its own.
-libm = "0.2"
+# Its one default feature, `arch`, substitutes CPU-specific instructions. Off,
+# the portable implementation runs everywhere, which is what this crate is for.
+libm = { version = "0.2", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
