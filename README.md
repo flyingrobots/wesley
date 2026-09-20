@@ -19,7 +19,7 @@ cargo install wesley-cli
 To install a pre-release, name its exact version:
 
 ```bash
-cargo install wesley-cli --version 0.3.0-alpha.2
+cargo install wesley-cli --version 0.3.0-alpha.3
 ```
 
 From a checkout of this repository:
@@ -105,7 +105,7 @@ The compiler kernel is `wesley-core`. It is synchronous, and with default
 features off it pulls in no async runtime:
 
 ```toml
-wesley-core = { version = "=0.3.0-alpha.2", default-features = false }
+wesley-core = { version = "=0.3.0-alpha.3", default-features = false }
 ```
 
 ```rust

@@ -5,7 +5,7 @@ to Wesley's L1 IR, hashes it, lists its operations, and classifies the
 differences between two schemas. It is synchronous and performs no I/O.
 
 ```toml
-wesley-core = { version = "=0.3.0-alpha.2", default-features = false }
+wesley-core = { version = "=0.3.0-alpha.3", default-features = false }
 ```
 
 ```rust

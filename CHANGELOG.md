@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.3.0-alpha.3] - 2026-09-20
+
+The compiler is unchanged in this release: no source file under any crate's
+`src/` differs from `0.3.0-alpha.2`, so the IR, the hashes, and the emitted code
+are identical. What changes is everything around it: the documentation, the
+tests, the release tooling, and the READMEs that ship inside the crates.
+
 ### Added
 
 - Executable documentation. `test/docs-examples.bats` replays the sessions in
@@ -51,22 +58,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - CI now runs every `test/*.bats` suite on every change, discovered by glob. It
   listed seven of the sixteen behind a change filter that compared commits on a
   shallow checkout. That comparison failed silently, so in practice the suites
-  did not run, and a suite could break without any check failing.
+  did not run. Running them found a test that could never pass on a runner,
+  because it read `GITHUB_SHA` without controlling it; it is fixed.
 
 ### Fixed
 
 - ESLint was configured and nothing ran it: not CI, not a preflight, not a
   hook. `pnpm run legacy-preflight` now runs `eslint .`, so `preflight.yml`
   fails a pull request that has a lint error.
-- Four bats suites assert absence with `run rg ...; assert_failure`. Without
-  ripgrep the command exits 127, which also satisfies `assert_failure`, so
-  eighteen assertions, including the domain-empty boundary guard, passed having
-  searched nothing. CI now installs ripgrep, and those suites refuse to run
-  without it.
-- `test/serve-static.bats` was failing on `main` and nothing ran it. It searched
-  `scripts/serve-static.mjs` for an object-literal spelling of the `.js` MIME
-  entry, which stopped matching when the table became a `Map`. The mapping
-  itself was always correct; the unit and HTTP suites prove it.
 - `cargo xtask release-guard` now refuses a lightweight release tag. It only
   peeled the tag to a commit before, so a hand-pushed lightweight tag passed
   every tag check and could publish. `release-crates.yml` force-fetches the tag
@@ -1851,7 +1850,8 @@ kind` instead of being silently accepted via structural duck-typing. All
 
 - Initial public repository layout
 
-[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.2...HEAD
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.3...HEAD
+[0.3.0-alpha.3]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.2...v0.3.0-alpha.3
 [0.3.0-alpha.2]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.1...v0.3.0-alpha.2
 [0.3.0-alpha.1]: https://github.com/flyingrobots/wesley/compare/v0.2.0...v0.3.0-alpha.1
 [0.2.0]: https://github.com/flyingrobots/wesley/compare/v0.1.1...v0.2.0
