@@ -146,11 +146,11 @@ const REPLAYED_DOCUMENTS: [&str; 2] = ["README.md", "docs/getting-started.md"];
 fn run_docs_replay() -> Result<(), Error> {
     run_command("cargo", &["build", "--quiet", "--bin", "wesley"])?;
 
-    // Where Cargo put it: `CARGO_TARGET_DIR` moves the directory and Windows
-    // adds a suffix, so a fixed `target/debug/wesley` could be missing or stale.
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let built_cli = bench_wesley_binary_path(&root, env::var_os("CARGO_TARGET_DIR"));
+    // Where Cargo put it. The target directory can be moved by `CARGO_TARGET_DIR`,
+    // by `CARGO_BUILD_TARGET_DIR`, or by `build.target-dir` in any Cargo config
+    // file, so ask Cargo instead of guessing: a fixed `target/debug/wesley`
+    // could be missing, or stale.
+    let built_cli = built_wesley_path(&cargo_target_directory()?);
     let built_cli = built_cli.to_string_lossy();
 
     let mut replay = vec![
@@ -306,6 +306,40 @@ fn build_wesley_for_bench(root: &Path, json_output: bool) -> Result<PathBuf, Err
         root,
         env::var_os("CARGO_TARGET_DIR"),
     ))
+}
+
+/// The target directory Cargo resolved for this workspace.
+fn cargo_target_directory() -> Result<PathBuf, Error> {
+    let args = ["metadata", "--format-version", "1", "--no-deps"];
+    let label = command_label("cargo", &args);
+    let output = Command::new("cargo")
+        .args(args)
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+    if !output.status.success() {
+        return Err(Error::CommandFailed {
+            command: label,
+            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+        });
+    }
+    target_directory_from_metadata(&output.stdout)
+}
+
+fn target_directory_from_metadata(metadata: &[u8]) -> Result<PathBuf, Error> {
+    let metadata: serde_json::Value = serde_json::from_slice(metadata)
+        .map_err(|source| Error::Usage(format!("`cargo metadata` did not print JSON: {source}")))?;
+    metadata
+        .get("target_directory")
+        .and_then(serde_json::Value::as_str)
+        .filter(|directory| !directory.is_empty())
+        .map(PathBuf::from)
+        .ok_or_else(|| Error::Usage("`cargo metadata` named no `target_directory`".to_string()))
+}
+
+fn built_wesley_path(target_dir: &Path) -> PathBuf {
+    target_dir
+        .join("debug")
+        .join(format!("wesley{}", env::consts::EXE_SUFFIX))
 }
 
 fn bench_wesley_binary_path(root: &Path, cargo_target_dir: Option<OsString>) -> PathBuf {
@@ -3723,6 +3757,37 @@ mod tests {
             bench_wesley_binary_path(root, None),
             root.join("target").join("debug").join(expected_binary)
         );
+    }
+
+    #[test]
+    fn docs_replay_runs_the_binary_in_the_target_directory_cargo_reports() {
+        let metadata = br#"{"packages":[],"target_directory":"/elsewhere/build","version":1}"#;
+        let target_dir = target_directory_from_metadata(metadata).expect("target directory");
+
+        assert_eq!(
+            built_wesley_path(&target_dir),
+            PathBuf::from("/elsewhere/build")
+                .join("debug")
+                .join(format!("wesley{}", env::consts::EXE_SUFFIX))
+        );
+    }
+
+    #[test]
+    fn docs_replay_refuses_cargo_metadata_without_a_target_directory() {
+        for metadata in [
+            &br#"{"version":1}"#[..],
+            br#"{"target_directory":""}"#,
+            b"not json",
+        ] {
+            assert!(
+                matches!(
+                    target_directory_from_metadata(metadata),
+                    Err(Error::Usage(_))
+                ),
+                "accepted {}",
+                String::from_utf8_lossy(metadata)
+            );
+        }
     }
 
     #[test]

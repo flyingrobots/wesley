@@ -14,7 +14,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   checks that `docs/cli.md` equals the binary's help for every command family.
   `scripts/generate-cli-reference.mjs` writes that page. The replay fails
   closed, and `test/docs-replay-refusals.bats` holds it to that with one broken
-  page per rule. This replaces
+  page per rule. `cargo xtask docs-replay` asks Cargo where the built CLI is, so
+  a moved target directory cannot make it replay a stale binary. This replaces
   `scripts/check-doc-cli-commands.mjs`, which learned the CLI's commands by
   searching its source.
 

@@ -71,31 +71,37 @@ The documentation is checked only by executing things:
   scratch directory against the built CLI: `cargo xtask docs-replay`, which
   preflight runs, and `test/docs-examples.bats` in CI. What the
   CLI prints, and the files it writes, are compared with what the page shows.
-  Every `wesley` command a page names, run or not, must be one that
-  `wesley --help` lists. Each page must contribute: a page with nothing run or
+  Every `wesley` command a page names, and every option written directly after
+  `wesley`, must be one that `wesley --help` lists, whether the block is run or
+  not. Each page must contribute: a page with nothing run or
   nothing compared fails.
 - `docs/cli.md` must equal what the binary's help prints today, for every
   command family the root help lists; the same suite checks it.
 
 The replay reads these annotations from the Markdown:
 
-| Annotation                     | Before           | Meaning                                              |
-| ------------------------------ | ---------------- | ---------------------------------------------------- |
-| `<!-- file: NAME -->`          | any fenced block | write the block to `NAME`                            |
-| `<!-- exit: N -->`             | a `bash` block   | its commands exit `N`                                |
-| `<!-- norun: WHY -->`          | a `bash` block   | shown, not run; its command names are still checked  |
-| `<!-- shows: NAME -->`         | any fenced block | the block is a contiguous excerpt of the file `NAME` |
-| `<!-- stdout: json-subset -->` | a `json` block   | every key and value shown is in the real output      |
+| Annotation                     | Before           | Meaning                                               |
+| ------------------------------ | ---------------- | ----------------------------------------------------- |
+| `<!-- file: NAME -->`          | any fenced block | write the block to `NAME`                             |
+| `<!-- exit: N -->`             | a `bash` block   | its commands exit `N`                                 |
+| `<!-- norun: WHY -->`          | a `bash` block   | shown, not run; its command names are still checked   |
+| `<!-- shows: NAME -->`         | any fenced block | a contiguous excerpt of `NAME`, which a command wrote |
+| `<!-- stdout: json-subset -->` | a `json` block   | every key and value shown is in the real output       |
+
+A block takes one annotation, so none can switch another's check off. `shows`
+accepts only a file that a replayed command created or changed: a fixture the
+page wrote itself with `file` proves nothing about a command.
 
 A `text` block directly after a `bash` block is that block's exact output. A
 stream the page does not show must be empty: a command that prints a warning the
 page omits fails the replay.
 
 The replay fails closed. An annotation it does not know, or one not directly
-before a block; a fence left open; an indented `wesley` line, which would not
-run; an output block with no command before it; a comparison that compares
-nothing; a file path outside the scratch directory; and a command that does not
-finish within ten seconds are all failures, not things it skips.
+before a block; two annotations on one block; a fence left open; an indented
+`wesley` line, which would not run; an output block with no command before it;
+a comparison that compares nothing; a file path outside the scratch directory;
+and a command that does not finish within ten seconds (`--timeout-ms` changes the wait) are all failures,
+not things it skips.
 `test/docs-replay-refusals.bats` gives it one broken page per rule and requires
 each to be refused with a message that names the problem.
 Prettier does not reformat code inside Markdown here, because an excerpt has to

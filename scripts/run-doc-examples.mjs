@@ -7,20 +7,25 @@
 //   <!-- exit: N -->             bash only: its wesley commands exit N
 //   <!-- norun: WHY -->          bash only: shown, not run; names still checked
 //   <!-- shows: NAME -->         the block is a contiguous excerpt of the file
-//                                NAME, which a command wrote
+//                                NAME, which a replayed command created or
+//                                changed; a `file:` fixture does not count
 //   <!-- stdout: json-subset --> json only, directly after a bash block: every
 //                                key and value shown is in the real output
 //   a ```text block directly after a ```bash block is that block's exact stdout
 //
+// A block takes one annotation, so that none can switch another's check off.
+//
 // The runner fails closed. Each of these is a failure, not something skipped:
-// an annotation it does not know or that is attached to nothing; a fence left
+// an annotation it does not know or that is attached to nothing; two
+// annotations on one block; a command or a leading option that `wesley --help`
+// does not list, even in a block that is not run; a fence left
 // open; a `wesley` line that is indented and so would not run; an output block
 // with no command before it; a comparison that compares nothing; a file outside
 // the scratch directory; a process that does not finish; and any output, on
 // either stream, that the page does not show.
 //
-//   node scripts/run-doc-examples.mjs --wesley <path-to-binary> <doc.md>...
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+//   node scripts/run-doc-examples.mjs --wesley <binary> [--timeout-ms N] <doc.md>...
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -28,14 +33,21 @@ import { spawnSync } from 'node:child_process';
 const args = process.argv.slice(2);
 const flag = args.indexOf('--wesley');
 if (flag === -1 || !args[flag + 1]) {
-  console.error('usage: run-doc-examples.mjs --wesley <binary> <doc.md>...');
+  console.error('usage: run-doc-examples.mjs --wesley <binary> [--timeout-ms N] <doc.md>...');
   process.exit(2);
 }
 const wesley = resolve(args[flag + 1]);
-const docs = args.filter((_, i) => i !== flag && i !== flag + 1);
 
 // A documented command that hangs must fail the replay, not stall the gate.
-const COMMAND_TIMEOUT_MS = 10_000;
+const timeoutFlag = args.indexOf('--timeout-ms');
+const COMMAND_TIMEOUT_MS = timeoutFlag === -1 ? 10_000 : Number(args[timeoutFlag + 1]);
+if (!Number.isInteger(COMMAND_TIMEOUT_MS) || COMMAND_TIMEOUT_MS <= 0) {
+  console.error('--timeout-ms takes a positive whole number of milliseconds');
+  process.exit(2);
+}
+const consumed = new Set([flag, flag + 1]);
+if (timeoutFlag !== -1) consumed.add(timeoutFlag).add(timeoutFlag + 1);
+const docs = args.filter((_, i) => !consumed.has(i));
 
 const FENCE_OPEN = /^```([a-z]*)\s*$/;
 // Anything shaped like `<!-- word: value -->` is taken to be meant for this
@@ -84,8 +96,10 @@ function parse(markdown) {
           );
         }
       }
-      if (open.file && open.shows) {
-        problems.push(`line ${lineNo}: a block cannot be both \`file\` and \`shows\``);
+      // One annotation per block, so that no check can switch another off.
+      const names = Object.keys(pending);
+      if (names.length > 1) {
+        problems.push(`line ${lineNo}: \`${names.join('\` and \`')}\` cannot be combined`);
       }
       if (open.shows && open.lang === 'bash') {
         problems.push(`line ${lineNo}: a bash block cannot be \`shows\``);
@@ -126,29 +140,37 @@ function registeredCommands() {
     process.exit(2);
   }
   const commands = new Set();
-  let inCommands = false;
+  const options = new Set();
+  let section = null;
   for (const line of help.stdout.split('\n')) {
-    if (line.trim() === 'Commands:') inCommands = true;
-    else if (inCommands && line.trim() === '') inCommands = false;
-    else if (inCommands) {
+    if (line.trim() === 'Commands:' || line.trim() === 'Options:') section = line.trim();
+    else if (line.trim() === '') section = null;
+    else if (section === 'Commands:') {
       const row = line.match(/^ {2}([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)?) {2,}/);
       if (row) commands.add(row[1]);
+    } else if (section === 'Options:') {
+      for (const option of line.match(/(?<![\w-])--?[A-Za-z][\w-]*/g) ?? []) options.add(option);
     }
   }
   if (commands.size === 0) {
     console.error('`wesley --help` listed no commands');
     process.exit(2);
   }
-  return commands;
+  return { commands, options };
 }
 
-function namesRegisteredCommand(argv, registered) {
+// Why `wesley <argv>` is not something the binary's help lists, or null.
+function unlisted(argv, { commands, options }) {
   const [first, second] = argv;
-  if (first === undefined || first.startsWith('-')) return true;
-  if (registered.has(`${first} ${second}`) || registered.has(first)) return true;
+  if (first === undefined) return null;
+  if (first.startsWith('-')) {
+    return options.has(first) ? null : 'is not an option `wesley --help` lists';
+  }
+  if (commands.has(`${first} ${second}`) || commands.has(first)) return null;
   // `wesley schema` with nothing after it prints that family's help.
   const bare = second === undefined || second.startsWith('-');
-  return bare && [...registered].some((command) => command.startsWith(`${first} `));
+  const family = [...commands].some((command) => command.startsWith(`${first} `));
+  return bare && family ? null : 'is not a command `wesley --help` lists';
 }
 
 // Compares `shown` against `actual` as a subset. Arrays match by position, so a
@@ -181,6 +203,18 @@ function subset(shown, actual, path, counter) {
     : `${path}: the page shows ${JSON.stringify(shown)}, the CLI printed ${JSON.stringify(actual)}`;
 }
 
+// The content of every file in the scratch directory, to tell what a command
+// created or changed from what the page put there itself.
+function snapshot(dir) {
+  const files = new Map();
+  for (const entry of readdirSync(dir, { withFileTypes: true, recursive: true })) {
+    if (!entry.isFile()) continue;
+    const path = join(entry.parentPath ?? entry.path, entry.name);
+    files.set(relative(dir, path), readFileSync(path, 'utf8'));
+  }
+  return files;
+}
+
 // A path named by an annotation, confined to the scratch directory.
 function inside(dir, name) {
   if (isAbsolute(name)) return null;
@@ -201,6 +235,9 @@ function replay(doc, registered) {
   const witness = { ran: 0, compared: 0 };
   // The stdout of the bash block at `index`, for the block at `index + 1` only.
   let produced = null;
+  // Files a replayed command created or changed. A fixture the page wrote with
+  // `file:` is not evidence of anything a command did.
+  const written = new Set();
   try {
     blocks.forEach((block, index) => {
       const follows = produced !== null && produced.index === index - 1;
@@ -216,16 +253,14 @@ function replay(doc, registered) {
         if (!target) return fail(`\`shows: ${block.shows}\` is outside the scratch directory`);
         const excerpt = block.lines.join('\n');
         if (excerpt.trim() === '') return fail(`the block that shows \`${block.shows}\` is empty`);
-        let written;
-        try {
-          written = readFileSync(target, 'utf8');
-        } catch {
-          return fail(`the page shows \`${block.shows}\`, but no command wrote it`);
+        if (!written.has(relative(dir, target))) {
+          return fail(`the page shows \`${block.shows}\`, but no replayed command wrote it`);
         }
+        const content = readFileSync(target, 'utf8');
         witness.compared += 1;
-        if (!written.includes(excerpt)) {
+        if (!content.includes(excerpt)) {
           fail(
-            `the \`${block.lang}\` block is not an excerpt of \`${block.shows}\` as written\n--- page\n${excerpt}\n--- ${block.shows}\n${written}`
+            `the \`${block.lang}\` block is not an excerpt of \`${block.shows}\` as written\n--- page\n${excerpt}\n--- ${block.shows}\n${content}`
           );
         }
         return undefined;
@@ -272,15 +307,15 @@ function replay(doc, registered) {
       }
       const commands = block.lines.filter((line) => /^wesley(\s|$)/.test(line));
       for (const command of commands) {
-        if (!namesRegisteredCommand(command.split(/\s+/).slice(1), registered)) {
-          fail(`\`${command}\` is not a command \`wesley --help\` lists`);
-        }
+        const why = unlisted(command.split(/\s+/).slice(1), registered);
+        if (why) fail(`\`${command}\` ${why}`);
       }
       if (block.norun || commands.length === 0) return undefined;
 
       const expectedExit = Number(block.exit ?? 0);
       let stdout = '';
       let stderr = '';
+      const before = snapshot(dir);
       for (const command of commands) {
         const result = run(command.split(/\s+/).slice(1), dir);
         if (result.failed) {
@@ -297,6 +332,9 @@ function replay(doc, registered) {
         }
       }
       produced = { index, stdout };
+      for (const [name, content] of snapshot(dir)) {
+        if (before.get(name) !== content) written.add(name);
+      }
       const session = commands.join(' && ');
       if (stderr !== '') {
         fail(`\`${session}\` wrote to stderr, which the page does not show\n${stderr}`);
