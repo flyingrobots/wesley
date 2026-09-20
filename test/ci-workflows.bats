@@ -889,3 +889,22 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   run bash -lc "grep -A24 'name: Repo Bats tests' $ci | grep -cE 'continue|E2E|skip' "
   [ "$output" -eq 0 ]
 }
+
+@test "suites that search with ripgrep cannot pass without it" {
+  # `run rg ...; assert_failure` is how these suites assert that something is
+  # absent. Without ripgrep the command exits 127, which also satisfies
+  # assert_failure, so the assertion passes having searched nothing.
+  run bash -lc "grep -c 'ripgrep' .github/actions/install-bats/action.yml"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  for suite in $(grep -lE '\brg\b' test/*.bats | grep -v 'test/ci-workflows.bats'); do
+    run grep -cF 'require_ripgrep' "$suite"
+    assert_success
+    [ "$output" -ge 1 ]
+  done
+
+  run grep -cF 'command -v rg' test/helpers/require-ripgrep.bash
+  assert_success
+  [ "$output" -eq 1 ]
+}

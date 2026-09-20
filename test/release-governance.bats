@@ -2,6 +2,11 @@
 
 load 'vendor/bats-plugins/bats-support/load'
 load 'vendor/bats-plugins/bats-assert/load'
+load 'helpers/require-ripgrep'
+
+setup_file() {
+  require_ripgrep
+}
 
 @test "changelog records release governance hardening" {
   run grep -F "**Release governance hardening**" CHANGELOG.md

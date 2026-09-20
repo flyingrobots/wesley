@@ -15,6 +15,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- Four bats suites assert absence with `run rg ...; assert_failure`. Without
+  ripgrep the command exits 127, which also satisfies `assert_failure`, so
+  eighteen assertions, including the domain-empty boundary guard, passed having
+  searched nothing. CI now installs ripgrep, and those suites refuse to run
+  without it.
 - `test/serve-static.bats` was failing on `main` and nothing ran it. It searched
   `scripts/serve-static.mjs` for an object-literal spelling of the `.js` MIME
   entry, which stopped matching when the table became a `Map`. The mapping
