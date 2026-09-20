@@ -23,7 +23,7 @@ the Rust checks will pass in CI. Run it before opening a pull request.
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | `rust-native.yml`             | `cargo xtask preflight`                                                        |
 | `ci.yml`                      | `pnpm -w test`, a CLI smoke run, and every bats suite under `test/*.bats`      |
-| `preflight.yml`               | `pnpm run legacy-preflight`: ESLint, links, package policy, dependency bounds  |
+| `preflight.yml`               | `pnpm run legacy-preflight`: the repository hygiene checks listed below        |
 | `architecture-boundaries.yml` | Import boundaries of the Node package, and that retired packages stay retired  |
 | `docs-link-check.yml`         | Relative links in Markdown resolve                                             |
 | `pkg-holmes.yml`              | `pnpm --filter @wesley/holmes test`                                            |
@@ -33,6 +33,18 @@ the Rust checks will pass in CI. Run it before opening a pull request.
 
 `ci.yml` discovers bats suites by glob, so a new `test/<name>.bats` runs without
 editing the workflow. A glob that matches nothing fails the step.
+
+`legacy-preflight` is `scripts/preflight.mjs`. It runs, and fails on any of:
+
+- the Git identity guard, and the unit tests under `scripts/*.test.mjs`;
+- ESLint;
+- `actionlint` over every workflow;
+- the Markdown link check;
+- markdownlint over every tracked Markdown file but two, named with their
+  reasons in `.markdownlint-cli2.jsonc`;
+- the forbidden machine-local path check and the package manager policy;
+- dependency-cruiser's import boundaries, and the Apache-2.0 license audit of
+  the workspace packages.
 
 ## On `main` only
 
@@ -142,3 +154,15 @@ skips that group, so the hook is a shortcut, not the gate: CI runs everything.
 Rust stable; the repository is developed on 1.96. Node `^22.13`, `^24`, or
 `>=26`, with `pnpm` at the version `package.json` names in `packageManager`.
 Corepack provides it: `corepack enable`.
+
+`actionlint` is optional locally (`brew install actionlint`, or
+`go install github.com/rhysd/actionlint/cmd/actionlint@latest`). Without it,
+`legacy-preflight` says the workflows were not linted and carries on. In CI
+(`CI=true`) a missing `actionlint` fails the run, so a workflow is never merged
+unlinted.
+
+The gate runs `actionlint -shellcheck= -pyflakes=`. Left alone, actionlint runs
+whatever `shellcheck` and `pyflakes` are on the machine, so the same workflow
+could pass on a laptop and fail on a runner, or start failing when the runner
+image upgrades. With them off the verdict is the same everywhere. The cost is
+that the shell inside `run:` blocks is not linted by this gate.
