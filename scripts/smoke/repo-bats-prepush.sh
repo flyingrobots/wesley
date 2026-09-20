@@ -17,17 +17,19 @@ timeout 60s bash scripts/setup-bats-plugins.sh || {
   exit 1
 }
 
-files=(
-  test/serve-static-unit.bats
-  test/serve-static-relative-unit.bats
-  test/docs-planning-boundary.bats
-  test/domain-empty-boundary.bats
-  test/ir-fixtures.bats
-  test/ci-package-manager-policy.bats
-  test/ci-workflows.bats
-)
-
-for f in "${files[@]}"; do
+# Every suite, discovered the same way CI discovers them. All eight take a few
+# seconds, so there is no reason for a hand-kept list that can name a suite
+# that no longer exists.
+# Without nullglob an unmatched glob is passed through as the literal string,
+# and bats would be run on a file called 'test/*.bats' before the count is read.
+shopt -s nullglob
+ran=0
+for f in test/*.bats; do
   echo "[pre-push] bats -t $f"
   timeout 3m bats -t "$f"
+  ran=$((ran + 1))
 done
+if [ "$ran" -eq 0 ]; then
+  echo "[pre-push] No Bats suites ran." >&2
+  exit 1
+fi

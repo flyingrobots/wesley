@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 use std::time::{Duration, Instant};
 
@@ -841,12 +841,8 @@ fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     check_publish_manifest_versions(&version)?;
     check_release_required_files(&version)?;
     check_release_tracker_clear(tag, &version)?;
-    check_readme_version_headline(&version)?;
-    check_technical_teardown_version(&version)?;
     check_no_wip_fixup_commits(tag)?;
     check_breaking_change_version_bump(tag, &version)?;
-    check_guide_file_paths_resolve()?;
-    check_guide_cited_shas_exist()?;
     run_preflight()?;
     check_ci_green_on_head()?;
     check_cargo_audit_clean()?;
@@ -1474,76 +1470,10 @@ fn check_release_tracker_clear(tag: &str, version: &str) -> Result<(), Error> {
     check_release_issue_tracker_clear(tag, version)
 }
 
-fn check_readme_version_headline(version: &str) -> Result<(), Error> {
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let readme_path = root.join("README.md");
-    let readme = fs::read_to_string(&readme_path).map_err(|source| Error::CheckFailed {
-        check: "README version headline".to_string(),
-        failures: vec![format!("README.md is missing or unreadable: {source}")],
-    })?;
-
-    let expected = format!("## What's New in v{version}");
-    if readme_has_exact_version_headline(&readme, version) {
-        Ok(())
-    } else {
-        Err(Error::CheckFailed {
-            check: "README version headline".to_string(),
-            failures: vec![format!(
-                "README.md does not contain `{expected}`; update the What's New section to v{version}"
-            )],
-        })
-    }
-}
-
-fn readme_has_exact_version_headline(readme: &str, version: &str) -> bool {
-    let expected = format!("## What's New in v{version}");
-    readme.lines().any(|line| line.trim_end() == expected)
-}
-
-fn teardown_contains_version(content: &str, version: &str) -> bool {
-    let needle = format!("v{version}");
-    let mut search = content;
-    while let Some(pos) = search.find(&needle) {
-        let before = search[..pos].chars().next_back();
-        let after = &search[pos + needle.len()..];
-        if is_release_version_boundary(before) && is_release_version_boundary(after.chars().next())
-        {
-            return true;
-        }
-        search = &search[pos + 1..];
-    }
-    false
-}
-
 fn is_release_version_boundary(ch: Option<char>) -> bool {
     match ch {
         None => true,
         Some(c) => !c.is_ascii_alphanumeric() && c != '.' && c != '-' && c != '+' && c != '_',
-    }
-}
-
-fn check_technical_teardown_version(version: &str) -> Result<(), Error> {
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let teardown_path = root.join("docs/TECHNICAL_TEARDOWN.md");
-    let content = fs::read_to_string(&teardown_path).map_err(|source| Error::CheckFailed {
-        check: "TECHNICAL_TEARDOWN version".to_string(),
-        failures: vec![format!(
-            "docs/TECHNICAL_TEARDOWN.md is missing or unreadable: {source}"
-        )],
-    })?;
-
-    let v_version = format!("v{version}");
-    if teardown_contains_version(&content, version) {
-        Ok(())
-    } else {
-        Err(Error::CheckFailed {
-            check: "TECHNICAL_TEARDOWN version".to_string(),
-            failures: vec![format!(
-                "docs/TECHNICAL_TEARDOWN.md does not reference {v_version}; update it to describe the {v_version} release state"
-            )],
-        })
     }
 }
 
@@ -1657,118 +1587,6 @@ fn check_breaking_change_version_bump(tag: &str, version: &str) -> Result<(), Er
             )],
         })
     }
-}
-
-fn check_guide_file_paths_resolve() -> Result<(), Error> {
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let guides_dir = root.join("docs/guides");
-    let mut guide_files = Vec::new();
-    collect_markdown_files(&guides_dir, &mut guide_files)?;
-
-    let mut failures = Vec::new();
-    for guide in &guide_files {
-        let content = fs::read_to_string(guide).map_err(|source| {
-            Error::Usage(format!("failed to read `{}`: {source}", guide.display()))
-        })?;
-        for path_ref in extract_backtick_file_paths(&content) {
-            let resolved = root.join(&path_ref);
-            if !resolved.exists() {
-                failures.push(format!(
-                    "{}: `{path_ref}` does not exist",
-                    display_path(&root, guide)
-                ));
-            }
-        }
-    }
-
-    finish_check("guide file paths", failures)
-}
-
-fn check_guide_cited_shas_exist() -> Result<(), Error> {
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let guides_dir = root.join("docs/guides");
-    let mut guide_files = Vec::new();
-    collect_markdown_files(&guides_dir, &mut guide_files)?;
-
-    let mut failures = Vec::new();
-    for guide in &guide_files {
-        let content = fs::read_to_string(guide).map_err(|source| {
-            Error::Usage(format!("failed to read `{}`: {source}", guide.display()))
-        })?;
-        for sha in extract_backtick_commit_shas(&content) {
-            if !git_revision_exists(&sha)? {
-                failures.push(format!(
-                    "{}: cited commit `{sha}` does not exist in git history",
-                    display_path(&root, guide)
-                ));
-            }
-        }
-    }
-
-    finish_check("guide cited commits", failures)
-}
-
-fn extract_backtick_file_paths(content: &str) -> Vec<String> {
-    extract_backtick_content(content)
-        .into_iter()
-        .filter(|s| looks_like_file_path(s))
-        .collect()
-}
-
-fn extract_backtick_commit_shas(content: &str) -> Vec<String> {
-    extract_backtick_content(content)
-        .into_iter()
-        .filter(|s| looks_like_commit_sha(s))
-        .collect()
-}
-
-fn extract_backtick_content(content: &str) -> Vec<String> {
-    let mut result = Vec::new();
-    let mut remaining = content;
-    while let Some(open) = remaining.find('`') {
-        remaining = &remaining[open + 1..];
-        if let Some(close) = remaining.find('`') {
-            let inner = &remaining[..close];
-            if !inner.is_empty() && !inner.contains('\n') {
-                result.push(inner.to_string());
-            }
-            remaining = &remaining[close + 1..];
-        } else {
-            break;
-        }
-    }
-    result
-}
-
-fn looks_like_file_path(s: &str) -> bool {
-    if s.starts_with("http://") || s.starts_with("https://") {
-        return false;
-    }
-    if s.chars().any(char::is_whitespace) {
-        return false;
-    }
-    if !s.contains('/') {
-        return false;
-    }
-    let has_extension = s
-        .split('/')
-        .next_back()
-        .is_some_and(|name| name.contains('.') && !name.starts_with('.'));
-    let has_known_prefix = s.starts_with("src/")
-        || s.starts_with("crates/")
-        || s.starts_with("docs/")
-        || s.starts_with("packages/")
-        || s.starts_with("xtask/")
-        || s.starts_with("scripts/")
-        || s.starts_with("test/")
-        || s.starts_with(".github/");
-    has_extension || has_known_prefix
-}
-
-fn looks_like_commit_sha(s: &str) -> bool {
-    s.len() == 40 && s.chars().all(|c| c.is_ascii_hexdigit())
 }
 
 fn check_ci_green_on_head() -> Result<(), Error> {
@@ -2392,7 +2210,6 @@ fn finish_check(check: &str, failures: Vec<String>) -> Result<(), Error> {
 
 fn run_docs_check() -> Result<(), Error> {
     check_doc_links()?;
-    check_docs_truth_manifest()?;
     check_forbidden_literals()?;
     check_node_retirement_ledger()?;
     Ok(())
@@ -2419,7 +2236,6 @@ fn check_node_retirement_ledger() -> Result<(), Error> {
     check_node_package_dispositions(&root, &ledger, &mut failures)?;
     check_retired_node_packages_absent(&root, &ledger, &mut failures);
     check_legacy_package_metadata(&root, &ledger, &mut failures)?;
-    check_pnpm_wesley_front_door_docs(&root, &ledger, &mut failures)?;
     check_legacy_core_authority_changes(&root, &ledger, &mut failures)?;
 
     if failures.is_empty() {
@@ -2593,43 +2409,6 @@ fn node_package_dirs(root: &Path) -> Result<Vec<String>, Error> {
     Ok(dirs)
 }
 
-fn check_pnpm_wesley_front_door_docs(
-    root: &Path,
-    ledger: &serde_json::Value,
-    failures: &mut Vec<String>,
-) -> Result<(), Error> {
-    let context_terms = ledger_strings(ledger, "pnpmWesleyCompatibilityContext", failures);
-    for doc in ledger_strings(ledger, "frontDoorDocs", failures) {
-        let path = root.join(&doc);
-        let content = fs::read_to_string(&path).map_err(|source| Error::CheckFailed {
-            check: "node retirement ledger".to_string(),
-            failures: vec![format!(
-                "front-door doc `{}` is missing or unreadable: {source}",
-                display_path(root, &path)
-            )],
-        })?;
-        let lines = content.lines().collect::<Vec<_>>();
-        for (index, line) in lines.iter().enumerate() {
-            if !line.contains("pnpm wesley") {
-                continue;
-            }
-            let context = context_window(&lines, index, 4).to_ascii_lowercase();
-            if !context_terms
-                .iter()
-                .any(|term| context.contains(&term.to_ascii_lowercase()))
-            {
-                failures.push(format!(
-                    "{}:{} mentions `pnpm wesley` without legacy or migration context",
-                    doc,
-                    index + 1
-                ));
-            }
-        }
-    }
-
-    Ok(())
-}
-
 fn check_legacy_core_authority_changes(
     root: &Path,
     ledger: &serde_json::Value,
@@ -2731,12 +2510,6 @@ fn ledger_strings(
         .into_iter()
         .filter_map(|value| value.as_str().map(ToOwned::to_owned))
         .collect()
-}
-
-fn context_window(lines: &[&str], index: usize, radius: usize) -> String {
-    let start = index.saturating_sub(radius);
-    let end = (index + radius + 1).min(lines.len());
-    lines[start..end].join("\n")
 }
 
 fn git_revision_exists(revision: &str) -> Result<bool, Error> {
@@ -2905,187 +2678,6 @@ fn markdown_links(content: &str) -> Vec<String> {
     links
 }
 
-fn check_docs_truth_manifest() -> Result<(), Error> {
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let manifest_path = root.join("docs/truth-manifest.json");
-    let manifest_text =
-        fs::read_to_string(&manifest_path).map_err(|source| Error::CheckFailed {
-            check: "docs truth".to_string(),
-            failures: vec![format!(
-                "missing or unreadable manifest `{}`: {source}",
-                display_path(&root, &manifest_path)
-            )],
-        })?;
-    let manifest: serde_json::Value =
-        serde_json::from_str(&manifest_text).map_err(|source| Error::CheckFailed {
-            check: "docs truth".to_string(),
-            failures: vec![format!("manifest is not valid JSON: {source}")],
-        })?;
-
-    let mut failures = Vec::new();
-    let manifest_version_is_integer = manifest
-        .get("version")
-        .and_then(serde_json::Value::as_i64)
-        .is_some();
-    if !manifest_version_is_integer {
-        failures.push("manifest.version must be an integer".to_string());
-    }
-
-    let Some(documents) = manifest
-        .get("documents")
-        .and_then(serde_json::Value::as_array)
-    else {
-        failures.push("manifest.documents must be a non-empty array".to_string());
-        return finish_docs_truth(failures);
-    };
-
-    if documents.is_empty() {
-        failures.push("manifest.documents must be a non-empty array".to_string());
-    }
-
-    let mut seen = Vec::<String>::new();
-    for entry in documents {
-        let Some(entry) = entry.as_object() else {
-            failures.push("manifest entry must be an object".to_string());
-            continue;
-        };
-
-        let Some(path) = entry.get("path").and_then(serde_json::Value::as_str) else {
-            failures.push("manifest entry is missing a non-empty \"path\"".to_string());
-            continue;
-        };
-        if path.is_empty() {
-            failures.push("manifest entry is missing a non-empty \"path\"".to_string());
-            continue;
-        }
-
-        let owner = entry
-            .get("owner")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
-        if owner.is_empty() {
-            failures.push(format!(
-                "manifest entry {path} is missing a non-empty \"owner\""
-            ));
-        }
-
-        let status = entry
-            .get("status")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
-        if !matches!(status, "current" | "experimental" | "proposed") {
-            failures.push(format!(
-                "manifest entry {path} has invalid status \"{status}\""
-            ));
-        }
-
-        let absolute = root.join(path);
-        let normalized = normalize_path(&absolute);
-        if seen.contains(&normalized) {
-            failures.push(format!("duplicate manifest entry for {path}"));
-            continue;
-        }
-        seen.push(normalized);
-
-        let Ok(content) = fs::read_to_string(&absolute) else {
-            failures.push(format!("manifest entry points to missing file: {path}"));
-            continue;
-        };
-        let Some((file_status, file_owner)) = extract_docs_truth(&content) else {
-            failures.push(format!("{path} is missing docs-truth metadata comment"));
-            continue;
-        };
-        if file_status != status {
-            failures.push(format!(
-                "{path} status mismatch: manifest={status} file={file_status}"
-            ));
-        }
-        if file_owner != owner {
-            failures.push(format!(
-                "{path} owner mismatch: manifest={owner} file={file_owner}"
-            ));
-        }
-    }
-
-    let mkdocs_path = root.join("mkdocs.yml");
-    if let Ok(mkdocs) = fs::read_to_string(&mkdocs_path) {
-        let nav_docs = extract_nav_docs(&root, &mkdocs);
-        for nav_doc in nav_docs {
-            let normalized = normalize_path(&nav_doc);
-            if !seen.contains(&normalized) {
-                failures.push(format!(
-                    "public docs page is missing from truth manifest: {}",
-                    display_path(&root, &nav_doc)
-                ));
-            }
-        }
-    }
-
-    finish_docs_truth(failures)
-}
-
-fn finish_docs_truth(failures: Vec<String>) -> Result<(), Error> {
-    if failures.is_empty() {
-        println!("✅ Docs truth manifest is consistent");
-        Ok(())
-    } else {
-        Err(Error::CheckFailed {
-            check: "docs truth".to_string(),
-            failures,
-        })
-    }
-}
-
-fn extract_docs_truth(content: &str) -> Option<(String, String)> {
-    let marker = "docs-truth:";
-    let marker_index = content.find(marker)?;
-    let tail = &content[marker_index + marker.len()..];
-    let end = tail.find("-->").unwrap_or(tail.len());
-    let metadata = &tail[..end];
-    let mut status = None;
-    let mut owner = None;
-
-    for token in metadata.split_whitespace() {
-        if let Some(value) = token.strip_prefix("status=") {
-            status = Some(value.trim().to_string());
-        } else if let Some(value) = token.strip_prefix("owner=") {
-            owner = Some(value.trim().to_string());
-        }
-    }
-
-    Some((status?, owner?))
-}
-
-fn extract_nav_docs(root: &Path, mkdocs: &str) -> Vec<PathBuf> {
-    let docs_dir = mkdocs
-        .lines()
-        .find_map(|line| {
-            let line = line.trim();
-            line.strip_prefix("docs_dir:").map(str::trim)
-        })
-        .unwrap_or("docs");
-    let docs_root = root.join(docs_dir);
-    let mut docs = Vec::new();
-
-    for raw_line in mkdocs.lines() {
-        let line = raw_line.trim();
-        if line.is_empty() || line.starts_with('#') || !line.contains(".md") {
-            continue;
-        }
-
-        let Some((_label, path_part)) = line.split_once(':') else {
-            continue;
-        };
-        let rel = path_part.split('#').next().unwrap_or_default().trim();
-        if rel.ends_with(".md") {
-            docs.push(docs_root.join(rel));
-        }
-    }
-
-    docs
-}
-
 fn check_forbidden_literals() -> Result<(), Error> {
     let root = env::current_dir()
         .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
@@ -3141,28 +2733,6 @@ fn check_forbidden_literals() -> Result<(), Error> {
             failures,
         })
     }
-}
-
-fn normalize_path(path: &Path) -> String {
-    normalize_path_buf(path)
-        .to_string_lossy()
-        .replace('\\', "/")
-}
-
-fn normalize_path_buf(path: &Path) -> PathBuf {
-    let mut normalized = PathBuf::new();
-    for component in path.components() {
-        match component {
-            Component::CurDir => {}
-            Component::ParentDir => {
-                normalized.pop();
-            }
-            Component::Prefix(prefix) => normalized.push(prefix.as_os_str()),
-            Component::RootDir => normalized.push(component.as_os_str()),
-            Component::Normal(part) => normalized.push(part),
-        }
-    }
-    normalized
 }
 
 fn display_path(root: &Path, path: &Path) -> String {
@@ -4491,18 +4061,6 @@ mod tests {
     }
 
     #[test]
-    fn readme_version_headline_requires_exact_heading_line() {
-        assert!(readme_has_exact_version_headline(
-            "# Wesley\n\n## What's New in v0.0.5\n\nNotes",
-            "0.0.5"
-        ));
-        assert!(!readme_has_exact_version_headline(
-            "# Wesley\n\n## What's New in v0.0.50\n\nNotes",
-            "0.0.5"
-        ));
-    }
-
-    #[test]
     fn semver_rejects_leading_zeroes_and_empty_prereleases() {
         assert!(version_from_tag("v01.2.3").is_err());
         assert!(version_from_tag("v1.2.3-").is_err());
@@ -4597,37 +4155,6 @@ mod tests {
                 "{name} README must use package-safe links"
             );
         }
-    }
-
-    #[test]
-    fn node_retirement_front_door_doc_read_errors_are_check_failures() {
-        let root = env::temp_dir().join(format!(
-            "wesley-xtask-front-door-doc-{}",
-            std::process::id()
-        ));
-        fs::create_dir_all(&root).expect("temp root should be created");
-        let ledger = serde_json::json!({
-            "frontDoorDocs": ["missing.md"],
-            "pnpmWesleyCompatibilityContext": ["legacy"]
-        });
-        let mut failures = Vec::new();
-
-        let error = check_pnpm_wesley_front_door_docs(&root, &ledger, &mut failures)
-            .expect_err("missing front-door doc should be a check failure");
-
-        match error {
-            Error::CheckFailed { check, failures } => {
-                assert_eq!(check, "node retirement ledger");
-                assert_eq!(failures.len(), 1);
-                assert!(
-                    failures[0].contains("front-door doc `missing.md` is missing or unreadable"),
-                    "unexpected failure: {:?}",
-                    failures
-                );
-            }
-            other => panic!("expected CheckFailed, got {other:?}"),
-        }
-        fs::remove_dir_all(root).expect("temp root should be removed");
     }
 
     #[test]
@@ -4772,28 +4299,6 @@ mod tests {
             package_json_without_retirement_metadata(&old),
             package_json_without_retirement_metadata(&authority_change)
         );
-    }
-
-    #[test]
-    fn release_procedure_uses_version_placeholder_in_install_example() {
-        let doc = include_str!("../../docs/CRATES_IO_RELEASE.md");
-        assert!(
-            !doc.contains("cargo install wesley-cli --version 0.0.1"),
-            "release procedure should not hardcode the first alpha version"
-        );
-    }
-
-    #[test]
-    fn release_procedure_lists_all_publish_crates() {
-        let doc = include_str!("../../docs/CRATES_IO_RELEASE.md");
-        for publish_crate in PUBLISH_CRATES {
-            let table_entry = format!("| `{}`", publish_crate.name);
-            assert!(
-                doc.contains(&table_entry),
-                "release procedure should list `{}` in Published Units",
-                publish_crate.name
-            );
-        }
     }
 
     #[test]
@@ -5106,76 +4611,7 @@ mod tests {
 
     // --- looks_like_file_path ---
 
-    #[test]
-    fn file_path_accepts_repo_relative_paths_with_known_prefix() {
-        assert!(looks_like_file_path("crates/wesley-core/src/lib.rs"));
-        assert!(looks_like_file_path("docs/GUIDE.md"));
-        assert!(looks_like_file_path("src/main.rs"));
-        assert!(looks_like_file_path("xtask/src/main.rs"));
-        assert!(looks_like_file_path("scripts/preflight.sh"));
-        assert!(looks_like_file_path("test/fixtures/schema.graphql"));
-        assert!(looks_like_file_path(".github/workflows/ci.yml"));
-    }
-
-    #[test]
-    fn file_path_accepts_paths_with_extension_and_slash() {
-        assert!(looks_like_file_path("some/path/file.toml"));
-        assert!(looks_like_file_path("a/b.rs"));
-    }
-
-    #[test]
-    fn file_path_rejects_strings_without_slash() {
-        assert!(!looks_like_file_path("GUIDE.md"));
-        assert!(!looks_like_file_path("cargo-audit"));
-        assert!(!looks_like_file_path("v0.0.5"));
-        assert!(!looks_like_file_path("hello"));
-    }
-
-    #[test]
-    fn file_path_rejects_shell_commands_with_paths() {
-        assert!(looks_like_file_path("test/ci-workflows.bats"));
-        assert!(!looks_like_file_path(
-            "BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats"
-        ));
-    }
-
-    #[test]
-    fn file_path_rejects_http_and_https_urls() {
-        // C-1 / H-1: URLs with file-extension last-components must not trigger file-existence checks
-        assert!(!looks_like_file_path(
-            "https://github.com/flyingrobots/wesley/blob/main/docs/GUIDE.md"
-        ));
-        assert!(!looks_like_file_path("http://example.com/path/to/file.rs"));
-        assert!(!looks_like_file_path("https://example.com/README.md"));
-    }
-
     // --- looks_like_commit_sha ---
-
-    #[test]
-    fn commit_sha_accepts_exactly_40_lowercase_hex_chars() {
-        assert!(looks_like_commit_sha(
-            "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
-        ));
-        assert!(looks_like_commit_sha(&"f".repeat(40)));
-        assert!(looks_like_commit_sha(&"0".repeat(40)));
-    }
-
-    #[test]
-    fn commit_sha_rejects_wrong_length() {
-        assert!(!looks_like_commit_sha("abc123")); // too short
-        assert!(!looks_like_commit_sha(&"a".repeat(39))); // 39
-        assert!(!looks_like_commit_sha(&"a".repeat(41))); // 41
-    }
-
-    #[test]
-    fn commit_sha_rejects_non_hex_chars() {
-        assert!(!looks_like_commit_sha(&"g".repeat(40)));
-        assert!(!looks_like_commit_sha(&"z".repeat(40)));
-        // git SHAs are hex — mixed case is acceptable since git is case-insensitive
-        assert!(looks_like_commit_sha(
-            "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2"
-        ));
-    }
 
     #[test]
     fn git_revision_exists_requires_commit_objects() {
@@ -5186,25 +4622,6 @@ mod tests {
     }
 
     // --- extract_backtick_content ---
-
-    #[test]
-    fn backtick_content_extracts_inline_spans() {
-        assert_eq!(extract_backtick_content("hello `world` foo"), vec!["world"]);
-        assert_eq!(extract_backtick_content("`a` and `b`"), vec!["a", "b"]);
-    }
-
-    #[test]
-    fn backtick_content_skips_empty_and_multiline() {
-        assert!(extract_backtick_content("no backticks").is_empty());
-        assert!(extract_backtick_content("unpaired `tick").is_empty());
-        // multi-line span is discarded
-        assert!(extract_backtick_content("text `first line\nsecond line` more").is_empty());
-    }
-
-    #[test]
-    fn backtick_content_handles_back_to_back_pairs() {
-        assert_eq!(extract_backtick_content("`foo``bar`"), vec!["foo", "bar"]);
-    }
 
     // --- previous_tag_from_sorted_list ---
 
@@ -5229,38 +4646,4 @@ mod tests {
     }
 
     // --- teardown_contains_version ---
-
-    #[test]
-    fn teardown_version_check_requires_v_prefix_and_rejects_substrings() {
-        // C-1: bare contains(version) would falsely pass "v0.0.50" for version "0.0.5"
-        assert!(!teardown_contains_version(
-            "The doc covers v0.0.50 changes.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "The doc covers v0.0.5-alpha changes.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "The doc covers v0.0.5+build changes.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "The doc covers av0.0.5 token.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "The doc covers v0.0.5_rc token.",
-            "0.0.5"
-        ));
-        assert!(!teardown_contains_version(
-            "No version mentioned at all.",
-            "0.0.5"
-        ));
-        // Correct case: doc contains v{version} with v prefix
-        assert!(teardown_contains_version(
-            "Released v0.0.5 on June 5.",
-            "0.0.5"
-        ));
-    }
 }

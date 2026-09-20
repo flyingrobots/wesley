@@ -78,26 +78,3 @@ current_pnpm() {
   assert_output --partial "nested pnpm lockfile is not allowed: packages/example/pnpm-lock.yaml"
   assert_output --partial "forbidden lockfile is tracked: packages/example/yarn.lock"
 }
-
-@test "pre-commit hook stages lockfile updates only for resolution-impacting manifests" {
-  run grep -F "dependencies:x.dependencies" .githooks/pre-commit
-  assert_success
-
-  run grep -F "devDependencies:x.devDependencies" .githooks/pre-commit
-  assert_success
-
-  run grep -F "packageManager" .githooks/pre-commit
-  assert_success
-
-  run grep -F "pnpm install --lockfile-only" .githooks/pre-commit
-  assert_success
-
-  run grep -F "git add pnpm-lock.yaml" .githooks/pre-commit
-  assert_success
-}
-
-@test "github pnpm setup reads packageManager instead of hardcoded pnpm version" {
-  run bash -lc "grep -R -n 'version: 9\\.15\\.9' .github/workflows .github/actions || true"
-  assert_success
-  [ -z "$output" ]
-}

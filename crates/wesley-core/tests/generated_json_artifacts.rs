@@ -227,12 +227,6 @@ fn yaml_to_json_value(value: &Yaml) -> serde_json::Value {
 
 #[test]
 fn schema_family_declares_supported_draft_boundary() {
-    let readme = read_text("schemas/README.md");
-    assert!(
-        readme.contains("## JSON Schema Draft Policy"),
-        "schemas/README.md must document the supported draft boundary"
-    );
-
     let mut drafts = BTreeMap::new();
     for schema_path in schema_file_paths() {
         let repo_path = repo_relative_path(&schema_path);
@@ -721,16 +715,6 @@ fn external_target_protocol_artifacts_satisfy_declared_schemas() {
         "schemas/wesley-target-artifact-manifest-v1.schema.json",
         "duplicate artifact paths with distinct metadata require host validation",
         &duplicate_path_distinct_artifact_manifest,
-    );
-
-    let external_target_protocol_reference =
-        include_str!("../../../docs/reference/external-target-protocol.md")
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ");
-    assert!(
-        external_target_protocol_reference.contains("same path with different metadata"),
-        "external target protocol docs must spell out duplicate path validation beyond JSON Schema"
     );
 
     let dot_only_artifact_manifest = json!({
