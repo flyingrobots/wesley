@@ -11,9 +11,9 @@ load 'vendor/bats-plugins/bats-assert/load'
 # scripts/run-doc-examples.mjs.
 
 setup_file() {
-  cargo build --quiet --bin wesley
-  target_dir="$(cargo metadata --format-version 1 --no-deps | node -e 'process.stdin.setEncoding("utf8"); let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => console.log(JSON.parse(s).target_directory));')"
-  export WESLEY_BIN="$target_dir/debug/wesley"
+  # Cargo says where it put the binary; the path is not guessable.
+  WESLEY_BIN="$(cargo xtask built-cli)"
+  export WESLEY_BIN
   [ -x "$WESLEY_BIN" ]
 }
 
