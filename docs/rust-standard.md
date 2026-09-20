@@ -437,9 +437,12 @@ cargo deny --workspace check
 cargo xtask lean-core-check
 ```
 
-Also gated: source-file line limits, forbidden file names, committed
-generated-code cleanliness, and Markdown link resolution. `cargo audit` gates a
-release. Before trusting any gate, know what it looks at: a gate that examined
+Markdown link resolution is gated today. **Not yet gated, and therefore resting
+on review:** source-file line limits, forbidden file names, function limits, and
+committed generated-code cleanliness. Nothing in `cargo xtask` or any workflow
+inspects them, so a new 600-line file or a `utils.rs` passes every check. They
+become gates when a check exists that executes and can fail; the ledger below
+carries that debt. `cargo audit` gates a release. Before trusting any gate, know what it looks at: a gate that examined
 one crate, or no suites, reports success too.
 
 ## 25. Forbidden patterns
@@ -527,6 +530,7 @@ exempt: each line below is a debt with a direction.
 | 10.2    | no `as` conversions                 | 4 in `src`                                                           |
 | 19.4    | `cargo deny` over the workspace     | no `deny.toml`; `cargo audit` runs at release only                   |
 | 24      | release-profile and doc tests in CI | not run                                                              |
+| 6, 24   | file, function, and filename limits | no check exists; enforced by review only                             |
 
 Counts are of lines matching the pattern under `crates/*/src`, nonblank and
 non-comment for file sizes. Some `println!` calls in `wesley-cli` are its
