@@ -62,8 +62,9 @@ passes when the behavior is broken, which is both false alarm and false
 confidence at once. Two checks touch documentation, and both execute something:
 links are followed and must resolve, and a `wesley` command shown in the docs
 must be one the CLI registers. A workflow's safety properties are protected by
-`actionlint`, by review, and by tests that execute the logic the workflow calls,
-such as the autotag planner's unit tests.
+review and by tests that execute the logic the workflow calls, such as the
+autotag planner's unit tests. A workflow linter belongs in that list and is not
+in it yet: see the ledger.
 
 **Tools.** Rust tests run under `cargo test --workspace`. Node tests run under
 `node --test`. Shell-level tests of the CLI, the fixture generators, and the
@@ -450,6 +451,10 @@ Recorded on 2026-09-20. Each line is a debt, not an excuse.
   timers.
 - **Rule 17.** Fixture goldens under `test/fixtures/` have no re-baseline
   procedure beyond review.
+- **Rule 19.** Nothing lints the workflows. `actionlint` is configured in
+  `.pre-commit-config.yaml`, which the installed hooks do not run, and no
+  workflow or preflight invokes it, so a malformed workflow is caught by review
+  or not at all. Tracked in issue 828.
 
 ## Reviewer checklist, ordered by kill rate
 
