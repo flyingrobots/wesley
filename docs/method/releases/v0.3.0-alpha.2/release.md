@@ -24,10 +24,14 @@ It changes no IR, no hash, no CLI behavior, and no emitted artifact.
    `cargo xtask release-prep-guard --version 0.3.0-alpha.2` passes, and
    `cargo metadata` reports `=0.3.0-alpha.2` on every edge between published
    crates.
-3. **Autotag** (#806, landed in #807). Merging the release-prep PR creates the
-   annotated tag after the full release guard passes on the release commit.
-   Acceptance: the `release-autotag` run for the #805 merge commit succeeds and
-   `v0.3.0-alpha.2` is an annotated tag on that commit.
+3. **Autotag** (#806, landed in #807). The repository has a workflow that tags
+   a merged release-prep PR after the full release guard passes on the release
+   commit. The goalpost is that the workflow ships, not that this release uses
+   it. Acceptance, all met before this PR merges: the workflow is on `main`; its
+   planner and workflow tests pass in `cargo xtask preflight` and
+   `test/ci-workflows.bats`; and its first run on `main`, for the #807 merge
+   commit, skipped a non-release merge for the right reason and ran none of the
+   tagging steps.
 
 Retrospective and evidence live in this directory:
 [`verification.md`](./verification.md).
@@ -36,8 +40,11 @@ Retrospective and evidence live in this directory:
 
 - **Must ship:** all three goalposts. The first is the reason the release
   exists. The second can only be fixed before publication, because published
-  crates are immutable. The third is how the tag gets made.
-- **May slip:** nothing.
+  crates are immutable. The third is already on `main`.
+- **May slip:** tagging this release with autotag. That is the intended path.
+  If autotag cannot run, the maintainer creates the signed fallback tag after
+  rerunning the pre-tag checks on synced `main`, and the release still meets
+  every goalpost. A failed guard is not a reason to use the fallback.
 - **Explicitly not included:** turning `resilience` off by default; any further
   reduction of the remaining 64 crates; verifying inside `release-guard` that a
   tag is annotated (#808); running every bats suite in CI (#810); the
