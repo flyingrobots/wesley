@@ -267,8 +267,12 @@ fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {
 }
 
 fn build_wesley_for_bench(json_output: bool) -> Result<PathBuf, Error> {
-    // Announced on stdout only when stdout is not the JSON report.
-    built_cli::build_wesley(!json_output)
+    // Stdout is the JSON report in that mode, so nothing else may be printed there.
+    built_cli::build_wesley(if json_output {
+        built_cli::Stdout::Silent
+    } else {
+        built_cli::Stdout::Announce
+    })
 }
 
 fn run_wesley_schema_lower(wesley_bin: &Path, schema_path: &Path) -> Result<Vec<u8>, Error> {

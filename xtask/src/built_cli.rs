@@ -20,13 +20,19 @@ const BUILD_ARGS: [&str; 5] = [
     "--message-format=json-render-diagnostics",
 ];
 
+/// Whether the build writes its `xtask: <command>` line to stdout.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Stdout {
+    /// Print the command, as every other xtask step does.
+    Announce,
+    /// Print nothing: the caller's stdout is a path or a JSON report.
+    Silent,
+}
+
 /// Builds the CLI and returns the executable Cargo says it produced.
-///
-/// With `announce` off nothing is written to stdout, so a caller that prints
-/// JSON there stays parseable.
-pub(crate) fn build_wesley(announce: bool) -> Result<PathBuf, Error> {
+pub(crate) fn build_wesley(stdout: Stdout) -> Result<PathBuf, Error> {
     let label = command_label("cargo", &BUILD_ARGS);
-    if announce {
+    if stdout == Stdout::Announce {
         println!("xtask: {label}");
     }
     let output = Command::new("cargo")
@@ -46,7 +52,7 @@ pub(crate) fn build_wesley(announce: bool) -> Result<PathBuf, Error> {
 /// `cargo xtask built-cli`: builds the CLI and prints its path and nothing else,
 /// so that shell callers such as the bats suites ask the same question.
 pub(crate) fn print_path() -> Result<(), Error> {
-    println!("{}", build_wesley(false)?.display());
+    println!("{}", build_wesley(Stdout::Silent)?.display());
     Ok(())
 }
 

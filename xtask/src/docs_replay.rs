@@ -9,7 +9,7 @@ const REPLAYED_DOCUMENTS: [&str; 2] = ["README.md", "docs/getting-started.md"];
 /// Builds the CLI, replays the sessions the documentation shows, and checks
 /// that the generated CLI reference still matches the binary.
 pub(crate) fn run() -> Result<(), Error> {
-    let built_cli = built_cli::build_wesley(true)?;
+    let built_cli = built_cli::build_wesley(built_cli::Stdout::Announce)?;
     let built_cli = built_cli.to_string_lossy();
 
     let mut replay = vec![
