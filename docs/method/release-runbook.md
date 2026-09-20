@@ -126,8 +126,14 @@ Then follow exactly one of the two tagging paths.
    full `release-guard` against a local annotated tag, and pushes the tag
    unless `main` had already moved past the release commit. Do not create or
    push a tag by hand while it runs.
-2. If the run fails, no tag exists. Fix the cause on `main` through a new PR;
-   do not fall back to a manual tag to get around a failed guard.
+2. If the run fails, first check whether the tag exists on the remote:
+   `git ls-remote --tags origin vX.Y.Z`. A run that is cancelled or loses its
+   runner after the push reports failure although the tag was created. If the
+   tag exists, verify it is annotated and points at the release commit, then
+   continue from step 3. If it does not, no release boundary exists: fix the
+   cause through a new PR. That includes a run refused because `main` had
+   moved, where neither commit may be tagged by hand. Never use a manual tag to
+   get around a failed guard.
 3. Verify the pushed tag is annotated and points at the release commit.
 4. Dispatch the publish workflow from the tag. A tag pushed with a workflow's
    `GITHUB_TOKEN` does not start it:

@@ -92,7 +92,9 @@ jobs:
           main_commit="$(git rev-parse origin/main)"
           if [ "$head_commit" != "$main_commit" ]; then
             echo "main moved to $main_commit after $head_commit was pushed."
-            echo "Refusing to autotag a commit that is no longer the tip of main; tag manually after the release guards pass."
+            echo "Refusing to autotag a commit that is no longer the tip of main."
+            echo "Do not tag either commit by hand: $head_commit is no longer synced main, and $main_commit contains work the release sign-off did not cover."
+            echo "Open a new release-prep PR so the release boundary is reviewed and guarded again."
             exit 1
           fi
 

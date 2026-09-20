@@ -797,3 +797,19 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   run grep -E '^  manual_dispatch_required: true$' .continuum/release.yml
   assert_success
 }
+
+@test "release autotag sends a moved main to a new release boundary, not a manual tag" {
+  # Once main has moved there is no valid commit to tag by hand. The release
+  # commit is no longer synced main, and the new tip contains work the release
+  # PR's sign-off never covered. Recovery is a new release-prep PR.
+  run bash -lc "grep -A12 'name: Confirm the commit is still origin/main' $autotag_workflow | grep -ci 'tag manually'"
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -A14 'name: Confirm the commit is still origin/main' $autotag_workflow | grep -c 'Do not tag either commit by hand'"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -A14 'name: Confirm the commit is still origin/main' $autotag_workflow | grep -c 'new release-prep PR'"
+  assert_success
+  [ "$output" -eq 1 ]
+}

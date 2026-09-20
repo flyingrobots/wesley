@@ -75,13 +75,23 @@ before the next tag.
 
 ## GitHub Actions Release Shape
 
-The release workflow is tag-triggered:
+The release workflow always runs from a release tag. How it starts depends on
+who pushed the tag:
 
 ```text
-push tag v*
+autotag pushes tag v*        (normal path; a GITHUB_TOKEN push starts nothing)
+  -> maintainer runs: gh workflow run release-crates.yml --ref vX.Y.Z
+  -> release-gauntlet
+  -> publish-crates
+
+maintainer pushes tag v*     (manual fallback; the push starts the workflow)
   -> release-gauntlet
   -> publish-crates
 ```
+
+On the autotag path, publication does not begin until the workflow is
+dispatched. A dispatch from anything other than a tag is refused in the first
+job.
 
 The `release-gauntlet` job must verify:
 
@@ -89,7 +99,7 @@ The `release-gauntlet` job must verify:
 - tag resolves to the workflow `HEAD`
 - tag commit is reachable from `origin/main`
 - every published `Cargo.toml` version matches the tag
-- every internal Wesley dependency version matches the tag
+- every internal Wesley dependency pins the tag's version exactly (`=X.Y.Z`)
 - root `package.json` version matches the tag
 - every publishable crate has the minimum package file set
 - root `README.md` exists
@@ -240,15 +250,15 @@ Packaging sanity must fail on:
 2. Stage all release-prep changes.
 3. Create exactly one release-prep commit on a release branch:
 
-```bash
-git commit -m "chore(release): vX.Y.Z"
-```
+   ```bash
+   git commit -m "chore(release): vX.Y.Z"
+   ```
 
-For prereleases:
+   For prereleases:
 
-```bash
-git commit -m "chore(release): vX.Y.Z-alpha.1"
-```
+   ```bash
+   git commit -m "chore(release): vX.Y.Z-alpha.1"
+   ```
 
 4. Land the release-prep change through the protected `main` branch.
 5. Fetch `origin/main` and tags.
@@ -286,15 +296,15 @@ gh workflow run release-crates.yml --ref vX.Y.Z
 
 1. Create exactly one signed tag on the synced `main` commit:
 
-```bash
-git tag -s vX.Y.Z -m "release: vX.Y.Z"
-```
+   ```bash
+   git tag -s vX.Y.Z -m "release: vX.Y.Z"
+   ```
 
-For prereleases:
+   For prereleases:
 
-```bash
-git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
-```
+   ```bash
+   git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
+   ```
 
 2. Verify the tag points at the synced `main` commit.
 3. Verify the tag signature.
@@ -305,12 +315,12 @@ git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
 
 **Both paths continue:**
 
-8. Create or verify the GitHub Release from the versioned changelog notes.
-9. Monitor every workflow triggered by the release tag.
-10. Do not infer success from queued or in-progress jobs.
-11. Verify crates.io directly for every published crate.
-12. Do not merge manual release-evidence backfills to `main` for the release
-    that just published.
+1. Create or verify the GitHub Release from the versioned changelog notes.
+2. Monitor every workflow triggered by the release tag.
+3. Do not infer success from queued or in-progress jobs.
+4. Verify crates.io directly for every published crate.
+5. Do not merge manual release-evidence backfills to `main` for the release
+   that just published.
 
 `ABORT LOUDLY` if any of these fail:
 
