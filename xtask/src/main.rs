@@ -4238,15 +4238,17 @@ mod tests {
 
     /// Writes a manifest at `version` for every unpublished crate the release
     /// table names, so that a crate added to the table is in the fixture too.
-    fn write_unpublished_manifests(root: &Path, version: &str) -> std::io::Result<()> {
+    fn write_unpublished_manifests(root: &Path, version: &str) -> Result<(), String> {
+        let named = |path: &Path, source: std::io::Error| format!("{}: {source}", path.display());
         for source in UNPUBLISHED_CARGO_VERSION_SOURCES {
             let crate_root = root.join(source.path);
-            fs::create_dir_all(crate_root.join("src"))?;
+            fs::create_dir_all(crate_root.join("src")).map_err(|e| named(&crate_root, e))?;
             let manifest = format!(
                 "[package]\nname = \"{}\"\nversion = \"{version}\"\nedition = \"2021\"\npublish = false\n",
                 source.name
             );
-            fs::write(crate_root.join("Cargo.toml"), manifest)?;
+            fs::write(crate_root.join("Cargo.toml"), manifest)
+                .map_err(|e| named(&crate_root, e))?;
         }
         Ok(())
     }
@@ -4295,7 +4297,7 @@ mod tests {
             .expect("crate manifest should be written");
         }
 
-        assert!(write_unpublished_manifests(&root, "1.2.3").is_ok());
+        assert_eq!(write_unpublished_manifests(&root, "1.2.3"), Ok(()));
 
         let result = check_publish_manifest_versions_at(&root, "1.2.3");
 
@@ -4358,7 +4360,7 @@ mod tests {
         }
 
         // Every unpublished crate at the right version, then Holmes at a wrong one.
-        assert!(write_unpublished_manifests(&root, "1.2.3").is_ok());
+        assert_eq!(write_unpublished_manifests(&root, "1.2.3"), Ok(()));
         let holmes_root = root.join("crates/wesley-holmes");
         fs::create_dir_all(holmes_root.join("src")).expect("holmes src should be created");
         fs::write(
