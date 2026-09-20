@@ -84,8 +84,8 @@ mod tests {
         let stdout = [LIBRARY, OTHER_BINARY, wesley, FINISHED].join("\n");
 
         assert_eq!(
-            executable_from_build_messages(stdout.as_bytes()).expect("executable"),
-            PathBuf::from("/build/aarch64-apple-darwin/debug/wesley")
+            executable_from_build_messages(stdout.as_bytes()).ok(),
+            Some(PathBuf::from("/build/aarch64-apple-darwin/debug/wesley"))
         );
     }
 
