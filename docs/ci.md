@@ -29,7 +29,7 @@ target fails the run, and the workflows install it.
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | `rust-native.yml`             | `cargo xtask preflight`                                                        |
 | `ci.yml`                      | `pnpm -w test`, a CLI smoke run, and every bats suite under `test/*.bats`      |
-| `preflight.yml`               | `pnpm run legacy-preflight`: ESLint, actionlint, links, package policy, bounds |
+| `preflight.yml`               | `pnpm run legacy-preflight`: the repository hygiene checks listed below        |
 | `architecture-boundaries.yml` | Import boundaries of the Node package, and that retired packages stay retired  |
 | `docs-link-check.yml`         | Relative links in Markdown resolve                                             |
 | `pkg-holmes.yml`              | `pnpm --filter @wesley/holmes test`                                            |
@@ -39,6 +39,18 @@ target fails the run, and the workflows install it.
 
 `ci.yml` discovers bats suites by glob, so a new `test/<name>.bats` runs without
 editing the workflow. A glob that matches nothing fails the step.
+
+`legacy-preflight` is `scripts/preflight.mjs`. It runs, and fails on any of:
+
+- the Git identity guard, and the unit tests under `scripts/*.test.mjs`;
+- ESLint;
+- `actionlint` over every workflow;
+- the Markdown link check;
+- markdownlint over every tracked Markdown file but two, named with their
+  reasons in `.markdownlint-cli2.jsonc`;
+- the forbidden machine-local path check and the package manager policy;
+- dependency-cruiser's import boundaries, and the Apache-2.0 license audit of
+  the workspace packages.
 
 ## On `main` only
 
