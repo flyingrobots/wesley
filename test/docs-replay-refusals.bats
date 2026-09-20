@@ -166,11 +166,17 @@ replay() {
 }
 
 @test "a file annotation that escapes the scratch directory is refused and writes nothing" {
-  write_page 's#<!-- file: s.graphql -->#<!-- file: ../escaped.graphql -->#'
+  # The runner's scratch directory sits directly under Node's tmpdir, so that
+  # is where `../` would land; it is not this test's own temporary directory.
+  escaped="$(node -p 'require("node:os").tmpdir()')/wesley-docs-refusal-escaped.graphql"
+  rm -f "$escaped"
+  write_page 's#<!-- file: s.graphql -->#<!-- file: ../wesley-docs-refusal-escaped.graphql -->#'
   replay
+  leaked=0
+  if [ -e "$escaped" ]; then leaked=1; rm -f "$escaped"; fi
   assert_failure
   assert_output --partial 'is outside the scratch directory'
-  [ ! -e "$BATS_TEST_TMPDIR/../escaped.graphql" ]
+  [ "$leaked" -eq 0 ]
 }
 
 @test "a command the CLI does not list is refused even in a block that is not run" {
