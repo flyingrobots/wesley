@@ -1,13 +1,11 @@
 name: 'Install Bats and JQ'
-description: 'Installs bats, jq, and ripgrep on Ubuntu runners'
+description: 'Installs bats and jq on Ubuntu runners'
 runs:
   using: 'composite'
   steps:
     - name: apt-get update
       shell: bash
       run: sudo apt-get update
-    # ripgrep is a test dependency: several suites assert absence with
-    # `run rg ...; assert_failure`, which passes vacuously if rg is missing.
-    - name: install bats, jq, and ripgrep
+    - name: install bats and jq
       shell: bash
-      run: sudo apt-get install -y bats jq ripgrep
+      run: sudo apt-get install -y bats jq

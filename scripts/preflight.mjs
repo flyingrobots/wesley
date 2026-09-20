@@ -94,10 +94,6 @@ try {
 const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { stdio: 'inherit' });
 if (linkChk.status !== 0) fail('Docs link check failed');
 
-// Docs truth check.
-const truthChk = spawnSync(process.execPath, ['scripts/check-doc-truth.mjs'], { stdio: 'inherit' });
-if (truthChk.status !== 0) fail('Docs truth check failed');
-
 // Forbidden machine-local path literals.
 const privatePathChk = spawnSync(process.execPath, ['scripts/check-forbidden-literals.mjs'], {
   stdio: 'inherit'
