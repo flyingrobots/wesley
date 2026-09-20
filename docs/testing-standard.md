@@ -59,12 +59,13 @@ on what comes out of it:
 not test subjects. No assertion searches a Markdown file, a workflow, or a
 source file for a string. Such a check fails when a sentence is reworded and
 passes when the behavior is broken, which is both false alarm and false
-confidence at once. Two checks touch documentation, and both execute something:
-links are followed and must resolve, and a `wesley` command shown in the docs
-must be one the CLI registers. A workflow's safety properties are protected by
-review and by tests that execute the logic the workflow calls, such as the
-autotag planner's unit tests. A workflow linter belongs in that list and is not
-in it yet: see the ledger.
+confidence at once. The checks that touch documentation all execute something:
+links are followed and must resolve, and the sessions the docs show are
+replayed against the real CLI, with its output and the files it writes compared
+to the page. A workflow's safety properties are protected by review and by tests
+that execute the logic the workflow calls, such as the autotag planner's unit
+tests. A workflow linter belongs in that list and is not in it yet: see the
+ledger.
 
 **Tools.** Rust tests run under `cargo test --workspace`. Node tests run under
 `node --test`. Shell-level tests of the CLI, the fixture generators, and the

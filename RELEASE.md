@@ -26,10 +26,22 @@ On a branch named `release/vX.Y.Z`:
 1. Set the version in the six crate manifests and in `package.json`. Set every
    sibling requirement to `=X.Y.Z`. Then run `cargo check`, which rewrites the
    workspace entries in `Cargo.lock`.
-2. In `CHANGELOG.md`, move the entries under `## [Unreleased]` into a new
+2. Refresh the pages that quote the version. `wesley doctor` prints it, and CI
+   replays the documented sessions, so a bump that skips this fails the build:
+
+   ```bash
+   node scripts/generate-cli-reference.mjs --wesley "$(cargo xtask built-cli)"
+   cargo xtask docs-replay
+   ```
+
+   The last command reports each place `docs/getting-started.md` or the
+   README disagrees with the binary; correct the page to match. Update the
+   version in the install commands and in the crate READMEs too.
+
+3. In `CHANGELOG.md`, move the entries under `## [Unreleased]` into a new
    `## [X.Y.Z] - YYYY-MM-DD` section. Use the UTC date. The publish workflow
    copies this section into the GitHub Release, so it is the release notes.
-3. Run the checks:
+4. Run the checks:
 
    ```bash
    cargo xtask release-prep-guard --version X.Y.Z
@@ -52,7 +64,7 @@ On a branch named `release/vX.Y.Z`:
    publishing, after the tag exists, and would be fixed by releasing the next
    version.
 
-4. Open a pull request whose title names the tag, for example
+5. Open a pull request whose title names the tag, for example
    `chore(release): prepare vX.Y.Z`. The autotag workflow requires the branch
    name, the title, and the manifest version to agree.
 

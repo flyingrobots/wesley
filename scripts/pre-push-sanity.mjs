@@ -150,8 +150,7 @@ function needsLegacyPreflight(changedFiles) {
       file === 'pnpm-workspace.yaml' ||
       file.startsWith('.dependency-cruiser') ||
       file.startsWith('packages/') ||
-      file === 'scripts/preflight.mjs' ||
-      file === 'scripts/check-doc-cli-commands.mjs'
+      file === 'scripts/preflight.mjs'
   );
 }
 
@@ -161,7 +160,10 @@ function needsRepoBats(changedFiles) {
       file.startsWith('.github/') ||
       file.startsWith('.githooks/') ||
       file.startsWith('scripts/') ||
-      file.startsWith('test/')
+      file.startsWith('test/') ||
+      // The replay suite reads these pages.
+      file.startsWith('docs/') ||
+      file === 'README.md'
   );
 }
 
@@ -321,10 +323,4 @@ if (isDirectInvocation()) {
   main();
 }
 
-export {
-  buildCommands,
-  buildGitDiscoveryEnv,
-  formatCommand,
-  formatSpawnFailure,
-  resolveCommand
-};
+export { buildCommands, buildGitDiscoveryEnv, formatCommand, formatSpawnFailure, resolveCommand };

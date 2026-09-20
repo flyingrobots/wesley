@@ -12,7 +12,9 @@ cargo xtask preflight
 
 It runs, in order: `cargo fmt --check`, `cargo clippy --workspace --all-targets
 -- -D warnings`, the documentation checks, `cargo test --workspace`,
-`cargo xtask lean-core-check`, and a smoke run of the CLI. If it passes locally,
+`cargo xtask lean-core-check`, a smoke run of the CLI, and
+`cargo xtask docs-replay`, which replays the documented sessions. It needs Node
+for that last step. If it passes locally,
 the Rust checks will pass in CI. Run it before opening a pull request.
 
 ## On a pull request
@@ -21,7 +23,7 @@ the Rust checks will pass in CI. Run it before opening a pull request.
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | `rust-native.yml`             | `cargo xtask preflight`                                                        |
 | `ci.yml`                      | `pnpm -w test`, a CLI smoke run, and every bats suite under `test/*.bats`      |
-| `preflight.yml`               | `pnpm run legacy-preflight`: links, package policy, dependency boundaries      |
+| `preflight.yml`               | `pnpm run legacy-preflight`: ESLint, links, package policy, dependency bounds  |
 | `architecture-boundaries.yml` | Import boundaries of the Node package, and that retired packages stay retired  |
 | `docs-link-check.yml`         | Relative links in Markdown resolve                                             |
 | `pkg-holmes.yml`              | `pnpm --filter @wesley/holmes test`                                            |
@@ -62,11 +64,66 @@ documentation, workflow files, or source code for strings.
   `apt install bats`. `setup:bats-plugins` only verifies the assertion plugins
   vendored under `test/vendor`; it does not install the runner.
 
-The documentation has two checks, and both execute something. Links are
-followed and must resolve (`cargo xtask docs-check`). Commands shown in
-`README.md` and `docs/getting-started.md` must be commands the CLI registers
-(`node scripts/check-doc-cli-commands.mjs`). `docs/cli.md` is not read by that
-check.
+The documentation is checked only by executing things:
+
+- Links are followed and must resolve: `cargo xtask docs-check`.
+- The sessions in `README.md` and `docs/getting-started.md` are replayed in a
+  scratch directory against the built CLI: `cargo xtask docs-replay`, which
+  preflight runs, and `test/docs-examples.bats` in CI. What the
+  CLI prints, and the files it writes, are compared with what the page shows.
+  Every `wesley` command a page names, and every option written directly after
+  `wesley`, must be one that `wesley --help` lists: in a block that is run, in
+  one that is not, and in an inline code span in the prose. Each page must
+  contribute: a page with nothing run or nothing compared fails, and the replay
+  prints how many commands it ran, outputs it compared, and names it checked.
+- `docs/cli.md` must equal what the binary's help prints today, for every
+  command family the root help lists; the same suite checks it.
+
+The replay reads these annotations from the Markdown:
+
+| Annotation                     | Before             | Meaning                                               |
+| ------------------------------ | ------------------ | ----------------------------------------------------- |
+| `<!-- file: NAME -->`          | any fenced block   | write the block to `NAME`                             |
+| `<!-- exit: N -->`             | a `bash` block     | its commands exit `N`                                 |
+| `<!-- norun: WHY -->`          | a `bash` block     | shown, not run; its command names are still checked   |
+| `<!-- shows: NAME -->`         | a block not `bash` | a contiguous excerpt of `NAME`, which a command wrote |
+| `<!-- stdout: json-subset -->` | a `json` block     | every key and value shown is in the real output       |
+
+A block takes one annotation, so none can switch another's check off. `shows`
+accepts only a file that a replayed command created or changed: a fixture the
+page wrote itself with `file` proves nothing about a command. A `file` block is
+only a fixture: whatever its language, it is never run and never compared.
+
+A `text` block directly after a `bash` block is that block's exact output. A
+stream the page does not show must be empty: a command that prints a warning the
+page omits fails the replay.
+
+The replay fails closed. Each of these is a failure, not something it skips:
+
+- an annotation it does not know, one written without its colon, one given
+  twice, one not directly before a block, two on one block, or `norun` or `exit`
+  on a block with no `wesley` command;
+- a fence left open, or a `wesley` line that would not run: indented, behind a
+  wrapper such as `env` or `FOO=1`, or in an `sh`, `shell` or `console` fence,
+  since only `bash` fences are replayed;
+- in a command that is run: a pipe, redirect, quote or other shell syntax, since
+  no shell interprets it, and an argument that is an absolute path or climbs
+  out with `..`;
+- an output block with no command before it, a comparison that compares nothing,
+  and a JSON block that repeats a key, since only the last would be compared;
+- a `file` or `shows` path outside the scratch directory;
+- a command that does not finish within ten seconds (`--timeout-ms` changes the
+  wait).
+
+`test/docs-replay-refusals.bats` gives it one broken page per rule and requires
+each to be refused with a message that names the problem.
+
+The scratch directory is a working directory, not a sandbox. Refusing path
+arguments that leave it stops a documented command from writing into the
+checkout; it does not contain a command that finds a path some other way.
+
+Prettier does not reformat code inside Markdown here, because an excerpt has to
+stay byte for byte what the tool printed.
 
 ## Git hooks
 
@@ -76,8 +133,8 @@ the lockfile in step with manifest changes.
 The pre-push hook chooses what to run from the paths a push changes
 (`scripts/pre-push-sanity.mjs`). Rust, workflow, hook, and documentation paths
 select `cargo xtask preflight`. `packages/`, the lockfile, and the package
-manifests select the legacy preflight. `.github/`, `.githooks/`, `scripts/`, and
-`test/` select the bats suites. A push that touches none of a group's paths
+manifests select the legacy preflight. `.github/`, `.githooks/`, `scripts/`,
+`test/`, `docs/`, and `README.md` select the bats suites. A push that touches none of a group's paths
 skips that group, so the hook is a shortcut, not the gate: CI runs everything.
 
 ## Toolchain
