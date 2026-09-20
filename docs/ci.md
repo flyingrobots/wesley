@@ -99,9 +99,9 @@ page omits fails the replay.
 
 The replay fails closed. Each of these is a failure, not something it skips:
 
-- an annotation it does not know, one given twice, one not directly before a
-  block, two on one block, or `norun` or `exit` on a block with no `wesley`
-  command;
+- an annotation it does not know, one written without its colon, one given
+  twice, one not directly before a block, two on one block, or `norun` or `exit`
+  on a block with no `wesley` command;
 - a fence left open, or an indented `wesley` line, which would not run;
 - in a command that is run: a pipe, redirect, quote or other shell syntax, since
   no shell interprets it, and an argument that is an absolute path or climbs

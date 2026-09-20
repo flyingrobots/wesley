@@ -17,8 +17,9 @@
 // A block takes one annotation, so that none can switch another's check off.
 //
 // The runner fails closed. Each of these is a failure, not something skipped:
-//   - an annotation it does not know, given twice, or attached to nothing; two
-//     annotations on one block; `norun` or `exit` on a block with no command
+//   - an annotation it does not know, written without its colon, given twice,
+//     or attached to nothing; two annotations on one block; `norun` or `exit`
+//     on a block with no command
 //   - a command or a leading option that `wesley --help` does not list, even
 //     in a block that is not run
 //   - a fence left open; a `wesley` line that is indented and so would not run
@@ -135,6 +136,15 @@ function parse(markdown) {
         pending[name] = value;
         pendingLine = lineNo;
       }
+      return;
+    }
+    // `<!-- shows s.rs -->`, without the colon, is an ordinary comment to
+    // Markdown and would silently take its check with it.
+    const lookalike = line.trim().match(/^<!--\s*([A-Za-z][A-Za-z-]*)\b/);
+    if (lookalike && lookalike[1] in KNOWN) {
+      problems.push(
+        `line ${lineNo}: this comment looks like a \`${lookalike[1]}\` annotation but is not written as one: \`<!-- ${lookalike[1]}: value -->\``
+      );
       return;
     }
     if (line.trim() !== '' && Object.keys(pending).length > 0) {

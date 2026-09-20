@@ -339,3 +339,10 @@ replay() {
   assert_failure
   assert_output --partial 'a bash block cannot be `shows`'
 }
+
+@test "a comment that starts like an annotation but is malformed is refused" {
+  write_page 's/<!-- shows: s.rs -->/<!-- shows s.rs -->/'
+  replay
+  assert_failure
+  assert_output --partial 'looks like a `shows` annotation but is not written as one'
+}
