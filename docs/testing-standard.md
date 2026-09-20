@@ -31,6 +31,10 @@ fail, control everything a test observes.
 
 Do not count tests. Account for claims, counterexamples, and blind spots.
 
+**How to read this.** The rules state requirements, in the present tense. They do
+not describe the suite as it is: the
+[compliance ledger](#compliance-ledger-at-adoption) does that.
+
 ## Wesley profile
 
 These rules bind every new or materially changed assertion from adoption onward.
@@ -58,9 +62,10 @@ passes when the behavior is broken, which is both false alarm and false
 confidence at once. The checks that touch documentation all execute something:
 links are followed and must resolve, and the sessions the docs show are
 replayed against the real CLI, with its output and the files it writes compared
-to the page. A workflow's safety properties are protected by
-`actionlint`, by review, and by tests that execute the logic the workflow calls,
-such as the autotag planner's unit tests.
+to the page. A workflow's safety properties are protected by review and by tests
+that execute the logic the workflow calls, such as the autotag planner's unit
+tests. A workflow linter belongs in that list and is not in it yet: see the
+ledger.
 
 **Tools.** Rust tests run under `cargo test --workspace`. Node tests run under
 `node --test`. Shell-level tests of the CLI, the fixture generators, and the
@@ -440,11 +445,20 @@ Recorded on 2026-09-20. Each line is a debt, not an excuse.
   workspace. No fuzz target exists for any parser. No corpus.
 - **Rule 6.** Inherited tests do not name their oracles. Goldens are not labeled
   as class 5.
+- **Rule 8.** `law_backed_generated_rust_compiles_as_crate` in
+  `wesley-emit-rust` is not hermetic. It writes a manifest that depends on
+  `serde` from crates.io and runs `cargo check` on it with no offline or
+  vendored source, so `cargo test --workspace` fails on a runner without
+  registry access. It is the only test that does this.
 - **Rule 9.** Size classes are not declared or enforced.
 - **Rule 14.** The `resilience` feature's async policy is tested with real
   timers.
 - **Rule 17.** Fixture goldens under `test/fixtures/` have no re-baseline
   procedure beyond review.
+- **Rule 19.** Nothing lints the workflows. `actionlint` is configured in
+  `.pre-commit-config.yaml`, which the installed hooks do not run, and no
+  workflow or preflight invokes it, so a malformed workflow is caught by review
+  or not at all. Tracked in issue 828.
 
 ## Reviewer checklist, ordered by kill rate
 

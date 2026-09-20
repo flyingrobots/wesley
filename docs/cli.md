@@ -3,7 +3,7 @@
 This page is the output of `wesley --help` and of each command group's
 `--help`, captured from version 0.3.0-alpha.2. It is generated, not written:
 if it disagrees with the binary, the binary is right. Regenerate it with
-`node scripts/generate-cli-reference.mjs --wesley target/debug/wesley`.
+`node scripts/generate-cli-reference.mjs --wesley "$(cargo xtask built-cli)"`.
 
 ## wesley
 

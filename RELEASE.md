@@ -30,8 +30,7 @@ On a branch named `release/vX.Y.Z`:
    replays the documented sessions, so a bump that skips this fails the build:
 
    ```bash
-   cargo build --bin wesley
-   node scripts/generate-cli-reference.mjs --wesley target/debug/wesley
+   node scripts/generate-cli-reference.mjs --wesley "$(cargo xtask built-cli)"
    cargo xtask docs-replay
    ```
 
@@ -51,7 +50,10 @@ On a branch named `release/vX.Y.Z`:
 
    `release-prep-guard` checks the versions, the sibling pins, the changelog
    section, that no open GitHub issue mentions the version, and, for each of the
-   five crates, that the files it would package are the expected set.
+   five crates, that the package would include `Cargo.toml`, `README.md`, and
+   `src/lib.rs` or `src/main.rs`. That is a minimum: it does not reject a file
+   that should not be there, so read `cargo package --list` yourself if a crate's
+   contents changed.
    `release-check` runs the full preflight, builds the optimized CLI and runs
    it, and packages `wesley-core`.
 
@@ -129,12 +131,19 @@ Only when the workflow itself is unavailable, and never to get around a check
 that failed: on `main`, synced with `origin/main`, at the release commit,
 
 ```bash
+cargo install cargo-audit --locked
 cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask release-check
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
 cargo xtask release-guard --tag vX.Y.Z
 git push origin vX.Y.Z
 ```
+
+`release-guard` runs `cargo audit`, which is not part of a Rust installation;
+the workflow installs it, and by hand you must. Install it first, so that the
+guard cannot fail for that reason after the tag already exists. If the guard
+does fail, delete the local tag (`git tag -d vX.Y.Z`) before anything else: it
+has not been pushed.
 
 A tag pushed by a person starts `release-crates.yml` by itself. Do not dispatch
 it as well.

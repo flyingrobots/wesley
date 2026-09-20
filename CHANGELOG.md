@@ -14,13 +14,17 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   checks that `docs/cli.md` equals the binary's help for every command family.
   `scripts/generate-cli-reference.mjs` writes that page. The replay fails
   closed, and `test/docs-replay-refusals.bats` holds it to that with one broken
-  page per rule. This replaces
+  page per rule. `cargo xtask docs-replay` runs the executable the build itself
+  reports, so a moved target directory or a target triple cannot make it replay
+  a stale binary; `cargo xtask bench-ir` does the same, and
+  `cargo xtask built-cli` prints that path for shell callers. This replaces
   `scripts/check-doc-cli-commands.mjs`, which learned the CLI's commands by
   searching its source.
 
 ### Changed
 
-- Replaced the documentation. 271 Markdown files under `docs/` are deleted,
+- Replaced the documentation. 268 Markdown files under `docs/` are deleted, and
+  273 across the repository,
   including the design packets, release packets, audits, and the archive; Git
   is the archive. In their place: a rewritten README, getting-started guide, CLI
   reference generated from `wesley --help`, architecture, CI, RELEASE,
@@ -35,6 +39,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Tests now assert runtime behavior only. 112 bats tests that searched
   documentation, workflow YAML, or source text for strings are removed, along
   with eight suites that contained nothing else; the 16 that execute code remain.
+  One Node test that searched `scripts/pre-push-sanity.mjs` for two patterns is
+  removed too; the test beside it already asserts that each check is an argv
+  pair and not a shell string.
   `cargo xtask release-guard` no longer reads prose: the README version
   headline, teardown version, guide path, and cited-SHA checks are gone, as are
   the docs truth manifest and the "pnpm wesley" context check. The Markdown
@@ -48,6 +55,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- ESLint was configured and nothing ran it: not CI, not a preflight, not a
+  hook. `pnpm run legacy-preflight` now runs `eslint .`, so `preflight.yml`
+  fails a pull request that has a lint error.
 - Four bats suites assert absence with `run rg ...; assert_failure`. Without
   ripgrep the command exits 127, which also satisfies `assert_failure`, so
   eighteen assertions, including the domain-empty boundary guard, passed having

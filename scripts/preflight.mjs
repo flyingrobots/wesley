@@ -90,6 +90,10 @@ try {
   // Intentionally ignored: workflows dir may not exist
 }
 
+// ESLint. Nothing else runs it, so without this a lint error reaches `main`.
+const eslintChk = spawnSync('pnpm', ['exec', 'eslint', '.'], { stdio: 'inherit' });
+if (eslintChk.status !== 0) fail('ESLint failed');
+
 // Docs link check.
 const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { stdio: 'inherit' });
 if (linkChk.status !== 0) fail('Docs link check failed');

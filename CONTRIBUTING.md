@@ -73,8 +73,7 @@ claim from the code or from real command output. `docs/cli.md` is generated from
 `wesley --help`; regenerate it, do not edit it:
 
 ```bash
-cargo build --bin wesley
-node scripts/generate-cli-reference.mjs --wesley target/debug/wesley
+node scripts/generate-cli-reference.mjs --wesley "$(cargo xtask built-cli)"
 ```
 
 The sessions in the README and the getting-started guide are replayed in CI, so

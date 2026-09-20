@@ -1,8 +1,10 @@
 # Wesley
 
-Wesley is a compiler for GraphQL schemas. It reads GraphQL SDL, lowers it to a
-deterministic intermediate representation, and from that it hashes schemas,
-lists operations, reports breaking changes, and emits Rust and TypeScript.
+Wesley is a compiler for GraphQL schemas. It reads GraphQL SDL and lowers it to
+a deterministic intermediate representation, which it hashes and compares to
+report breaking changes. It lists a schema's root operations, which it reads
+from the SDL in a separate pass, and from the two together it emits Rust and
+TypeScript.
 
 It is written in Rust and ships as a command-line tool, `wesley`, and as a set
 of library crates. Wesley is pre-1.0: the CLI, the library APIs, and the emitted
@@ -86,8 +88,9 @@ TypeScript, and catching a breaking change in CI.
 
 - [Getting started](docs/getting-started.md): a walkthrough from an empty
   directory.
-- [CLI reference](docs/cli.md): every command and option, as the CLI prints
-  them.
+- [CLI reference](docs/cli.md): the help the CLI prints for every command
+  group. It is only as complete as that help: the schema commands also accept
+  `--config`, which their help does not list yet.
 - [Architecture](docs/architecture.md): the crates, what each one owns, and how
   a schema moves through them.
 - [CI](docs/ci.md): what runs on a pull request and how to run it locally.
