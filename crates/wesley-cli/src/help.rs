@@ -135,19 +135,31 @@ pub(crate) fn print_schema_help() {
         "\
 Wesley schema commands
 
+lower, hash, and operations take the schema from --schema. Without it they read
+the project manifest, named by --config or found by walking upward from the
+current directory, and use its schema path; a manifest that lists more than one
+needs --schema.
+
 Usage:
   wesley schema lower --schema <path> [--json]
+  wesley schema lower [--config <path>] [--json]
   wesley schema hash --schema <path> [--json]
+  wesley schema hash [--config <path>] [--json]
   wesley schema operations --schema <path> [--json]
+  wesley schema operations [--config <path>] [--json]
   wesley schema diff --old <path> --new <path> [--format text|json|summary] [--breaking-only] [--exit-code]
   wesley schema diff --schema <path> --against <rev> [--format text|json|summary] [--breaking-only] [--exit-code]
 
 Options:
   -s, --schema <path>  GraphQL SDL file
+  --config <path>      Project manifest that names the schema; defaults to upward discovery
   --old <path>         Old/base GraphQL SDL file
   --new <path>         New/target GraphQL SDL file
   --against <rev>      Git revision that provides the old schema state
   --base <rev>         Alias for --against
+  --format <format>    diff output format: text, json, or summary
+  --breaking-only      diff: report only breaking changes
+  --exit-code          diff: exit 1 when the change is breaking
   --json               Emit JSON output"
     );
 }
@@ -214,6 +226,7 @@ Usage:
 Options:
   -o, --operation <path>  GraphQL operation file
   -s, --schema <path>     Optional GraphQL schema SDL file
-  -d, --directive <name>  Directive name, without or with @"
+  -d, --directive <name>  Directive name, without or with @
+  --json                  Emit JSON output"
     );
 }

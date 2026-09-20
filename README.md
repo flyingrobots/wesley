@@ -89,8 +89,8 @@ TypeScript, and catching a breaking change in CI.
 - [Getting started](docs/getting-started.md): a walkthrough from an empty
   directory.
 - [CLI reference](docs/cli.md): the help the CLI prints for every command
-  group. It is only as complete as that help: the schema commands also accept
-  `--config`, which their help does not list yet.
+  group. A test holds each help page to describing every option its usage lines
+  offer.
 - [Architecture](docs/architecture.md): the crates, what each one owns, and how
   a schema moves through them.
 - [CI](docs/ci.md): what runs on a pull request and how to run it locally.

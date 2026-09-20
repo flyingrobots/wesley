@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- `wesley schema --help` now documents `--config`. `schema lower`, `schema hash`,
+  and `schema operations` have always taken the schema from a project manifest
+  when `--schema` is omitted, and the help said neither that nor how to name the
+  manifest. It also lists `--format`, `--breaking-only`, and `--exit-code` under
+  Options, and `wesley operation --help` lists `--json`; each appeared only in a
+  usage line. A CLI test now requires every help page to describe every option
+  its usage lines offer.
+
 ## [0.3.0-alpha.3] - 2026-09-20
 
 The compiler is unchanged in this release: no source file under any crate's
