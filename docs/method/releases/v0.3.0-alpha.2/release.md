@@ -5,37 +5,43 @@
 Wesley `0.3.0-alpha.2` puts `wesley-core`'s async lowering port behind a
 default-on `resilience` feature and removes two unused dependencies, so a
 consumer that needs only the synchronous compiler kernel can omit the async
-runtime stack.
+runtime stack. It also pins sibling crates exactly in every published manifest,
+and it is the first release tagged by the autotag workflow.
 
-The release is deliberately narrow: one Cargo feature, two dependency removals,
-and the gate that keeps the lean build lean. It changes no IR, no hash, no CLI
-behavior, and no emitted artifact.
+It changes no IR, no hash, no CLI behavior, and no emitted artifact.
 
-## Included Scope
+## Goalposts
 
-- #803: `wesley-core` forces the async runtime stack on kernel-only consumers.
-  Landed in #804.
-- The `resilience` feature gating `ports::lowering`, the `resilience` module,
-  their re-exports, and `impl LoweringPort for ApolloLoweringAdapter`.
-- Removal of the unused `tower` dependency and the unused normal `tokio`
-  dependency.
-- `cargo xtask lean-core-check`, wired into `cargo xtask preflight`.
-- `crates/wesley-core/tests/lean_core.rs`, which runs in both configurations.
+1. **Lean core** (#803, landed in #804). `wesley-core` compiles without the
+   async runtime stack when default features are off. Acceptance:
+   `cargo xtask lean-core-check` passes inside `cargo xtask preflight`;
+   `cargo tree -p wesley-core --no-default-features -e normal` names none of
+   `async-trait`, `ninelives`, `tokio`, or `tower`; the default-feature public
+   API is unchanged.
+2. **Exact sibling pins** (#809, landed in #811). Every published crate requires
+   its siblings as `=0.3.0-alpha.2`, so an unlocked install of this release
+   cannot resolve siblings from a later one. Acceptance:
+   `cargo xtask release-prep-guard --version 0.3.0-alpha.2` passes, and
+   `cargo metadata` reports `=0.3.0-alpha.2` on every edge between published
+   crates.
+3. **Autotag** (#806, landed in #807). Merging the release-prep PR creates the
+   annotated tag after the full release guard passes on the release commit.
+   Acceptance: the `release-autotag` run for the #805 merge commit succeeds and
+   `v0.3.0-alpha.2` is an annotated tag on that commit.
+
+Retrospective and evidence live in this directory:
+[`verification.md`](./verification.md).
 
 ## Scope
 
-This release uses the shorter thesis the release policy allows for patch-style
-releases: a recorded reason, validation evidence, post-publication
-verification, and a fallout path. It names no goalposts because it completes
-none; it carries one fix that a downstream consumer is waiting on.
-
-- **Must ship:** the `resilience` feature, the removal of `tower` and the normal
-  `tokio` dependency, and `lean-core-check` in preflight. Without all three the
-  release has no reason to exist.
-- **May slip:** nothing. There is no second item to defer.
-- **Explicitly not included:** turning `resilience` off by default, any further
-  reduction of the remaining 44 crates, and anything else merged to `main` after
-  #804 that is not release prep.
+- **Must ship:** all three goalposts. The first is the reason the release
+  exists. The second can only be fixed before publication, because published
+  crates are immutable. The third is how the tag gets made.
+- **May slip:** nothing.
+- **Explicitly not included:** turning `resilience` off by default; any further
+  reduction of the remaining 44 crates; verifying inside `release-guard` that a
+  tag is annotated (#808); running every bats suite in CI (#810); the
+  repository-wide markdownlint sweep (#812).
 
 ## Sponsored Users
 
@@ -64,12 +70,13 @@ The stable `0.3.0` is not claimed.
 
 ## Acceptance
 
+Each goalpost carries its own acceptance above. For the release as a whole:
+
 - `cargo xtask preflight` passes, including `lean-core-check`.
 - `cargo test -p wesley-core --no-default-features` passes every suite.
-- `cargo tree -p wesley-core --no-default-features -e normal` names none of
-  `async-trait`, `ninelives`, `tokio`, or `tower`.
 - `cargo xtask release-prep-guard --version 0.3.0-alpha.2` passes.
-- The default-feature public API is unchanged.
+- `cargo xtask release-check`, `cargo audit`, and
+  `cargo xtask package-crates --version 0.3.0-alpha.2` pass.
 
 ## Evidence And Fallout
 

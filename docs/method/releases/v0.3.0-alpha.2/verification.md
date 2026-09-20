@@ -13,17 +13,16 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 - Target version: `0.3.0-alpha.2`.
 - Target tag: `v0.3.0-alpha.2`.
 - Prep branch: `release/v0.3.0-alpha.2`.
-- Release type: pre-release of the 0.3.0 line. It carries one additive
-  `wesley-core` feature and two dependency removals, so it uses the shorter
-  thesis the release policy allows for patch-style releases.
+- Release type: pre-release of the 0.3.0 line. It carries three goalposts,
+  named with their acceptance evidence in [`release.md`](./release.md).
 - Previous release tag: `v0.3.0-alpha.1`.
 - Tracking issue: #803. It closes when the crates are visible on crates.io.
-- Feature merge: PR #804 merged to `main` at
-  `d444bbfa7` from `core/803-lean-core-resilience-feature`.
+- Feature merges to `main`: #804 at `d444bbfa7` (lean core), #811 at
+  `f46a7d5b3` (exact sibling pins), and #807 at `bc2069527` (autotag).
 - Release-prep PR: #805. Its merge commit is the release commit; the tag records
   it, so it is not repeated here.
-- Release boundary: one release tag on synced `main`, created as `RELEASE.md`
-  describes at the time of tagging.
+- Release boundary: one annotated release tag on synced `main`, created by the
+  autotag workflow when #805 merges.
 
 ## Discovery
 
@@ -32,7 +31,8 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 | Repository type                   | Mixed Rust/pnpm workspace.                                                                          |
 | Rust release authority            | `wesley-core`, `wesley-emit-codec`, `wesley-emit-rust`, `wesley-emit-typescript`, and `wesley-cli`. |
 | Unpublished Rust workspace member | `wesley-holmes` stays `publish = false` but follows workspace version lockstep.                     |
-| Version sources bumped            | Five published manifests and their inter-crate pins, `wesley-holmes`, `package.json`, `Cargo.lock`. |
+| Version sources bumped            | Five published manifests, `wesley-holmes`, `package.json`, `Cargo.lock`.                            |
+| Sibling requirements              | All eight are `=0.3.0-alpha.2`. `cargo metadata --locked` reports that requirement on every edge.   |
 | `Cargo.lock` change               | Exactly six version lines, `0.3.0-alpha.1` to `0.3.0-alpha.2`.                                      |
 | Public API change                 | None with default features. `--no-default-features` now removes the async lowering port.            |
 
