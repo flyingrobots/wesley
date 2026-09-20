@@ -260,3 +260,10 @@ replay() {
   assert_success
   assert_output --regexp 'ran 3, compared 3$'
 }
+
+@test "shell syntax the replay does not interpret is refused, not passed to the CLI" {
+  write_page 's#^(wesley schema hash --schema s\.graphql)$#\1 | cat#'
+  replay
+  assert_failure
+  assert_output --partial 'shell syntax the replay does not interpret'
+}

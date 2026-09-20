@@ -99,10 +99,11 @@ page omits fails the replay.
 
 The replay fails closed. An annotation it does not know, or one not directly
 before a block; two annotations on one block; a fence left open; an indented
-`wesley` line, which would not run; an output block with no command before it;
-a comparison that compares nothing; a file path outside the scratch directory;
-and a command that does not finish within ten seconds (`--timeout-ms` changes the wait) are all failures,
-not things it skips.
+`wesley` line, which would not run; a pipe, redirect, quote or other shell
+syntax in a command that is run, since no shell interprets it; an output block
+with no command before it; a comparison that compares nothing; a file path
+outside the scratch directory; and a command that does not finish within ten
+seconds (`--timeout-ms` changes the wait) are all failures, not things it skips.
 `test/docs-replay-refusals.bats` gives it one broken page per rule and requires
 each to be refused with a message that names the problem.
 Prettier does not reformat code inside Markdown here, because an excerpt has to

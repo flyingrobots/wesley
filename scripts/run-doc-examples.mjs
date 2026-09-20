@@ -20,7 +20,8 @@
 // an annotation it does not know or that is attached to nothing; two
 // annotations on one block; a command or a leading option that `wesley --help`
 // does not list, even in a block that is not run; a fence left
-// open; a `wesley` line that is indented and so would not run; an output block
+// open; a `wesley` line that is indented and so would not run, or that uses
+// shell syntax, which no shell is here to interpret; an output block
 // with no command before it; a comparison that compares nothing; a file outside
 // the scratch directory; a process that does not finish; and any output, on
 // either stream, that the page does not show.
@@ -56,6 +57,7 @@ const FENCE_OPEN = /^```([a-z]*)\s*$/;
 // Anything shaped like `<!-- word: value -->` is taken to be meant for this
 // runner, so a misspelled annotation is an error rather than a dropped check.
 const ANNOTATION = /^<!--\s*([A-Za-z][A-Za-z-]*):\s*(.*?)\s*-->$/;
+const SHELL_SYNTAX = /[|&;<>$"'\\#`(){}*?~]/;
 const KNOWN = {
   file: { langs: null, value: /\S/ },
   shows: { langs: null, value: /\S/ },
@@ -311,6 +313,13 @@ function replay(doc, registered) {
       let stderr = '';
       const before = snapshot(dir);
       for (const command of commands) {
+        // No shell runs these lines: they are split on spaces and handed to the
+        // binary. A pipe, a redirect or a quote would become an argument, and
+        // the page would only fail if the CLI happened to reject it.
+        if (SHELL_SYNTAX.test(command)) {
+          fail(`\`${command}\` uses shell syntax the replay does not interpret`);
+          continue;
+        }
         const result = run(command.split(/\s+/).slice(1), dir);
         if (result.failed) {
           fail(`\`${command}\` did not finish: ${result.failed}`);
