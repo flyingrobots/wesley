@@ -12,7 +12,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   the README and the getting-started guide against the real CLI and compares
   what it prints, and the files it writes, with what the page shows, and
   checks that `docs/cli.md` equals the binary's help for every command family.
-  `scripts/generate-cli-reference.mjs` writes that page. This replaces
+  `scripts/generate-cli-reference.mjs` writes that page. The replay fails
+  closed, and `test/docs-replay-refusals.bats` holds it to that with one broken
+  page per rule. This replaces
   `scripts/check-doc-cli-commands.mjs`, which learned the CLI's commands by
   searching its source.
 
