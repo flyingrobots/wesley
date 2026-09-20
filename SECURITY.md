@@ -16,11 +16,18 @@ version. Older versions are not patched.
 
 ## What Wesley does with its input
 
-The `wesley` CLI and the Rust crates read GraphQL SDL, law files, and project
-manifests from paths you give them, and write generated source to a path you
-give them. They treat all of it as data: they do not execute the schema, fetch
-anything over the network, or run the code they generate. Treat generated code
-as you would any code you did not write: review it before you ship it.
+The Rust library crates do no I/O. They take SDL, law files, and manifests as
+strings and return the IR, reports, or generated source as values. They do not
+open files, use the network, or start processes.
+
+The `wesley` CLI is the part that touches the system. It reads the paths you
+give it and writes generated source to the path you give it. With
+`schema diff --against <rev>` it also runs `git rev-parse` and `git show` in the
+schema's repository to read the old schema. It does not use the network.
+
+Both treat all input as data: nothing executes the schema or runs the code that
+is generated. Treat generated code as you would any code you did not write:
+review it before you ship it.
 
 ## Holmes loads and runs code
 
