@@ -100,12 +100,6 @@ const privatePathChk = spawnSync(process.execPath, ['scripts/check-forbidden-lit
 });
 if (privatePathChk.status !== 0) fail('Forbidden machine-local path literal check failed');
 
-// Front-door CLI examples should name registered Wesley commands.
-const docCliChk = spawnSync(process.execPath, ['scripts/check-doc-cli-commands.mjs'], {
-  stdio: 'inherit'
-});
-if (docCliChk.status !== 0) fail('Docs CLI command check failed');
-
 const packageManagerPolicyChk = spawnSync(
   process.execPath,
   ['scripts/check-package-manager-policy.mjs'],

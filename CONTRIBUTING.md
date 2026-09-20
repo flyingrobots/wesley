@@ -62,8 +62,8 @@ lists everything that runs on a pull request.
 ## Documentation
 
 Documentation describes; no check reads its prose. What can be executed is:
-links must resolve, a `wesley` command named in the docs must be one the CLI
-registers, and the sessions the docs show are replayed against the real CLI.
+links must resolve, and the sessions the docs show are replayed against the real
+CLI, with its output and the files it writes compared to the page.
 
 When behavior changes, change the page that describes it in the same pull
 request, and add an entry under `## [Unreleased]` in `CHANGELOG.md`. Take every

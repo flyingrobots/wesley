@@ -150,8 +150,7 @@ function needsLegacyPreflight(changedFiles) {
       file === 'pnpm-workspace.yaml' ||
       file.startsWith('.dependency-cruiser') ||
       file.startsWith('packages/') ||
-      file === 'scripts/preflight.mjs' ||
-      file === 'scripts/check-doc-cli-commands.mjs'
+      file === 'scripts/preflight.mjs'
   );
 }
 
@@ -321,10 +320,4 @@ if (isDirectInvocation()) {
   main();
 }
 
-export {
-  buildCommands,
-  buildGitDiscoveryEnv,
-  formatCommand,
-  formatSpawnFailure,
-  resolveCommand
-};
+export { buildCommands, buildGitDiscoveryEnv, formatCommand, formatSpawnFailure, resolveCommand };

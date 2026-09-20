@@ -10,8 +10,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 - Executable documentation. `test/docs-examples.bats` replays the sessions in
   the README and the getting-started guide against the real CLI and compares
-  what it prints with what the page says, and checks that `docs/cli.md` equals
-  `wesley --help`. `scripts/generate-cli-reference.mjs` writes that page.
+  what it prints, and the files it writes, with what the page shows, and
+  checks that `docs/cli.md` equals the binary's help for every command family.
+  `scripts/generate-cli-reference.mjs` writes that page. This replaces
+  `scripts/check-doc-cli-commands.mjs`, which learned the CLI's commands by
+  searching its source.
 
 ### Changed
 

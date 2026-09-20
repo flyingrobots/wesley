@@ -17,20 +17,6 @@ const wesley = resolve(args[flag + 1]);
 const check = args.includes('--check');
 const PAGE = 'docs/cli.md';
 
-// One entry per help page the CLI has. Groups share a page, so one command from
-// each group is enough to print it.
-const SECTIONS = [
-  ['Schema', ['schema', 'lower']],
-  ['Emit', ['emit', 'rust']],
-  ['Project manifests', ['config', 'validate']],
-  ['Law', ['law', 'validate']],
-  ['Operations', ['operation', 'selections']],
-  ['External targets', ['target', 'verify']],
-  ['init-law', ['init-law']],
-  ['normalize-sdl', ['normalize-sdl']],
-  ['doctor', ['doctor']]
-];
-
 function run(argv) {
   const result = spawnSync(wesley, argv, { encoding: 'utf8' });
   if (result.status !== 0) {
@@ -41,6 +27,30 @@ function run(argv) {
 }
 
 const version = run(['--version']);
+const rootHelp = run(['--help']);
+
+// The help pages are discovered from the root help, not listed here, so a new
+// command family cannot be left out of the reference. Commands that share a
+// first word share a help page; one of them is enough to print it.
+function helpPages(help) {
+  const pages = new Map();
+  let inCommands = false;
+  for (const line of help.split('\n')) {
+    if (line.trim() === 'Commands:') inCommands = true;
+    else if (inCommands && line.trim() === '') inCommands = false;
+    else if (inCommands) {
+      const row = line.match(/^ {2}([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)?) {2,}/);
+      if (!row) continue;
+      const argv = row[1].split(' ');
+      if (argv[0] !== 'version' && !pages.has(argv[0])) pages.set(argv[0], argv);
+    }
+  }
+  if (pages.size === 0) {
+    console.error('`wesley --help` listed no commands');
+    process.exit(2);
+  }
+  return pages;
+}
 const parts = [
   '# CLI reference',
   '',
@@ -52,10 +62,10 @@ const parts = [
   '## wesley',
   '',
   '```text',
-  run(['--help']),
+  rootHelp,
   '```'
 ];
-for (const [title, argv] of SECTIONS) {
+for (const [title, argv] of helpPages(rootHelp)) {
   parts.push('', `## ${title}`, '', '```text', run([...argv, '--help']), '```');
 }
 parts.push(

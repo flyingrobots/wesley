@@ -56,9 +56,9 @@ not test subjects. No assertion searches a Markdown file, a workflow, or a
 source file for a string. Such a check fails when a sentence is reworded and
 passes when the behavior is broken, which is both false alarm and false
 confidence at once. The checks that touch documentation all execute something:
-links are followed and must resolve, a `wesley` command named in the docs must
-be one the CLI registers, and the sessions the docs show are replayed against
-the real CLI with the printed output compared. A workflow's safety properties are protected by
+links are followed and must resolve, and the sessions the docs show are
+replayed against the real CLI, with its output and the files it writes compared
+to the page. A workflow's safety properties are protected by
 `actionlint`, by review, and by tests that execute the logic the workflow calls,
 such as the autotag planner's unit tests.
 

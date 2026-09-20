@@ -15,8 +15,9 @@ setup_file() {
 @test "the sessions shown in the README and the getting-started guide replay as written" {
   run node scripts/run-doc-examples.mjs --wesley "$WESLEY_BIN" README.md docs/getting-started.md
   assert_success
-  # Witness count: a replay that ran nothing proves nothing.
-  assert_output --regexp '^ran [1-9][0-9]* documented commands and compared [1-9][0-9]* outputs'
+  # A witness count for each page: one that contributed nothing was not checked.
+  assert_line --regexp '^README\.md: ran [1-9][0-9]*, compared [1-9][0-9]*$'
+  assert_line --regexp '^docs/getting-started\.md: ran [1-9][0-9]*, compared [1-9][0-9]*$'
 }
 
 @test "the CLI reference is what the binary prints" {

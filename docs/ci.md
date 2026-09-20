@@ -61,20 +61,28 @@ documentation, workflow files, or source code for strings.
 The documentation is checked only by executing things:
 
 - Links are followed and must resolve: `cargo xtask docs-check`.
-- A `wesley` command named anywhere in `README.md`, `docs/getting-started.md`,
-  or `docs/cli.md` must be one the CLI registers:
-  `node scripts/check-doc-cli-commands.mjs`.
 - The sessions in `README.md` and `docs/getting-started.md` are replayed in a
-  scratch directory, and what the CLI prints is compared with what the page
-  says it prints: `test/docs-examples.bats`.
-- `docs/cli.md` must equal what `wesley --help` prints today; the same suite
-  checks it.
+  scratch directory against the built CLI: `test/docs-examples.bats`. What the
+  CLI prints, and the files it writes, are compared with what the page shows.
+  Every `wesley` command a page names, run or not, must be one that
+  `wesley --help` lists. Each page must contribute: a page with nothing run or
+  nothing compared fails.
+- `docs/cli.md` must equal what the binary's help prints today, for every
+  command family the root help lists; the same suite checks it.
 
-The replay reads three annotations from the Markdown. `<!-- file: NAME -->`
-before a fenced block writes that block to `NAME`. `<!-- exit: N -->` before a
-`bash` block says its commands exit `N`. `<!-- norun: WHY -->` shows a block
-without running it. A `text` block directly after a `bash` block is that
-block's exact output.
+The replay reads these annotations from the Markdown:
+
+| Annotation                     | Before           | Meaning                                              |
+| ------------------------------ | ---------------- | ---------------------------------------------------- |
+| `<!-- file: NAME -->`          | any fenced block | write the block to `NAME`                            |
+| `<!-- exit: N -->`             | a `bash` block   | its commands exit `N`                                |
+| `<!-- norun: WHY -->`          | a `bash` block   | shown, not run; its command names are still checked  |
+| `<!-- shows: NAME -->`         | any fenced block | the block is a contiguous excerpt of the file `NAME` |
+| `<!-- stdout: json-subset -->` | a `json` block   | every key and value shown is in the real output      |
+
+A `text` block directly after a `bash` block is that block's exact output.
+Prettier does not reformat code inside Markdown here, because an excerpt has to
+stay byte for byte what the tool printed.
 
 ## Git hooks
 
