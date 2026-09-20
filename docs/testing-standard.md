@@ -441,6 +441,11 @@ Recorded on 2026-09-20. Each line is a debt, not an excuse.
   workspace. No fuzz target exists for any parser. No corpus.
 - **Rule 6.** Inherited tests do not name their oracles. Goldens are not labeled
   as class 5.
+- **Rule 8.** `law_backed_generated_rust_compiles_as_crate` in
+  `wesley-emit-rust` is not hermetic. It writes a manifest that depends on
+  `serde` from crates.io and runs `cargo check` on it with no offline or
+  vendored source, so `cargo test --workspace` fails on a runner without
+  registry access. It is the only test that does this.
 - **Rule 9.** Size classes are not declared or enforced.
 - **Rule 14.** The `resilience` feature's async policy is tested with real
   timers.
