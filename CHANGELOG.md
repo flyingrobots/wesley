@@ -36,7 +36,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `cargo xtask release-guard` no longer reads prose: the README version
   headline, teardown version, guide path, and cited-SHA checks are gone, as are
   the docs truth manifest and the "pnpm wesley" context check. The Markdown
-  link check stays. Documentation is not a testable artifact.
+  link check stays. Documentation is not a testable artifact. The Holmes
+  architecture test, which searched the domain sources for forbidden imports,
+  is removed for the same reason; #821 replaces it with a lint.
 - CI now runs every `test/*.bats` suite on every change, discovered by glob. It
   listed seven of the sixteen behind a change filter that compared commits on a
   shallow checkout. That comparison failed silently, so in practice the suites

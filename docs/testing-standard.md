@@ -427,9 +427,12 @@ Recorded on 2026-09-20. Each line is a debt, not an excuse.
 
 - **Rule 1.** At adoption, 112 of 128 bats tests, 16 xtask unit tests, and
   assertions inside two `wesley-core` tests searched documentation, workflow
-  YAML, or source text. They were removed under rule 18's last criterion.
-  `crates/wesley-holmes/tests/architecture.rs` has not been reviewed against
-  this rule.
+  YAML, or source text. They were removed under rule 18's last criterion. So was
+  `crates/wesley-holmes/tests/architecture.rs`, which searched the Holmes domain
+  sources for forbidden imports. The property it guarded is real: that layer
+  must not touch the filesystem, the network, processes, or the clock. Until
+  #821 enforces it with a crate boundary and a clippy configuration, it rests on
+  review.
 - **Rule 4.** No mutation tooling. Calibration is by hand, recorded in commit
   messages and pull requests. Most inherited assertions have no recorded
   demonstration.
