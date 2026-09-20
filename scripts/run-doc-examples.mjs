@@ -22,8 +22,8 @@
 //     on a block with no command
 //   - a command or a leading option that `wesley --help` does not list, even
 //     in a block that is not run
-//   - a fence left open; a `wesley` line that is indented and so would not run,
-//     or that sits in an `sh`, `shell` or `console` fence, which is not replayed
+//   - a fence left open; a `wesley` line that would not run: indented, behind a
+//     wrapper such as `env` or `FOO=1`, or in an `sh`, `shell` or `console` fence
 //   - in a command that is run: shell syntax, which no shell is here to
 //     interpret, and an argument that is absolute or climbs out with `..`
 //   - an output block with no command before it; a comparison that compares
@@ -189,11 +189,15 @@ function registeredCommands() {
 
 // Why `wesley <argv>` is not something the binary's help lists, or null.
 function unlisted(argv, { commands, options }) {
-  const [first, second] = argv;
-  if (first === undefined) return null;
-  if (first.startsWith('-')) {
-    return options.has(first) ? null : 'is not an option `wesley --help` lists';
+  // The root options take no value, so each leading one is checked and passed
+  // over; what follows them is still a command and still has to be listed.
+  const leading = argv.findIndex((arg) => !arg.startsWith('-'));
+  const given = leading === -1 ? argv : argv.slice(0, leading);
+  if (given.some((option) => !options.has(option))) {
+    return 'is not an option `wesley --help` lists';
   }
+  const [first, second] = leading === -1 ? [] : argv.slice(leading);
+  if (first === undefined) return null;
   if (commands.has(`${first} ${second}`) || commands.has(first)) return null;
   // `wesley schema` with nothing after it prints that family's help.
   const bare = second === undefined || second.startsWith('-');
@@ -361,6 +365,12 @@ function replay(doc, registered) {
         if (/^\s+wesley(\s|$)/.test(line)) {
           fail(
             `line ${block.line}: \`${line.trim()}\` is indented, so it would not be run or checked`
+          );
+        } else if (!/^(wesley(\s|$)|#)/.test(line) && /\swesley(\s|$)/.test(line)) {
+          // `env wesley ...`, `FOO=1 wesley ...`: a shell would run it, and the
+          // replay, which collects lines that start with `wesley`, would not.
+          fail(
+            `line ${block.line}: \`${line.trim()}\` runs wesley but does not start the line, so it would not be run or checked`
           );
         }
       }
