@@ -51,7 +51,7 @@ fn cargo_target_directory() -> Result<PathBuf, Error> {
     if !output.status.success() {
         return Err(Error::CommandFailed {
             command: label,
-            code: output.status.code().unwrap_or(EXIT_FAILURE as i32),
+            code: output.status.code().unwrap_or(i32::from(EXIT_FAILURE)),
         });
     }
     target_directory_from_metadata(&output.stdout)
