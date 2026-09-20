@@ -72,9 +72,10 @@ The documentation is checked only by executing things:
   preflight runs, and `test/docs-examples.bats` in CI. What the
   CLI prints, and the files it writes, are compared with what the page shows.
   Every `wesley` command a page names, and every option written directly after
-  `wesley`, must be one that `wesley --help` lists, whether the block is run or
-  not. Each page must contribute: a page with nothing run or
-  nothing compared fails.
+  `wesley`, must be one that `wesley --help` lists: in a block that is run, in
+  one that is not, and in an inline code span in the prose. Each page must
+  contribute: a page with nothing run or nothing compared fails, and the replay
+  prints how many commands it ran, outputs it compared, and names it checked.
 - `docs/cli.md` must equal what the binary's help prints today, for every
   command family the root help lists; the same suite checks it.
 
@@ -102,9 +103,9 @@ The replay fails closed. Each of these is a failure, not something it skips:
 - an annotation it does not know, one written without its colon, one given
   twice, one not directly before a block, two on one block, or `norun` or `exit`
   on a block with no `wesley` command;
-- a fence left open, an indented `wesley` line, which would not run, or a
-  `wesley` line in an `sh`, `shell` or `console` fence: only `bash` fences are
-  replayed;
+- a fence left open, or a `wesley` line that would not run: indented, behind a
+  wrapper such as `env` or `FOO=1`, or in an `sh`, `shell` or `console` fence,
+  since only `bash` fences are replayed;
 - in a command that is run: a pipe, redirect, quote or other shell syntax, since
   no shell interprets it, and an argument that is an absolute path or climbs
   out with `..`;

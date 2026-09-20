@@ -58,12 +58,20 @@ pub(crate) fn print_path() -> Result<(), Error> {
 
 /// The `executable` of the `wesley` binary among Cargo's build messages.
 fn executable_from_build_messages(stdout: &[u8]) -> Result<PathBuf, Error> {
+    // Checked access throughout: a message without one of these fields is some
+    // other kind of message, not an error and not a reason to index blindly.
+    let text = |message: &serde_json::Value, pointer: &str| {
+        message
+            .pointer(pointer)
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned)
+    };
     String::from_utf8_lossy(stdout)
         .lines()
         .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
-        .filter(|message| message["reason"] == "compiler-artifact")
-        .filter(|message| message["target"]["name"] == "wesley")
-        .filter_map(|message| message["executable"].as_str().map(PathBuf::from))
+        .filter(|message| text(message, "/reason").as_deref() == Some("compiler-artifact"))
+        .filter(|message| text(message, "/target/name").as_deref() == Some("wesley"))
+        .filter_map(|message| text(&message, "/executable").map(PathBuf::from))
         .next_back()
         .ok_or_else(|| Error::Usage("`cargo build` reported no `wesley` executable".to_string()))
 }
@@ -98,12 +106,16 @@ mod tests {
             "not json".to_string(),
             String::new(),
         ] {
+            // The whole error, not only its variant: a refusal for some other
+            // reason would be a different defect and must not pass here.
+            let refusal = executable_from_build_messages(stdout.as_bytes());
             assert!(
                 matches!(
-                    executable_from_build_messages(stdout.as_bytes()),
-                    Err(Error::Usage(_))
+                    &refusal,
+                    Err(Error::Usage(message))
+                        if message == "`cargo build` reported no `wesley` executable"
                 ),
-                "accepted {stdout}"
+                "for {stdout:?} got {refusal:?}"
             );
         }
     }

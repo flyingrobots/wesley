@@ -20,10 +20,10 @@
 //   - an annotation it does not know, written without its colon, given twice,
 //     or attached to nothing; two annotations on one block; `norun` or `exit`
 //     on a block with no command
-//   - a command or a leading option that `wesley --help` does not list, even
-//     in a block that is not run
-//   - a fence left open; a `wesley` line that is indented and so would not run,
-//     or that sits in an `sh`, `shell` or `console` fence, which is not replayed
+//   - a command or a leading option that `wesley --help` does not list: in a
+//     block, even one that is not run, or in an inline code span in the prose
+//   - a fence left open; a `wesley` line that would not run: indented, behind a
+//     wrapper such as `env` or `FOO=1`, or in an `sh`, `shell` or `console` fence
 //   - in a command that is run: shell syntax, which no shell is here to
 //     interpret, and an argument that is absolute or climbs out with `..`
 //   - an output block with no command before it; a comparison that compares
@@ -99,6 +99,7 @@ function run(argv, cwd, timeout = COMMAND_TIMEOUT_MS) {
 function parse(markdown) {
   const blocks = [];
   const problems = [];
+  const inline = [];
   let pending = {};
   let pendingLine = 0;
   let open = null;
@@ -159,6 +160,11 @@ function parse(markdown) {
       );
       return;
     }
+    // A command named in prose, as an inline code span, is a claim about the CLI
+    // like any other.
+    for (const span of line.matchAll(/`(wesley(?:\s[^`]*)?)`/g)) {
+      inline.push({ line: lineNo, command: span[1].trim() });
+    }
     if (line.trim() !== '' && Object.keys(pending).length > 0) {
       problems.push(`line ${pendingLine}: annotation is not directly before a fenced block`);
       pending = {};
@@ -168,7 +174,7 @@ function parse(markdown) {
   if (Object.keys(pending).length > 0) {
     problems.push(`line ${pendingLine}: annotation is not before any block`);
   }
-  return { blocks, problems };
+  return { blocks, problems, inline };
 }
 
 // The commands the binary says it has, read from its own help.
@@ -189,11 +195,15 @@ function registeredCommands() {
 
 // Why `wesley <argv>` is not something the binary's help lists, or null.
 function unlisted(argv, { commands, options }) {
-  const [first, second] = argv;
-  if (first === undefined) return null;
-  if (first.startsWith('-')) {
-    return options.has(first) ? null : 'is not an option `wesley --help` lists';
+  // The root options take no value, so each leading one is checked and passed
+  // over; what follows them is still a command and still has to be listed.
+  const leading = argv.findIndex((arg) => !arg.startsWith('-'));
+  const given = leading === -1 ? argv : argv.slice(0, leading);
+  if (given.some((option) => !options.has(option))) {
+    return 'is not an option `wesley --help` lists';
   }
+  const [first, second] = leading === -1 ? [] : argv.slice(leading);
+  if (first === undefined) return null;
   if (commands.has(`${first} ${second}`) || commands.has(first)) return null;
   // `wesley schema` with nothing after it prints that family's help.
   const bare = second === undefined || second.startsWith('-');
@@ -263,8 +273,12 @@ function replay(doc, registered) {
   const fail = (message) => {
     failures.push(`${doc}: ${message}`);
   };
-  const { blocks, problems } = parse(readFileSync(doc, 'utf8'));
+  const { blocks, problems, inline } = parse(readFileSync(doc, 'utf8'));
   problems.forEach(fail);
+  for (const { line, command } of inline) {
+    const why = unlisted(command.split(/\s+/).slice(1), registered);
+    if (why) fail(`line ${line}: \`${command}\` ${why}`);
+  }
 
   const dir = mkdtempSync(join(tmpdir(), 'wesley-docs-'));
   const witness = { ran: 0, compared: 0 };
@@ -362,6 +376,12 @@ function replay(doc, registered) {
           fail(
             `line ${block.line}: \`${line.trim()}\` is indented, so it would not be run or checked`
           );
+        } else if (!/^(wesley(\s|$)|#)/.test(line) && /\swesley(\s|$)/.test(line)) {
+          // `env wesley ...`, `FOO=1 wesley ...`: a shell would run it, and the
+          // replay, which collects lines that start with `wesley`, would not.
+          fail(
+            `line ${block.line}: \`${line.trim()}\` runs wesley but does not start the line, so it would not be run or checked`
+          );
         }
       }
       const commands = block.lines.filter((line) => /^wesley(\s|$)/.test(line));
@@ -443,7 +463,12 @@ function replay(doc, registered) {
   // A page that contributed nothing was not checked, whatever the others did.
   if (witness.ran === 0) fail('no wesley commands were found to run');
   if (witness.compared === 0) fail('no output was compared');
-  return { failures, line: `${doc}: ran ${witness.ran}, compared ${witness.compared}` };
+  // The prose count is reported, not required: a page may name no commands.
+  const line = [
+    `${doc}: checked ${inline.length} command names in prose`,
+    `${doc}: ran ${witness.ran}, compared ${witness.compared}`
+  ].join('\n');
+  return { failures, line };
 }
 
 const registered = registeredCommands();

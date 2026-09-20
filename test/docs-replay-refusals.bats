@@ -372,3 +372,37 @@ replay() {
   assert_failure
   assert_output --partial 'printed output the page does not show'
 }
+
+@test "a wesley command behind a wrapper is refused, because no shell runs it" {
+  for wrapped in 'env wesley schema hash --schema s.graphql' 'command wesley schema hash --schema s.graphql' 'RUST_LOG=debug wesley schema hash --schema s.graphql'; do
+    write_page "s#^wesley schema hash --schema s\\.graphql\$#$wrapped#"
+    replay
+    assert_failure
+    assert_output --partial 'does not start the line'
+  done
+}
+
+@test "a command after a leading option is still checked against the CLI's list" {
+  write_page
+  printf '\n<!-- norun: example -->\n\n```bash\nwesley --help definitely-not-a-command\n```\n' >> "$PAGE"
+  replay
+  assert_failure
+  assert_output --partial 'is not a command `wesley --help` lists'
+}
+
+@test "a prompt-prefixed wesley line in a bash block is refused, not skipped" {
+  write_page
+  printf '\n```bash\n$ wesley definitely-bogus\n```\n' >> "$PAGE"
+  replay
+  assert_failure
+  assert_output --partial 'does not start the line'
+}
+
+@test "a command named in prose is checked against the CLI's list too" {
+  write_page
+  printf '\nRun `wesley definitely-bogus` to see it, or `wesley schema` for help.\n' >> "$PAGE"
+  replay
+  assert_failure
+  assert_output --partial '`wesley definitely-bogus` is not a command `wesley --help` lists'
+  refute_output --partial '`wesley schema` is not'
+}
