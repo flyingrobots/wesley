@@ -42,45 +42,25 @@ jobs:
             --schema test/fixtures/examples/ecommerce.graphql \
             --json > "$RUNNER_TEMP/ecommerce-l1.json"
 
-      - name: Detect changes for repo Bats tests (no servers)
-        id: changelog
-        env:
-          EVENT: ${{ github.event_name }}
-          BASE_REF: ${{ github.event.pull_request.base.sha }}
-          BEFORE: ${{ github.event.before }}
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          RANGE="${BEFORE}..${SHA}"
-          if [ "$EVENT" = "pull_request" ] && [ -n "${BASE_REF}" ]; then
-            RANGE="${BASE_REF}..${SHA}"
-          fi
-          echo "Diff range: $RANGE"
-          CHANGED=$(git diff --name-only "$RANGE" || true)
-          echo "$CHANGED" | sed 's/^/ - /'
-          NEED=false
-          # Trigger only on unit/serverless repository checks.
-          echo "$CHANGED" | grep -E -q '^(scripts/serve-static\.mjs|test/serve-static-(unit|relative-unit)\.bats|scripts/generate-ir-fixtures\.mjs|test/docs-planning-boundary\.bats|test/domain-empty-boundary\.bats|test/ir-fixtures\.bats|test/ci-)' && NEED=true || true
-          echo "RUN_BATS=$NEED" >> $GITHUB_ENV
-
-      - name: Repo Bats tests (unit/docs/ci checks only)
-        if: ${{ env.RUN_BATS == 'true' }}
+      # Every suite runs on every change, including the two that start a local
+      # server: all sixteen take under a minute. A path filter once let a broken
+      # suite through, and a suite nothing ran was failing on main unnoticed.
+      - name: Repo Bats tests (every suite)
         env:
           BATS_LIB_PATH: test/vendor
           TERM: xterm
           BATS_NO_COLOR: '1'
         run: |
           set -euo pipefail
-          files=(
-            test/serve-static-unit.bats
-            test/serve-static-relative-unit.bats
-            test/docs-planning-boundary.bats
-            test/domain-empty-boundary.bats
-            test/ir-fixtures.bats
-            test/ci-package-manager-policy.bats
-            test/ci-workflows.bats
-          )
-          for f in "${files[@]}"; do
+          ran=0
+          for f in test/*.bats; do
             echo "Running Bats: $f"
             timeout 3m bats -t "$f"
+            ran=$((ran + 1))
           done
+          # A glob that matches nothing must not pass as success.
+          if [ "$ran" -eq 0 ]; then
+            echo "No Bats suites ran."
+            exit 1
+          fi
+          echo "Ran $ran Bats suites."

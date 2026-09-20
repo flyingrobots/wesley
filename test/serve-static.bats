@@ -4,7 +4,8 @@ load 'vendor/bats-plugins/bats-support/load'
 load 'vendor/bats-plugins/bats-assert/load'
 
 @test "serve-static maps .js to application/javascript" {
-  run bash -lc "grep -n \"\\.js': 'application/javascript\" scripts/serve-static.mjs | wc -l"
+  # The MIME table is a Map of [extension, type] pairs.
+  run bash -lc "grep -n \"\\['\\.js', 'application/javascript\" scripts/serve-static.mjs | wc -l"
   assert_success
   [ "$output" -ge 1 ]
 }

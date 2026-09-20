@@ -6,8 +6,24 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- CI now runs every `test/*.bats` suite on every change, discovered by glob. It
+  listed seven of the sixteen behind a change filter that compared commits on a
+  shallow checkout. That comparison failed silently, so in practice the suites
+  did not run, and a suite could break without any check failing.
+
 ### Fixed
 
+- Four bats suites assert absence with `run rg ...; assert_failure`. Without
+  ripgrep the command exits 127, which also satisfies `assert_failure`, so
+  eighteen assertions, including the domain-empty boundary guard, passed having
+  searched nothing. CI now installs ripgrep, and those suites refuse to run
+  without it.
+- `test/serve-static.bats` was failing on `main` and nothing ran it. It searched
+  `scripts/serve-static.mjs` for an object-literal spelling of the `.js` MIME
+  entry, which stopped matching when the table became a `Map`. The mapping
+  itself was always correct; the unit and HTTP suites prove it.
 - `cargo xtask release-guard` now refuses a lightweight release tag. It only
   peeled the tag to a commit before, so a hand-pushed lightweight tag passed
   every tag check and could publish. `release-crates.yml` force-fetches the tag

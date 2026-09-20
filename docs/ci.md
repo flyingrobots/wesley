@@ -4,7 +4,7 @@ This repository uses multiple GitHub Actions workflows to keep the codebase heal
 
 ## Workflows Overview
 
-- `ci.yml` — Main pipeline. Installs deps, runs unit tests, and executes a small set of repository-level Bats tests (server/docs/CI checks) when relevant.
+- `ci.yml` — Main pipeline. Installs deps, runs unit tests, and runs every repository-level Bats suite on every change.
 - `rust-native.yml` — Rust product preflight for the native compiler kernel and CLI.
 - `preflight.yml` — Repository hygiene checks (docs links, dependency boundaries, ESLint purity, license audit).
 - Package workflows — focused checks for retained non-compiler packages such as Holmes.
@@ -18,56 +18,36 @@ Workflow names distinguish product checks from compatibility checks:
 
 ## Reusable Pieces
 
-### Install Bats (reusable workflow)
+### Install Bats (composite action)
 
-We provide a reusable workflow to install Bats and jq:
+`ci.yml` installs Bats, jq, and ripgrep with a composite action:
 
 ```yaml
 - name: Install Bats
-  uses: flyingrobots/wesley/.github/workflows/install-bats.yml@main
+  uses: ./.github/actions/install-bats
 ```
 
-Use this anywhere Bats-based tests run (Linux runners).
+Use it in any job that runs Bats suites on a Linux runner. ripgrep is a test
+dependency, not a convenience: several suites assert that something is absent
+with `run rg ...; assert_failure`. Without ripgrep that command exits 127, which
+also satisfies `assert_failure`, so the assertion would pass having searched
+nothing. Those suites load `test/helpers/require-ripgrep.bash` and refuse to run
+when `rg` is not on `PATH`.
 
-## Repo-level Bats Tests (Gated)
+## Repo-level Bats Tests
 
-In `ci.yml`, we run a concise set of repository-level Bats suites covering:
+`ci.yml` runs every suite under `test/*.bats` on every change, including the two
+that start a local server. It discovers them by glob, so a new suite needs no
+workflow edit, and a glob that matches nothing fails the step. All sixteen take
+under a minute.
 
-- Static server behavior (content-type, traversal defenses)
-- Docs planning-boundary guards
-- CI YAML invariants
-
-To keep CI lean, these tests are gated via a simple diff check and only execute
-when relevant files change (paths matching `scripts/serve-static.mjs`,
-`scripts/generate-ir-fixtures.mjs`, `test/serve-static*`,
-`test/docs-planning-boundary.bats`, `test/domain-empty-boundary.bats`,
-`test/ir-fixtures.bats`, or `test/ci-*`).
-
-Example gating snippet used in `ci.yml`:
-
-```yaml
-- name: Detect changes for repo Bats tests
-  id: changelog
-  run: |
-    RANGE="${{ github.event.before }}..${{ github.sha }}"
-    if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "${{ github.event.pull_request.base.sha }}" ]; then
-      RANGE="${{ github.event.pull_request.base.sha }}..${{ github.sha }}"
-    fi
-    CHANGED=$(git diff --name-only "$RANGE" || true)
-    NEED=false
-    echo "$CHANGED" | grep -E -q '^(scripts/serve-static\\.mjs|test/serve-static|scripts/generate-ir-fixtures\\.mjs|test/docs-planning-boundary\\.bats|test/domain-empty-boundary\\.bats|test/ir-fixtures\\.bats|test/ci-)' && NEED=true || true
-    echo "RUN_BATS=$NEED" >> $GITHUB_ENV
-- name: Repo Bats tests
-  if: ${{ env.RUN_BATS == 'true' }}
-  env:
-    BATS_LIB_PATH: test/vendor
-  run: bats test/serve-static*.bats test/docs-planning-boundary.bats test/domain-empty-boundary.bats test/ir-fixtures.bats test/ci-*.bats
-```
+There is no path filter. An earlier version ran a listed subset only when a
+diff touched certain paths. That diff was computed on a shallow checkout, failed
+silently, and left the suites unselected, so in practice they did not run.
 
 ### Run these locally
 
 ```bash
 pnpm run setup:bats-plugins
-BATS_LIB_PATH=test/vendor \
-  bats test/serve-static*.bats test/docs-planning-boundary.bats test/domain-empty-boundary.bats test/ir-fixtures.bats test/ci-*.bats
+for f in test/*.bats; do BATS_LIB_PATH=test/vendor bats "$f"; done
 ```

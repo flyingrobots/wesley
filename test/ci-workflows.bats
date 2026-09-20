@@ -398,7 +398,17 @@ load 'vendor/bats-plugins/bats-assert/load'
 
 @test "shipme certificate fixture prepares PASS realm and exact evidence" {
   tmp_dir="$(mktemp -d -t wesley-shipme-fixture-XXXXXX)"
-  run bash -lc "cd '$tmp_dir' && node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"version\": \"2.0.0\"' .wesley-cache/scores.json && grep -F '\"commit\": \"abcdef1234567890abcdef1234567890abcdef12\"' .wesley-cache/scores.json && grep -F '\"metadata\"' .wesley-cache/scores.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
+  # The script stamps GITHUB_SHA into the fixture when it is set, and every
+  # GitHub runner sets it. Unset it here so the default commit is what is tested.
+  run bash -lc "cd '$tmp_dir' && env -u GITHUB_SHA node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"verdict\": \"PASS\"' .wesley-cache/realm.json && grep -F '\"version\": \"2.0.0\"' .wesley-cache/scores.json && grep -F '\"commit\": \"abcdef1234567890abcdef1234567890abcdef12\"' .wesley-cache/scores.json && grep -F '\"metadata\"' .wesley-cache/scores.json && grep -F '\"readiness\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-2\"' .wesley-cache/bundle.json && grep -F '\"lines\": \"1-1\"' .wesley-cache/bundle.json"
+  rm -rf "$tmp_dir"
+  assert_success
+}
+
+@test "shipme certificate fixture stamps the workflow's commit when GITHUB_SHA is set" {
+  # cert-shipme certifies the landed commit, so the fixture must carry it.
+  tmp_dir="$(mktemp -d -t wesley-shipme-fixture-XXXXXX)"
+  run bash -lc "cd '$tmp_dir' && GITHUB_SHA=1111111111111111111111111111111111111111 node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' && grep -F '\"commit\": \"1111111111111111111111111111111111111111\"' .wesley-cache/scores.json"
   rm -rf "$tmp_dir"
   assert_success
 }
@@ -858,6 +868,43 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   [ "$output" -eq 1 ]
 
   run bash -lc "grep -A16 'name: Verify crates.io visibility' $crates | grep -cF 'cargo info \"\${crate}@\${version}\" --registry crates-io'"
+  assert_success
+  [ "$output" -eq 1 ]
+}
+
+@test "ci runs every bats suite on every change" {
+  ci=".github/workflows/ci.yml"
+
+  # No path filter decides whether the suites run. A change to RELEASE.md or to
+  # a workflow file once broke a suite that the filter never selected.
+  run bash -lc "grep -c 'RUN_BATS' $ci"
+  [ "$output" -eq 0 ]
+
+  # Suites are discovered, not listed, so a new suite cannot be forgotten, and
+  # none is left out: a suite nothing ran was failing on main unnoticed.
+  run bash -lc "grep -cF 'for f in test/*.bats; do' $ci"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -A24 'name: Repo Bats tests' $ci | grep -cE 'continue|E2E|skip' "
+  [ "$output" -eq 0 ]
+}
+
+@test "suites that search with ripgrep cannot pass without it" {
+  # `run rg ...; assert_failure` is how these suites assert that something is
+  # absent. Without ripgrep the command exits 127, which also satisfies
+  # assert_failure, so the assertion passes having searched nothing.
+  run bash -lc "grep -c 'ripgrep' .github/actions/install-bats/action.yml"
+  assert_success
+  [ "$output" -ge 1 ]
+
+  for suite in $(grep -lE '\brg\b' test/*.bats | grep -v 'test/ci-workflows.bats'); do
+    run grep -cF 'require_ripgrep' "$suite"
+    assert_success
+    [ "$output" -ge 1 ]
+  done
+
+  run grep -cF 'command -v rg' test/helpers/require-ripgrep.bash
   assert_success
   [ "$output" -eq 1 ]
 }

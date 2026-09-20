@@ -2,6 +2,11 @@
 
 load 'vendor/bats-plugins/bats-support/load'
 load 'vendor/bats-plugins/bats-assert/load'
+load 'helpers/require-ripgrep'
+
+setup_file() {
+  require_ripgrep
+}
 
 @test "active filesystem planning directories are retired" {
   run test ! -e docs/drafts
