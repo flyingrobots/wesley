@@ -45,3 +45,30 @@ fn every_percentage_equals_the_producers_to_the_bit() -> Result<(), std::num::Tr
 fn an_empty_category_is_fully_covered() {
     assert_eq!(percentage(0, 0).to_bits(), 100.0_f64.to_bits());
 }
+
+// Counts far above `u32::MAX`, and above 2^53 where `f64` can no longer hold
+// every integer. Oracle: specified, by arithmetic on exact powers of two.
+//
+// The first two cases put the covered count in the low 32 bits and the total in
+// the high 32. They are the ones that catch a wrong scale on the high half:
+// when both counts are in the high half, a wrong scale cancels out of the
+// ratio, which is how an earlier version of this test let that mutant live.
+#[cfg(target_pointer_width = "64")]
+#[test]
+fn counts_beyond_u32_and_beyond_exact_f64_integers_convert_correctly() {
+    let two_pow = |exponent: u32| 1_usize << exponent;
+    for (covered, total, expected) in [
+        (two_pow(31), two_pow(33), 25.0_f64),
+        (3 * two_pow(30), two_pow(32), 75.0),
+        (two_pow(40), two_pow(41), 50.0),
+        (two_pow(60), two_pow(60), 100.0),
+        // 2^53 + 1 is not representable and rounds to 2^53, so the ratio is 1/2.
+        (two_pow(53) + 1, two_pow(54), 50.0),
+    ] {
+        assert_eq!(
+            percentage(covered, total).to_bits(),
+            expected.to_bits(),
+            "{covered}/{total}"
+        );
+    }
+}
