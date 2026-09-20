@@ -64,8 +64,9 @@ documentation, workflow files, or source code for strings.
 
 The documentation has two checks, and both execute something. Links are
 followed and must resolve (`cargo xtask docs-check`). Commands shown in
-`README.md`, `docs/getting-started.md`, and `docs/cli.md` must be commands the
-CLI registers (`node scripts/check-doc-cli-commands.mjs`).
+`README.md` and `docs/getting-started.md` must be commands the CLI registers
+(`node scripts/check-doc-cli-commands.mjs`). `docs/cli.md` is not read by that
+check.
 
 ## Git hooks
 

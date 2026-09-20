@@ -94,8 +94,11 @@ behavior to any directive.
 
 Lowers the IR to a plan for the little-endian binary codecs: which values are
 scalars, enums, nested structs, options, or lists, and in what order. The Rust
-and TypeScript emitters both consume this plan and decide only how to spell it
-in their language, so the two cannot drift apart on the wire.
+and TypeScript emitters both consume this plan, so they share one decision about
+structure and field order. That is not a guarantee that the bytes agree: each
+emitter still renders its own implementation against its own `Writer` and
+`Reader`, and no test yet round-trips a value between the two languages. The
+[testing standard](testing-standard.md) records that gap.
 
 ### wesley-emit-rust and wesley-emit-typescript
 

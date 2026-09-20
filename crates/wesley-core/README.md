@@ -35,8 +35,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `diff_schema_sdl`                                                  | added, removed, and modified types       |
 | `resolve_operation_selections`, `extract_operation_directive_args` | facts about a GraphQL operation          |
 
-Directives are lowered as data, a name and its arguments. The core does not
-interpret them.
+Directives are lowered as data, a name and its arguments, and one the core does
+not know passes through unchanged. A fixed set is rewritten on the way, which
+changes the IR and the registry hash: `table`, `pk` or `primaryKey`, `fk` or
+`foreignKey`, `unique`, `index`, `tenant`, `default`, and `rls` are each accepted
+bare, as `wesley_<name>`, or as `wes_<name>`, and recorded as `wes_<name>`. So
+`@table` and `@wes_table` give the same IR and the same hash. `@wes_channel` on
+an object type can also be lowered into the law IR with
+`lower_wes_channel_directives_to_law_ir_v1`.
 
 ## The `resilience` feature
 
