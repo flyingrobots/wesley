@@ -19,7 +19,8 @@ const checks = [
   ['scores.version', scores.version, '2.0.0'],
   ['scores.commit', scores.commit, expectedCommit],
   ['bundle.sha', bundle.sha, expectedCommit],
-  ['scores.metadata', typeof scores.metadata, 'object'],
+  // `typeof null` is "object" too, so say what kind of object.
+  ['scores.metadata', scores.metadata === null ? 'null' : typeof scores.metadata, 'object'],
   ['scores.readiness.ready', scores.readiness.ready, true],
   ['bundle.scores.readiness.ready', bundle.scores.readiness.ready, true],
   ['schema sql evidence lines', schemaEvidence.sql[0].lines, '1-2'],
