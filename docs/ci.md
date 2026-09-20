@@ -145,5 +145,12 @@ Corepack provides it: `corepack enable`.
 
 `actionlint` is optional locally (`brew install actionlint`, or
 `go install github.com/rhysd/actionlint/cmd/actionlint@latest`). Without it,
-`legacy-preflight` says the workflows were not linted and carries on. In CI a
-missing `actionlint` fails the run, so a workflow is never merged unlinted.
+`legacy-preflight` says the workflows were not linted and carries on. In CI
+(`CI=true`) a missing `actionlint` fails the run, so a workflow is never merged
+unlinted.
+
+The gate runs `actionlint -shellcheck= -pyflakes=`. Left alone, actionlint runs
+whatever `shellcheck` and `pyflakes` are on the machine, so the same workflow
+could pass on a laptop and fail on a runner, or start failing when the runner
+image upgrades. With them off the verdict is the same everywhere. The cost is
+that the shell inside `run:` blocks is not linted by this gate.
