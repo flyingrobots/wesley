@@ -10,17 +10,21 @@ const read = (name) => JSON.parse(readFileSync(join(cacheDir, name), 'utf8'));
 const realm = read('realm.json');
 const scores = read('scores.json');
 const bundle = read('bundle.json');
-
-assert.equal(realm.verdict, 'PASS', 'realm.verdict');
-assert.equal(scores.version, '2.0.0', 'scores.version');
-assert.equal(scores.commit, expectedCommit, 'scores.commit');
-assert.equal(bundle.sha, expectedCommit, 'bundle.sha');
-assert.equal(typeof scores.metadata, 'object', 'scores.metadata');
-assert.equal(scores.readiness.ready, true, 'scores.readiness.ready');
-assert.equal(bundle.scores.readiness.ready, true, 'bundle.scores.readiness.ready');
-
 const schemaEvidence = bundle.evidence.evidence.schema;
-assert.equal(schemaEvidence.sql[0].lines, '1-2', 'schema sql evidence lines');
-assert.equal(schemaEvidence.tests[0].lines, '1-1', 'schema tests evidence lines');
 
-console.log(`checked 9 fields for commit ${expectedCommit}`);
+// [field, actual, expected]. The witness below is the length of this list, so
+// it cannot claim more than was asserted.
+const checks = [
+  ['realm.verdict', realm.verdict, 'PASS'],
+  ['scores.version', scores.version, '2.0.0'],
+  ['scores.commit', scores.commit, expectedCommit],
+  ['bundle.sha', bundle.sha, expectedCommit],
+  ['scores.metadata', typeof scores.metadata, 'object'],
+  ['scores.readiness.ready', scores.readiness.ready, true],
+  ['bundle.scores.readiness.ready', bundle.scores.readiness.ready, true],
+  ['schema sql evidence lines', schemaEvidence.sql[0].lines, '1-2'],
+  ['schema tests evidence lines', schemaEvidence.tests[0].lines, '1-1']
+];
+for (const [field, actual, expected] of checks) assert.equal(actual, expected, field);
+
+console.log(`checked ${checks.length} fields for commit ${expectedCommit}`);
