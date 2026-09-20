@@ -124,8 +124,11 @@ wesley-cli
 ```
 
 Lower layers never import the CLI, an emitter, logging policy, or a
-higher-level error type. `wesley-core` carries no meaning for any directive, any
-target, or any product: it records what the schema says. A cycle disguised
+higher-level error type. `wesley-core` attaches no database, runtime, or product
+behavior to any directive or target: it records what the schema says. It does
+canonicalize a fixed set of directive aliases, which
+[architecture](architecture.md) lists, and any addition to that set changes
+hashes and is a format change under section 14. A cycle disguised
 through a trait is still a cycle.
 
 ## 6. File size and findability
