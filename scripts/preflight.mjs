@@ -128,10 +128,32 @@ const privatePathChk = spawnSync(process.execPath, ['scripts/check-forbidden-lit
 });
 if (privatePathChk.status !== 0) fail('Forbidden machine-local path literal check failed');
 
-// Prettier, over everything .prettierignore does not exclude. ESLint does not
-// judge formatting here, so without this an unformatted file reaches `main`.
-const prettierChk = spawnSync('pnpm', ['exec', 'prettier', '--check', '.'], { stdio: 'inherit' });
-if (prettierChk.status !== 0) fail('Prettier check failed');
+// Prettier, over every tracked file .prettierignore does not exclude. ESLint does
+// not judge formatting here, so without this an unformatted file reaches `main`.
+//
+// The files come from Git, and only .prettierignore is consulted. Left to find
+// files itself, Prettier also honours .gitignore, and this repository tracks
+// files under ignored paths: they would be skipped without anyone having said so.
+const trackedFiles = spawnSync('git', ['ls-files', '-z'], { encoding: 'utf8' });
+const tracked = (trackedFiles.stdout ?? '').split('\0').filter(Boolean);
+if (trackedFiles.status !== 0 || tracked.length === 0) {
+  fail('Prettier check could not list the tracked files');
+} else {
+  const prettierChk = spawnSync(
+    'pnpm',
+    [
+      'exec',
+      'prettier',
+      '--check',
+      '--ignore-unknown',
+      '--ignore-path',
+      '.prettierignore',
+      ...tracked
+    ],
+    { stdio: 'inherit' }
+  );
+  if (prettierChk.status !== 0) fail('Prettier check failed');
+}
 
 const packageManagerPolicyChk = spawnSync(
   process.execPath,

@@ -63,3 +63,9 @@ test/fixtures/weslaw/diff/ci-semantic-diff.md
 
 # Vendored bats plugins: not ours to reformat.
 test/vendor/
+
+# Generated output that is tracked although `out/` is git-ignored: proof
+# artifacts committed with the repository's first commit and referenced by
+# nothing. They stay as the tools wrote them. Whether they should be tracked at
+# all is issue 836.
+out/proof/
