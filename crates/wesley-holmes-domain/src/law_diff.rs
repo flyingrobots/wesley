@@ -1,5 +1,6 @@
 //! Typed Wesley law diff evidence accepted by Holmes.
 
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// API version supported by the first Holmes law diff ingest port.

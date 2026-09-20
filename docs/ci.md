@@ -12,10 +12,16 @@ cargo xtask preflight
 
 It runs, in order: `cargo fmt --check`, `cargo clippy --workspace --all-targets
 -- -D warnings`, the documentation checks, `cargo test --workspace`,
-`cargo xtask lean-core-check`, a smoke run of the CLI, and
-`cargo xtask docs-replay`, which replays the documented sessions. It needs Node
-for that last step. If it passes locally,
-the Rust checks will pass in CI. Run it before opening a pull request.
+`cargo xtask lean-core-check`, `cargo xtask holmes-domain-check`, a smoke run of
+the CLI, and `cargo xtask docs-replay`, which replays the documented sessions.
+It needs Node for that last step. If it passes locally, the Rust checks will
+pass in CI. Run it before opening a pull request.
+
+`holmes-domain-check` builds `wesley-holmes-domain` for `thumbv7em-none-eabihf`,
+a target with no `std`, which is how the domain's no-I/O rule is enforced. It
+needs that target: `rustup target add thumbv7em-none-eabihf`. Without it the
+check says it did not run and preflight carries on; in CI (`CI=true`) a missing
+target fails the run, and the workflows install it.
 
 ## On a pull request
 

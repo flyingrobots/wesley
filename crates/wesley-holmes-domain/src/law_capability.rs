@@ -1,5 +1,6 @@
 //! Typed Wesley law capability evidence accepted by Holmes.
 
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// API version named by the Holmes PRD for law capability summaries.

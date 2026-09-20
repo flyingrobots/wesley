@@ -1,5 +1,6 @@
 //! Coverage gate decisions derived from normalized Wesley law coverage evidence.
 
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::law_coverage::NormalizedLawCoverageProfile;

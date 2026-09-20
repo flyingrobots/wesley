@@ -1,5 +1,6 @@
 //! Typed Wesley law coverage evidence accepted by Holmes.
 
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// API version supported by the first Holmes law coverage ingest port.
@@ -153,10 +154,17 @@ pub struct NormalizedLawCoverageCategory {
 }
 
 /// Calculate Wesley's one-decimal coverage percentage.
+///
+/// Holmes compares this with the figure Wesley reports, so it must equal the
+/// producer's `f64::round` result to the bit. `core` has no `round`; `libm`'s is
+/// the same exactly-defined operation, and `tests/percentage_matches_the_producer.rs`
+/// checks every input up to a total of 1,500 against the producer's expression.
 pub fn percentage(covered: usize, total: usize) -> f64 {
     if total == 0 {
         100.0
     } else {
-        ((covered as f64 / total as f64) * 1000.0).round() / 10.0
+        // `as`: there is no lossless conversion from `usize` to `f64`. These are
+        // counts of law subjects, far below 2^53, where the cast is exact.
+        libm::round((covered as f64 / total as f64) * 1000.0) / 10.0
     }
 }

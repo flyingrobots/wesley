@@ -1,5 +1,6 @@
 //! Holmes semantic findings derived from Wesley law diff evidence.
 
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::diagnostic::{HolmesDiagnostic, HolmesDiagnosticCode, HolmesResult, HolmesSeverity};

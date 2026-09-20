@@ -1,11 +1,29 @@
 #![deny(warnings)]
 #![deny(missing_docs)]
+#![forbid(unsafe_code)]
+// The boundary, held by the compiler. Without `std` there is no `std::fs`,
+// `std::net`, `std::process`, `std::env`, `SystemTime`, or `Instant` to reach
+// for: the domain cannot touch the filesystem, the network, a process, the
+// environment, or a clock, and nobody has to remember a list of what to forbid.
+#![no_std]
 
 //! Pure Holmes law-assurance domain model.
 //!
-//! Domain code owns data, deterministic validation, and diagnostics. It must
-//! not import ambient filesystem, network, process, GitHub, MCP, or wall-clock
-//! dependencies.
+//! Domain code owns data, deterministic validation, and diagnostics. It cannot
+//! import ambient filesystem, network, process, environment, or wall-clock
+//! dependencies: the crate is `no_std`, so they do not exist here. What remains
+//! open is its dependency list: `serde`, `serde_json`, and `libm` for rounding.
+
+extern crate alloc;
+
+/// What the `std` prelude would have supplied, taken from `alloc`.
+mod prelude {
+    pub(crate) use alloc::borrow::ToOwned;
+    pub(crate) use alloc::format;
+    pub(crate) use alloc::string::String;
+    pub(crate) use alloc::vec;
+    pub(crate) use alloc::vec::Vec;
+}
 
 mod assessment;
 mod contract_manifest;

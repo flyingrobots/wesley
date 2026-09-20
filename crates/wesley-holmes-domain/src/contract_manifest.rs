@@ -1,5 +1,6 @@
 //! Typed Wesley contract bundle manifest evidence accepted by Holmes.
 
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// API version supported by the first Holmes contract bundle manifest ingest port.

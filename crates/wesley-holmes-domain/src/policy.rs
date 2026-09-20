@@ -1,6 +1,7 @@
 //! Domain-level law assurance policy parsing, normalization, and matching.
 
-use std::collections::{BTreeMap, BTreeSet};
+use crate::prelude::*;
+use alloc::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 

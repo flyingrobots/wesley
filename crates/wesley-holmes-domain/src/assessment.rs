@@ -1,5 +1,6 @@
 //! Domain-level Holmes law assurance assessment and traceability models.
 
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::contract_manifest::{ContractBundleManifest, NormalizedContractBundleProvenance};
