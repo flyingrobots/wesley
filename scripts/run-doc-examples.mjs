@@ -247,6 +247,8 @@ function replay(doc, registered) {
         const target = inside(dir, block.file);
         if (!target) return fail(`\`file: ${block.file}\` is outside the scratch directory`);
         mkdirSync(dirname(target), { recursive: true });
+        // Whatever a command wrote here, these bytes are now the page's own.
+        written.delete(relative(dir, target));
         writeFileSync(target, `${block.lines.join('\n')}\n`);
         // A fixture is only a fixture: never a command to run or output to compare.
         return undefined;

@@ -287,3 +287,11 @@ replay() {
   assert_output --partial 'did not finish'
   refute_output --partial '`wesley --help` did not succeed'
 }
+
+@test "a fixture that overwrites a command's output is no longer that command's output" {
+  write_page
+  printf '\n<!-- file: s.rs -->\n\n```rust\n// written by hand\n```\n\n<!-- shows: s.rs -->\n\n```rust\n// written by hand\n```\n' >> "$PAGE"
+  replay
+  assert_failure
+  assert_output --partial 'no replayed command wrote it'
+}
