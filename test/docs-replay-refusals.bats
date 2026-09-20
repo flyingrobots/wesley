@@ -302,3 +302,12 @@ replay() {
   assert_failure
   assert_output --partial 'repeats the key `fieldName`'
 }
+
+@test "an execution annotation on a block with no wesley command is refused" {
+  # A typo such as `wesly` would otherwise take the line out of every check.
+  write_page
+  printf '\n<!-- norun: example -->\n\n```bash\nwesly schema diff --old a.graphql --new b.graphql\n```\n' >> "$PAGE"
+  replay
+  assert_failure
+  assert_output --partial '`norun` is on a block with no `wesley` command'
+}

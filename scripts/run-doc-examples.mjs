@@ -325,7 +325,14 @@ function replay(doc, registered) {
         const why = unlisted(command.split(/\s+/).slice(1), registered);
         if (why) fail(`\`${command}\` ${why}`);
       }
-      if (block.norun || commands.length === 0) return undefined;
+      if (commands.length === 0) {
+        // The annotation asks for a check of commands that are not there.
+        const asked = block.norun ? 'norun' : block.exit && 'exit';
+        if (asked)
+          fail(`line ${block.line}: \`${asked}\` is on a block with no \`wesley\` command`);
+        return undefined;
+      }
+      if (block.norun) return undefined;
 
       const expectedExit = Number(block.exit ?? 0);
       let stdout = '';
