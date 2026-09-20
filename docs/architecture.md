@@ -140,7 +140,8 @@ scripts/      Node and shell helpers used by the hooks and by CI
 ## Automation
 
 `cargo xtask` is the entry point for everything a contributor or a workflow
-runs: `preflight`, `docs-check`, `docs-replay`, `lean-core-check`,
+runs: `preflight`, `docs-check`, `docs-replay`, `built-cli`, `lean-core-check`,
 `release-prep-guard`, `release-check`, `release-guard`, `release-autotag-plan`,
-`package-crates`, and `publish-crates`. Run `cargo xtask help` for the list. [CI](ci.md) says which of
-them run where, and [RELEASE.md](../RELEASE.md) covers the release commands.
+`package-crates`, and `publish-crates`. Run `cargo xtask help` for the list.
+[CI](ci.md) says which of them run where, and [RELEASE.md](../RELEASE.md) covers
+the release commands.

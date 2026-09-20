@@ -10,9 +10,19 @@ let models = wesley_emit_rust::emit_rust(&ir);
 let with_bindings = wesley_emit_rust::emit_rust_with_operations(&ir, &operations);
 ```
 
-`emit_rust` gives a `serde` struct for each type. `emit_rust_with_operations`
-adds, for each root operation, a request type, a response alias, and metadata
-constants. The crate also emits little-endian binary codecs from the plan in
+`emit_rust` gives one `serde` declaration for each type in the IR:
+
+| GraphQL                          | Rust                           |
+| -------------------------------- | ------------------------------ |
+| object, input type, or interface | `pub struct`                   |
+| enum                             | `pub enum`                     |
+| union                            | `pub enum`, a variant per type |
+| custom scalar                    | `pub type Name = String;`      |
+| built-in scalar                  | nothing; fields use `i32` etc. |
+
+`emit_rust_with_operations` adds, for each root operation, a request struct, a
+response alias, and metadata constants, and in their place it leaves out the
+`Query`, `Mutation`, and `Subscription` types themselves. The crate also emits little-endian binary codecs from the plan in
 `wesley-emit-codec`. The `wesley emit rust` and `wesley emit le-binary-rust`
 commands are this crate behind a command line.
 

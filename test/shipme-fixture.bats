@@ -28,3 +28,12 @@ default_commit="abcdef1234567890abcdef1234567890abcdef12"
   assert_success
   assert_output --partial "for commit $commit"
 }
+
+@test "the fixture check refuses a scores file whose metadata is null" {
+  # Shows the assertion can fail: `typeof null` is "object" in JavaScript.
+  tmp_dir="$(mktemp -d -t wesley-shipme-fixture-XXXXXX)"
+  run bash -c "cd '$tmp_dir' && env -u GITHUB_SHA node '$PWD/scripts/prepare-shipme-cert-fixture.mjs' >/dev/null && node -e 'const fs = require(\"node:fs\"); const p = \".wesley-cache/scores.json\"; const s = JSON.parse(fs.readFileSync(p, \"utf8\")); s.metadata = null; fs.writeFileSync(p, JSON.stringify(s));' && node '$PWD/test/bin/assert-shipme-fixture.mjs' .wesley-cache '$default_commit'"
+  rm -rf "$tmp_dir"
+  assert_failure
+  assert_output --partial 'scores.metadata'
+}

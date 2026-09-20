@@ -11,9 +11,21 @@ let declarations = wesley_emit_typescript::emit_typescript(&ir);
 let with_bindings = wesley_emit_typescript::emit_typescript_with_operations(&ir, &operations);
 ```
 
-`emit_typescript` gives an interface for each type. The
-`_with_operations` form adds, for each root operation, a request interface, a
-response type, and a typed operation descriptor. The crate also emits
+`emit_typescript` gives one declaration for each type in the IR:
+
+| GraphQL              | TypeScript                                        |
+| -------------------- | ------------------------------------------------- |
+| object or input type | `export interface`, extending what it implements  |
+| interface            | `export interface`                                |
+| enum                 | a union of string literals: `"RED" \| "GREEN"`    |
+| union                | a union of the member types: `Cat \| Dog`         |
+| custom scalar        | `export type Name = unknown;`                     |
+| built-in scalar      | nothing; fields use `number`, `string`, `boolean` |
+
+The `_with_operations` form adds, for each root operation, a request interface,
+a response type, and a typed operation descriptor, and in their place it leaves
+out the `Query`, `Mutation`, and `Subscription` types themselves. The crate also
+emits
 little-endian binary codecs from the plan in `wesley-emit-codec`. The
 `wesley emit typescript` and `wesley emit le-binary-typescript` commands are this
 crate behind a command line.

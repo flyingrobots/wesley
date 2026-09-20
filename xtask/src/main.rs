@@ -1,5 +1,8 @@
 //! Repository automation for Wesley.
 
+mod built_cli;
+mod docs_replay;
+
 use ninelives::{Backoff, Jitter, ResilienceError, RetryPolicy};
 use semver::Version;
 use std::collections::BTreeMap;
@@ -96,7 +99,8 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
         "lean-core-check" => run_lean_core_check(),
-        "docs-replay" => run_docs_replay(),
+        "built-cli" => built_cli::print_path(),
+        "docs-replay" => docs_replay::run(),
         "release-autotag-plan" => run_release_autotag_plan(),
         "package-crates" => run_package_crates(&args[1..]),
         "publish-alpha" => {
@@ -136,40 +140,7 @@ fn run_preflight() -> Result<(), Error> {
     run_command("cargo", &["test", "--workspace"])?;
     run_lean_core_check()?;
     run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])?;
-    run_docs_replay()
-}
-
-/// The documents whose shell sessions are replayed against the built CLI.
-const REPLAYED_DOCUMENTS: [&str; 2] = ["README.md", "docs/getting-started.md"];
-/// Builds the CLI, replays the sessions the documentation shows, and checks
-/// that the generated CLI reference still matches the binary.
-fn run_docs_replay() -> Result<(), Error> {
-    run_command("cargo", &["build", "--quiet", "--bin", "wesley"])?;
-
-    // Where Cargo put it: `CARGO_TARGET_DIR` moves the directory and Windows
-    // adds a suffix, so a fixed `target/debug/wesley` could be missing or stale.
-    let root = env::current_dir()
-        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let built_cli = bench_wesley_binary_path(&root, env::var_os("CARGO_TARGET_DIR"));
-    let built_cli = built_cli.to_string_lossy();
-
-    let mut replay = vec![
-        "scripts/run-doc-examples.mjs",
-        "--wesley",
-        built_cli.as_ref(),
-    ];
-    replay.extend(REPLAYED_DOCUMENTS);
-    run_command("node", &replay)?;
-
-    run_command(
-        "node",
-        &[
-            "scripts/generate-cli-reference.mjs",
-            "--wesley",
-            built_cli.as_ref(),
-            "--check",
-        ],
-    )
+    docs_replay::run()
 }
 
 fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {
@@ -177,7 +148,7 @@ fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {
 
     let root = env::current_dir()
         .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
-    let wesley_bin = build_wesley_for_bench(&root, options.json)?;
+    let wesley_bin = build_wesley_for_bench(options.json)?;
     let bench_root = env::temp_dir().join(format!(
         "wesley-bench-ir-{}-{}",
         std::process::id(),
@@ -295,27 +266,13 @@ fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {
     Ok(())
 }
 
-fn build_wesley_for_bench(root: &Path, json_output: bool) -> Result<PathBuf, Error> {
-    if json_output {
-        run_command_no_label("cargo", &["build", "--quiet", "--bin", "wesley"])?;
+fn build_wesley_for_bench(json_output: bool) -> Result<PathBuf, Error> {
+    // Stdout is the JSON report in that mode, so nothing else may be printed there.
+    built_cli::build_wesley(if json_output {
+        built_cli::Stdout::Silent
     } else {
-        run_command("cargo", &["build", "--bin", "wesley"])?;
-    }
-
-    Ok(bench_wesley_binary_path(
-        root,
-        env::var_os("CARGO_TARGET_DIR"),
-    ))
-}
-
-fn bench_wesley_binary_path(root: &Path, cargo_target_dir: Option<OsString>) -> PathBuf {
-    let target_dir = cargo_target_dir
-        .map(PathBuf::from)
-        .unwrap_or_else(|| root.join("target"));
-
-    target_dir
-        .join("debug")
-        .join(format!("wesley{}", env::consts::EXE_SUFFIX))
+        built_cli::Stdout::Announce
+    })
 }
 
 fn run_wesley_schema_lower(wesley_bin: &Path, schema_path: &Path) -> Result<Vec<u8>, Error> {
@@ -3043,11 +3000,6 @@ fn run_command(program: &str, args: &[&str]) -> Result<(), Error> {
     run_command_with_label(program, args, label)
 }
 
-fn run_command_no_label(program: &str, args: &[&str]) -> Result<(), Error> {
-    let label = command_label(program, args);
-    run_command_with_label(program, args, label)
-}
-
 fn run_command_with_label(program: &str, args: &[&str], label: String) -> Result<(), Error> {
     let status = Command::new(program)
         .args(args)
@@ -3084,6 +3036,7 @@ Commands:
   bench-ir          Run advisory Rust-native IR lowering benchmarks
   docs-check        Run Rust-native documentation hygiene checks
   lean-core-check   Prove wesley-core without default features omits the async stack
+  built-cli         Build the wesley binary and print the path Cargo gave it
   docs-replay       Replay the documented CLI sessions and check the generated CLI reference
   preflight         Run the strict pre-PR/release quality gate
   strict-preflight  Alias for preflight
@@ -3706,23 +3659,6 @@ mod tests {
             BenchIrOptions::parse(&args),
             Err(Error::Usage(message)) if message == "bench-ir --iterations must be greater than zero"
         ));
-    }
-
-    #[test]
-    fn bench_ir_binary_path_honors_cargo_target_dir() {
-        let root = Path::new("/workspace/wesley");
-        let expected_binary = format!("wesley{}", env::consts::EXE_SUFFIX);
-
-        assert_eq!(
-            bench_wesley_binary_path(root, Some(OsString::from("/tmp/wesley-target"))),
-            PathBuf::from("/tmp/wesley-target")
-                .join("debug")
-                .join(&expected_binary)
-        );
-        assert_eq!(
-            bench_wesley_binary_path(root, None),
-            root.join("target").join("debug").join(expected_binary)
-        );
     }
 
     #[test]

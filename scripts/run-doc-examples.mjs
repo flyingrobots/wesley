@@ -3,44 +3,79 @@
 // CLI really does with what the page says it does.
 //
 // Annotations, written in the Markdown directly before a fenced block:
-//   <!-- file: NAME -->          write the block to NAME in the scratch directory
+//   <!-- file: NAME -->          write the block to NAME in the scratch directory;
+//                                a fixture is never run or compared
 //   <!-- exit: N -->             bash only: its wesley commands exit N
 //   <!-- norun: WHY -->          bash only: shown, not run; names still checked
-//   <!-- shows: NAME -->         the block is a contiguous excerpt of the file
-//                                NAME, which a command wrote
+//   <!-- shows: NAME -->         not bash: the block is a contiguous excerpt of the file
+//                                NAME, which a replayed command created or
+//                                changed; a `file:` fixture does not count
 //   <!-- stdout: json-subset --> json only, directly after a bash block: every
 //                                key and value shown is in the real output
 //   a ```text block directly after a ```bash block is that block's exact stdout
 //
-// The runner fails closed. Each of these is a failure, not something skipped:
-// an annotation it does not know or that is attached to nothing; a fence left
-// open; a `wesley` line that is indented and so would not run; an output block
-// with no command before it; a comparison that compares nothing; a file outside
-// the scratch directory; a process that does not finish; and any output, on
-// either stream, that the page does not show.
+// A block takes one annotation, so that none can switch another's check off.
 //
-//   node scripts/run-doc-examples.mjs --wesley <path-to-binary> <doc.md>...
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+// The runner fails closed. Each of these is a failure, not something skipped:
+//   - an annotation it does not know, written without its colon, given twice,
+//     or attached to nothing; two annotations on one block; `norun` or `exit`
+//     on a block with no command
+//   - a command or a leading option that `wesley --help` does not list, even
+//     in a block that is not run
+//   - a fence left open; a `wesley` line that is indented and so would not run,
+//     or that sits in an `sh`, `shell` or `console` fence, which is not replayed
+//   - in a command that is run: shell syntax, which no shell is here to
+//     interpret, and an argument that is absolute or climbs out with `..`
+//   - an output block with no command before it; a comparison that compares
+//     nothing; a JSON block that repeats a key, since only the last is compared
+//   - a `file` or `shows` path outside the scratch directory
+//   - a process that does not finish
+//   - any output, on either stream, that the page does not show
+//
+//   node scripts/run-doc-examples.mjs --wesley <binary> [--timeout-ms N] <doc.md>...
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+
+import { duplicateKey } from './json-duplicate-key.mjs';
+import { parseHelp } from './wesley-help.mjs';
 
 const args = process.argv.slice(2);
 const flag = args.indexOf('--wesley');
 if (flag === -1 || !args[flag + 1]) {
-  console.error('usage: run-doc-examples.mjs --wesley <binary> <doc.md>...');
+  console.error('usage: run-doc-examples.mjs --wesley <binary> [--timeout-ms N] <doc.md>...');
   process.exit(2);
 }
 const wesley = resolve(args[flag + 1]);
-const docs = args.filter((_, i) => i !== flag && i !== flag + 1);
 
 // A documented command that hangs must fail the replay, not stall the gate.
-const COMMAND_TIMEOUT_MS = 10_000;
+const timeoutFlag = args.indexOf('--timeout-ms');
+const COMMAND_TIMEOUT_MS = timeoutFlag === -1 ? 10_000 : Number(args[timeoutFlag + 1]);
+if (!Number.isInteger(COMMAND_TIMEOUT_MS) || COMMAND_TIMEOUT_MS <= 0) {
+  console.error('--timeout-ms takes a positive whole number of milliseconds');
+  process.exit(2);
+}
+const consumed = new Set([flag, flag + 1]);
+if (timeoutFlag !== -1) consumed.add(timeoutFlag).add(timeoutFlag + 1);
+const docs = args.filter((_, i) => !consumed.has(i));
 
-const FENCE_OPEN = /^```([a-z]*)\s*$/;
+// The language is whatever follows the backticks, not only `[a-z]*`: a fence
+// the parser fails to see as opening would make its closing line open one.
+const FENCE_OPEN = /^```\s*([^\s`]*)/;
+const OTHER_SHELL_FENCES = new Set([
+  'sh',
+  'shell',
+  'zsh',
+  'console',
+  'terminal',
+  'shell-session',
+  'shellsession'
+]);
 // Anything shaped like `<!-- word: value -->` is taken to be meant for this
 // runner, so a misspelled annotation is an error rather than a dropped check.
 const ANNOTATION = /^<!--\s*([A-Za-z][A-Za-z-]*):\s*(.*?)\s*-->$/;
+const SHELL_SYNTAX = /[|&;<>$"'\\#`(){}*?~]/;
 const KNOWN = {
   file: { langs: null, value: /\S/ },
   shows: { langs: null, value: /\S/ },
@@ -49,8 +84,13 @@ const KNOWN = {
   stdout: { langs: ['json'], value: /^json-subset$/ }
 };
 
-function run(argv, cwd) {
-  const result = spawnSync(wesley, argv, { cwd, encoding: 'utf8', timeout: COMMAND_TIMEOUT_MS });
+// `--timeout-ms` is the wait for a documented command. The runner's own help
+// probe keeps a fixed limit, so a short one cannot stop the replay before any
+// documented command has been judged.
+const HELP_TIMEOUT_MS = 10_000;
+
+function run(argv, cwd, timeout = COMMAND_TIMEOUT_MS) {
+  const result = spawnSync(wesley, argv, { cwd, encoding: 'utf8', timeout });
   return result.error ? { failed: result.error.message } : result;
 }
 
@@ -84,8 +124,10 @@ function parse(markdown) {
           );
         }
       }
-      if (open.file && open.shows) {
-        problems.push(`line ${lineNo}: a block cannot be both \`file\` and \`shows\``);
+      // One annotation per block, so that no check can switch another off.
+      const names = Object.keys(pending);
+      if (names.length > 1) {
+        problems.push(`line ${lineNo}: \`${names.join('` and `')}\` cannot be combined`);
       }
       if (open.shows && open.lang === 'bash') {
         problems.push(`line ${lineNo}: a bash block cannot be \`shows\``);
@@ -99,10 +141,22 @@ function parse(markdown) {
       if (!(name in KNOWN)) problems.push(`line ${lineNo}: unknown annotation \`${name}\``);
       else if (!KNOWN[name].value.test(value)) {
         problems.push(`line ${lineNo}: \`${name}: ${value}\` is not a valid value`);
+      } else if (name in pending) {
+        // Keeping the last would silently drop the check the first one asked for.
+        problems.push(`line ${lineNo}: \`${name}\` is given twice for one block`);
       } else {
         pending[name] = value;
         pendingLine = lineNo;
       }
+      return;
+    }
+    // `<!-- shows s.rs -->`, without the colon, is an ordinary comment to
+    // Markdown and would silently take its check with it.
+    const lookalike = line.trim().match(/^<!--\s*([A-Za-z][A-Za-z-]*)\b/);
+    if (lookalike && lookalike[1] in KNOWN) {
+      problems.push(
+        `line ${lineNo}: this comment looks like a \`${lookalike[1]}\` annotation but is not written as one: \`<!-- ${lookalike[1]}: value -->\``
+      );
       return;
     }
     if (line.trim() !== '' && Object.keys(pending).length > 0) {
@@ -119,36 +173,32 @@ function parse(markdown) {
 
 // The commands the binary says it has, read from its own help.
 function registeredCommands() {
-  const help = run(['--help']);
+  const help = run(['--help'], undefined, HELP_TIMEOUT_MS);
   if (help.failed || help.status !== 0) {
     const why = help.failed ?? `exit ${help.status}\n${help.stderr}`;
     console.error(`\`wesley --help\` did not succeed: ${why}`);
     process.exit(2);
   }
-  const commands = new Set();
-  let inCommands = false;
-  for (const line of help.stdout.split('\n')) {
-    if (line.trim() === 'Commands:') inCommands = true;
-    else if (inCommands && line.trim() === '') inCommands = false;
-    else if (inCommands) {
-      const row = line.match(/^ {2}([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)?) {2,}/);
-      if (row) commands.add(row[1]);
-    }
-  }
+  const { commands, options } = parseHelp(help.stdout);
   if (commands.size === 0) {
     console.error('`wesley --help` listed no commands');
     process.exit(2);
   }
-  return commands;
+  return { commands, options };
 }
 
-function namesRegisteredCommand(argv, registered) {
+// Why `wesley <argv>` is not something the binary's help lists, or null.
+function unlisted(argv, { commands, options }) {
   const [first, second] = argv;
-  if (first === undefined || first.startsWith('-')) return true;
-  if (registered.has(`${first} ${second}`) || registered.has(first)) return true;
+  if (first === undefined) return null;
+  if (first.startsWith('-')) {
+    return options.has(first) ? null : 'is not an option `wesley --help` lists';
+  }
+  if (commands.has(`${first} ${second}`) || commands.has(first)) return null;
   // `wesley schema` with nothing after it prints that family's help.
   const bare = second === undefined || second.startsWith('-');
-  return bare && [...registered].some((command) => command.startsWith(`${first} `));
+  const family = [...commands].some((command) => command.startsWith(`${first} `));
+  return bare && family ? null : 'is not a command `wesley --help` lists';
 }
 
 // Compares `shown` against `actual` as a subset. Arrays match by position, so a
@@ -181,12 +231,31 @@ function subset(shown, actual, path, counter) {
     : `${path}: the page shows ${JSON.stringify(shown)}, the CLI printed ${JSON.stringify(actual)}`;
 }
 
+// The content of every file in the scratch directory, to tell what a command
+// created or changed from what the page put there itself.
+function snapshot(dir) {
+  const files = new Map();
+  for (const entry of readdirSync(dir, { withFileTypes: true, recursive: true })) {
+    if (!entry.isFile()) continue;
+    const path = join(entry.parentPath ?? entry.path, entry.name);
+    files.set(relative(dir, path), readFileSync(path, 'utf8'));
+  }
+  return files;
+}
+
 // A path named by an annotation, confined to the scratch directory.
 function inside(dir, name) {
   if (isAbsolute(name)) return null;
   const target = resolve(dir, name);
   const rel = relative(dir, target);
   return rel === '' || rel.startsWith('..') || isAbsolute(rel) ? null : target;
+}
+
+// Whether a command argument, or the value of `--option=value`, is an absolute
+// path or climbs out with `..`.
+function leavesScratch(arg) {
+  const value = arg.startsWith('-') && arg.includes('=') ? arg.slice(arg.indexOf('=') + 1) : arg;
+  return isAbsolute(value) || value.split(/[\\/]/).includes('..');
 }
 
 function replay(doc, registered) {
@@ -201,6 +270,9 @@ function replay(doc, registered) {
   const witness = { ran: 0, compared: 0 };
   // The stdout of the bash block at `index`, for the block at `index + 1` only.
   let produced = null;
+  // Files a replayed command created or changed. A fixture the page wrote with
+  // `file:` is not evidence of anything a command did.
+  const written = new Set();
   try {
     blocks.forEach((block, index) => {
       const follows = produced !== null && produced.index === index - 1;
@@ -208,7 +280,12 @@ function replay(doc, registered) {
       if (block.file) {
         const target = inside(dir, block.file);
         if (!target) return fail(`\`file: ${block.file}\` is outside the scratch directory`);
+        mkdirSync(dirname(target), { recursive: true });
+        // Whatever a command wrote here, these bytes are now the page's own.
+        written.delete(relative(dir, target));
         writeFileSync(target, `${block.lines.join('\n')}\n`);
+        // A fixture is only a fixture: never a command to run or output to compare.
+        return undefined;
       }
 
       if (block.shows) {
@@ -216,16 +293,14 @@ function replay(doc, registered) {
         if (!target) return fail(`\`shows: ${block.shows}\` is outside the scratch directory`);
         const excerpt = block.lines.join('\n');
         if (excerpt.trim() === '') return fail(`the block that shows \`${block.shows}\` is empty`);
-        let written;
-        try {
-          written = readFileSync(target, 'utf8');
-        } catch {
-          return fail(`the page shows \`${block.shows}\`, but no command wrote it`);
+        if (!written.has(relative(dir, target))) {
+          return fail(`the page shows \`${block.shows}\`, but no replayed command wrote it`);
         }
+        const content = readFileSync(target, 'utf8');
         witness.compared += 1;
-        if (!written.includes(excerpt)) {
+        if (!content.includes(excerpt)) {
           fail(
-            `the \`${block.lang}\` block is not an excerpt of \`${block.shows}\` as written\n--- page\n${excerpt}\n--- ${block.shows}\n${written}`
+            `the \`${block.lang}\` block is not an excerpt of \`${block.shows}\` as written\n--- page\n${excerpt}\n--- ${block.shows}\n${content}`
           );
         }
         return undefined;
@@ -238,7 +313,14 @@ function replay(doc, registered) {
         const counter = { leaves: 0 };
         let mismatch;
         try {
-          const shown = JSON.parse(block.lines.join('\n'));
+          const text = block.lines.join('\n');
+          const shown = JSON.parse(text);
+          const repeated = duplicateKey(text);
+          if (repeated !== null) {
+            return fail(
+              `the JSON shown repeats the key \`${repeated}\`; only the last is compared`
+            );
+          }
           mismatch = subset(shown, JSON.parse(produced.stdout), '$', counter);
         } catch (error) {
           mismatch = `not valid JSON: ${error.message}`;
@@ -261,6 +343,18 @@ function replay(doc, registered) {
         return undefined;
       }
 
+      if (OTHER_SHELL_FENCES.has(block.lang)) {
+        // Only `bash` fences are replayed. A session in another shell fence
+        // would otherwise leave the replay by a change of label.
+        for (const line of block.lines) {
+          if (/^\s*[$%>]?\s*wesley(\s|$)/.test(line)) {
+            fail(
+              `line ${block.line}: \`${line.trim()}\` is in a \`${block.lang}\` fence; only \`bash\` fences are replayed`
+            );
+          }
+        }
+        return undefined;
+      }
       if (block.lang !== 'bash') return undefined;
 
       for (const line of block.lines) {
@@ -272,17 +366,39 @@ function replay(doc, registered) {
       }
       const commands = block.lines.filter((line) => /^wesley(\s|$)/.test(line));
       for (const command of commands) {
-        if (!namesRegisteredCommand(command.split(/\s+/).slice(1), registered)) {
-          fail(`\`${command}\` is not a command \`wesley --help\` lists`);
-        }
+        const why = unlisted(command.split(/\s+/).slice(1), registered);
+        if (why) fail(`\`${command}\` ${why}`);
       }
-      if (block.norun || commands.length === 0) return undefined;
+      if (commands.length === 0) {
+        // The annotation asks for a check of commands that are not there.
+        const asked = block.norun ? 'norun' : block.exit && 'exit';
+        if (asked)
+          fail(`line ${block.line}: \`${asked}\` is on a block with no \`wesley\` command`);
+        return undefined;
+      }
+      if (block.norun) return undefined;
 
       const expectedExit = Number(block.exit ?? 0);
       let stdout = '';
       let stderr = '';
+      const before = snapshot(dir);
       for (const command of commands) {
-        const result = run(command.split(/\s+/).slice(1), dir);
+        // No shell runs these lines: they are split on spaces and handed to the
+        // binary. A pipe, a redirect or a quote would become an argument, and
+        // the page would only fail if the CLI happened to reject it.
+        if (SHELL_SYNTAX.test(command)) {
+          fail(`\`${command}\` uses shell syntax the replay does not interpret`);
+          continue;
+        }
+        const argv = command.split(/\s+/).slice(1);
+        // The scratch directory is only the working directory, not a sandbox: a
+        // path argument could still write into the checkout and outlive the run.
+        const leaving = argv.find(leavesScratch);
+        if (leaving !== undefined) {
+          fail(`\`${command}\`: \`${leaving}\` points outside the scratch directory`);
+          continue;
+        }
+        const result = run(argv, dir);
         if (result.failed) {
           fail(`\`${command}\` did not finish: ${result.failed}`);
           continue;
@@ -297,13 +413,16 @@ function replay(doc, registered) {
         }
       }
       produced = { index, stdout };
+      for (const [name, content] of snapshot(dir)) {
+        if (before.get(name) !== content) written.add(name);
+      }
       const session = commands.join(' && ');
       if (stderr !== '') {
         fail(`\`${session}\` wrote to stderr, which the page does not show\n${stderr}`);
       }
 
       const next = blocks[index + 1];
-      const isText = next && next.lang === 'text' && !next.shows;
+      const isText = next && next.lang === 'text' && !next.shows && !next.file;
       const isJson = next && next.stdout === 'json-subset';
       if (isText) {
         witness.compared += 1;
