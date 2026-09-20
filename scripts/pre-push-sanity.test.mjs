@@ -1,8 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import {
   buildGitDiscoveryEnv,
@@ -11,9 +8,6 @@ import {
   formatSpawnFailure,
   resolveCommand
 } from './pre-push-sanity.mjs';
-
-const __filename = fileURLToPath(import.meta.url);
-const repoRoot = resolve(dirname(__filename), '..');
 
 test('pre-push sanity builds argv commands for selected checks', () => {
   const commands = buildCommands([
@@ -99,13 +93,6 @@ test('pre-push sanity reports command startup errors with actionable context', (
       '[pre-push] spawn pnpm ENOENT'
     ].join('\n')
   );
-});
-
-test('pre-push sanity does not execute selected checks through a shell', () => {
-  const source = readFileSync(resolve(repoRoot, 'scripts/pre-push-sanity.mjs'), 'utf8');
-
-  assert.doesNotMatch(source, /spawnSync\(['"]\/bin\/bash['"],\s*\[\s*['"]-lc['"]/);
-  assert.doesNotMatch(source, /function shellQuote\b/);
 });
 
 test('pre-push sanity removes hook-local Git context from child checks', () => {

@@ -39,6 +39,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Tests now assert runtime behavior only. 112 bats tests that searched
   documentation, workflow YAML, or source text for strings are removed, along
   with eight suites that contained nothing else; the 16 that execute code remain.
+  One Node test that searched `scripts/pre-push-sanity.mjs` for two patterns is
+  removed too; the test beside it already asserts that each check is an argv
+  pair and not a shell string.
   `cargo xtask release-guard` no longer reads prose: the README version
   headline, teardown version, guide path, and cited-SHA checks are gone, as are
   the docs truth manifest and the "pnpm wesley" context check. The Markdown
