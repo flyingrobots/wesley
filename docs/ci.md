@@ -80,13 +80,13 @@ The documentation is checked only by executing things:
 
 The replay reads these annotations from the Markdown:
 
-| Annotation                     | Before           | Meaning                                               |
-| ------------------------------ | ---------------- | ----------------------------------------------------- |
-| `<!-- file: NAME -->`          | any fenced block | write the block to `NAME`                             |
-| `<!-- exit: N -->`             | a `bash` block   | its commands exit `N`                                 |
-| `<!-- norun: WHY -->`          | a `bash` block   | shown, not run; its command names are still checked   |
-| `<!-- shows: NAME -->`         | any fenced block | a contiguous excerpt of `NAME`, which a command wrote |
-| `<!-- stdout: json-subset -->` | a `json` block   | every key and value shown is in the real output       |
+| Annotation                     | Before             | Meaning                                               |
+| ------------------------------ | ------------------ | ----------------------------------------------------- |
+| `<!-- file: NAME -->`          | any fenced block   | write the block to `NAME`                             |
+| `<!-- exit: N -->`             | a `bash` block     | its commands exit `N`                                 |
+| `<!-- norun: WHY -->`          | a `bash` block     | shown, not run; its command names are still checked   |
+| `<!-- shows: NAME -->`         | a block not `bash` | a contiguous excerpt of `NAME`, which a command wrote |
+| `<!-- stdout: json-subset -->` | a `json` block     | every key and value shown is in the real output       |
 
 A block takes one annotation, so none can switch another's check off. `shows`
 accepts only a file that a replayed command created or changed: a fixture the

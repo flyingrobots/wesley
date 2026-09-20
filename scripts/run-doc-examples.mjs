@@ -7,7 +7,7 @@
 //                                a fixture is never run or compared
 //   <!-- exit: N -->             bash only: its wesley commands exit N
 //   <!-- norun: WHY -->          bash only: shown, not run; names still checked
-//   <!-- shows: NAME -->         the block is a contiguous excerpt of the file
+//   <!-- shows: NAME -->         not bash: the block is a contiguous excerpt of the file
 //                                NAME, which a replayed command created or
 //                                changed; a `file:` fixture does not count
 //   <!-- stdout: json-subset --> json only, directly after a bash block: every
