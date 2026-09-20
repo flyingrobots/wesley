@@ -1,6 +1,6 @@
 //! Deterministic diagnostic envelopes for Holmes law assurance.
 
-use crate::prelude::*;
+use alloc::string::String;
 use core::error::Error;
 use core::fmt;
 

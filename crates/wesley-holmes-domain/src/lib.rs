@@ -14,16 +14,9 @@
 //! dependencies: the crate is `no_std`, so they do not exist here. What remains
 //! open is its dependency list: `serde`, `serde_json`, and `libm` for rounding.
 
+// Each module imports what it uses from `alloc` by name: `String`, `Vec`,
+// `format!` and the rest are not in scope by default without `std`.
 extern crate alloc;
-
-/// What the `std` prelude would have supplied, taken from `alloc`.
-mod prelude {
-    pub(crate) use alloc::borrow::ToOwned;
-    pub(crate) use alloc::format;
-    pub(crate) use alloc::string::String;
-    pub(crate) use alloc::vec;
-    pub(crate) use alloc::vec::Vec;
-}
 
 mod assessment;
 mod contract_manifest;

@@ -1,6 +1,8 @@
 //! Typed Wesley law coverage evidence accepted by Holmes.
 
-use crate::prelude::*;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 /// API version supported by the first Holmes law coverage ingest port.
