@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- `pnpm run legacy-preflight` runs markdownlint over every tracked Markdown file
+  but two: the vendored bats plugins' README and a golden file a CLI test
+  compares byte for byte. Nothing ran it before. This file's 22 errors were all
+  in the two oldest releases, whose notes are left as written: two rules are
+  switched off from `[0.1.0]` to the end, and every newer section is linted in
+  full. The blade fixture's READMEs now say that the commands they show belong
+  to the retired Node CLI.
+
 ## [0.3.0-alpha.3] - 2026-09-20
 
 The compiler is unchanged in this release: no source file under any crate's
@@ -382,6 +392,15 @@ changed-schemas`, runs schema-scoped matrix jobs, and keeps per-schema report
   directive families that the Rust-native SDL hot path actually lowers, while
   broader RLS/RPC/reference fixtures are explicitly marked experimental or
   historical.
+
+<!--
+  The two oldest releases below repeat headings within a release (two
+  "### Changed" under one version) and contain one code span with a trailing
+  space. Those notes are released history and are left as written; the rules
+  are switched off from here to the end of the file only. Every section above
+  this line is linted in full.
+-->
+<!-- markdownlint-disable MD024 MD038 -->
 
 ## [0.1.0] - 2026-06-24
 
