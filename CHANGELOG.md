@@ -21,7 +21,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
-- Replaced the documentation. 271 Markdown files under `docs/` are deleted,
+- Replaced the documentation. 268 Markdown files under `docs/` are deleted, and
+  273 across the repository,
   including the design packets, release packets, audits, and the archive; Git
   is the archive. In their place: a rewritten README, getting-started guide, CLI
   reference generated from `wesley --help`, architecture, CI, RELEASE,

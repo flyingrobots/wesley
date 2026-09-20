@@ -36,11 +36,11 @@ editing the workflow. A glob that matches nothing fails the step.
 
 ## On `main` only
 
-| Workflow              | What it does                                                          |
-| --------------------- | --------------------------------------------------------------------- |
-| `cert-shipme.yml`     | Produces a SHIPME certificate for the commit that landed              |
-| `release-autotag.yml` | Tags the commit if it is the merge of a `release/vX.Y.Z` pull request |
-| `scorecards.yml`      | OpenSSF Scorecard, also on a schedule                                 |
+| Workflow              | What it does                                                                                               |
+| --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `cert-shipme.yml`     | Produces a SHIPME certificate, only for a push that touches `packages/`, `.github/`, or the fixture script |
+| `release-autotag.yml` | Tags the commit if it is the merge of a `release/vX.Y.Z` pull request                                      |
+| `scorecards.yml`      | OpenSSF Scorecard, also on a schedule                                                                      |
 
 `release-crates.yml` runs from a release tag. [RELEASE.md](../RELEASE.md)
 describes it and the autotag workflow.
