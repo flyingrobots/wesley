@@ -17,8 +17,8 @@ timeout 60s bash scripts/setup-bats-plugins.sh || {
   exit 1
 }
 
-# Every suite, discovered the same way CI discovers them. All eight take a few
-# seconds, so there is no reason for a hand-kept list that can name a suite
+# Every suite, discovered the same way CI discovers them. The whole sweep takes
+# under a minute, so there is no reason for a hand-kept list that can name a suite
 # that no longer exists.
 # Without nullglob an unmatched glob is passed through as the literal string,
 # and bats would be run on a file called 'test/*.bats' before the count is read.
