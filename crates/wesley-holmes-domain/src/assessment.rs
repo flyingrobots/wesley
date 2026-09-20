@@ -7,7 +7,7 @@ use super::contract_manifest::{ContractBundleManifest, NormalizedContractBundleP
 use super::evidence::{
     HolmesLawEvidenceBundle, LawEvidenceValidationResult, LawEvidenceValidationStatus,
 };
-use super::finding::{sort_semantic_change_findings, LawFindingSeverity, SemanticChangeFinding};
+use super::finding::{LawFindingSeverity, SemanticChangeFinding, sort_semantic_change_findings};
 use super::law_coverage_gate::{LawCoverageGateDecision, LawCoverageGateState};
 
 /// State for one bundle traceability check or the aggregate traceability gate.

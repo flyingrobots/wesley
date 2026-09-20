@@ -38,10 +38,11 @@ mod policy;
 mod versioning;
 
 pub use assessment::{
+    BoundedFindingSummary, BundleTraceabilityCheck, BundleTraceabilityGateDecision,
+    BundleTraceabilityGateState, LawAssuranceArtifactProvenance, LawAssuranceAssessmentOutcome,
+    LawAssuranceAssessmentSummary, LawAssuranceProvenanceReport,
     aggregate_law_assurance_assessment, bounded_finding_summary, evaluate_bundle_traceability,
-    law_assurance_provenance_report, BoundedFindingSummary, BundleTraceabilityCheck,
-    BundleTraceabilityGateDecision, BundleTraceabilityGateState, LawAssuranceArtifactProvenance,
-    LawAssuranceAssessmentOutcome, LawAssuranceAssessmentSummary, LawAssuranceProvenanceReport,
+    law_assurance_provenance_report,
 };
 pub use contract_manifest::{
     ContractBundleManifest, NormalizedContractBundleProvenance,
@@ -55,34 +56,34 @@ pub use evidence::{
     LoadedArtifactMetadata,
 };
 pub use finding::{
-    default_severity_for_event, semantic_change_findings_from_law_diff,
-    sort_semantic_change_findings, LawFindingSeverity, SemanticChangeFinding,
+    LawFindingSeverity, SemanticChangeFinding, default_severity_for_event,
+    semantic_change_findings_from_law_diff, sort_semantic_change_findings,
 };
 pub use law_capability::{
     LawCapabilityClosure, LawCapabilityFootprint, LawCapabilityReport, LawCapabilitySlot,
     NormalizedLawCapabilityOperation, WESLEY_LAW_CAPABILITIES_API_VERSION,
 };
 pub use law_coverage::{
-    percentage, LawCoverageCategory, LawCoverageReport, NormalizedLawCoverageCategory,
-    NormalizedLawCoverageProfile, WESLEY_LAW_COVERAGE_API_VERSION,
+    LawCoverageCategory, LawCoverageReport, NormalizedLawCoverageCategory,
+    NormalizedLawCoverageProfile, WESLEY_LAW_COVERAGE_API_VERSION, percentage,
 };
 pub use law_coverage_gate::{
-    evaluate_law_coverage_gates, CoverageAbsentCategoryBehavior, CoverageUnavailableBehavior,
-    LawCoverageCategoryThreshold, LawCoverageGateDecision, LawCoverageGatePolicy,
-    LawCoverageGateState,
+    CoverageAbsentCategoryBehavior, CoverageUnavailableBehavior, LawCoverageCategoryThreshold,
+    LawCoverageGateDecision, LawCoverageGatePolicy, LawCoverageGateState,
+    evaluate_law_coverage_gates,
 };
 pub use law_diff::{
     LawDiffEvent, LawDiffEventKind, LawDiffFieldChange, LawDiffLawKind, LawDiffReport,
     LawDiffReviewPosture, NormalizedLawDiffEvent, WESLEY_LAW_DIFF_API_VERSION,
 };
 pub use policy::{
-    apply_suppression_policy, map_semantic_finding_severities, matching_suppressions_for_finding,
-    normalize_law_assurance_policy, parse_law_assurance_policy, AnnotatedFinding,
-    LawAssuranceCoverageThresholdPolicy, LawAssurancePolicyProfile, LawAssurancePolicySchema,
-    LawAssuranceSuppressionMatch, LawAssuranceSuppressionRule, LawAssuranceSuppressionTarget,
-    LawAssuranceSuppressionTargetKind, NormalizedLawAssurancePolicy, SuppressionApplicationRecord,
-    SuppressionPolicyOutcome, SuppressionRejectionReason, SuppressionRejectionRecord,
-    HOLMES_LAW_ASSURANCE_POLICY_API_VERSION,
+    AnnotatedFinding, HOLMES_LAW_ASSURANCE_POLICY_API_VERSION, LawAssuranceCoverageThresholdPolicy,
+    LawAssurancePolicyProfile, LawAssurancePolicySchema, LawAssuranceSuppressionMatch,
+    LawAssuranceSuppressionRule, LawAssuranceSuppressionTarget, LawAssuranceSuppressionTargetKind,
+    NormalizedLawAssurancePolicy, SuppressionApplicationRecord, SuppressionPolicyOutcome,
+    SuppressionRejectionReason, SuppressionRejectionRecord, apply_suppression_policy,
+    map_semantic_finding_severities, matching_suppressions_for_finding,
+    normalize_law_assurance_policy, parse_law_assurance_policy,
 };
 pub use versioning::{
     ArtifactFamily, ParsedSchemaVersion, VersionCheck, VersionRegistry, VersionRequirement,

@@ -1,7 +1,7 @@
 [package]
 name = "wesley-holmes-domain"
 version = "0.3.0-alpha.3"
-edition = "2021"
+edition = "2024"
 description = "The pure Holmes law-assurance domain: data, deterministic validation, and diagnostics"
 license = "Apache-2.0"
 repository = "https://github.com/flyingrobots/wesley"

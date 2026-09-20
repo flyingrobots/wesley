@@ -570,16 +570,18 @@ pub fn apply_suppression_policy(
             applied: Vec::new(),
             rejected: Vec::new(),
             expired: Vec::new(),
-            diagnostics: vec![HolmesDiagnostic::new(
-                HolmesDiagnosticCode::HlawSuppressionInvalid,
-                HolmesSeverity::Error,
-                format!(
-                    "evaluation_date {evaluation_date:?} is not in YYYY-MM-DD format; \
+            diagnostics: vec![
+                HolmesDiagnostic::new(
+                    HolmesDiagnosticCode::HlawSuppressionInvalid,
+                    HolmesSeverity::Error,
+                    format!(
+                        "evaluation_date {evaluation_date:?} is not in YYYY-MM-DD format; \
                      no suppressions were applied"
-                ),
-            )
-            .for_family("policy")
-            .at_field("evaluation_date")],
+                    ),
+                )
+                .for_family("policy")
+                .at_field("evaluation_date"),
+            ],
         };
     }
 
@@ -920,13 +922,12 @@ fn validate_threshold(
     }
     if let (Some(warning_threshold), Some(failure_threshold)) =
         (threshold.warning_threshold, threshold.failure_threshold)
+        && warning_threshold < failure_threshold
     {
-        if warning_threshold < failure_threshold {
-            return invalid_threshold(
-                &format!("coverageThresholds.{category_id}.warningThreshold"),
-                "warning threshold must be greater than or equal to failure threshold",
-            );
-        }
+        return invalid_threshold(
+            &format!("coverageThresholds.{category_id}.warningThreshold"),
+            "warning threshold must be greater than or equal to failure threshold",
+        );
     }
 
     Ok(())
