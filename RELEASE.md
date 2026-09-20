@@ -119,12 +119,19 @@ Only when the workflow itself is unavailable, and never to get around a check
 that failed: on `main`, synced with `origin/main`, at the release commit,
 
 ```bash
+cargo install cargo-audit --locked
 cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask release-check
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
 cargo xtask release-guard --tag vX.Y.Z
 git push origin vX.Y.Z
 ```
+
+`release-guard` runs `cargo audit`, which is not part of a Rust installation;
+the workflow installs it, and by hand you must. Install it first, so that the
+guard cannot fail for that reason after the tag already exists. If the guard
+does fail, delete the local tag (`git tag -d vX.Y.Z`) before anything else: it
+has not been pushed.
 
 A tag pushed by a person starts `release-crates.yml` by itself. Do not dispatch
 it as well.
