@@ -6,15 +6,36 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- `actionlint` runs over every workflow in `pnpm run legacy-preflight`, and so
+  on every pull request through `preflight.yml`, which installs a pinned
+  version. It was configured for pre-commit, which the installed hooks never
+  ran, so nothing linted the workflows. In CI a missing `actionlint` is a
+  failure; locally it is a warning that says the workflows were not linted. Its
+  `shellcheck` and `pyflakes` integrations are off, so the verdict does not
+  depend on what else a machine has installed.
+
 ### Changed
 
 - `pnpm run legacy-preflight` runs markdownlint over every tracked Markdown file
   but two: the vendored bats plugins' README and a golden file a CLI test
-  compares byte for byte. Nothing ran it before. This file's 22 errors were all
-  in the two oldest releases, whose notes are left as written: two rules are
-  switched off from `[0.1.0]` to the end, and every newer section is linted in
-  full. The blade fixture's READMEs now say that the commands they show belong
-  to the retired Node CLI.
+  compares byte for byte. Nothing ran it before, and `markdownlint-cli2` is now
+  a locked dev dependency, not whatever a machine has. This file's 22
+  errors were all in the two oldest releases, whose notes are left as written:
+  two rules are switched off from `[0.1.0]` to the end, and every newer section
+  is linted in full. The blade fixture's READMEs now say that the commands they
+  show belong to the retired Node CLI.
+
+### Fixed
+
+- `wesley schema --help` now documents `--config`. `schema lower`, `schema hash`,
+  and `schema operations` have always taken the schema from a project manifest
+  when `--schema` is omitted, and the help said neither that nor how to name the
+  manifest. It also lists `--format`, `--breaking-only`, and `--exit-code` under
+  Options, and `wesley operation --help` lists `--json`; each appeared only in a
+  usage line. A CLI test now requires every help page to describe every option
+  its usage lines offer.
 
 ## [0.3.0-alpha.3] - 2026-09-20
 

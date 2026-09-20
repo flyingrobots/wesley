@@ -94,6 +94,26 @@ try {
 const eslintChk = spawnSync('pnpm', ['exec', 'eslint', '.'], { stdio: 'inherit' });
 if (eslintChk.status !== 0) fail('ESLint failed');
 
+// actionlint, over every workflow. It is a separate binary, so a contributor may
+// not have it; CI always does, and there a missing linter is a failure, not a
+// skip. Locally the skip is said out loud.
+//
+// actionlint runs whatever `shellcheck` and `pyflakes` it finds on PATH, so with
+// them the verdict would depend on the machine and on the runner image's
+// upgrades. They are switched off: this gate checks the workflows themselves,
+// the same way everywhere.
+const actionlintChk = spawnSync('actionlint', ['-shellcheck=', '-pyflakes='], {
+  stdio: 'inherit'
+});
+if (actionlintChk.error?.code === 'ENOENT') {
+  // `CI=true` only, as scripts/pre-push-sanity.mjs reads it: `CI=false` is local.
+  if (process.env.CI === 'true') {
+    fail('actionlint is not installed, so the workflows were not linted');
+  } else console.warn('⚠️  actionlint is not installed: the workflows were NOT linted here.');
+} else if (actionlintChk.status !== 0) {
+  fail('actionlint failed');
+}
+
 // Docs link check.
 const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { stdio: 'inherit' });
 if (linkChk.status !== 0) fail('Docs link check failed');

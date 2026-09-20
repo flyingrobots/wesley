@@ -169,7 +169,7 @@ jobs:
         run: |
           echo "## 📊 Generation Scores"
           if [ -f "${{ matrix.schema_set.bundle_dir }}/scores.json" ]; then
-            cat "${{ matrix.schema_set.bundle_dir }}/scores.json" | jq '.scores'
+            jq '.scores' "${{ matrix.schema_set.bundle_dir }}/scores.json"
           else
             echo "No scores.json found yet"
           fi

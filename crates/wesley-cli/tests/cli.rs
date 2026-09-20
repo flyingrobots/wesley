@@ -1072,6 +1072,101 @@ fn nested_command_help_exits_zero() {
     assert!(stdout.contains("wesley schema lower --schema <path>"));
 }
 
+/// Runs `wesley <args>` and returns its stdout, or why it could not.
+fn help_text(args: &[&str]) -> Result<String, String> {
+    let output = wesley()
+        .args(args)
+        .output()
+        .map_err(|source| format!("`wesley {}` did not run: {source}", args.join(" ")))?;
+    if !output.status.success() {
+        return Err(format!("`wesley {}` failed", args.join(" ")));
+    }
+    String::from_utf8(output.stdout).map_err(|source| source.to_string())
+}
+
+/// The lines of one section of a help page, from its heading to the next blank line.
+fn help_section<'a>(help: &'a str, heading: &str) -> Vec<&'a str> {
+    help.lines()
+        .skip_while(|line| line.trim() != heading)
+        .skip(1)
+        .take_while(|line| !line.trim().is_empty())
+        .collect()
+}
+
+// Oracle: the help page against itself. Whatever a usage line offers, the
+// Options list on the same page must describe. Families are harvested from the
+// root help, so a new one is covered without editing this test.
+#[test]
+fn every_option_a_usage_line_names_is_described_under_options() -> Result<(), String> {
+    let root = help_text(&["--help"])?;
+    let mut families: Vec<&str> = help_section(&root, "Commands:")
+        .iter()
+        .filter_map(|row| row.split_whitespace().next())
+        .filter(|family| *family != "version")
+        .collect();
+    families.dedup();
+    assert!(families.len() >= 5, "root help listed {families:?}");
+
+    let mut checked = 0;
+    let mut undescribed = Vec::new();
+    for family in families {
+        let help = help_text(&[family, "--help"])?;
+        let described = help_section(&help, "Options:").join("\n");
+        for option in help_section(&help, "Usage:")
+            .iter()
+            .flat_map(|line| line.split(|c: char| c.is_whitespace() || "[]|".contains(c)))
+            .filter(|token| token.starts_with("--"))
+        {
+            checked += 1;
+            if !described.contains(option) {
+                undescribed.push(format!("{family}: {option}"));
+            }
+        }
+    }
+    undescribed.sort();
+    undescribed.dedup();
+
+    assert!(
+        checked > 40,
+        "only {checked} usage options were found to check"
+    );
+    assert_eq!(undescribed, Vec::<String>::new());
+    Ok(())
+}
+
+// Required, not harvested: an option that no usage line mentions cannot be
+// found by the test above, which is how `--config` went missing.
+#[test]
+fn schema_help_documents_the_manifest_option_the_schema_commands_accept() -> Result<(), String> {
+    let dir = temp_dir("schema-help-config");
+    let write = |name: &str, content: &str| {
+        std::fs::write(dir.join(name), content).map_err(|source| source.to_string())
+    };
+    std::fs::create_dir_all(&dir).map_err(|source| source.to_string())?;
+    write("schema.graphql", "type Query { health: Boolean }\n")?;
+    write(
+        "other.json",
+        r#"{"apiVersion":"wesley.project-manifest/v1","schemaPaths":["schema.graphql"]}"#,
+    )?;
+    let accepted = wesley()
+        .current_dir(&dir)
+        .args(["schema", "hash", "--config", "other.json"])
+        .output()
+        .map_err(|source| source.to_string())?;
+    assert!(
+        accepted.status.success(),
+        "`schema hash --config` is accepted"
+    );
+
+    let help = help_text(&["schema", "--help"])?;
+    let described = help_section(&help, "Options:").join("\n");
+    assert!(
+        described.contains("--config <path>"),
+        "schema help does not describe --config:\n{help}"
+    );
+    Ok(())
+}
+
 #[test]
 fn doctor_help_exits_zero() {
     let output = wesley()
