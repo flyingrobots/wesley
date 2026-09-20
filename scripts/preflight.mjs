@@ -118,6 +118,10 @@ if (actionlintChk.error?.code === 'ENOENT') {
 const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { stdio: 'inherit' });
 if (linkChk.status !== 0) fail('Docs link check failed');
 
+// markdownlint, over the files .markdownlint-cli2.jsonc selects.
+const markdownChk = spawnSync('pnpm', ['exec', 'markdownlint-cli2'], { stdio: 'inherit' });
+if (markdownChk.status !== 0) fail('markdownlint failed');
+
 // Forbidden machine-local path literals.
 const privatePathChk = spawnSync(process.execPath, ['scripts/check-forbidden-literals.mjs'], {
   stdio: 'inherit'

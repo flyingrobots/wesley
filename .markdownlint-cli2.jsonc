@@ -1,0 +1,13 @@
+{
+  // What `pnpm exec markdownlint-cli2` lints when given no arguments, which is
+  // how legacy-preflight runs it. Rules are in .markdownlint.json.
+  "globs": ["**/*.md"],
+  "gitignore": true,
+  "ignores": [
+    // Vendored bats plugins: not ours to reformat.
+    "test/vendor/**",
+    // A golden file: a CLI test compares the law diff's Markdown output with it
+    // byte for byte, so it says what the tool prints, blank lines included.
+    "test/fixtures/weslaw/diff/ci-semantic-diff.md"
+  ]
+}
