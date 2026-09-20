@@ -846,3 +846,18 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   assert_success
   [ "$output" -eq 1 ]
 }
+
+@test "release crates workflow checks visibility against the registry, not the checkout" {
+  # Inside the repository every published crate exists at the release version,
+  # and plain `cargo info crate@version` resolves that workspace member and
+  # exits 0 without asking crates.io. --registry forces the registry lookup.
+  crates=".github/workflows/release-crates.yml"
+
+  run bash -lc "grep -A16 'name: Verify crates.io visibility' $crates | grep -c 'cargo info'"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -A16 'name: Verify crates.io visibility' $crates | grep -cF 'cargo info \"\${crate}@\${version}\" --registry crates-io'"
+  assert_success
+  [ "$output" -eq 1 ]
+}
