@@ -7,6 +7,8 @@ load 'vendor/bats-plugins/bats-assert/load'
 # Oracle: the binary. The documentation is the thing under test, not the code:
 # each page is replayed against the real CLI.
 
+# `cargo xtask docs-replay` runs the same two checks; `cargo xtask preflight`
+# calls it, so a stale page fails the local gate as well as this suite.
 setup_file() {
   cargo build --quiet --bin wesley
   export WESLEY_BIN="$PWD/target/debug/wesley"

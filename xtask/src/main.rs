@@ -96,6 +96,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
         "lean-core-check" => run_lean_core_check(),
+        "docs-replay" => run_docs_replay(),
         "release-autotag-plan" => run_release_autotag_plan(),
         "package-crates" => run_package_crates(&args[1..]),
         "publish-alpha" => {
@@ -134,7 +135,33 @@ fn run_preflight() -> Result<(), Error> {
     run_docs_check()?;
     run_command("cargo", &["test", "--workspace"])?;
     run_lean_core_check()?;
-    run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])
+    run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])?;
+    run_docs_replay()
+}
+
+/// The documents whose shell sessions are replayed against the built CLI.
+const REPLAYED_DOCUMENTS: [&str; 2] = ["README.md", "docs/getting-started.md"];
+/// Where `cargo build --bin wesley` leaves the CLI.
+const BUILT_CLI: &str = "target/debug/wesley";
+
+/// Builds the CLI, replays the sessions the documentation shows, and checks
+/// that the generated CLI reference still matches the binary.
+fn run_docs_replay() -> Result<(), Error> {
+    run_command("cargo", &["build", "--quiet", "--bin", "wesley"])?;
+
+    let mut replay = vec!["scripts/run-doc-examples.mjs", "--wesley", BUILT_CLI];
+    replay.extend(REPLAYED_DOCUMENTS);
+    run_command("node", &replay)?;
+
+    run_command(
+        "node",
+        &[
+            "scripts/generate-cli-reference.mjs",
+            "--wesley",
+            BUILT_CLI,
+            "--check",
+        ],
+    )
 }
 
 fn run_bench_ir(args: &[OsString]) -> Result<(), Error> {
@@ -3049,6 +3076,7 @@ Commands:
   bench-ir          Run advisory Rust-native IR lowering benchmarks
   docs-check        Run Rust-native documentation hygiene checks
   lean-core-check   Prove wesley-core without default features omits the async stack
+  docs-replay       Replay the documented CLI sessions and check the generated CLI reference
   preflight         Run the strict pre-PR/release quality gate
   strict-preflight  Alias for preflight
   package-crates    Check package file sets for the crates.io release set

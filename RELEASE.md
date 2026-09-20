@@ -32,10 +32,10 @@ On a branch named `release/vX.Y.Z`:
    ```bash
    cargo build --bin wesley
    node scripts/generate-cli-reference.mjs --wesley target/debug/wesley
-   node scripts/run-doc-examples.mjs --wesley target/debug/wesley README.md docs/getting-started.md
+   cargo xtask docs-replay
    ```
 
-   The second command reports each place `docs/getting-started.md` or the
+   The last command reports each place `docs/getting-started.md` or the
    README disagrees with the binary; correct the page to match. Update the
    version in the install commands and in the crate READMEs too.
 

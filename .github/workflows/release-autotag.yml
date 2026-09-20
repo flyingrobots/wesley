@@ -53,6 +53,14 @@ jobs:
           rustc --version
           cargo --version
 
+      # release-guard runs preflight, and preflight replays the documented CLI
+      # sessions with Node. Set it up here instead of relying on whatever the
+      # runner image happens to carry.
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: 22
+
       - name: Find the merged pull request for this commit
         id: pr
         env:

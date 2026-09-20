@@ -160,7 +160,10 @@ function needsRepoBats(changedFiles) {
       file.startsWith('.github/') ||
       file.startsWith('.githooks/') ||
       file.startsWith('scripts/') ||
-      file.startsWith('test/')
+      file.startsWith('test/') ||
+      // The replay suite reads these pages.
+      file.startsWith('docs/') ||
+      file === 'README.md'
   );
 }
 

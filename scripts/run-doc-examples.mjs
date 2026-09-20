@@ -12,6 +12,9 @@
 //                                every key and value shown is in the real output
 //   a ```text block directly after a ```bash block is that block's exact stdout
 //
+// A stream the page does not show must be empty: stdout when no `text` or
+// json-subset block follows, and stderr always. A warning the page omits fails.
+//
 // Only lines that start with `wesley ` are run. Every such line, run or not,
 // must name a command that `wesley --help` lists.
 //
@@ -177,6 +180,7 @@ for (const doc of docs) {
 
       const expectedExit = Number(block.exit ?? 0);
       let stdout = '';
+      let stderr = '';
       for (const command of commands) {
         const result = spawnSync(wesley, command.split(/\s+/).slice(1), {
           cwd: dir,
@@ -184,6 +188,7 @@ for (const doc of docs) {
         });
         witness.ran += 1;
         stdout += result.stdout;
+        stderr += result.stderr;
         if (result.status !== expectedExit) {
           failures.push(
             `${doc}: \`${command}\` exited ${result.status}, the page says ${expectedExit}\n${result.stderr}`
@@ -192,7 +197,20 @@ for (const doc of docs) {
       }
       lastStdout = stdout;
 
+      if (stderr !== '') {
+        failures.push(
+          `${doc}: \`${commands.join(' && ')}\` wrote to stderr, which the page does not show\n${stderr}`
+        );
+      }
+
       const next = blocks[index + 1];
+      const showsStdout =
+        next && ((next.lang === 'text' && !next.shows) || next.stdout === 'json-subset');
+      if (!showsStdout && stdout !== '') {
+        failures.push(
+          `${doc}: \`${commands.join(' && ')}\` printed output the page does not show\n${stdout}`
+        );
+      }
       if (next && next.lang === 'text' && !next.shows) {
         witness.compared += 1;
         const expected = `${next.lines.join('\n')}\n`;

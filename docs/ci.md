@@ -12,7 +12,9 @@ cargo xtask preflight
 
 It runs, in order: `cargo fmt --check`, `cargo clippy --workspace --all-targets
 -- -D warnings`, the documentation checks, `cargo test --workspace`,
-`cargo xtask lean-core-check`, and a smoke run of the CLI. If it passes locally,
+`cargo xtask lean-core-check`, a smoke run of the CLI, and
+`cargo xtask docs-replay`, which replays the documented sessions. It needs Node
+for that last step. If it passes locally,
 the Rust checks will pass in CI. Run it before opening a pull request.
 
 ## On a pull request
@@ -62,7 +64,8 @@ The documentation is checked only by executing things:
 
 - Links are followed and must resolve: `cargo xtask docs-check`.
 - The sessions in `README.md` and `docs/getting-started.md` are replayed in a
-  scratch directory against the built CLI: `test/docs-examples.bats`. What the
+  scratch directory against the built CLI: `cargo xtask docs-replay`, which
+  preflight runs, and `test/docs-examples.bats` in CI. What the
   CLI prints, and the files it writes, are compared with what the page shows.
   Every `wesley` command a page names, run or not, must be one that
   `wesley --help` lists. Each page must contribute: a page with nothing run or
@@ -80,7 +83,9 @@ The replay reads these annotations from the Markdown:
 | `<!-- shows: NAME -->`         | any fenced block | the block is a contiguous excerpt of the file `NAME` |
 | `<!-- stdout: json-subset -->` | a `json` block   | every key and value shown is in the real output      |
 
-A `text` block directly after a `bash` block is that block's exact output.
+A `text` block directly after a `bash` block is that block's exact output. A
+stream the page does not show must be empty: a command that prints a warning the
+page omits fails the replay.
 Prettier does not reformat code inside Markdown here, because an excerpt has to
 stay byte for byte what the tool printed.
 
