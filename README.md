@@ -30,6 +30,8 @@ cargo install --locked --path crates/wesley-cli
 
 Save this as `shop.graphql`:
 
+<!-- file: shop.graphql -->
+
 ```graphql
 type Product {
   id: ID!

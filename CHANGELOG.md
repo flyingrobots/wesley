@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- Executable documentation. `test/docs-examples.bats` replays the sessions in
+  the README and the getting-started guide against the real CLI and compares
+  what it prints with what the page says, and checks that `docs/cli.md` equals
+  `wesley --help`. `scripts/generate-cli-reference.mjs` writes that page.
+
 ### Changed
 
 - Replaced the documentation. 271 Markdown files under `docs/` are deleted,

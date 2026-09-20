@@ -25,6 +25,8 @@ wesley doctor
 
 Save this as `shop.graphql`:
 
+<!-- file: shop.graphql -->
+
 ```graphql
 type Product {
   id: ID!
@@ -180,8 +182,26 @@ The generated Rust uses `serde`; add it to the crate that includes the file.
 
 ## 6. Catch a breaking change
 
-Copy the schema to `shop-v2.graphql`, remove the `tags` field, and add
-`description: String`. Then compare the two:
+Save a second version as `shop-v2.graphql`. It drops `tags` and adds
+`description`:
+
+<!-- file: shop-v2.graphql -->
+
+```graphql
+type Product {
+  id: ID!
+  name: String!
+  priceCents: Int!
+  description: String
+}
+
+type Query {
+  product(id: ID!): Product
+  products: [Product!]!
+}
+```
+
+Then compare the two:
 
 ```bash
 wesley schema diff --old shop.graphql --new shop-v2.graphql
@@ -195,6 +215,8 @@ BREAKING  Field "tags" removed from Product
 With `--exit-code` the command exits 1 when the change is breaking, which is
 what a CI job needs:
 
+<!-- exit: 1 -->
+
 ```bash
 wesley schema diff --old shop.graphql --new shop-v2.graphql --format summary --exit-code
 ```
@@ -204,6 +226,8 @@ wesley schema diff --old shop.graphql --new shop-v2.graphql --format summary --e
 ```
 
 To compare the working copy against a Git revision instead of a second file:
+
+<!-- norun: needs a Git history -->
 
 ```bash
 wesley schema diff --schema shop.graphql --against origin/main --exit-code

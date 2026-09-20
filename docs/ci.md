@@ -58,10 +58,23 @@ documentation, workflow files, or source code for strings.
   for f in test/*.bats; do BATS_LIB_PATH=test/vendor bats "$f"; done
   ```
 
-The documentation has two checks, and both execute something. Links are
-followed and must resolve (`cargo xtask docs-check`). Commands shown in
-`README.md`, `docs/getting-started.md`, and `docs/cli.md` must be commands the
-CLI registers (`node scripts/check-doc-cli-commands.mjs`).
+The documentation is checked only by executing things:
+
+- Links are followed and must resolve: `cargo xtask docs-check`.
+- A `wesley` command named anywhere in `README.md`, `docs/getting-started.md`,
+  or `docs/cli.md` must be one the CLI registers:
+  `node scripts/check-doc-cli-commands.mjs`.
+- The sessions in `README.md` and `docs/getting-started.md` are replayed in a
+  scratch directory, and what the CLI prints is compared with what the page
+  says it prints: `test/docs-examples.bats`.
+- `docs/cli.md` must equal what `wesley --help` prints today; the same suite
+  checks it.
+
+The replay reads three annotations from the Markdown. `<!-- file: NAME -->`
+before a fenced block writes that block to `NAME`. `<!-- exit: N -->` before a
+`bash` block says its commands exit `N`. `<!-- norun: WHY -->` shows a block
+without running it. A `text` block directly after a `bash` block is that
+block's exact output.
 
 ## Git hooks
 

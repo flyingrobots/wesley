@@ -61,14 +61,23 @@ lists everything that runs on a pull request.
 
 ## Documentation
 
-Documentation describes; it is not tested, and no check reads its prose. Two
-things about it are checked, because both can be executed: links must resolve,
-and a `wesley` command shown in the docs must be one the CLI registers.
+Documentation describes; no check reads its prose. What can be executed is:
+links must resolve, a `wesley` command named in the docs must be one the CLI
+registers, and the sessions the docs show are replayed against the real CLI.
 
 When behavior changes, change the page that describes it in the same pull
 request, and add an entry under `## [Unreleased]` in `CHANGELOG.md`. Take every
 claim from the code or from real command output. `docs/cli.md` is generated from
-`wesley --help`; regenerate it, do not edit it.
+`wesley --help`; regenerate it, do not edit it:
+
+```bash
+cargo build --bin wesley
+node scripts/generate-cli-reference.mjs --wesley target/debug/wesley
+```
+
+The sessions in the README and the getting-started guide are replayed in CI, so
+an example that stops being true fails the build. [CI](docs/ci.md) describes
+the annotations the replay reads.
 
 ## Dependencies
 
