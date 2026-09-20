@@ -537,6 +537,7 @@ exempt: each line below is a debt with a direction.
 | 6.1     | source files at most 500 lines      | 19 of 70 exceed it; the largest is `xtask/src/main.rs` at 4,115      |
 | 9.1     | no `expect`/`panic` in library code | 131 `.expect(`, 2 `panic!`, 1 `unreachable!`, 1 `.unwrap()` in `src` |
 | 10.2    | no `as` conversions                 | 4 in `src`                                                           |
+| 13      | generated output written atomically | `wesley-cli` writes every output with a truncating `fs::write`       |
 | 19.4    | `cargo deny` over the workspace     | no `deny.toml`; `cargo audit` runs at release only                   |
 | 24      | release-profile and doc tests in CI | not run                                                              |
 | 6, 24   | file, function, and filename limits | no check exists; enforced by review only                             |
