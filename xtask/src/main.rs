@@ -835,6 +835,7 @@ fn run_release_guard_for_tag(tag: &str) -> Result<(), Error> {
     let version = version_from_tag(tag)?;
     check_git_identity_guard()?;
     check_release_tag_points_to_head(tag)?;
+    check_release_tag_is_annotated(tag)?;
     check_release_tag_is_on_main(tag)?;
     assert_clean_worktree()?;
     check_publish_manifest_versions(&version)?;
@@ -1026,6 +1027,34 @@ fn check_release_tag_points_to_head(tag: &str) -> Result<(), Error> {
             )],
         })
     }
+}
+
+/// Why a release tag's object type is unacceptable, or `None` when it is an
+/// annotated tag. `object_type` is what `git cat-file -t refs/tags/<tag>` prints.
+fn release_tag_object_failure(tag: &str, object_type: &str) -> Option<String> {
+    match object_type {
+        "tag" => None,
+        "commit" => Some(format!(
+            "tag `{tag}` is a lightweight tag; release tags are annotated"
+        )),
+        other => Some(format!(
+            "tag `{tag}` names a `{other}` object; release tags are annotated tags"
+        )),
+    }
+}
+
+/// Release tags are annotated: autotag creates them with `git tag -a`, and the
+/// manual fallback signs them. A lightweight tag peels to the same commit, so
+/// every other tag check would pass it.
+fn check_release_tag_is_annotated(tag: &str) -> Result<(), Error> {
+    let reference = format!("refs/tags/{tag}");
+    let object_type = git_output(&["cat-file", "-t", reference.as_str()])?;
+    release_tag_object_failure(tag, object_type.trim()).map_or(Ok(()), |failure| {
+        Err(Error::CheckFailed {
+            check: "release tag".to_string(),
+            failures: vec![failure],
+        })
+    })
 }
 
 fn check_release_tag_is_on_main(tag: &str) -> Result<(), Error> {
@@ -5047,6 +5076,32 @@ mod tests {
         );
 
         assert_eq!(failures, Vec::<String>::new());
+    }
+
+    // --- release tag object type ---
+
+    #[test]
+    fn an_annotated_release_tag_is_accepted() {
+        assert_eq!(release_tag_object_failure("v1.2.3", "tag"), None);
+    }
+
+    #[test]
+    fn a_lightweight_release_tag_is_refused() {
+        // `git cat-file -t refs/tags/<tag>` reports `commit` for a lightweight
+        // tag, because the ref names the commit directly.
+        let failure = release_tag_object_failure("v1.2.3", "commit")
+            .expect("a lightweight tag should be refused");
+
+        assert!(failure.contains("lightweight"), "{failure}");
+        assert!(failure.contains("v1.2.3"), "{failure}");
+    }
+
+    #[test]
+    fn a_release_tag_naming_any_other_object_is_refused() {
+        let failure = release_tag_object_failure("v1.2.3", "blob")
+            .expect("a tag ref naming a blob should be refused");
+
+        assert!(failure.contains("`blob`"), "{failure}");
     }
 
     // --- looks_like_file_path ---

@@ -70,6 +70,10 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin main --tags --prune
+          # Checking out a tag ref leaves refs/tags/<tag> pointing straight at
+          # the commit, and a plain fetch will not clobber it. Restore the real
+          # tag object so release-guard can see whether it is annotated.
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
           tag_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
           head_commit="$(git rev-parse HEAD)"
           if [ "$tag_commit" != "$head_commit" ]; then
@@ -192,6 +196,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin main --tags --prune
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
           cargo xtask release-guard --tag "$GITHUB_REF_NAME"
 
       - name: Extract release notes

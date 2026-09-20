@@ -813,3 +813,28 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   assert_success
   [ "$output" -eq 1 ]
 }
+
+@test "release crates workflow restores the annotated tag before each release guard" {
+  # actions/checkout of a tag ref writes refs/tags/<tag> pointing straight at
+  # the commit, which replaces the annotated tag object with a lightweight one,
+  # and a plain `git fetch --tags` refuses to clobber it. release-guard checks
+  # the tag's object type, so each job must force-fetch the real tag first.
+  crates=".github/workflows/release-crates.yml"
+  refetch='git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"'
+
+  run bash -lc "grep -cF '$refetch' $crates"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "f1=\$(grep -nF '$refetch' $crates | sed -n '1p' | cut -d: -f1); f2=\$(grep -nF '$refetch' $crates | sed -n '2p' | cut -d: -f1); g1=\$(grep -n 'cargo xtask release-guard' $crates | sed -n '1p' | cut -d: -f1); g2=\$(grep -n 'cargo xtask release-guard' $crates | sed -n '2p' | cut -d: -f1); [ \"\$f1\" -lt \"\$g1\" ] && [ \"\$g1\" -lt \"\$f2\" ] && [ \"\$f2\" -lt \"\$g2\" ]"
+  assert_success
+}
+
+@test "release autotag's push step does not claim more than the push guarantees" {
+  run bash -lc "grep -c 'name: Push the tag, only while main is still the release commit' $autotag_workflow"
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -c 'name: Push the tag, unless main had already moved' $autotag_workflow"
+  assert_success
+  [ "$output" -eq 1 ]
+}

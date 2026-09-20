@@ -97,6 +97,8 @@ The `release-gauntlet` job must verify:
 
 - checkout has full history and tags
 - tag resolves to the workflow `HEAD`
+- tag is an annotated tag, checked after the job force-fetches it, because
+  checking out a tag ref leaves a lightweight copy behind
 - tag commit is reachable from `origin/main`
 - every published `Cargo.toml` version matches the tag
 - every internal Wesley dependency pins the tag's version exactly (`=X.Y.Z`)

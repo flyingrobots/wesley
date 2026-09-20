@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- `cargo xtask release-guard` now refuses a lightweight release tag. It only
+  peeled the tag to a commit before, so a hand-pushed lightweight tag passed
+  every tag check and could publish. `release-crates.yml` force-fetches the tag
+  before each guard run, because checking out a tag ref replaces the local
+  annotated tag with a lightweight one and a plain fetch does not restore it.
+
 ## [0.3.0-alpha.2] - 2026-09-20
 
 ### Added
