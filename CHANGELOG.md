@@ -16,8 +16,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   closed, and `test/docs-replay-refusals.bats` holds it to that with one broken
   page per rule. `cargo xtask docs-replay` runs the executable the build itself
   reports, so a moved target directory or a target triple cannot make it replay
-  a stale binary; `cargo xtask bench-ir` does the same, and `cargo xtask
-  built-cli` prints that path for shell callers. This replaces
+  a stale binary; `cargo xtask bench-ir` does the same, and
+  `cargo xtask built-cli` prints that path for shell callers. This replaces
   `scripts/check-doc-cli-commands.mjs`, which learned the CLI's commands by
   searching its source.
 
