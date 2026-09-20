@@ -311,3 +311,23 @@ replay() {
   assert_failure
   assert_output --partial '`norun` is on a block with no `wesley` command'
 }
+
+@test "a command argument that leaves the scratch directory is refused and not run" {
+  escaped="$(node -p 'require("node:os").tmpdir()')/wesley-docs-refusal-escape.rs"
+  rm -f "$escaped"
+  write_page 's#--out s\.rs#--out ../wesley-docs-refusal-escape.rs#'
+  replay
+  leaked=0
+  if [ -e "$escaped" ]; then leaked=1; rm -f "$escaped"; fi
+  assert_failure
+  assert_output --partial 'points outside the scratch directory'
+  [ "$leaked" -eq 0 ]
+}
+
+@test "an absolute path argument is refused and not run" {
+  write_page "s#--out s\\.rs#--out $BATS_TEST_TMPDIR/absolute.rs#"
+  replay
+  assert_failure
+  assert_output --partial 'points outside the scratch directory'
+  [ ! -e "$BATS_TEST_TMPDIR/absolute.rs" ]
+}

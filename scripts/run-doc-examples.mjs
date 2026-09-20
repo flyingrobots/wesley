@@ -226,6 +226,13 @@ function inside(dir, name) {
   return rel === '' || rel.startsWith('..') || isAbsolute(rel) ? null : target;
 }
 
+// Whether a command argument, or the value of `--option=value`, is an absolute
+// path or climbs out with `..`.
+function leavesScratch(arg) {
+  const value = arg.startsWith('-') && arg.includes('=') ? arg.slice(arg.indexOf('=') + 1) : arg;
+  return isAbsolute(value) || value.split(/[\\/]/).includes('..');
+}
+
 function replay(doc, registered) {
   const failures = [];
   const fail = (message) => {
@@ -346,7 +353,15 @@ function replay(doc, registered) {
           fail(`\`${command}\` uses shell syntax the replay does not interpret`);
           continue;
         }
-        const result = run(command.split(/\s+/).slice(1), dir);
+        const argv = command.split(/\s+/).slice(1);
+        // The scratch directory is only the working directory, not a sandbox: a
+        // path argument could still write into the checkout and outlive the run.
+        const leaving = argv.find(leavesScratch);
+        if (leaving !== undefined) {
+          fail(`\`${command}\`: \`${leaving}\` points outside the scratch directory`);
+          continue;
+        }
+        const result = run(argv, dir);
         if (result.failed) {
           fail(`\`${command}\` did not finish: ${result.failed}`);
           continue;
