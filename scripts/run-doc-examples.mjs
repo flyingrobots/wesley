@@ -118,6 +118,9 @@ function parse(markdown) {
       if (!(name in KNOWN)) problems.push(`line ${lineNo}: unknown annotation \`${name}\``);
       else if (!KNOWN[name].value.test(value)) {
         problems.push(`line ${lineNo}: \`${name}: ${value}\` is not a valid value`);
+      } else if (name in pending) {
+        // Keeping the last would silently drop the check the first one asked for.
+        problems.push(`line ${lineNo}: \`${name}\` is given twice for one block`);
       } else {
         pending[name] = value;
         pendingLine = lineNo;

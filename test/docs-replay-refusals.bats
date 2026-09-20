@@ -267,3 +267,10 @@ replay() {
   assert_failure
   assert_output --partial 'shell syntax the replay does not interpret'
 }
+
+@test "an annotation given twice is refused instead of keeping only the last" {
+  write_page $'s#<!-- shows: s.rs -->#<!-- shows: never-written.rs -->\\\n<!-- shows: s.rs -->#'
+  replay
+  assert_failure
+  assert_output --partial '`shows` is given twice'
+}
