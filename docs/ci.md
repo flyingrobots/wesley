@@ -14,14 +14,18 @@ It runs, in order: `cargo fmt --check`, `cargo clippy --workspace --all-targets
 -- -D warnings`, the documentation checks, `cargo test --workspace`,
 `cargo xtask lean-core-check`, `cargo xtask holmes-domain-check`, a smoke run of
 the CLI, and `cargo xtask docs-replay`, which replays the documented sessions.
-It needs Node for that last step. If it passes locally, the Rust checks will
-pass in CI. Run it before opening a pull request.
+It needs Node for that last step. Run it before opening a pull request.
 
-`holmes-domain-check` builds `wesley-holmes-domain` for `thumbv7em-none-eabihf`,
-a target with no `std`, which is how the domain's no-I/O rule is enforced. It
-needs that target: `rustup target add thumbv7em-none-eabihf`. Without it the
-check says it did not run and preflight carries on; in CI (`CI=true`) a missing
-target fails the run, and the workflows install it.
+A local pass predicts a CI pass only for the checks that ran. One check here
+needs a tool a contributor may not have, and then it says it did not run and
+lets preflight continue; in CI (`CI=true`) the same gap fails the run. So read
+the output: a line saying a check was NOT run means CI will run something you
+have not.
+
+`holmes-domain-check` is that check. It builds `wesley-holmes-domain` for
+`thumbv7em-none-eabihf`, a target with no `std`, which is how the domain's
+no-I/O rule is held. Install the target once and it always runs:
+`rustup target add thumbv7em-none-eabihf`. The workflows install it.
 
 ## On a pull request
 

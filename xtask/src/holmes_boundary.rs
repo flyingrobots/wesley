@@ -1,10 +1,17 @@
 //! `cargo xtask holmes-domain-check`: holds the Holmes domain's purity boundary.
 //!
 //! `wesley-holmes-domain` is `no_std`, so `std::fs`, `std::net`, `std::process`,
-//! `std::env` and the clocks do not exist for it. One loophole remains on a host
-//! build: an explicit `extern crate std;` brings them back. Building the crate
-//! for a target that has no `std` at all closes it, because there that line does
-//! not compile either.
+//! `std::env` and the clocks are not in scope for it. On a host build an
+//! `extern crate std;` would bring them back. Building the crate for a target
+//! that has no `std` at all rejects that line, and anything else that needs
+//! `std`, in every configuration that target compiles.
+//!
+//! What this does not catch, and nothing on stable Rust can: code gated to the
+//! host alone, such as `#[cfg(not(target_os = "none"))] extern crate std;`. The
+//! bare-metal build omits it, and the host has a `std` for it to find. That is
+//! not drift; it is someone going around the boundary on purpose, and it shows
+//! in review as a second `extern crate` in a crate that should have one. The
+//! same holds for a new dependency that does I/O.
 
 use std::env;
 use std::process::Command;

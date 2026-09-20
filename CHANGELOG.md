@@ -15,13 +15,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   failure; locally it is a warning that says the workflows were not linted. Its
   `shellcheck` and `pyflakes` integrations are off, so the verdict does not
   depend on what else a machine has installed.
-- The Holmes domain's no-I/O rule is enforced by the compiler. The domain moved
-  to its own crate, `wesley-holmes-domain`, which is `no_std`: `std::fs`,
-  `std::net`, `std::process`, `std::env` and the clocks do not exist for it.
+- The Holmes domain's no-I/O rule is held by the compiler. The domain moved to
+  its own crate, `wesley-holmes-domain`, which is `no_std`: `std::fs`,
+  `std::net`, `std::process`, `std::env` and the clocks are not in scope for it.
   `cargo xtask holmes-domain-check`, part of preflight, also builds it for a
-  bare-metal target, where an explicit `extern crate std` fails too.
-  `wesley_holmes::domain` is unchanged for callers. This replaces the test that
-  searched the domain's source for forbidden names, removed in 0.3.0-alpha.3.
+  bare-metal target, where an `extern crate std` fails to compile. That stops
+  accidental erosion; a `cfg`-gated opt-in or a new I/O dependency is still a
+  review matter. `wesley_holmes::domain` is unchanged for callers. This replaces
+  the test that searched the domain's source for forbidden names, removed in
+  0.3.0-alpha.3.
 
 ### Changed
 

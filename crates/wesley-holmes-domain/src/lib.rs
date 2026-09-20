@@ -1,18 +1,21 @@
 #![deny(warnings)]
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
-// The boundary, held by the compiler. Without `std` there is no `std::fs`,
-// `std::net`, `std::process`, `std::env`, `SystemTime`, or `Instant` to reach
-// for: the domain cannot touch the filesystem, the network, a process, the
-// environment, or a clock, and nobody has to remember a list of what to forbid.
+// The boundary, held by the compiler. Without `std` in scope there is no
+// `std::fs`, `std::net`, `std::process`, `std::env`, `SystemTime`, or `Instant`
+// to reach for, and nobody has to remember a list of what to forbid.
 #![no_std]
 
 //! Pure Holmes law-assurance domain model.
 //!
-//! Domain code owns data, deterministic validation, and diagnostics. It cannot
-//! import ambient filesystem, network, process, environment, or wall-clock
-//! dependencies: the crate is `no_std`, so they do not exist here. What remains
-//! open is its dependency list: `serde`, `serde_json`, and `libm` for rounding.
+//! Domain code owns data, deterministic validation, and diagnostics. It must not
+//! touch the filesystem, the network, a process, the environment, or a clock.
+//! The crate is `no_std`, so none of those is in scope, and
+//! `cargo xtask holmes-domain-check` builds it for a target that has no `std`.
+//!
+//! Two things that guard does not see, and review must: a second `extern crate`
+//! (the one below is the only one this crate should ever have), and a new entry
+//! in the dependency list, which today is `serde`, `serde_json`, and `libm`.
 
 // Each module imports what it uses from `alloc` by name: `String`, `Vec`,
 // `format!` and the rest are not in scope by default without `std`.

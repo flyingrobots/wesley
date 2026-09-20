@@ -123,11 +123,15 @@ Its domain model is a separate crate, `crates/wesley-holmes-domain`, re-exported
 as `wesley_holmes::domain`. The split exists to make one rule enforceable: the
 domain must give the same answer on every machine and every run, so it may not
 touch the filesystem, the network, a process, the environment, or a clock. The
-crate is `no_std`, so those parts of the standard library do not exist for it,
-and `cargo xtask holmes-domain-check`, which preflight runs, builds it for a
-bare-metal target, where even an explicit `extern crate std` fails to compile.
-What the compiler cannot see is the dependency list; it holds `serde`,
-`serde_json`, and `libm`, and a new entry there is a review question.
+crate is `no_std`, so those parts of the standard library are not in scope for
+it, and `cargo xtask holmes-domain-check`, which preflight runs, builds it for a
+bare-metal target, where an `extern crate std` fails to compile.
+
+That stops the rule eroding by accident. It does not stop someone going around
+it on purpose, and review has to: a second `extern crate` gated to the host
+with `cfg`, which the bare-metal build never sees, or a new dependency that does
+I/O. The crate should have one `extern crate`, `alloc`, and three dependencies,
+`serde`, `serde_json`, and `libm`.
 
 `packages/wesley-holmes` is the one remaining Node package. It provides the
 `holmes` and `moriarty` commands used by this repository's own assurance
