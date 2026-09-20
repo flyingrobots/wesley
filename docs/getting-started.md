@@ -55,8 +55,10 @@ so does reordering types or fields: order is part of the lowered schema.
 
 ## 4. See what Wesley understood
 
-`schema lower` prints the intermediate representation that everything else is
-built from. It is JSON, versioned, and deterministic:
+`schema lower` prints the intermediate representation: what the hash, the diff,
+and the emitters work from. The operation listing in the next step is the one
+exception: it reads the SDL again, on its own. The IR is JSON, versioned, and
+deterministic:
 
 ```bash
 wesley schema lower --schema shop.graphql --json
