@@ -30,6 +30,8 @@ import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+import { parseHelp } from './wesley-help.mjs';
+
 const args = process.argv.slice(2);
 const flag = args.indexOf('--wesley');
 if (flag === -1 || !args[flag + 1]) {
@@ -139,19 +141,7 @@ function registeredCommands() {
     console.error(`\`wesley --help\` did not succeed: ${why}`);
     process.exit(2);
   }
-  const commands = new Set();
-  const options = new Set();
-  let section = null;
-  for (const line of help.stdout.split('\n')) {
-    if (line.trim() === 'Commands:' || line.trim() === 'Options:') section = line.trim();
-    else if (line.trim() === '') section = null;
-    else if (section === 'Commands:') {
-      const row = line.match(/^ {2}([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)?) {2,}/);
-      if (row) commands.add(row[1]);
-    } else if (section === 'Options:') {
-      for (const option of line.match(/(?<![\w-])--?[A-Za-z][\w-]*/g) ?? []) options.add(option);
-    }
-  }
+  const { commands, options } = parseHelp(help.stdout);
   if (commands.size === 0) {
     console.error('`wesley --help` listed no commands');
     process.exit(2);
