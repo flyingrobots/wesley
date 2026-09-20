@@ -40,8 +40,15 @@ pub(crate) const PUBLISH_CRATES: &[PublishCrate] = &[
         dependencies: &["wesley-core", "wesley-emit-rust", "wesley-emit-typescript"],
     },
 ];
-pub(crate) const UNPUBLISHED_CARGO_VERSION_SOURCES: &[CargoVersionSource] = &[CargoVersionSource {
-    name: "wesley-holmes",
-    path: "crates/wesley-holmes",
-    publish: false,
-}];
+pub(crate) const UNPUBLISHED_CARGO_VERSION_SOURCES: &[CargoVersionSource] = &[
+    CargoVersionSource {
+        name: "wesley-holmes-domain",
+        path: "crates/wesley-holmes-domain",
+        publish: false,
+    },
+    CargoVersionSource {
+        name: "wesley-holmes",
+        path: "crates/wesley-holmes",
+        publish: false,
+    },
+];

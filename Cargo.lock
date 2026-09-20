@@ -1551,6 +1551,15 @@ version = "0.3.0-alpha.3"
 dependencies = [
  "serde",
  "serde_json",
+ "wesley-holmes-domain",
+]
+
+[[package]]
+name = "wesley-holmes-domain"
+version = "0.3.0-alpha.3"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

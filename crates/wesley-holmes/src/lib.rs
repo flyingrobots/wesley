@@ -10,7 +10,9 @@
 
 pub mod adapters;
 pub mod application;
-pub mod domain;
+/// The pure domain model, which lives in its own crate so that the compiler can
+/// hold its boundary. Re-exported here under the path it has always had.
+pub use wesley_holmes_domain as domain;
 pub mod ports;
 pub mod reporting;
 

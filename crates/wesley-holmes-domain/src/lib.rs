@@ -1,3 +1,6 @@
+#![deny(warnings)]
+#![deny(missing_docs)]
+
 //! Pure Holmes law-assurance domain model.
 //!
 //! Domain code owns data, deterministic validation, and diagnostics. It must
