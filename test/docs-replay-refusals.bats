@@ -397,3 +397,12 @@ replay() {
   assert_failure
   assert_output --partial 'does not start the line'
 }
+
+@test "a command named in prose is checked against the CLI's list too" {
+  write_page
+  printf '\nRun `wesley definitely-bogus` to see it, or `wesley schema` for help.\n' >> "$PAGE"
+  replay
+  assert_failure
+  assert_output --partial '`wesley definitely-bogus` is not a command `wesley --help` lists'
+  refute_output --partial '`wesley schema` is not'
+}

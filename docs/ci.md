@@ -72,9 +72,10 @@ The documentation is checked only by executing things:
   preflight runs, and `test/docs-examples.bats` in CI. What the
   CLI prints, and the files it writes, are compared with what the page shows.
   Every `wesley` command a page names, and every option written directly after
-  `wesley`, must be one that `wesley --help` lists, whether the block is run or
-  not. Each page must contribute: a page with nothing run or
-  nothing compared fails.
+  `wesley`, must be one that `wesley --help` lists: in a block that is run, in
+  one that is not, and in an inline code span in the prose. Each page must
+  contribute: a page with nothing run or nothing compared fails, and the replay
+  prints how many commands it ran, outputs it compared, and names it checked.
 - `docs/cli.md` must equal what the binary's help prints today, for every
   command family the root help lists; the same suite checks it.
 
