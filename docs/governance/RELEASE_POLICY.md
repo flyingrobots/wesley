@@ -27,7 +27,9 @@ lacks the human sign-off is not a valid release, and vice versa.
   native CLI and packages release artifacts without publishing anything.
 - **Human sign-off** is collected on the release PR using the template in
   [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md). The checklist must be
-  completed by a human reviewer before the tag is created.
+  completed by a human reviewer before the tag is created. Autotag creates the
+  tag when the release PR merges, so the sign-off must be complete before that
+  merge: merging the release PR is the act that authorizes the tag.
 
 ## Enforcement Matrix
 
@@ -105,6 +107,11 @@ the same version as the release tag. Today that means every published crate
 manifest, and the private root `package.json`. Workspace members are not
 permitted to drift independently.
 
+A published crate pins each sibling crate exactly, as `version = "=X.Y.Z"`. A
+bare `"X.Y.Z"` is a caret requirement. For a pre-release it admits every later
+release of the same line, so an unlocked install of an older release could
+resolve newer siblings. `cargo xtask release-prep-guard` refuses any other form.
+
 ### Check 6: Changelog
 
 `CHANGELOG.md` must contain a section heading of the form
@@ -166,8 +173,13 @@ time indicate the tag does not represent a clean, reproducible state.
 
 ### Check 18: Tagged main release boundary
 
-The release tag must be created from local `main` after fetching `origin/main`
-and verifying local `HEAD` equals `origin/main`. The tag's commit must remain
+The release tag points at the synced `main` release commit. Autotag creates it
+in CI on the release-prep merge commit and refuses to push it if `origin/main`
+had already moved past that commit when the push began. That narrows the race
+with a concurrent merge; it does not close it, and the tag stays on the
+release commit either way. A maintainer creating the fallback tag by hand must do so
+from local `main` after fetching `origin/main` and verifying local `HEAD`
+equals `origin/main`, and must sign it. The tag's commit must remain
 reachable from `origin/main` in CI (`git merge-base --is-ancestor`), but
 reachability alone is not enough for human release preparation. Releases from
 feature branches are not permitted, and humans must not merge manual

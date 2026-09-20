@@ -1,0 +1,204 @@
+name: Release Autotag
+
+# Continuum release runbook, sections 16 and 30.2. When a release-prep pull
+# request merges to main, create the annotated release tag at exactly that
+# commit. This workflow never publishes and never moves a tag.
+#
+# A tag pushed with this workflow's GITHUB_TOKEN does not trigger on-push-tag
+# workflows, by GitHub's design. Publication is therefore a deliberate dispatch
+# of release-crates.yml from the new tag; the last step prints the command.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# One slot per pushed commit. A shared group keeps one running and one pending
+# run, and a newer pending run replaces an older one, so a burst of merges could
+# discard the run for the release-prep merge. Two runs for different commits
+# cannot create the same tag: the planner refuses a tag that already exists
+# elsewhere, and the push is atomic.
+concurrency:
+  group: release-autotag-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  autotag:
+    runs-on: ubuntu-latest
+    # The gates wait for this commit's other CI runs, then run the full release
+    # guard, so a release-prep merge can take most of an hour.
+    timeout-minutes: 90
+    permissions:
+      # A job-level block sets every unlisted permission to none.
+      contents: write # push the tag
+      pull-requests: read # find the merged pull request for the commit
+      issues: read # release guards list open issues for the version
+      actions: read # release guard reads this commit's other CI runs
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920
+        with:
+          egress-policy: audit
+
+      - name: Checkout pushed commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+
+      - name: Verify Rust toolchain
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Find the merged pull request for this commit
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pulls="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls")"
+          merged="$(jq -c '[.[] | select(.merged_at != null and .base.ref == "main")] | first // empty' <<<"$pulls")"
+          if [ -z "$merged" ]; then
+            echo "No merged pull request is associated with ${GITHUB_SHA}."
+            exit 0
+          fi
+          # Written with a heredoc delimiter so the title stays one opaque value.
+          {
+            echo "head_branch=$(jq -r '.head.ref' <<<"$merged")"
+            echo "title<<AUTOTAG_TITLE_END"
+            jq -r '.title' <<<"$merged"
+            echo "AUTOTAG_TITLE_END"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Decide whether this commit earns a tag
+        id: plan
+        env:
+          AUTOTAG_HEAD_BRANCH: ${{ steps.pr.outputs.head_branch }}
+          AUTOTAG_PR_TITLE: ${{ steps.pr.outputs.title }}
+        run: |
+          set -euo pipefail
+          git fetch origin --tags --prune
+          cargo xtask release-autotag-plan | tee -a "$GITHUB_OUTPUT"
+
+      - name: Confirm the commit is still origin/main
+        if: steps.plan.outputs.decision == 'tag'
+        run: |
+          set -euo pipefail
+          git fetch origin main --prune
+          head_commit="$(git rev-parse HEAD)"
+          main_commit="$(git rev-parse origin/main)"
+          if [ "$head_commit" != "$main_commit" ]; then
+            echo "main moved to $main_commit after $head_commit was pushed."
+            echo "Refusing to autotag a commit that is no longer the tip of main."
+            echo "Do not tag either commit by hand: $head_commit is no longer synced main, and $main_commit contains work the release sign-off did not cover."
+            echo "Open a new release-prep PR so the release boundary is reviewed and guarded again."
+            exit 1
+          fi
+
+      # release-guard requires every other run on HEAD to be complete and green,
+      # and those runs started at the same moment this one did.
+      - name: Wait for the other CI runs on this commit
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          deadline=$((SECONDS + 3000))
+          # Give sibling workflows a moment to be created before the first look.
+          sleep 60
+          while :; do
+            pending="$(gh run list --commit "$GITHUB_SHA" --limit 100 --json databaseId,status \
+              --jq "[.[] | select(.databaseId != ${GITHUB_RUN_ID}) | select(.status != \"completed\")] | length")"
+            if [ "$pending" -eq 0 ]; then
+              break
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "$pending CI run(s) on $GITHUB_SHA had not completed by the deadline; not tagging."
+              exit 1
+            fi
+            echo "Waiting for $pending other CI run(s) on $GITHUB_SHA."
+            sleep 30
+          done
+
+      - name: Install cargo-audit
+        if: steps.plan.outputs.decision == 'tag'
+        run: cargo install cargo-audit --locked
+
+      - name: Release prep guard
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$AUTOTAG_TAG"
+          cargo xtask release-prep-guard --version "${tag#v}"
+
+      # The publish workflow builds and smoke-tests the optimized release
+      # artifacts only after the tag exists. A failure knowable now must not be
+      # discovered then.
+      - name: Release check
+        if: steps.plan.outputs.decision == 'tag'
+        run: cargo xtask release-check
+
+      # A pushed tag is immutable. The full release guard, which the publish
+      # workflow runs again, must pass against a local tag before anything is
+      # pushed; otherwise a tag the guard rejects would burn the version.
+      - name: Create the annotated tag locally and run the full release guard
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$AUTOTAG_TAG"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${tag}" -m "release: ${tag}"
+          git fetch origin main --prune
+          cargo xtask release-guard --tag "${tag}"
+
+      # The gates above take minutes, so main may have moved. Naming the release
+      # commit for main in the same push makes git compare it with the main the
+      # server advertises at push time: if main has moved, that ref is a
+      # non-fast-forward, the push is refused, and --atomic takes the tag down
+      # with it. Nothing is ever forced.
+      #
+      # This is not a server-side compare-and-swap. When main has not moved git
+      # sends no command for it, so main is not part of the receive transaction,
+      # and a commit landing between the advertisement and the receive, a window
+      # of milliseconds rather than the minutes of the gates, is not caught. Git
+      # has no cross-ref condition and GitHub has no ref lock. The residue is
+      # benign: the tag would still sit on the release-prep merge commit that
+      # passed every guard, and that commit is still on main, which is what
+      # release-guard requires. Only "is the tip of main" would be untrue.
+      - name: Push the tag, only while main is still the release commit
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$AUTOTAG_TAG"
+          sha="$(git rev-parse HEAD)"
+          git push --atomic origin "${sha}:refs/heads/main" "refs/tags/${tag}"
+
+      - name: Print the publish command
+        if: steps.plan.outputs.decision == 'tag'
+        env:
+          AUTOTAG_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          tag="$AUTOTAG_TAG"
+          {
+            echo "## Tagged \`$tag\`"
+            echo
+            echo "The full release guard passed against this tag before it was pushed."
+            echo "Publish from the tag:"
+            echo
+            echo '```bash'
+            echo "gh workflow run release-crates.yml --ref $tag"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

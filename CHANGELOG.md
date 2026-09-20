@@ -10,6 +10,22 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- Added `.github/workflows/release-autotag.yml`, following the Continuum release
+  runbook. When a `release/vX.Y.Z` prep PR merges to `main`, it waits for the
+  commit's other CI runs, runs `release-prep-guard`, runs the full
+  `release-guard` against a local annotated `vX.Y.Z` tag, and pushes that tag
+  together with a check that `main` has not moved past the release commit. The
+  push is refused if `main` had already moved when it began; that narrows the
+  race with a concurrent merge but does not close it. It never publishes and
+  never moves a tag. The decision is
+  `cargo xtask release-autotag-plan`, a pure function that requires the branch,
+  the pull request title, and the primary version source to agree. A rerun
+  skips only when the annotated tag is already on the release commit; an
+  existing tag on another commit, or a lightweight tag, fails the run.
+- Added a `workflow_dispatch` trigger to `release-crates.yml`, refused unless
+  dispatched from a tag. A tag pushed with a workflow's `GITHUB_TOKEN` does not
+  trigger on-push-tag workflows, so an autotagged release is published with
+  `gh workflow run release-crates.yml --ref vX.Y.Z`.
 - Added a default-on `resilience` feature to `wesley-core`. It carries the
   async `LoweringPort` and the ninelives-backed `ResilientLoweringPort`. A
   consumer that only lowers, hashes, or diffs SDL can now depend on
@@ -20,12 +36,32 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   `wesley-core` without default features and fails if that build's dependency
   tree names `async-trait`, `ninelives`, `tokio`, or `tower`.
 
+### Changed
+
+- Autotagged release tags are annotated and unsigned; their provenance is the
+  autotag workflow run. Signed manual tagging remains the documented fallback
+  for when autotag cannot run.
+- Replaced the rule that every release is cut from a signed tag. Releases are
+  cut from immutable annotated tags on synced `main`; `docs/BEARING.md`, the
+  release policy, the release runbooks, the guide, and the README now say so.
+  Because autotag creates the tag when the release PR merges, the release policy
+  now requires the human sign-off to be complete before that merge.
+
 ### Removed
 
 - Removed two unused `wesley-core` dependencies: `tower`, which no source file
   referenced, and the normal `tokio` dependency with every feature enabled,
   which only tests used and the existing dev-dependency already covers. The
   default dependency tree drops from 90 crates to 77.
+
+### Fixed
+
+- Published crates now pin their sibling crates exactly (`version = "=X.Y.Z"`).
+  The bare requirement used until now is a caret requirement, so an unlocked
+  install of an older pre-release could resolve newer siblings once a later
+  release of the same line was published. `cargo xtask release-prep-guard`
+  refuses any other form. Releases already on crates.io keep their caret
+  requirements; published crates are immutable.
 
 ## [0.3.0-alpha.1] - 2026-07-15
 

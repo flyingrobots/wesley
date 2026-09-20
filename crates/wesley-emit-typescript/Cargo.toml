@@ -13,8 +13,8 @@ categories = ["compilers"]
 
 [dependencies]
 serde_json = "1.0"
-wesley-core = { path = "../wesley-core", version = "0.3.0-alpha.2" }
-wesley-emit-codec = { path = "../wesley-emit-codec", version = "0.3.0-alpha.2" }
+wesley-core = { path = "../wesley-core", version = "=0.3.0-alpha.2" }
+wesley-emit-codec = { path = "../wesley-emit-codec", version = "=0.3.0-alpha.2" }
 
 [dev-dependencies]
 pretty_assertions = "1.4"

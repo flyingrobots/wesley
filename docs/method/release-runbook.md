@@ -47,7 +47,8 @@ Run these in order:
 2. Verify the current branch is `main`.
 3. Fetch `origin/main` and tags.
 4. Verify `HEAD` exactly matches `origin/main`.
-5. Verify tag-signing requirements if the repository requires signed tags.
+5. For a maintainer-created tag, verify that tag signing works. Autotag's tag
+   is unsigned by design and needs no signing setup.
 
 Do not continue past the first failed guard.
 
@@ -112,20 +113,48 @@ CI state.
 
 1. Review the final diff.
 2. Stage the release changes.
-3. Create the release commit on a release branch.
-4. Land the release commit through the protected `main` branch.
-5. Sync local main to origin/main after the release commit has landed.
-6. Create the release tag on the synced `main` commit.
-7. Verify the tag points at the release commit and satisfies signing
-   requirements where applicable.
-8. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally.
-9. Push the exact release tag only, for example: `git push origin vX.Y.Z`.
-10. Create the GitHub Release or equivalent forge release using the versioned
-    release notes.
-11. Monitor triggered workflows to completion.
-12. Verify registries directly before claiming publication succeeded.
-13. Record release evidence and retrospective before starting the next planned
-    release train.
+3. Create the release commit on a `release/vX.Y.Z` branch.
+4. Complete the human sign-off on the release PR. Merging it authorizes the tag.
+5. Land the release commit through the protected `main` branch.
+
+Then follow exactly one of the two tagging paths.
+
+### Autotag path (normal)
+
+1. Watch the `release-autotag` run for the merge commit. It waits for that
+   commit's other CI runs, runs `release-prep-guard`, `release-check`, and the
+   full `release-guard` against a local annotated tag, and pushes the tag
+   unless `main` had already moved past the release commit. Do not create or
+   push a tag by hand while it runs.
+2. If the run fails, first check whether the tag exists on the remote:
+   `git ls-remote --tags origin vX.Y.Z`. A run that is cancelled or loses its
+   runner after the push reports failure although the tag was created. If the
+   tag exists, verify it is annotated and points at the release commit, then
+   continue from step 3. If it does not, no release boundary exists: fix the
+   cause through a new PR. That includes a run refused because `main` had
+   moved, where neither commit may be tagged by hand. Never use a manual tag to
+   get around a failed guard.
+3. Verify the pushed tag is annotated and points at the release commit.
+4. Dispatch the publish workflow from the tag. A tag pushed with a workflow's
+   `GITHUB_TOKEN` does not start it:
+   `gh workflow run release-crates.yml --ref vX.Y.Z`.
+
+### Manual fallback (only when autotag cannot run)
+
+1. Sync local main to origin/main after the release commit has landed.
+2. Create the signed release tag on the synced `main` commit:
+   `git tag -s vX.Y.Z -m "release: vX.Y.Z"`.
+3. Run `cargo xtask release-guard --tag vX.Y.Z` after the tag exists locally.
+4. Push the exact release tag only: `git push origin vX.Y.Z`. A tag pushed by a
+   maintainer starts the publish workflow; no dispatch is needed.
+
+### Both paths
+
+1. Monitor the publish workflow to completion. It creates the GitHub Release
+   from the versioned changelog section.
+2. Verify registries directly before claiming publication succeeded.
+3. Record release evidence and retrospective before starting the next planned
+   release train.
 
 ## Idempotency And Failure Handling
 
@@ -167,9 +196,10 @@ If a published artifact is bad:
    impact make that the right move.
 4. File fallout issues and record the patch-forward decision.
 
-Manual tagging is not an emergency bypass in Wesley. It is the normal mechanism
-because the release profile declares `autotag: none`. It still must happen only
-after final guards pass from clean, fetched, synced `main`.
+Autotag is the normal mechanism: the release profile names
+`.github/workflows/release-autotag.yml`. Manual tagging is the fallback for when
+autotag cannot run. It is not an emergency bypass, and it must happen only after
+final guards pass from clean, fetched, synced `main`.
 
 ## Phase 5: Retrospective And Closeout
 

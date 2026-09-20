@@ -12,4 +12,4 @@ keywords = ["graphql", "compiler", "codec", "codegen"]
 categories = ["compilers"]
 
 [dependencies]
-wesley-core = { path = "../wesley-core", version = "0.3.0-alpha.2" }
+wesley-core = { path = "../wesley-core", version = "=0.3.0-alpha.2" }

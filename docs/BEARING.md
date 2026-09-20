@@ -113,8 +113,12 @@ governance residue. `v0.2.0` is the project-manifest platform launch: schema
 sets, config commands, HOLMES schema selection, descriptor-only extension
 fixtures, and comprehensive `docs/topics/` routing.
 
-Future releases must be cut from signed tags on synced `main`; do not merge
-post-release evidence backfills to `main` after a release boundary.
+Future releases must be cut from immutable annotated tags on synced `main`; do
+not merge post-release evidence backfills to `main` after a release boundary.
+The normal tag is created by the autotag workflow when a `release/vX.Y.Z` prep
+PR merges. That tag is unsigned: its provenance is the workflow run that passed
+the release guard on the tagged commit. A maintainer-created tag is the
+fallback when autotag cannot run, and that tag is signed.
 
 Versioned release work is tracked by `Release: ...` milestones and release-gate
 issues. The release policy and checklist remain the operational source:

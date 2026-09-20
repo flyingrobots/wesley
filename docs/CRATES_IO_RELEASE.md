@@ -60,7 +60,7 @@ wesley --help
 
 ## Tagged Main Boundary
 
-The signed tag on synced `main` is the source of truth for a release. Every
+The release tag on synced `main` is the source of truth for a release. Every
 repo-resident fact humans intend to ship with the release must already be on
 `origin/main` before the tag is created: version bumps, changelog entries,
 README copy, release notes, release packets, runbook changes, and any
@@ -75,13 +75,23 @@ before the next tag.
 
 ## GitHub Actions Release Shape
 
-The release workflow is tag-triggered:
+The release workflow always runs from a release tag. How it starts depends on
+who pushed the tag:
 
 ```text
-push tag v*
+autotag pushes tag v*        (normal path; a GITHUB_TOKEN push starts nothing)
+  -> maintainer runs: gh workflow run release-crates.yml --ref vX.Y.Z
+  -> release-gauntlet
+  -> publish-crates
+
+maintainer pushes tag v*     (manual fallback; the push starts the workflow)
   -> release-gauntlet
   -> publish-crates
 ```
+
+On the autotag path, publication does not begin until the workflow is
+dispatched. A dispatch from anything other than a tag is refused in the first
+job.
 
 The `release-gauntlet` job must verify:
 
@@ -89,7 +99,7 @@ The `release-gauntlet` job must verify:
 - tag resolves to the workflow `HEAD`
 - tag commit is reachable from `origin/main`
 - every published `Cargo.toml` version matches the tag
-- every internal Wesley dependency version matches the tag
+- every internal Wesley dependency pins the tag's version exactly (`=X.Y.Z`)
 - root `package.json` version matches the tag
 - every publishable crate has the minimum package file set
 - root `README.md` exists
@@ -154,8 +164,9 @@ policy has been provided.
 5. Run `git fetch origin main --tags --prune`.
 6. Verify `HEAD` equals `origin/main`.
 7. `ABORT` if local `main` is ahead of or behind `origin/main`.
-8. Verify signed-tag readiness for human-created release tags.
-9. `ABORT` if signing is unavailable or misconfigured.
+8. For the manual fallback only, verify signed-tag readiness. Autotag's tag is
+   unsigned by design; its provenance is the workflow run.
+9. `ABORT` a manual tag if signing is unavailable or misconfigured.
 
 ### Phase 2: Versioning And Lock-Step Sync
 
@@ -177,7 +188,9 @@ policy has been provided.
     dependencies after dry-run validation.
 
 For Wesley Rust crates, local `path` dependencies are allowed only for sibling
-Wesley crates when paired with an exact matching `version`.
+Wesley crates when paired with an exact requirement on the release version,
+written `version = "=X.Y.Z"`. A bare `"X.Y.Z"` is a caret requirement and is
+refused by `cargo xtask release-prep-guard`.
 
 ### Phase 3: Documentation
 
@@ -237,15 +250,15 @@ Packaging sanity must fail on:
 2. Stage all release-prep changes.
 3. Create exactly one release-prep commit on a release branch:
 
-```bash
-git commit -m "chore(release): vX.Y.Z"
-```
+   ```bash
+   git commit -m "chore(release): vX.Y.Z"
+   ```
 
-For prereleases:
+   For prereleases:
 
-```bash
-git commit -m "chore(release): vX.Y.Z-alpha.1"
-```
+   ```bash
+   git commit -m "chore(release): vX.Y.Z-alpha.1"
+   ```
 
 4. Land the release-prep change through the protected `main` branch.
 5. Fetch `origin/main` and tags.
@@ -256,17 +269,42 @@ git commit -m "chore(release): vX.Y.Z-alpha.1"
 
 ### Phase 6: Tag, Delivery, Release, And Monitoring
 
+There are two ways to reach a published tag. Use the autotag path. Use the
+manual fallback only when autotag cannot run, and never to bypass a failed gate.
+
+**Autotag path.** Merging the release-prep PR starts
+`.github/workflows/release-autotag.yml`. It waits for the other CI runs on the
+release commit, runs `release-prep-guard` and `release-check`, creates the
+annotated tag locally, runs the full `release-guard` against that local tag,
+and pushes the tag together with a check that `main` has not moved past the
+release commit. The push is refused if `main` had already moved when it began;
+that narrows the race with a concurrent merge but does not close it. Nothing is
+pushed unless the full guard has passed.
+
+1. Wait for the autotag run to finish, and read its summary.
+2. Verify the tag points at the synced `main` release commit.
+3. Verify the tag's provenance: the autotag workflow run that created it.
+4. `ABORT` if verification fails.
+5. Publish from the tag. A tag pushed with a workflow's `GITHUB_TOKEN` does not
+   trigger the tag-push workflow, so this dispatch is required:
+
+```bash
+gh workflow run release-crates.yml --ref vX.Y.Z
+```
+
+**Manual fallback.**
+
 1. Create exactly one signed tag on the synced `main` commit:
 
-```bash
-git tag -s vX.Y.Z -m "release: vX.Y.Z"
-```
+   ```bash
+   git tag -s vX.Y.Z -m "release: vX.Y.Z"
+   ```
 
-For prereleases:
+   For prereleases:
 
-```bash
-git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
-```
+   ```bash
+   git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
+   ```
 
 2. Verify the tag points at the synced `main` commit.
 3. Verify the tag signature.
@@ -274,12 +312,15 @@ git tag -s vX.Y.Z-alpha.1 -m "release: vX.Y.Z-alpha.1"
 5. Run `cargo xtask release-guard --tag vX.Y.Z`.
 6. Push the exact release tag only.
 7. Let GitHub Actions run the tag-triggered release workflow.
-8. Create or verify the GitHub Release from the versioned changelog notes.
-9. Monitor every workflow triggered by the release tag.
-10. Do not infer success from queued or in-progress jobs.
-11. Verify crates.io directly for every published crate.
-12. Do not merge manual release-evidence backfills to `main` for the release
-    that just published.
+
+**Both paths continue:**
+
+1. Create or verify the GitHub Release from the versioned changelog notes.
+2. Monitor every workflow triggered by the release tag.
+3. Do not infer success from queued or in-progress jobs.
+4. Verify crates.io directly for every published crate.
+5. Do not merge manual release-evidence backfills to `main` for the release
+   that just published.
 
 `ABORT LOUDLY` if any of these fail:
 
@@ -303,7 +344,7 @@ cargo xtask release-prep-guard --version X.Y.Z
 cargo xtask package-crates --version X.Y.Z
 ```
 
-After creating the signed tag, verify the tag-specific guard:
+After the release tag exists, verify the tag-specific guard:
 
 ```bash
 cargo xtask release-guard --tag vX.Y.Z

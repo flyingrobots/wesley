@@ -46,7 +46,7 @@ native CLI, Rust lowerer, normalized SDL hashing, and Rust emitter crates. It
 does not inspect legacy Node config, plugins, or package state.
 
 Use `cargo install wesley-cli --version 0.2.0` for the release alpha once the
-signed tag has published to crates.io. Use `cargo run --bin wesley -- ...` when
+release tag has published to crates.io. Use `cargo run --bin wesley -- ...` when
 working directly from this checkout before publication, or
 `cargo install --locked --path crates/wesley-cli` when you need a local
 installed binary. Use `cargo xtask preflight` before opening a PR. This is the

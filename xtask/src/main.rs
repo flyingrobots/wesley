@@ -97,6 +97,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
         "lean-core-check" => run_lean_core_check(),
+        "release-autotag-plan" => run_release_autotag_plan(),
         "package-crates" => run_package_crates(&args[1..]),
         "publish-alpha" => {
             run_publish_crates(&args[1..], Some(ALPHA_VERSION), "publish-alpha", true)
@@ -1202,6 +1203,39 @@ fn check_root_package_version(root: &Path, version: &str, failures: &mut Vec<Str
     }
 }
 
+const DEPENDENCY_SECTIONS: [&str; 3] = ["dependencies", "dev-dependencies", "build-dependencies"];
+
+/// The dependency sections declared directly in `scope`, which is a manifest or
+/// one `[target.<spec>]` table. `prefix` labels them for reporting.
+fn dependency_sections_of<'a>(
+    scope: &'a toml::Value,
+    prefix: &str,
+) -> Vec<(String, &'a toml::value::Table)> {
+    DEPENDENCY_SECTIONS
+        .iter()
+        .filter_map(|section_name| {
+            let table = scope.get(section_name)?.as_table()?;
+            Some((format!("{prefix}{section_name}"), table))
+        })
+        .collect()
+}
+
+/// Every dependency table a manifest can declare, with the label used to report
+/// it: the three top-level sections, and the same three under each
+/// `[target.<spec>]`.
+fn dependency_tables(manifest: &toml::Value) -> Vec<(String, &toml::value::Table)> {
+    let mut tables = dependency_sections_of(manifest, "");
+    if let Some(targets) = manifest.get("target").and_then(toml::Value::as_table) {
+        for (target_spec, target) in targets {
+            tables.extend(dependency_sections_of(
+                target,
+                &format!("target.{target_spec}."),
+            ));
+        }
+    }
+    tables
+}
+
 fn check_dependency_hygiene(
     publish_crate: &PublishCrate,
     manifest: &toml::Value,
@@ -1209,36 +1243,42 @@ fn check_dependency_hygiene(
     publish_crate_names: &[&str],
     failures: &mut Vec<String>,
 ) {
-    for section_name in ["dependencies", "dev-dependencies", "build-dependencies"] {
-        let Some(dependencies) = manifest.get(section_name).and_then(toml::Value::as_table) else {
-            continue;
-        };
-
+    // Published crates are versioned in lockstep, so a sibling is pinned
+    // exactly. A bare `"X.Y.Z"` is a caret requirement: for a pre-release it
+    // admits every later `X.Y` release, and an unlocked install of an older
+    // release would then resolve newer siblings.
+    let sibling_requirement = format!("={version}");
+    for (section_name, dependencies) in dependency_tables(manifest) {
         for (dependency_name, dependency) in dependencies {
-            let Some(dependency_table) = dependency.as_table() else {
-                continue;
-            };
+            // A dependency's key may be an alias; `package` names the crate
+            // Cargo resolves, so sibling identity comes from there.
+            let package_name = dependency
+                .get("package")
+                .and_then(toml::Value::as_str)
+                .unwrap_or(dependency_name);
+            let is_sibling = publish_crate_names.contains(&package_name);
+            // Cargo accepts a requirement as a bare string or as the `version`
+            // key of a table; both forms are read so neither escapes the check.
+            let requirement = dependency
+                .as_str()
+                .or_else(|| dependency.get("version").and_then(toml::Value::as_str))
+                .unwrap_or_default();
 
-            if dependency_table.contains_key("git") {
-                failures.push(format!(
-                    "{} {section_name}.{dependency_name} uses a git dependency",
-                    publish_crate.path
-                ));
-            }
-            if dependency_table.contains_key("workspace") {
-                failures.push(format!(
-                    "{} {section_name}.{dependency_name} uses a workspace dependency",
-                    publish_crate.path
-                ));
-            }
-
-            if dependency_table.contains_key("path") {
-                let dependency_version = dependency_table
-                    .get("version")
-                    .and_then(toml::Value::as_str)
-                    .unwrap_or_default();
-                if !publish_crate_names.contains(&dependency_name.as_str())
-                    || dependency_version != version
+            if let Some(dependency_table) = dependency.as_table() {
+                if dependency_table.contains_key("git") {
+                    failures.push(format!(
+                        "{} {section_name}.{dependency_name} uses a git dependency",
+                        publish_crate.path
+                    ));
+                }
+                if dependency_table.contains_key("workspace") {
+                    failures.push(format!(
+                        "{} {section_name}.{dependency_name} uses a workspace dependency",
+                        publish_crate.path
+                    ));
+                }
+                if dependency_table.contains_key("path")
+                    && (!is_sibling || requirement != sibling_requirement)
                 {
                     failures.push(format!(
                         "{} {section_name}.{dependency_name} has registry-incompatible path dependency",
@@ -1247,17 +1287,11 @@ fn check_dependency_hygiene(
                 }
             }
 
-            if publish_crate_names.contains(&dependency_name.as_str()) {
-                let dependency_version = dependency_table
-                    .get("version")
-                    .and_then(toml::Value::as_str)
-                    .unwrap_or_default();
-                if dependency_version != version {
-                    failures.push(format!(
-                        "{} {section_name}.{dependency_name} version is `{dependency_version}`, expected `{version}`",
-                        publish_crate.path
-                    ));
-                }
+            if is_sibling && requirement != sibling_requirement {
+                failures.push(format!(
+                    "{} {section_name}.{dependency_name} version requirement is `{requirement}`, expected `{sibling_requirement}`",
+                    publish_crate.path
+                ));
             }
         }
     }
@@ -3109,6 +3143,204 @@ fn display_path(root: &Path, path: &Path) -> String {
         .replace('\\', "/")
 }
 
+/// What the autotag workflow should do with one push to `main`.
+#[derive(Debug, PartialEq, Eq)]
+enum AutotagDecision {
+    /// Create this annotated tag at the pushed commit.
+    Tag(String),
+    /// Create nothing, for this reason. Skipping is the normal outcome: most
+    /// pushes to `main` are not release-prep merges.
+    Skip(String),
+}
+
+/// The facts about one push to `main` that decide whether it is tagged.
+struct AutotagInput<'a> {
+    /// The version the primary version source declares at the pushed commit.
+    version: &'a str,
+    /// The head branch of the merged pull request, if the commit has one.
+    head_branch: Option<&'a str>,
+    /// The title of that pull request.
+    pr_title: Option<&'a str>,
+    /// The commit being considered: `HEAD` of the pushed `main`.
+    head_commit: &'a str,
+    /// The expected tag, if it already exists.
+    existing_tag: Option<ExistingTag<'a>>,
+}
+
+/// A release tag that already exists in the repository.
+#[derive(Clone, Copy)]
+struct ExistingTag<'a> {
+    /// The commit the tag peels to.
+    commit: &'a str,
+    /// Whether the ref names a tag object rather than the commit itself.
+    annotated: bool,
+}
+
+/// Decides whether a push to `main` is a release-prep merge that earns a tag.
+///
+/// Follows the Continuum release runbook, section 16: a branch name is useful
+/// but is not the only line of defense, so the pull request's title must name
+/// the same version its branch does. A push that is not a release-prep merge is
+/// skipped. A push that *claims* to be one and disagrees with itself is an
+/// error, because tagging the wrong commit cannot be undone.
+fn autotag_decision(input: &AutotagInput<'_>) -> Result<AutotagDecision, Error> {
+    let version = version_from_release_arg(input.version)?;
+    let tag = format!("v{version}");
+
+    let (Some(head_branch), Some(pr_title)) = (input.head_branch, input.pr_title) else {
+        return Ok(AutotagDecision::Skip(
+            "the pushed commit has no merged pull request".to_string(),
+        ));
+    };
+    let Some(branch_version) = head_branch.strip_prefix(AUTOTAG_RELEASE_BRANCH_PREFIX) else {
+        return Ok(AutotagDecision::Skip(format!(
+            "`{head_branch}` is not a release-prep branch"
+        )));
+    };
+
+    let mut failures = Vec::new();
+    if branch_version != version {
+        failures.push(format!(
+            "branch `{head_branch}` names `{branch_version}`, but {AUTOTAG_VERSION_SOURCE} declares `{version}`"
+        ));
+    }
+    if !title_names_tag(pr_title, &tag) {
+        failures.push(format!(
+            "pull request title `{pr_title}` does not name `{tag}`"
+        ));
+    }
+    if !failures.is_empty() {
+        return Err(Error::CheckFailed {
+            check: "autotag release-prep agreement".to_string(),
+            failures,
+        });
+    }
+
+    let Some(existing) = input.existing_tag else {
+        return Ok(AutotagDecision::Tag(tag));
+    };
+    // Public tags are never moved, so neither defect below can be repaired
+    // here, and neither may pass as a green skip.
+    let mut failures = Vec::new();
+    if existing.commit != input.head_commit {
+        failures.push(format!(
+            "tag `{tag}` already exists at `{}`, not at the release commit `{}`",
+            existing.commit, input.head_commit
+        ));
+    }
+    if !existing.annotated {
+        failures.push(format!(
+            "tag `{tag}` is a lightweight tag; release tags are annotated"
+        ));
+    }
+    if !failures.is_empty() {
+        return Err(Error::CheckFailed {
+            check: "autotag existing tag".to_string(),
+            failures,
+        });
+    }
+    // A rerun on the commit that is already tagged: nothing to do.
+    Ok(AutotagDecision::Skip(format!(
+        "tag `{tag}` already points at this commit"
+    )))
+}
+
+/// The branch prefix a release-prep pull request is opened from.
+const AUTOTAG_RELEASE_BRANCH_PREFIX: &str = "release/v";
+/// The primary version source, first in `.continuum/release.yml`.
+const AUTOTAG_VERSION_SOURCE: &str = "crates/wesley-core/Cargo.toml";
+
+/// Whether a title names exactly this tag as a whole word, so that `v0.3.0`
+/// does not match inside `v0.3.0-alpha.2`.
+fn title_names_tag(title: &str, tag: &str) -> bool {
+    let is_version_char = |ch: char| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | '+');
+    title
+        .split(|ch: char| !is_version_char(ch))
+        .any(|word| word.trim_end_matches('.') == tag)
+}
+
+/// Whether `refs/tags/<tag>` names a tag object. A lightweight tag names the
+/// commit directly, so `git cat-file -t` reports `commit` for it.
+fn tag_is_annotated(tag: &str) -> Result<bool, Error> {
+    let reference = format!("refs/tags/{tag}");
+    Ok(git_output(&["cat-file", "-t", reference.as_str()])?.trim() == "tag")
+}
+
+/// The commit a tag points at, or `None` when the tag does not exist.
+fn commit_of_tag(tag: &str) -> Result<Option<String>, Error> {
+    let reference = format!("refs/tags/{tag}^{{commit}}");
+    let args = ["rev-parse", "--verify", "--quiet", reference.as_str()];
+    let label = command_label("git", &args);
+    let output = Command::new("git")
+        .args(args)
+        .output()
+        .map_err(|source| Error::Usage(format!("failed to spawn `{label}`: {source}")))?;
+    // `--verify --quiet` exits 1 with no output when the ref does not exist.
+    if !output.status.success() {
+        return Ok(None);
+    }
+    Ok(Some(
+        String::from_utf8_lossy(&output.stdout).trim().to_string(),
+    ))
+}
+
+/// Prints the autotag decision for the checked-out commit as `key=value` lines
+/// suitable for `$GITHUB_OUTPUT`.
+///
+/// The pull request's head branch and title arrive through the
+/// `AUTOTAG_HEAD_BRANCH` and `AUTOTAG_PR_TITLE` environment variables rather
+/// than arguments: a title is text a contributor chose, and a workflow must
+/// never interpolate it into a command line.
+fn run_release_autotag_plan() -> Result<(), Error> {
+    let manifest = fs::read_to_string(AUTOTAG_VERSION_SOURCE).map_err(|source| {
+        Error::Usage(format!("failed to read {AUTOTAG_VERSION_SOURCE}: {source}"))
+    })?;
+    let manifest: toml::Value = manifest.parse().map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse {AUTOTAG_VERSION_SOURCE}: {source}"
+        ))
+    })?;
+    let Some(version) = manifest
+        .get("package")
+        .and_then(|package| package.get("version"))
+        .and_then(toml::Value::as_str)
+    else {
+        return Err(Error::Usage(format!(
+            "{AUTOTAG_VERSION_SOURCE} declares no package.version"
+        )));
+    };
+
+    let head_commit = git_output(&["rev-parse", "HEAD"])?;
+    let expected_tag = format!("v{}", version_from_release_arg(version)?);
+    let existing_tag_commit = commit_of_tag(&expected_tag)?;
+    let existing_tag = match existing_tag_commit.as_deref() {
+        None => None,
+        Some(commit) => Some(ExistingTag {
+            commit,
+            annotated: tag_is_annotated(&expected_tag)?,
+        }),
+    };
+
+    let head_branch = env::var("AUTOTAG_HEAD_BRANCH")
+        .ok()
+        .filter(|value| !value.is_empty());
+    let pr_title = env::var("AUTOTAG_PR_TITLE")
+        .ok()
+        .filter(|value| !value.is_empty());
+    let decision = autotag_decision(&AutotagInput {
+        version,
+        head_branch: head_branch.as_deref(),
+        pr_title: pr_title.as_deref(),
+        head_commit: head_commit.trim(),
+        existing_tag,
+    })?;
+    match decision {
+        AutotagDecision::Tag(tag) => println!("decision=tag\ntag={tag}"),
+        AutotagDecision::Skip(reason) => println!("decision=skip\nreason={reason}"),
+    }
+    Ok(())
+}
+
 /// Crates a `wesley-core` build without default features must not pull in.
 ///
 /// The compiler kernel is synchronous and pure. The async runtime stack belongs
@@ -3226,6 +3458,7 @@ Commands:
   publish-crates    Publish crates.io package set for a release tag
   release-prep-guard Verify release prep before a tag exists
   release-guard     Verify that a release tag is eligible to publish
+  release-autotag-plan Decide whether the checked-out main commit earns a release tag
   release-check     Run strict preflight, then build and package release artifacts
   legacy-preflight  Run the historical pnpm package preflight for legacy changes
   help              Show help
@@ -3601,6 +3834,170 @@ mod tests {
 
     fn os_args(args: &[&str]) -> Vec<OsString> {
         args.iter().map(OsString::from).collect()
+    }
+
+    const AUTOTAG_HEAD: &str = "1111111111111111111111111111111111111111";
+    const AUTOTAG_ELSEWHERE: &str = "2222222222222222222222222222222222222222";
+
+    fn autotag_input<'a>(
+        version: &'a str,
+        head_branch: Option<&'a str>,
+        pr_title: Option<&'a str>,
+        existing_tag: Option<ExistingTag<'a>>,
+    ) -> AutotagInput<'a> {
+        AutotagInput {
+            version,
+            head_branch,
+            pr_title,
+            head_commit: AUTOTAG_HEAD,
+            existing_tag,
+        }
+    }
+
+    const fn annotated_at(commit: &str) -> ExistingTag<'_> {
+        ExistingTag {
+            commit,
+            annotated: true,
+        }
+    }
+
+    #[test]
+    fn autotag_tags_a_merged_release_prep_pull_request() {
+        let input = autotag_input(
+            "0.3.0-alpha.2",
+            Some("release/v0.3.0-alpha.2"),
+            Some("chore(release): prepare v0.3.0-alpha.2"),
+            None,
+        );
+
+        assert_eq!(
+            autotag_decision(&input).unwrap(),
+            AutotagDecision::Tag("v0.3.0-alpha.2".to_string())
+        );
+    }
+
+    #[test]
+    fn autotag_skips_an_ordinary_merge_to_main() {
+        let input = autotag_input(
+            "0.3.0-alpha.2",
+            Some("core/803-lean-core-resilience-feature"),
+            Some("feat(core): put the async lowering port behind a `resilience` feature"),
+            None,
+        );
+
+        assert!(matches!(
+            autotag_decision(&input).unwrap(),
+            AutotagDecision::Skip(reason) if reason.contains("not a release-prep")
+        ));
+    }
+
+    #[test]
+    fn autotag_skips_a_push_with_no_pull_request() {
+        let input = autotag_input("0.3.0-alpha.2", None, None, None);
+
+        assert!(matches!(
+            autotag_decision(&input).unwrap(),
+            AutotagDecision::Skip(reason) if reason.contains("no merged pull request")
+        ));
+    }
+
+    #[test]
+    fn autotag_skips_a_rerun_when_the_tag_already_points_at_this_commit() {
+        let input = autotag_input(
+            "0.3.0-alpha.1",
+            Some("release/v0.3.0-alpha.1"),
+            Some("chore(release): prepare v0.3.0-alpha.1"),
+            Some(annotated_at(AUTOTAG_HEAD)),
+        );
+
+        assert!(matches!(
+            autotag_decision(&input).unwrap(),
+            AutotagDecision::Skip(reason) if reason.contains("already points at this commit")
+        ));
+    }
+
+    #[test]
+    fn autotag_refuses_a_lightweight_tag_even_at_the_release_commit() {
+        // Release tags are annotated. A lightweight tag at HEAD peels to the
+        // same commit, so a green skip would let the publish dispatch run from
+        // a tag this workflow would never have created.
+        let input = autotag_input(
+            "0.3.0-alpha.1",
+            Some("release/v0.3.0-alpha.1"),
+            Some("chore(release): prepare v0.3.0-alpha.1"),
+            Some(ExistingTag {
+                commit: AUTOTAG_HEAD,
+                annotated: false,
+            }),
+        );
+
+        assert!(matches!(
+            autotag_decision(&input),
+            Err(Error::CheckFailed { failures, .. })
+                if failures.iter().any(|failure| failure.contains("lightweight"))
+        ));
+    }
+
+    #[test]
+    fn autotag_fails_loudly_when_the_tag_exists_on_another_commit() {
+        // A green skip here would hide that an immutable version is attached to
+        // the wrong source.
+        let input = autotag_input(
+            "0.3.0-alpha.1",
+            Some("release/v0.3.0-alpha.1"),
+            Some("chore(release): prepare v0.3.0-alpha.1"),
+            Some(annotated_at(AUTOTAG_ELSEWHERE)),
+        );
+
+        assert!(autotag_decision(&input).is_err());
+    }
+
+    #[test]
+    fn autotag_refuses_a_release_branch_that_disagrees_with_the_manifest() {
+        let input = autotag_input(
+            "0.3.0-alpha.1",
+            Some("release/v0.3.0-alpha.2"),
+            Some("chore(release): prepare v0.3.0-alpha.2"),
+            None,
+        );
+
+        assert!(autotag_decision(&input).is_err());
+    }
+
+    #[test]
+    fn autotag_refuses_a_release_branch_whose_title_names_another_version() {
+        let input = autotag_input(
+            "0.3.0-alpha.2",
+            Some("release/v0.3.0-alpha.2"),
+            Some("chore(release): prepare v0.3.0-alpha.3"),
+            None,
+        );
+
+        assert!(autotag_decision(&input).is_err());
+    }
+
+    #[test]
+    fn autotag_does_not_mistake_a_longer_version_in_the_title_for_a_match() {
+        let input = autotag_input(
+            "0.3.0",
+            Some("release/v0.3.0"),
+            Some("chore(release): prepare v0.3.0-alpha.2"),
+            None,
+        );
+
+        assert!(autotag_decision(&input).is_err());
+    }
+
+    #[test]
+    fn autotag_refuses_a_version_with_build_metadata() {
+        let input = autotag_input(
+            "0.3.0+build.7",
+            Some("release/v0.3.0+build.7"),
+            Some("chore(release): prepare v0.3.0+build.7"),
+            None,
+        );
+
+        assert!(autotag_decision(&input).is_err());
     }
 
     #[test]
@@ -4401,7 +4798,7 @@ mod tests {
             let mut dependency_lines = String::new();
             for dependency in publish_crate.dependencies {
                 dependency_lines.push_str(&format!(
-                    "{dependency} = {{ path = \"../{dependency}\", version = \"1.2.3\" }}\n"
+                    "{dependency} = {{ path = \"../{dependency}\", version = \"=1.2.3\" }}\n"
                 ));
             }
             fs::write(
@@ -4469,7 +4866,7 @@ mod tests {
             let mut dependency_lines = String::new();
             for dependency in publish_crate.dependencies {
                 dependency_lines.push_str(&format!(
-                    "{dependency} = {{ path = \"../{dependency}\", version = \"1.2.3\" }}\n"
+                    "{dependency} = {{ path = \"../{dependency}\", version = \"=1.2.3\" }}\n"
                 ));
             }
             fs::write(
@@ -4504,6 +4901,152 @@ mod tests {
         }
 
         fs::remove_dir_all(root).expect("temp root should be removed");
+    }
+
+    // --- sibling requirements ---
+
+    /// Failures `check_dependency_hygiene` reports for a `wesley-cli` manifest
+    /// with this body, when the release version is `1.2.3-alpha.2`.
+    fn dependency_hygiene_failures(manifest: &str) -> Vec<String> {
+        let cli = PUBLISH_CRATES
+            .iter()
+            .find(|publish_crate| publish_crate.name == "wesley-cli")
+            .expect("wesley-cli should be a published crate");
+        let manifest: toml::Value = manifest.parse().expect("fixture manifest should parse");
+        let mut failures = Vec::new();
+        check_dependency_hygiene(
+            cli,
+            &manifest,
+            "1.2.3-alpha.2",
+            &["wesley-core"],
+            &mut failures,
+        );
+        failures
+    }
+
+    /// The same, for a `wesley-core` path dependency with this requirement.
+    fn sibling_requirement_failures(requirement: &str) -> Vec<String> {
+        dependency_hygiene_failures(&format!(
+            "[dependencies]\nwesley-core = {{ path = \"../wesley-core\", version = \"{requirement}\" }}\n"
+        ))
+    }
+
+    fn expects_exact_pin(failures: &[String]) -> bool {
+        failures
+            .iter()
+            .any(|failure| failure.contains("expected `=1.2.3-alpha.2`"))
+    }
+
+    #[test]
+    fn sibling_requirement_pinned_exactly_passes() {
+        assert_eq!(
+            sibling_requirement_failures("=1.2.3-alpha.2"),
+            Vec::<String>::new()
+        );
+    }
+
+    #[test]
+    fn bare_sibling_requirement_is_refused_because_cargo_reads_it_as_caret() {
+        // `"1.2.3-alpha.2"` admits `1.2.3-alpha.3` and `1.2.3`, so an unlocked
+        // install of an older release can resolve newer siblings.
+        let failures = sibling_requirement_failures("1.2.3-alpha.2");
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("expected `=1.2.3-alpha.2`")),
+            "{failures:?}"
+        );
+    }
+
+    #[test]
+    fn caret_sibling_requirement_is_refused() {
+        let failures = sibling_requirement_failures("^1.2.3-alpha.2");
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("expected `=1.2.3-alpha.2`")),
+            "{failures:?}"
+        );
+    }
+
+    #[test]
+    fn shorthand_sibling_requirement_is_refused_too() {
+        // `wesley-core = "1.2.3-alpha.2"` is valid Cargo and is the same caret
+        // requirement; a check that reads only dependency tables never sees it.
+        let cli = PUBLISH_CRATES
+            .iter()
+            .find(|publish_crate| publish_crate.name == "wesley-cli")
+            .expect("wesley-cli should be a published crate");
+        let manifest: toml::Value = "[dependencies]\nwesley-core = \"1.2.3-alpha.2\"\n"
+            .parse()
+            .expect("fixture manifest should parse");
+        let mut failures = Vec::new();
+
+        check_dependency_hygiene(
+            cli,
+            &manifest,
+            "1.2.3-alpha.2",
+            &["wesley-core"],
+            &mut failures,
+        );
+
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.contains("expected `=1.2.3-alpha.2`")),
+            "{failures:?}"
+        );
+    }
+
+    #[test]
+    fn target_specific_sibling_requirement_is_refused() {
+        for section in ["dependencies", "dev-dependencies", "build-dependencies"] {
+            let failures = dependency_hygiene_failures(&format!(
+                "[target.'cfg(unix)'.{section}]\nwesley-core = {{ path = \"../wesley-core\", version = \"1.2.3-alpha.2\" }}\n"
+            ));
+
+            assert!(expects_exact_pin(&failures), "{section}: {failures:?}");
+        }
+    }
+
+    #[test]
+    fn target_specific_sibling_pinned_exactly_passes() {
+        let failures = dependency_hygiene_failures(
+            "[target.'cfg(unix)'.dependencies]\nwesley-core = { path = \"../wesley-core\", version = \"=1.2.3-alpha.2\" }\n",
+        );
+
+        assert_eq!(failures, Vec::<String>::new());
+    }
+
+    #[test]
+    fn renamed_sibling_requirement_is_refused() {
+        // The key is an alias; `package` names the crate Cargo resolves.
+        let failures = dependency_hygiene_failures(
+            "[dependencies]\ncore = { package = \"wesley-core\", version = \"1.2.3-alpha.2\" }\n",
+        );
+
+        assert!(expects_exact_pin(&failures), "{failures:?}");
+    }
+
+    #[test]
+    fn renamed_sibling_pinned_exactly_passes() {
+        let failures = dependency_hygiene_failures(
+            "[dependencies]\ncore = { package = \"wesley-core\", path = \"../wesley-core\", version = \"=1.2.3-alpha.2\" }\n",
+        );
+
+        assert_eq!(failures, Vec::<String>::new());
+    }
+
+    #[test]
+    fn a_dependency_that_only_shares_a_sibling_alias_is_not_a_sibling() {
+        // `wesley-core` here is an alias for an unrelated registry crate.
+        let failures = dependency_hygiene_failures(
+            "[dependencies]\nwesley-core = { package = \"serde\", version = \"1\" }\n",
+        );
+
+        assert_eq!(failures, Vec::<String>::new());
     }
 
     // --- looks_like_file_path ---
