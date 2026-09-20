@@ -26,9 +26,9 @@
 // either stream, that the page does not show.
 //
 //   node scripts/run-doc-examples.mjs --wesley <binary> [--timeout-ms N] <doc.md>...
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { parseHelp } from './wesley-help.mjs';
@@ -236,6 +236,7 @@ function replay(doc, registered) {
       if (block.file) {
         const target = inside(dir, block.file);
         if (!target) return fail(`\`file: ${block.file}\` is outside the scratch directory`);
+        mkdirSync(dirname(target), { recursive: true });
         writeFileSync(target, `${block.lines.join('\n')}\n`);
         // A fixture is only a fixture: never a command to run or output to compare.
         return undefined;

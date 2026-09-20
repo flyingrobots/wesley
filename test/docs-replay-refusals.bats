@@ -253,3 +253,10 @@ replay() {
   assert_success
   assert_output --regexp 'ran 4, compared 3$'
 }
+
+@test "a fixture in a subdirectory is written, not a crash" {
+  write_page 's#s\.graphql#sub/s.graphql#g'
+  replay
+  assert_success
+  assert_output --regexp 'ran 3, compared 3$'
+}
