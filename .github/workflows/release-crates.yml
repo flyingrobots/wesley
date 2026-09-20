@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'v*'
+  # The autotag workflow pushes its tag with GITHUB_TOKEN, which by GitHub's
+  # design does not trigger the tag push above. An autotagged release is
+  # published by dispatching this workflow from the tag:
+  #   gh workflow run release-crates.yml --ref vX.Y.Z
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -23,6 +28,13 @@ jobs:
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920
         with:
           egress-policy: audit
+
+      # Every later job needs this one, so a dispatch from a branch stops here.
+      - name: Refuse a dispatch that is not from a tag
+        if: github.ref_type != 'tag'
+        run: |
+          echo "release-crates must run from a release tag, not ${GITHUB_REF}."
+          exit 1
 
       - name: Checkout release tag
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0

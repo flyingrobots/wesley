@@ -4,7 +4,7 @@
 
 Wesley follows the Continuum release lifecycle, adapted to this repository's
 actual shape: a domain-free Rust compiler/toolchain that publishes crates from
-signed tags on synced `main`.
+immutable release tags on synced `main`.
 
 The rule is:
 
@@ -38,9 +38,19 @@ places:
 - `Release: vX.Y.Z` milestones hold release-gate and closeout issues only.
 - Release guards query exact-version issue references and `vX.Y.Z` labels, not
   release-gate milestones.
-- Autotag is not enabled. Maintainers create a signed tag manually after final
-  release guards pass from synced `main`.
-- Publication is tag-triggered through `.github/workflows/release-crates.yml`.
+- Autotag is enabled. When a `release/vX.Y.Z` prep PR merges,
+  `.github/workflows/release-autotag.yml` waits for the commit's other CI runs,
+  runs the full release guard against a local annotated tag, and pushes that tag
+  together with a check that `main` has not moved past the release commit. The
+  push is refused if `main` had already moved when it began. That narrows the
+  race with a concurrent merge; it does not close it. It never publishes and
+  never moves a tag.
+- An autotagged tag is unsigned. Its provenance is the autotag workflow run, not
+  a maintainer's key. A manually created fallback tag is signed.
+- Publication runs `.github/workflows/release-crates.yml` from the tag. A tag
+  pushed with a workflow's `GITHUB_TOKEN` does not trigger on-push-tag
+  workflows, so an autotagged release is published by dispatching that workflow
+  from the tag. A manually pushed tag still triggers it directly.
 - crates.io is the public package registry. npm/JSR dist-tag policy does not
   apply to Wesley's current release surface.
 
@@ -55,7 +65,18 @@ cargo xtask release-check
 cargo xtask package-crates --version X.Y.Z
 ```
 
-Tag from synced `main` only:
+Merge the release-prep PR. Autotag creates `vX.Y.Z` and prints the publish
+command:
+
+```bash
+gh workflow run release-crates.yml --ref vX.Y.Z
+```
+
+The publish workflow runs `release-guard` against the tag, then publishes the
+crates and the GitHub Release from the immutable tag.
+
+Manual fallback, only when autotag cannot run, and never to bypass a failed
+gate. Tag from synced `main`:
 
 ```bash
 git switch main
@@ -65,8 +86,6 @@ git tag -s vX.Y.Z -m "release: vX.Y.Z"
 cargo xtask release-guard --tag vX.Y.Z
 git push origin vX.Y.Z
 ```
-
-The tag workflow publishes the crates and GitHub Release from the immutable tag.
 
 ## Canonical Docs
 

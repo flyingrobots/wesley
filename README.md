@@ -47,7 +47,7 @@ wesley --help
 ```
 
 Pre-release builds of the next line (for example `0.3.0-alpha.1`) are published
-to crates.io as opt-in previews once their signed tag lands; after one is
+to crates.io as opt-in previews once their release tag publishes; after one is
 published, pin its exact version to install it. Pre-releases are unstable and
 are not the recommended default.
 

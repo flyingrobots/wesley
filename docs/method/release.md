@@ -6,7 +6,7 @@ Releases happen when externally meaningful behavior changes.
 
 Wesley follows the Continuum release spine, adapted for this repository's
 actual shape: a domain-free Rust compiler/toolchain that publishes crates from
-signed tags on synced `main`. A release is not a version bump. A release is a
+immutable release tags on synced `main`. A release is not a version bump. A release is a
 promise made visible.
 
 The repo-local mechanics live in [`.continuum/release.yml`](../../.continuum/release.yml).
@@ -18,15 +18,15 @@ automation and reviewers should enforce.
 Wesley uses the Continuum spine, but the generic template must be adapted in
 these important ways:
 
-| Generic lifecycle point | Wesley adaptation                                                                                                                                  |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Version bucket          | Implementation issues stay in `Goalpost: ...` milestones. Concrete `vX.Y.Z` labels are the scheduling axis.                                        |
-| Release milestone       | `Release: vX.Y.Z` milestones hold release-gate and closeout issues only. They are not queried as pre-tag blockers.                                 |
-| Autotag                 | `.continuum/release.yml` declares `autotag: none`. Maintainers create a signed tag manually after final guards pass from synced `main`.            |
-| Package/channel policy  | crates.io is the public package registry. npm, JSR, and dist-tag policy do not apply to the current Wesley release surface.                        |
-| Publication             | `.github/workflows/release-crates.yml` runs from the tag and must verify tag, metadata, main reachability, package visibility, and GitHub Release. |
-| Public release boundary | The tag must point at the exact reviewed `main` commit. Do not merge post-release fixes into `main` and pretend they are part of the same release. |
-| Domain boundary         | Release scope must not add downstream domain semantics to Wesley core. Extensions and sibling repos own meaning.                                   |
+| Generic lifecycle point | Wesley adaptation                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Version bucket          | Implementation issues stay in `Goalpost: ...` milestones. Concrete `vX.Y.Z` labels are the scheduling axis.                                                                                                                                                                                                                                                                                                                   |
+| Release milestone       | `Release: vX.Y.Z` milestones hold release-gate and closeout issues only. They are not queried as pre-tag blockers.                                                                                                                                                                                                                                                                                                            |
+| Autotag                 | `.continuum/release.yml` names `.github/workflows/release-autotag.yml`. When a `release/vX.Y.Z` prep PR merges, it waits for the commit's other CI runs, runs the full release guard against a local annotated tag, and pushes that unsigned tag unless `main` had already moved past the release commit when the push began. It never publishes or moves a tag. A signed manual tag is the fallback when autotag cannot run. |
+| Package/channel policy  | crates.io is the public package registry. npm, JSR, and dist-tag policy do not apply to the current Wesley release surface.                                                                                                                                                                                                                                                                                                   |
+| Publication             | `.github/workflows/release-crates.yml` runs from the tag and must verify tag, metadata, main reachability, package visibility, and GitHub Release.                                                                                                                                                                                                                                                                            |
+| Public release boundary | The tag must point at the exact reviewed `main` commit. Do not merge post-release fixes into `main` and pretend they are part of the same release.                                                                                                                                                                                                                                                                            |
+| Domain boundary         | Release scope must not add downstream domain semantics to Wesley core. Extensions and sibling repos own meaning.                                                                                                                                                                                                                                                                                                              |
 
 The root [release process](../../RELEASE.md) is a thin maintainer entrance. This
 page remains the doctrine. The command-by-command execution layer remains
@@ -48,8 +48,9 @@ A valid Wesley release has all of the following:
    recorded before release prep.
 4. **A reviewed source commit**: the release tag points at the exact `main`
    commit that passed release prep.
-5. **An immutable public tag**: signed public tags are not moved. Bad releases
-   are fixed by patching forward.
+5. **An immutable public tag**: public tags are not moved, whether autotag
+   created them or a maintainer signed them. Bad releases are fixed by patching
+   forward.
 6. **Synchronized metadata**: every version source declared in the release
    profile agrees.
 7. **Updated signposts**: changelog, README, guide, architecture, topics,
@@ -110,8 +111,16 @@ commit.
 ### tagged
 
 A release is tagged when final preflight passes from synced `main`, the expected
-tag does not already exist, and an annotated signed tag is created at the exact
-candidate release commit.
+tag does not already exist, and an annotated tag is created at the exact
+candidate release commit. The autotag workflow does this when the release-prep
+PR merges:
+
+```bash
+git tag -a vX.Y.Z -m "release: vX.Y.Z"
+```
+
+Its tag is unsigned; its provenance is the workflow run. When autotag cannot
+run, a maintainer creates the same tag by hand, signed:
 
 ```bash
 git tag -s vX.Y.Z -m "release: vX.Y.Z"
@@ -265,8 +274,11 @@ workflows.
 5. Reconcile scope against the previous public tag.
 6. Run the sequential pre-flight in `docs/method/release-runbook.md`.
 7. Land the release-prep PR on `main`.
-8. Create the signed tag on synced `main`.
-9. Publish from the tag.
+8. Let autotag create the release tag on `main`, or create a signed tag by hand
+   if autotag cannot run.
+9. Publish from the tag. After autotag, dispatch the publish workflow:
+   `gh workflow run release-crates.yml --ref vX.Y.Z`. After a manual tag push,
+   do not dispatch; the push already started that workflow, so monitor it.
 10. Verify delivery directly.
 11. Record the release witness and retrospective.
 12. Close the release and plan the next thesis.
@@ -328,7 +340,7 @@ Issues:
 
 ## Publication
 
-- [ ] Signed tag created from synced main
+- [ ] Release tag created at the synced main release commit (autotag run, or signed manual tag)
 - [ ] Release guard passed against tag
 - [ ] Tag pushed
 - [ ] Release Crates workflow completed
@@ -421,8 +433,9 @@ vX.Y.Z
 
 ## Publish notes
 
-Manual publish required: no. Push signed tag `vX.Y.Z`; tag workflow publishes
-crates and the GitHub Release.
+Manual publish required: one dispatch. Autotag creates `vX.Y.Z`; run
+`gh workflow run release-crates.yml --ref vX.Y.Z` to publish crates and the
+GitHub Release. A manually pushed signed tag publishes without the dispatch.
 ```
 
 ## User-Facing Release Notes

@@ -302,8 +302,9 @@ version declared across the workspace. The changelog's dated `0.3.0-alpha.1`
 section carries the post-`0.2.0` extension-generation provenance contract,
 generation input-schema hardening, pre-push and test Git-context isolation, and
 release-pipeline pre-release support. Release preparation has landed on synced
-`main`; the remaining release gate is the final pre-tag validation, signed tag,
-publish, and post-publish verification sequence.
+`main`; the remaining release gate is the final pre-tag validation, the release
+tag, publish, and post-publish verification sequence. Autotag creates that tag
+unsigned when the release-prep PR merges; a signed manual tag is the fallback.
 
 ## Package(s) Overview
 

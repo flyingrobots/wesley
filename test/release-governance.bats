@@ -113,7 +113,17 @@ load 'vendor/bats-plugins/bats-assert/load'
 }
 
 @test "root release process documents Wesley-specific lifecycle deviations" {
+  run grep -F "Autotag is enabled" RELEASE.md
+  assert_success
+
+  # The old doctrine must not survive beside the new one.
   run grep -F "Autotag is not enabled" RELEASE.md
+  assert_failure
+
+  run grep -F "An autotagged tag is unsigned" RELEASE.md
+  assert_success
+
+  run grep -F "A manually created fallback tag is signed" RELEASE.md
   assert_success
 
   run grep -F "Release: vX.Y.Z" RELEASE.md
