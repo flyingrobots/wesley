@@ -101,7 +101,7 @@ function parse(markdown) {
       // One annotation per block, so that no check can switch another off.
       const names = Object.keys(pending);
       if (names.length > 1) {
-        problems.push(`line ${lineNo}: \`${names.join('\` and \`')}\` cannot be combined`);
+        problems.push(`line ${lineNo}: \`${names.join('` and `')}\` cannot be combined`);
       }
       if (open.shows && open.lang === 'bash') {
         problems.push(`line ${lineNo}: a bash block cannot be \`shows\``);
