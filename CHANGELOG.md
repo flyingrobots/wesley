@@ -9,8 +9,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Changed
 
 - CI now runs every `test/*.bats` suite on every change, discovered by glob. It
-  ran seven of the sixteen, and only when the change touched a filtered path,
-  so a suite could break without any check failing.
+  listed seven of the sixteen behind a change filter that compared commits on a
+  shallow checkout. That comparison failed silently, so in practice the suites
+  did not run, and a suite could break without any check failing.
 
 ### Fixed
 
