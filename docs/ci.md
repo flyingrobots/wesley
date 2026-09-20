@@ -53,6 +53,9 @@ editing the workflow. A glob that matches nothing fails the step.
 - markdownlint over every tracked Markdown file but two, named with their
   reasons in `.markdownlint-cli2.jsonc`;
 - the forbidden machine-local path check and the package manager policy;
+- Prettier, over every tracked file that `.prettierignore` does not name. The
+  file list comes from Git, so a tracked file under a git-ignored path is
+  checked too; each exclusion in `.prettierignore` says why it is there;
 - dependency-cruiser's import boundaries, and the Apache-2.0 license audit of
   the workspace packages.
 
