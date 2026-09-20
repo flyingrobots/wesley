@@ -18,7 +18,16 @@ const check = args.includes('--check');
 const PAGE = 'docs/cli.md';
 
 function run(argv) {
-  const result = spawnSync(wesley, argv, { encoding: 'utf8' });
+  const result = spawnSync(wesley, argv, { encoding: 'utf8', timeout: 10_000 });
+  if (result.error) {
+    console.error(`\`wesley ${argv.join(' ')}\` did not finish: ${result.error.message}`);
+    process.exit(2);
+  }
+  // Help that also writes to stderr shows users something this page would omit.
+  if (result.status === 0 && result.stderr !== '') {
+    console.error(`\`wesley ${argv.join(' ')}\` wrote to stderr:\n${result.stderr}`);
+    process.exit(2);
+  }
   if (result.status !== 0) {
     console.error(`\`wesley ${argv.join(' ')}\` exited ${result.status}\n${result.stderr}`);
     process.exit(2);

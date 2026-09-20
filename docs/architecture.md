@@ -8,20 +8,28 @@ as it is; for why a change was made, read the commit and the pull request.
 
 ```text
 GraphQL SDL
-    │  wesley-core: parse, lower
-    ▼
-L1 IR  ──►  registry hash, operation list, schema diff
     │
-    ├──►  wesley-emit-rust         Rust models and operation bindings
-    ├──►  wesley-emit-typescript   TypeScript declarations and bindings
-    └──►  wesley-emit-codec        codec plan
-                 ├──►  wesley-emit-rust         LE-binary codecs in Rust
-                 └──►  wesley-emit-typescript   LE-binary codecs in TypeScript
+    ├── wesley-core: lower ──────►  L1 IR  ──►  registry hash, schema diff
+    │                                 │
+    └── wesley-core: operations ──►  root operations
+                                      │
+        L1 IR + root operations ──────┤
+                                      ├──►  wesley-emit-rust         models, bindings
+                                      ├──►  wesley-emit-typescript   declarations, bindings
+                                      └──►  wesley-emit-codec        codec plan
+                                                   ├──►  LE-binary codecs in Rust
+                                                   └──►  LE-binary codecs in TypeScript
 ```
 
-Everything downstream reads the L1 IR. Nothing downstream reads SDL. That is
-what makes the outputs agree with each other: two emitters cannot disagree about
-what a field is, because neither of them parsed it.
+The SDL is parsed twice. `lower_schema_sdl` produces the L1 IR.
+`list_schema_operations_sdl` parses the same text again, independently, to list
+the root operations; it does not read the IR. A change to lowering therefore
+does not automatically change the operation list, and the two must be kept in
+agreement by tests.
+
+The emitters never see SDL. They take the IR and the operation list, which is
+why two emitters cannot disagree about what a field is: neither of them parsed
+it.
 
 ## The crates
 
@@ -62,9 +70,25 @@ feature. That feature is on by default. With
 `ninelives`, or `async-trait`, and `cargo xtask lean-core-check` fails the build
 if any of them comes back.
 
-Directives in a schema are lowered as data: a name and its arguments, attached
-to the type or field they were written on. The core does not interpret them. A
-directive means whatever the tool that reads the IR says it means.
+Directives are lowered as data: a name and its arguments, attached to the type
+or field they were written on. A directive the core does not know, such as
+`@audited(level: 2)`, passes through unchanged and means whatever the tool that
+reads the IR says it means.
+
+The core does know a fixed set, and that set changes a schema's IR and hash:
+
+- Eight families have aliases that are rewritten to one canonical name during
+  lowering: `table`, `pk` (also `primaryKey`), `fk` (also `foreignKey`),
+  `unique`, `index`, `tenant`, `default`, and `rls`. Each is accepted bare, as
+  `wesley_<name>`, or as `wes_<name>`, and is recorded as `wes_<name>`. So
+  `@table` and `@wes_table` lower to the same IR and the same hash. The list is
+  `canonical_core_directive_name` in `adapters/apollo.rs`; the directives
+  themselves are declared in `schemas/directives.graphql`.
+- `@wes_channel` on an object type can be lowered into the law IR by
+  `lower_wes_channel_directives_to_law_ir_v1`.
+
+Beyond recording those names, the core attaches no database, runtime, or product
+behavior to any directive.
 
 ### wesley-emit-codec
 

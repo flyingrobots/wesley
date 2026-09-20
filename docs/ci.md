@@ -60,6 +60,10 @@ documentation, workflow files, or source code for strings.
   for f in test/*.bats; do BATS_LIB_PATH=test/vendor bats "$f"; done
   ```
 
+  `bats` itself is a prerequisite: `brew install bats-core`, or
+  `apt install bats`. `setup:bats-plugins` only verifies the assertion plugins
+  vendored under `test/vendor`; it does not install the runner.
+
 The documentation is checked only by executing things:
 
 - Links are followed and must resolve: `cargo xtask docs-check`.
@@ -92,8 +96,14 @@ stay byte for byte what the tool printed.
 ## Git hooks
 
 `scripts/install-hooks.sh` points Git at `.githooks/`. The pre-commit hook keeps
-the lockfile in step with manifest changes. The pre-push hook runs the legacy
-preflight and every bats suite.
+the lockfile in step with manifest changes.
+
+The pre-push hook chooses what to run from the paths a push changes
+(`scripts/pre-push-sanity.mjs`). Rust, workflow, hook, and documentation paths
+select `cargo xtask preflight`. `packages/`, the lockfile, and the package
+manifests select the legacy preflight. `.github/`, `.githooks/`, `scripts/`,
+`test/`, `docs/`, and `README.md` select the bats suites. A push that touches none of a group's paths
+skips that group, so the hook is a shortcut, not the gate: CI runs everything.
 
 ## Toolchain
 
