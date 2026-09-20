@@ -813,3 +813,36 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   assert_success
   [ "$output" -eq 1 ]
 }
+
+@test "release crates workflow restores the annotated tag before each release guard" {
+  # release-guard checks the tag's object type. With fetch-depth 0, checkout
+  # fetches every tag intact. A shallow checkout of a tag ref instead writes
+  # refs/tags/<tag> pointing straight at the commit, a lightweight copy. The
+  # force-fetch keeps the guard correct either way.
+  crates=".github/workflows/release-crates.yml"
+  refetch='git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"'
+  plain='git fetch origin main --tags --prune'
+
+  run bash -lc "grep -cF '$refetch' $crates"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  run bash -lc "grep -cF '$plain' $crates"
+  assert_success
+  [ "$output" -eq 2 ]
+
+  # Order matters. With a lightweight copy in place the plain --tags fetch is
+  # rejected ("would clobber existing tag") and exits 1, so under `set -e` a
+  # force-fetch placed after it would never run.
+  run bash -lc "line() { grep -nF \"\$1\" $crates | sed -n \"\$2p\" | cut -d: -f1; }; f1=\$(line '$refetch' 1); p1=\$(line '$plain' 1); g1=\$(grep -n 'cargo xtask release-guard' $crates | sed -n '1p' | cut -d: -f1); f2=\$(line '$refetch' 2); p2=\$(line '$plain' 2); g2=\$(grep -n 'cargo xtask release-guard' $crates | sed -n '2p' | cut -d: -f1); [ \"\$f1\" -lt \"\$p1\" ] && [ \"\$p1\" -lt \"\$g1\" ] && [ \"\$g1\" -lt \"\$f2\" ] && [ \"\$f2\" -lt \"\$p2\" ] && [ \"\$p2\" -lt \"\$g2\" ]"
+  assert_success
+}
+
+@test "release autotag's push step does not claim more than the push guarantees" {
+  run bash -lc "grep -c 'name: Push the tag, only while main is still the release commit' $autotag_workflow"
+  [ "$output" -eq 0 ]
+
+  run bash -lc "grep -c 'name: Push the tag, unless main had already moved' $autotag_workflow"
+  assert_success
+  [ "$output" -eq 1 ]
+}
