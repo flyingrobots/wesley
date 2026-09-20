@@ -48,8 +48,8 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 
 ## Local Evidence
 
-Run on 2026-09-19 from the prep branch at `85ae3bd3` with a clean tree, each
-exiting 0:
+Run on 2026-09-19 from the prep branch at `1aef2d4a` with a clean tree, each
+exiting 0. That commit already contains #811 and #807, merged in from `main`:
 
 ```bash
 cargo xtask release-prep-guard --version 0.3.0-alpha.2
@@ -64,24 +64,25 @@ cargo xtask package-crates --version 0.3.0-alpha.2
 `cargo audit` loaded 1,251 advisories, scanned 189 crate dependencies in
 `Cargo.lock`, and reported no vulnerabilities and no warnings. `release-check`
 built and smoked the optimized CLI and packaged every published crate;
-`package-crates` listed the contents of all five. The commit that records this
-evidence changes Markdown only.
+`package-crates` listed the contents of all five. All eleven non-e2e bats
+suites passed at the same commit. The tree was clean before and after. The
+commit that records this evidence changes Markdown only. An earlier run of the
+same seven commands at `85ae3bd3`, before `main` was merged in, also exited 0.
 
-That evidence is for `85ae3bd3`, not for the release commit. The same seven
-commands must exit 0 on the final synced `main` release commit before
-`v0.3.0-alpha.2` exists, because a failure found after tagging cannot be fixed
-on an immutable tag. Who reruns them depends on what `main` contains at that
-point:
+That evidence is for `1aef2d4a`, not for the release commit. The same checks
+must pass on the release commit itself before `v0.3.0-alpha.2` exists, because
+a failure found after tagging cannot be fixed on an immutable tag. The autotag
+workflow does that: it waits for the release commit's CI, which runs
+`legacy-preflight`, then reruns `release-prep-guard`, `release-check`, and the
+full `release-guard` on that commit, and creates the tag only if they pass.
+`release-guard` runs `preflight`, which includes `docs-check`, and
+`cargo audit`; `release-check` packages every published crate. If autotag
+cannot run, the maintainer reruns all seven by hand on synced `main` before
+creating the signed fallback tag, as `docs/CRATES_IO_RELEASE.md` requires.
 
-- If the autotag workflow from #807 has landed, it waits for the release
-  commit's CI, which runs `legacy-preflight`, then reruns `release-prep-guard`,
-  `release-check`, and the full `release-guard` on that commit, and creates the
-  tag only if they pass. `release-guard` runs `preflight`, which includes
-  `docs-check`, and `cargo audit`; `release-check` packages every published
-  crate.
-- If it has not, the maintainer reruns all seven by hand on synced `main`
-  before creating the signed tag, as `docs/CRATES_IO_RELEASE.md` Phase 4
-  requires.
+Autotag's first run on `main`, for the #807 merge commit `bc2069527`, found the
+merged pull request, decided `skip` because `ci/806-autotag-release-prep` is
+not a release-prep branch, ran none of the tagging steps, and succeeded.
 
 `cargo xtask preflight` includes `lean-core-check`, which tests `wesley-core`
 without default features and fails if that build's dependency tree names
@@ -102,9 +103,13 @@ artifact from `lower_schema_sdl` and `compute_registry_hash`.
 ## Review Evidence
 
 - #804: all CI checks passed; CodeRabbit and Codex raised no findings.
-- #805: Codex raised three findings on the first pass, two on the second, and
-  four on the third, and two on the fourth. All eleven were checked against the repository and are
-  addressed on the PR.
+- #805: Codex raised eleven findings and CodeRabbit one. All were checked against
+  the repository and are addressed on the PR.
+- #811: Codex raised three findings, each a form of sibling dependency the guard
+  did not read. All are fixed, with tests that were red first.
+- #807: Codex raised sixteen findings and CodeRabbit four. All are fixed on the
+  PR except one: verifying inside `release-guard` that a tag is annotated is
+  deferred to #808, with the reason recorded there.
 
 ## Publish Verification Plan
 
@@ -116,22 +121,22 @@ Do not infer success from queued or in-progress jobs.
    completed successfully.
 3. Verify every published crate directly:
 
-```bash
-for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
-  cargo info "${crate}@0.3.0-alpha.2"
-done
-```
+   ```bash
+   for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
+     cargo info "${crate}@0.3.0-alpha.2"
+   done
+   ```
 
 4. Confirm the GitHub Release exists for the tag, is marked a pre-release, and
    is not marked `latest`.
 5. Confirm a fresh consumer resolves the lean build:
 
-```toml
-wesley-core = { version = "=0.3.0-alpha.2", default-features = false }
-```
+   ```toml
+   wesley-core = { version = "=0.3.0-alpha.2", default-features = false }
+   ```
 
-`cargo tree -e normal` for that consumer must name none of `async-trait`,
-`ninelives`, `tokio`, or `tower`.
+   `cargo tree -e normal` for that consumer must name none of `async-trait`,
+   `ninelives`, `tokio`, or `tower`.
 
 6. Close #803.
 
