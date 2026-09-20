@@ -149,7 +149,7 @@ Do not infer success from queued or in-progress jobs.
 
    ```bash
    for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
-     cargo info "${crate}@0.3.0-alpha.2"
+     cargo info "${crate}@0.3.0-alpha.2" --registry crates-io
    done
    ```
 

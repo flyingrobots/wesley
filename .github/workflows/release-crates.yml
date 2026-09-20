@@ -256,7 +256,10 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           for crate in wesley-core wesley-emit-codec wesley-emit-rust wesley-emit-typescript wesley-cli; do
             for attempt in $(seq 1 30); do
-              if cargo info "${crate}@${version}" >/dev/null 2>&1; then
+              # --registry matters: inside this checkout every crate exists at
+              # this version, and without the flag the lookup reports that
+              # workspace member and exits 0 without asking crates.io.
+              if cargo info "${crate}@${version}" --registry crates-io >/dev/null 2>&1; then
                 break
               fi
               if [ "$attempt" -eq 30 ]; then

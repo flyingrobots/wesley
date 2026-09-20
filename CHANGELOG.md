@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Fixed
+
+- The publish workflow's crates.io visibility check now asks the registry. It ran
+  `cargo info crate@version` inside the checkout, where every published crate
+  exists at that version, so it reported the workspace member and passed whether
+  or not anything had been published. It now passes `--registry crates-io`.
+
 ## [0.3.0-alpha.2] - 2026-09-20
 
 ### Added
