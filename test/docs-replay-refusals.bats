@@ -295,3 +295,10 @@ replay() {
   assert_failure
   assert_output --partial 'no replayed command wrote it'
 }
+
+@test "a JSON listing with a repeated key is refused, because only the last is compared" {
+  write_page 's/"fieldName": "answer"/"fieldName": "wrong", "fieldName": "answer"/'
+  replay
+  assert_failure
+  assert_output --partial 'repeats the key `fieldName`'
+}

@@ -17,12 +17,13 @@
 // A block takes one annotation, so that none can switch another's check off.
 //
 // The runner fails closed. Each of these is a failure, not something skipped:
-// an annotation it does not know or that is attached to nothing; two
+// an annotation it does not know, given twice, or attached to nothing; two
 // annotations on one block; a command or a leading option that `wesley --help`
 // does not list, even in a block that is not run; a fence left
 // open; a `wesley` line that is indented and so would not run, or that uses
 // shell syntax, which no shell is here to interpret; an output block
-// with no command before it; a comparison that compares nothing; a file outside
+// with no command before it; a comparison that compares nothing; a JSON block
+// that repeats a key, since only the last would be compared; a file outside
 // the scratch directory; a process that does not finish; and any output, on
 // either stream, that the page does not show.
 //
@@ -32,6 +33,7 @@ import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+import { duplicateKey } from './json-duplicate-key.mjs';
 import { parseHelp } from './wesley-help.mjs';
 
 const args = process.argv.slice(2);
@@ -279,7 +281,14 @@ function replay(doc, registered) {
         const counter = { leaves: 0 };
         let mismatch;
         try {
-          const shown = JSON.parse(block.lines.join('\n'));
+          const text = block.lines.join('\n');
+          const shown = JSON.parse(text);
+          const repeated = duplicateKey(text);
+          if (repeated !== null) {
+            return fail(
+              `the JSON shown repeats the key \`${repeated}\`; only the last is compared`
+            );
+          }
           mismatch = subset(shown, JSON.parse(produced.stdout), '$', counter);
         } catch (error) {
           mismatch = `not valid JSON: ${error.message}`;
