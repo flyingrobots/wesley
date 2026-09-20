@@ -352,3 +352,23 @@ replay() {
   assert_failure
   assert_output --partial 'looks like a `shows` annotation but is not written as one'
 }
+
+@test "a wesley command in a shell fence that is not bash is refused, not ignored" {
+  for lang in sh shell console shell-session; do
+    write_page
+    printf '\n```%s\n$ wesley schema\n```\n' "$lang" >> "$PAGE"
+    replay
+    assert_failure
+    assert_output --partial "is in a \`$lang\` fence"
+  done
+}
+
+@test "a fence with an unusual language does not throw the parser out of step" {
+  write_page
+  # Before the fix `c++` was not seen as opening a fence, so its closing line
+  # opened one, and everything after it on the page was read inside out.
+  printf '\n```c++\nint main() {}\n```\n\n```bash\nwesley schema hash --schema s.graphql\n```\n' >> "$PAGE"
+  replay
+  assert_failure
+  assert_output --partial 'printed output the page does not show'
+}

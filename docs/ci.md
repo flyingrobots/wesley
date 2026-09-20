@@ -102,7 +102,9 @@ The replay fails closed. Each of these is a failure, not something it skips:
 - an annotation it does not know, one written without its colon, one given
   twice, one not directly before a block, two on one block, or `norun` or `exit`
   on a block with no `wesley` command;
-- a fence left open, or an indented `wesley` line, which would not run;
+- a fence left open, an indented `wesley` line, which would not run, or a
+  `wesley` line in an `sh`, `shell` or `console` fence: only `bash` fences are
+  replayed;
 - in a command that is run: a pipe, redirect, quote or other shell syntax, since
   no shell interprets it, and an argument that is an absolute path or climbs
   out with `..`;

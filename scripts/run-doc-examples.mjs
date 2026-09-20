@@ -22,7 +22,8 @@
 //     on a block with no command
 //   - a command or a leading option that `wesley --help` does not list, even
 //     in a block that is not run
-//   - a fence left open; a `wesley` line that is indented and so would not run
+//   - a fence left open; a `wesley` line that is indented and so would not run,
+//     or that sits in an `sh`, `shell` or `console` fence, which is not replayed
 //   - in a command that is run: shell syntax, which no shell is here to
 //     interpret, and an argument that is absolute or climbs out with `..`
 //   - an output block with no command before it; a comparison that compares
@@ -59,7 +60,18 @@ const consumed = new Set([flag, flag + 1]);
 if (timeoutFlag !== -1) consumed.add(timeoutFlag).add(timeoutFlag + 1);
 const docs = args.filter((_, i) => !consumed.has(i));
 
-const FENCE_OPEN = /^```([a-z]*)\s*$/;
+// The language is whatever follows the backticks, not only `[a-z]*`: a fence
+// the parser fails to see as opening would make its closing line open one.
+const FENCE_OPEN = /^```\s*([^\s`]*)/;
+const OTHER_SHELL_FENCES = new Set([
+  'sh',
+  'shell',
+  'zsh',
+  'console',
+  'terminal',
+  'shell-session',
+  'shellsession'
+]);
 // Anything shaped like `<!-- word: value -->` is taken to be meant for this
 // runner, so a misspelled annotation is an error rather than a dropped check.
 const ANNOTATION = /^<!--\s*([A-Za-z][A-Za-z-]*):\s*(.*?)\s*-->$/;
@@ -331,6 +343,18 @@ function replay(doc, registered) {
         return undefined;
       }
 
+      if (OTHER_SHELL_FENCES.has(block.lang)) {
+        // Only `bash` fences are replayed. A session in another shell fence
+        // would otherwise leave the replay by a change of label.
+        for (const line of block.lines) {
+          if (/^\s*[$%>]?\s*wesley(\s|$)/.test(line)) {
+            fail(
+              `line ${block.line}: \`${line.trim()}\` is in a \`${block.lang}\` fence; only \`bash\` fences are replayed`
+            );
+          }
+        }
+        return undefined;
+      }
       if (block.lang !== 'bash') return undefined;
 
       for (const line of block.lines) {
