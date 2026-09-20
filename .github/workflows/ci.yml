@@ -52,6 +52,7 @@ jobs:
           BATS_NO_COLOR: '1'
         run: |
           set -euo pipefail
+          shopt -s nullglob
           ran=0
           for f in test/*.bats; do
             echo "Running Bats: $f"

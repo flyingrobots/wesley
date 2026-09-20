@@ -39,7 +39,16 @@ export BATS_LIB_PATH=test/vendor
 export TERM=xterm
 export BATS_NO_COLOR=1
 bash scripts/setup-bats-plugins.sh
-bats -t test/ci-workflows.bats test/domain-empty-boundary.bats test/docs-whitespace.bats
+# Every suite, discovered the way CI discovers them.
+shopt -s nullglob
+suites=(test/*.bats)
+if [ "${#suites[@]}" -eq 0 ]; then
+  echo "No Bats suites found." >&2
+  exit 1
+fi
+for f in "${suites[@]}"; do
+  bats -t "$f"
+done
 
 echo ""
 echo "✅ Local CI simulation completed successfully!"
