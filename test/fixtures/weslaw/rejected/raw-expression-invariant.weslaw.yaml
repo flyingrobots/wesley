@@ -8,4 +8,4 @@ laws:
     status: active
     kind: invariantLaw
     subject: type:TranslatedSubstrateEvidence
-    expr: "forall e in TranslatedSubstrateEvidence: e.nativeContinuumWitness == false"
+    expr: 'forall e in TranslatedSubstrateEvidence: e.nativeContinuumWitness == false'

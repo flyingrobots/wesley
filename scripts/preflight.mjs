@@ -104,6 +104,11 @@ const privatePathChk = spawnSync(process.execPath, ['scripts/check-forbidden-lit
 });
 if (privatePathChk.status !== 0) fail('Forbidden machine-local path literal check failed');
 
+// Prettier, over everything .prettierignore does not exclude. ESLint does not
+// judge formatting here, so without this an unformatted file reaches `main`.
+const prettierChk = spawnSync('pnpm', ['exec', 'prettier', '--check', '.'], { stdio: 'inherit' });
+if (prettierChk.status !== 0) fail('Prettier check failed');
+
 const packageManagerPolicyChk = spawnSync(
   process.execPath,
   ['scripts/check-package-manager-policy.mjs'],

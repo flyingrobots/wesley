@@ -36,3 +36,30 @@ migrations/
 *.graphql
 test/fixtures/ir-parity/*.l1.json
 test/fixtures/typescript-emitter/*.generated.ts
+
+# Canonical JSON, byte-asserted: one line, keys sorted. test/weslaw-fixtures.bats
+# requires each of these to equal JSON.stringify of its sorted content exactly,
+# so a formatter would break them.
+schemas/weslaw-v1.schema.json
+schemas/wesley-contract-bundle-manifest-v1.schema.json
+schemas/wesley-law-diff-v1.schema.json
+schemas/wesley-law-ir-v1.schema.json
+
+# Canonical JSON by convention: the generation schemas and fixtures are published
+# in the same one-line form. Their tests parse them, so nothing asserts the
+# bytes; they are kept as written so the published artifacts stay uniform.
+schemas/wesley-extension-generation-input-v1.schema.json
+schemas/wesley-generation-provenance-manifest-v1.schema.json
+schemas/wesley-generation-review-v1.schema.json
+test/fixtures/extension-generation/*.json
+
+# A new one-line JSON file fails the Prettier check until it is listed above.
+# That is deliberate: it is a decision, not a default.
+
+# Goldens: tests compare what the CLI prints with these byte for byte, so they
+# keep the tool's formatting, not Prettier's.
+test/fixtures/weslaw/diff/ci-semantic-diff.json
+test/fixtures/weslaw/diff/ci-semantic-diff.md
+
+# Vendored bats plugins: not ours to reformat.
+test/vendor/
