@@ -1,5 +1,9 @@
 //! Typed Wesley law capability evidence accepted by Holmes.
 
+use alloc::borrow::ToOwned;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 /// API version named by the Holmes PRD for law capability summaries.

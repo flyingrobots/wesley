@@ -1,5 +1,8 @@
 //! Typed Wesley law diff evidence accepted by Holmes.
 
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 /// API version supported by the first Holmes law diff ingest port.

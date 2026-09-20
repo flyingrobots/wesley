@@ -45,6 +45,12 @@ version_sources:
     field: package.version
     required: true
     published: true
+  - path: crates/wesley-holmes-domain/Cargo.toml
+    name: wesley-holmes-domain
+    type: cargo-manifest
+    field: package.version
+    required: true
+    published: false
   - path: crates/wesley-holmes/Cargo.toml
     name: wesley-holmes
     type: cargo-manifest

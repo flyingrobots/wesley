@@ -1,6 +1,8 @@
 //! Schema-version registry for Holmes artifact families.
 
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
+use alloc::format;
+use alloc::vec::Vec;
 
 use serde::{Deserialize, Serialize};
 

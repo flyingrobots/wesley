@@ -23,7 +23,7 @@ is marked as a pre-release and not as `latest`.
 
 On a branch named `release/vX.Y.Z`:
 
-1. Set the version in the six crate manifests and in `package.json`. Set every
+1. Set the version in the seven crate manifests and in `package.json`. Set every
    sibling requirement to `=X.Y.Z`. Then run `cargo check`, which rewrites the
    workspace entries in `Cargo.lock`.
 2. Refresh the pages that quote the version. `wesley doctor` prints it, and CI

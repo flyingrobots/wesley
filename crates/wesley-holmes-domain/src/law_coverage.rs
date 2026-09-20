@@ -1,5 +1,8 @@
 //! Typed Wesley law coverage evidence accepted by Holmes.
 
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 /// API version supported by the first Holmes law coverage ingest port.
@@ -153,10 +156,29 @@ pub struct NormalizedLawCoverageCategory {
 }
 
 /// Calculate Wesley's one-decimal coverage percentage.
+///
+/// Holmes compares this with the figure Wesley reports, so it must equal the
+/// producer's `f64::round` result to the bit. `core` has no `round`; `libm`'s is
+/// the same exactly-defined operation, and `tests/percentage_matches_the_producer.rs`
+/// checks every input up to a total of 1,500 against the producer's expression.
 pub fn percentage(covered: usize, total: usize) -> f64 {
     if total == 0 {
         100.0
     } else {
-        ((covered as f64 / total as f64) * 1000.0).round() / 10.0
+        libm::round((count_to_f64(covered) / count_to_f64(total)) * 1000.0) / 10.0
     }
+}
+
+/// The nearest `f64` to a count, which is what `count as f64` gives, without the
+/// cast. Each 32-bit half converts exactly through `f64::from(u32)`, the high
+/// half scales by an exact power of two, and the one addition rounds once, to
+/// nearest: the correctly rounded value for every `usize`, not only small ones.
+fn count_to_f64(count: usize) -> f64 {
+    const TWO_POW_32: f64 = 4_294_967_296.0;
+    // Neither fallback can be reached: a `usize` fits in `u64`, and each half is
+    // masked or shifted into 32 bits. They are here so that nothing can panic.
+    let wide = u64::try_from(count).unwrap_or(u64::MAX);
+    let high = u32::try_from(wide >> 32).unwrap_or(u32::MAX);
+    let low = u32::try_from(wide & 0xFFFF_FFFF).unwrap_or(u32::MAX);
+    f64::from(high) * TWO_POW_32 + f64::from(low)
 }

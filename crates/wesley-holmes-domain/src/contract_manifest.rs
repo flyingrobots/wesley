@@ -1,5 +1,7 @@
 //! Typed Wesley contract bundle manifest evidence accepted by Holmes.
 
+use alloc::borrow::ToOwned;
+use alloc::string::String;
 use serde::{Deserialize, Serialize};
 
 /// API version supported by the first Holmes contract bundle manifest ingest port.

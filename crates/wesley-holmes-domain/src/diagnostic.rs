@@ -1,7 +1,8 @@
 //! Deterministic diagnostic envelopes for Holmes law assurance.
 
-use std::error::Error;
-use std::fmt;
+use alloc::string::String;
+use core::error::Error;
+use core::fmt;
 
 use serde::{Deserialize, Serialize};
 

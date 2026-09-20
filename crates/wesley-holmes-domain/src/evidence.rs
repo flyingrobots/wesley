@@ -1,6 +1,11 @@
 //! Law evidence bundle model consumed by Holmes.
 
-use std::collections::BTreeMap;
+use alloc::borrow::ToOwned;
+use alloc::collections::BTreeMap;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 
 use serde::{Deserialize, Serialize};
 

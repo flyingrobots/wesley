@@ -1,5 +1,9 @@
 //! Coverage gate decisions derived from normalized Wesley law coverage evidence.
 
+use alloc::borrow::ToOwned;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 use super::law_coverage::NormalizedLawCoverageProfile;

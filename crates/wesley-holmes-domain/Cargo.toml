@@ -1,0 +1,19 @@
+[package]
+name = "wesley-holmes-domain"
+version = "0.3.0-alpha.3"
+edition = "2024"
+description = "The pure Holmes law-assurance domain: data, deterministic validation, and diagnostics"
+license = "Apache-2.0"
+repository = "https://github.com/flyingrobots/wesley"
+homepage = "https://github.com/flyingrobots/wesley"
+readme = "README.md"
+publish = false
+
+[dependencies]
+# `f64::round` is not in `core`. libm is the rust-lang math library: pure
+# computation, `no_std`, and no dependencies of its own.
+# Its one default feature, `arch`, substitutes CPU-specific instructions. Off,
+# the portable implementation runs everywhere, which is what this crate is for.
+libm = { version = "0.2", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }

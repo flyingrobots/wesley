@@ -2,8 +2,13 @@
 
 mod built_cli;
 mod docs_replay;
+mod holmes_boundary;
+mod release_crates;
 
 use ninelives::{Backoff, Jitter, ResilienceError, RetryPolicy};
+use release_crates::{
+    CargoVersionSource, PublishCrate, PUBLISH_CRATES, UNPUBLISHED_CARGO_VERSION_SOURCES,
+};
 use semver::Version;
 use std::collections::BTreeMap;
 use std::env;
@@ -28,38 +33,6 @@ const FORBIDDEN_GIT_IDENTITIES: &[&str] = &[
     "test@ci.com",
 ];
 const NODE_RETIREMENT_LEDGER: &str = "xtask/node-retirement-ledger.json";
-const PUBLISH_CRATES: &[PublishCrate] = &[
-    PublishCrate {
-        name: "wesley-core",
-        path: "crates/wesley-core",
-        dependencies: &[],
-    },
-    PublishCrate {
-        name: "wesley-emit-codec",
-        path: "crates/wesley-emit-codec",
-        dependencies: &["wesley-core"],
-    },
-    PublishCrate {
-        name: "wesley-emit-rust",
-        path: "crates/wesley-emit-rust",
-        dependencies: &["wesley-core", "wesley-emit-codec"],
-    },
-    PublishCrate {
-        name: "wesley-emit-typescript",
-        path: "crates/wesley-emit-typescript",
-        dependencies: &["wesley-core", "wesley-emit-codec"],
-    },
-    PublishCrate {
-        name: "wesley-cli",
-        path: "crates/wesley-cli",
-        dependencies: &["wesley-core", "wesley-emit-rust", "wesley-emit-typescript"],
-    },
-];
-const UNPUBLISHED_CARGO_VERSION_SOURCES: &[CargoVersionSource] = &[CargoVersionSource {
-    name: "wesley-holmes",
-    path: "crates/wesley-holmes",
-    publish: false,
-}];
 
 fn main() -> ExitCode {
     match run(env::args_os().skip(1).collect()) {
@@ -99,6 +72,7 @@ fn run(args: Vec<OsString>) -> Result<(), Error> {
         "preflight" | "strict-preflight" => run_preflight(),
         "docs-check" => run_docs_check(),
         "lean-core-check" => run_lean_core_check(),
+        "holmes-domain-check" => holmes_boundary::run(),
         "built-cli" => built_cli::print_path(),
         "docs-replay" => docs_replay::run(),
         "release-autotag-plan" => run_release_autotag_plan(),
@@ -139,6 +113,7 @@ fn run_preflight() -> Result<(), Error> {
     run_docs_check()?;
     run_command("cargo", &["test", "--workspace"])?;
     run_lean_core_check()?;
+    holmes_boundary::run()?;
     run_command("cargo", &["run", "--bin", "wesley", "--", "--help"])?;
     docs_replay::run()
 }
@@ -3036,6 +3011,7 @@ Commands:
   bench-ir          Run advisory Rust-native IR lowering benchmarks
   docs-check        Run Rust-native documentation hygiene checks
   lean-core-check   Prove wesley-core without default features omits the async stack
+  holmes-domain-check  Build the Holmes domain for a target with no std, to hold its purity boundary
   built-cli         Build the wesley binary and print the path Cargo gave it
   docs-replay       Replay the documented CLI sessions and check the generated CLI reference
   preflight         Run the strict pre-PR/release quality gate
@@ -3062,18 +3038,6 @@ Publish options:
   cargo xtask release-prep-guard --version X.Y.Z
   cargo xtask release-guard --tag vX.Y.Z"
     );
-}
-
-struct PublishCrate {
-    name: &'static str,
-    path: &'static str,
-    dependencies: &'static [&'static str],
-}
-
-struct CargoVersionSource {
-    name: &'static str,
-    path: &'static str,
-    publish: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -4272,6 +4236,23 @@ mod tests {
         );
     }
 
+    /// Writes a manifest at `version` for every unpublished crate the release
+    /// table names, so that a crate added to the table is in the fixture too.
+    fn write_unpublished_manifests(root: &Path, version: &str) -> Result<(), String> {
+        let named = |path: &Path, source: std::io::Error| format!("{}: {source}", path.display());
+        for source in UNPUBLISHED_CARGO_VERSION_SOURCES {
+            let crate_root = root.join(source.path);
+            fs::create_dir_all(crate_root.join("src")).map_err(|e| named(&crate_root, e))?;
+            let manifest = format!(
+                "[package]\nname = \"{}\"\nversion = \"{version}\"\nedition = \"2021\"\npublish = false\n",
+                source.name
+            );
+            fs::write(crate_root.join("Cargo.toml"), manifest)
+                .map_err(|e| named(&crate_root, e))?;
+        }
+        Ok(())
+    }
+
     #[test]
     fn root_package_json_version_mismatch_blocks_release_manifest_check() {
         let root = env::temp_dir().join(format!(
@@ -4316,13 +4297,7 @@ mod tests {
             .expect("crate manifest should be written");
         }
 
-        let holmes_root = root.join("crates/wesley-holmes");
-        fs::create_dir_all(holmes_root.join("src")).expect("holmes src should be created");
-        fs::write(
-            holmes_root.join("Cargo.toml"),
-            "[package]\nname = \"wesley-holmes\"\nversion = \"1.2.3\"\nedition = \"2021\"\npublish = false\n",
-        )
-        .expect("holmes manifest should be written");
+        assert_eq!(write_unpublished_manifests(&root, "1.2.3"), Ok(()));
 
         let result = check_publish_manifest_versions_at(&root, "1.2.3");
 
@@ -4384,6 +4359,8 @@ mod tests {
             .expect("crate manifest should be written");
         }
 
+        // Every unpublished crate at the right version, then Holmes at a wrong one.
+        assert_eq!(write_unpublished_manifests(&root, "1.2.3"), Ok(()));
         let holmes_root = root.join("crates/wesley-holmes");
         fs::create_dir_all(holmes_root.join("src")).expect("holmes src should be created");
         fs::write(

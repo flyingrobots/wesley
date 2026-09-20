@@ -45,6 +45,10 @@ jobs:
         run: |
           rustc --version
           cargo --version
+      # preflight builds the Holmes domain for a target that has no std, to hold
+      # its purity boundary. In CI a missing target fails that check.
+      - name: Install the bare-metal Rust target
+        run: rustup target add thumbv7em-none-eabihf
 
       - name: Install pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
@@ -158,6 +162,11 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
+
+      # preflight builds the Holmes domain for a target that has no std, to hold
+      # its purity boundary. In CI a missing target fails that check.
+      - name: Install the bare-metal Rust target
+        run: rustup target add thumbv7em-none-eabihf
 
       - name: Verify registry credential
         env:

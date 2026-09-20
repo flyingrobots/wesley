@@ -152,6 +152,45 @@ fn policy_normalization_rejects_unknown_profile() {
     assert_eq!(err.field_path.as_deref(), Some("profiles.staging"));
 }
 
+// Oracle: specified. A category that warns at 50% and fails at 90% would fail
+// before it ever warned, so the policy is refused, whichever stage refuses it.
+#[test]
+fn policy_rejects_a_warning_threshold_below_its_failure_threshold() {
+    let policy = br#"{
+      "apiVersion": "holmes.law-assurance-policy/v1",
+      "defaultProfile": "release",
+      "profiles": {
+        "release": {
+          "coverageThresholds": {
+            "scalarSemantics": {
+              "required": true,
+              "warningThreshold": 50.0,
+              "failureThreshold": 90.0
+            }
+          }
+        }
+      }
+    }"#;
+
+    let outcome = parse_law_assurance_policy(policy)
+        .and_then(|schema| normalize_law_assurance_policy(&schema, None).map(|_| ()));
+
+    match outcome {
+        Ok(()) => panic!("a warning threshold below the failure threshold was accepted"),
+        Err(err) => {
+            assert_eq!(err.code, HolmesDiagnosticCode::HlawPolicyInvalidThreshold);
+            assert_eq!(
+                err.field_path.as_deref(),
+                Some("coverageThresholds.scalarSemantics.warningThreshold")
+            );
+            assert_eq!(
+                err.message,
+                "warning threshold must be greater than or equal to failure threshold"
+            );
+        }
+    }
+}
+
 #[test]
 fn severity_policy_preserves_wesley_event_identity() {
     let schema =
