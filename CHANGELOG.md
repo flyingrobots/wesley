@@ -36,6 +36,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   Options, and `wesley operation --help` lists `--json`; each appeared only in a
   usage line. A CLI test now requires every help page to describe every option
   its usage lines offer.
+- `pnpm run legacy-preflight` runs Prettier over every tracked file. Nothing ran
+  it, and ESLint does not judge formatting here, so 17 files failed unnoticed,
+  and 15 more under the git-ignored `out/` were invisible to it. The file list
+  comes from Git, so `.gitignore` cannot hide a tracked file. Two files are now
+  formatted. The rest are in `.prettierignore`, each group with its reason:
+  canonical one-line JSON that a bats test asserts byte for byte, generation
+  schemas and fixtures kept in that form by convention, goldens a test compares
+  with the CLI's output, generated proof artifacts, and the vendored bats
+  plugins.
 
 ## [0.3.0-alpha.3] - 2026-09-20
 
