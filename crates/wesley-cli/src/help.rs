@@ -1,13 +1,9 @@
-# CLI reference
+//! The help text each command prints. `docs/cli.md` is generated from it, and
+//! the CLI's tests hold it to what the option parser accepts.
 
-This page is the output of `wesley --help` and of each command group's
-`--help`, captured from version 0.3.0-alpha.3. It is generated, not written:
-if it disagrees with the binary, the binary is right. Regenerate it with
-`node scripts/generate-cli-reference.mjs --wesley "$(cargo xtask built-cli)"`.
-
-## wesley
-
-```text
+pub(crate) fn print_help() {
+    println!(
+        "\
 Wesley native CLI
 
 Usage:
@@ -42,42 +38,13 @@ Commands:
 
 Options:
   -h, --help     Show help
-  -V, --version  Show version
-```
+  -V, --version  Show version"
+    );
+}
 
-## normalize-sdl
-
-```text
-Wesley SDL normalizer
-
-Usage:
-  wesley normalize-sdl --schema <path> [--hash]
-
-Options:
-  -s, --schema <path>  GraphQL SDL file
-  --hash               Print the SHA-256 of the normalized SDL
-```
-
-## doctor
-
-```text
-Wesley native doctor
-
-Rust-native health checks only. This command does not inspect legacy Node,
-pnpm, config modules, or plugin packages.
-
-Usage:
-  wesley doctor [--json]
-  wesley doctor [--format text|json]
-
-Options:
-  --json                 Emit JSON output
-  --format text|json     Output format
-```
-
-## init-law
-
-```text
+pub(crate) fn print_init_law_help() {
+    println!(
+        "\
 Wesley init-law
 
 Scaffolds weslaw/v1 from formally known SDL law directives and draft
@@ -89,12 +56,31 @@ Usage:
 Options:
   -s, --schema <path>  GraphQL SDL file
   --family <name>      Contract family id for the generated law document
-  --out <path>         Optional output path; stdout when omitted
-```
+  --out <path>         Optional output path; stdout when omitted"
+    );
+}
 
-## config
+pub(crate) fn print_doctor_help() {
+    println!(
+        "\
+Wesley native doctor
 
-```text
+Rust-native health checks only. This command does not inspect legacy Node,
+pnpm, config modules, or plugin packages.
+
+Usage:
+  wesley doctor [--json]
+  wesley doctor [--format text|json]
+
+Options:
+  --json                 Emit JSON output
+  --format text|json     Output format"
+    );
+}
+
+pub(crate) fn print_config_help() {
+    println!(
+        "\
 Wesley project manifest commands
 
 Manifest files are domain-free JSON or YAML documents. The CLI discovers
@@ -110,12 +96,13 @@ Options:
   --config <path>        Manifest path; defaults to upward discovery
   --changed <path>       Changed file path; may be passed more than once
   --changed-file <path>  Newline-delimited changed file list
-  --json                 Emit JSON output
-```
+  --json                 Emit JSON output"
+    );
+}
 
-## target
-
-```text
+pub(crate) fn print_target_help() {
+    println!(
+        "\
 Wesley target commands
 
 External target commands validate descriptor metadata without assigning product
@@ -125,12 +112,27 @@ Usage:
   wesley target verify <descriptor> [--json]
 
 Options:
-  --json  Emit JSON output
-```
+  --json  Emit JSON output"
+    );
+}
 
-## schema
+pub(crate) fn print_normalize_sdl_help() {
+    println!(
+        "\
+Wesley SDL normalizer
 
-```text
+Usage:
+  wesley normalize-sdl --schema <path> [--hash]
+
+Options:
+  -s, --schema <path>  GraphQL SDL file
+  --hash               Print the SHA-256 of the normalized SDL"
+    );
+}
+
+pub(crate) fn print_schema_help() {
+    println!(
+        "\
 Wesley schema commands
 
 lower, hash, and operations take the schema from --schema. Without it they read
@@ -158,12 +160,13 @@ Options:
   --format <format>    diff output format: text, json, or summary
   --breaking-only      diff: report only breaking changes
   --exit-code          diff: exit 1 when the change is breaking
-  --json               Emit JSON output
-```
+  --json               Emit JSON output"
+    );
+}
 
-## law
-
-```text
+pub(crate) fn print_law_help() {
+    println!(
+        "\
 Wesley law commands
 
 Usage:
@@ -184,12 +187,13 @@ Options:
   --out <path>         Rebind output path
   --profile <name>     Coverage profile, default: release
   --json               Emit JSON output
-  --format <format>    Output format: markdown, json, or summary
-```
+  --format <format>    Output format: markdown, json, or summary"
+    );
+}
 
-## emit
-
-```text
+pub(crate) fn print_emit_help() {
+    println!(
+        "\
 Wesley emit commands
 
 Emits model declarations and root operation bindings when the schema declares
@@ -206,12 +210,13 @@ Options:
   --law <path>           Optional weslaw/v1 file for bundle hashes
   --out <path>           Output file
   --metadata-out <path>  Deterministic metadata JSON sidecar
-  --codec-import <path>  Module specifier for Writer/Reader/CodecError (le-binary-* only)
-```
+  --codec-import <path>  Module specifier for Writer/Reader/CodecError (le-binary-* only)"
+    );
+}
 
-## operation
-
-```text
+pub(crate) fn print_operation_help() {
+    println!(
+        "\
 Wesley operation commands
 
 Usage:
@@ -222,10 +227,6 @@ Options:
   -o, --operation <path>  GraphQL operation file
   -s, --schema <path>     Optional GraphQL schema SDL file
   -d, --directive <name>  Directive name, without or with @
-  --json                  Emit JSON output
-```
-
-## Exit status
-
-Commands exit 0 on success and non-zero on failure. `wesley schema diff
---exit-code` exits 1 when the change is breaking.
+  --json                  Emit JSON output"
+    );
+}
