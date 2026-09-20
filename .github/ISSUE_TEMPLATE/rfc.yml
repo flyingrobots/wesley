@@ -132,7 +132,7 @@ body:
       label: Method artifacts
       description: Fill these links as work proceeds.
       value: |
-        - Design: Link `docs/design/<LEGEND>_<slug>.md`, or state why issue-only triage is sufficient.
+        - Design: Link the issue or pull request that holds the design discussion, or state why none is needed.
         - Witness: Link committed witness evidence or the issue/PR comment that records verification.
         - Retro: Link the retro/closeout artifact or the issue close comment.
         - PR: Link the pull request before closing implementation work.

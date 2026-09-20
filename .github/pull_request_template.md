@@ -1,67 +1,50 @@
-## Linked Issue
+<!-- markdownlint-disable MD041 -->
+
+## Linked issue
 
 Closes #
 
-## Branch / Issue-Title Check
+<!-- `Closes #N` if this resolves the issue. `Refs #N` if it only advances it, with what remains. -->
 
-- [ ] Branch name is the linked issue title slug, or the exception is explained here.
+## Kind of change
 
-## Summary
+<!-- Exactly one. The test diff must match it: docs/testing-standard.md, rule 3. -->
 
-- What problem does this PR solve?
+- [ ] Refactoring: no test and no golden file changes
+- [ ] New feature: adds tests, edits none
+- [ ] Bug fix: adds a test that was observed red on the unfixed code
+- [ ] Behavior change: the only kind that edits an existing expectation
 
-## Why
+## Problem
 
-- Rationale for this approach. Mention alternatives considered and trade-offs.
+## Invariant affected
 
-## Changes
+## Approach
 
-- Bulleted list of focused changes.
+## Alternatives rejected
 
-## Method Evidence
+## Failure modes
 
-- [ ] Design doc linked or not required.
-- [ ] Tests or validation evidence included.
-- [ ] Playback/witness included or not required.
-- [ ] Retro or closeout evidence included or not required.
+## Tests added
 
-## Tracker Hygiene
+<!-- For each new load-bearing assertion: how was it shown able to fail? What is its oracle? -->
 
-- [ ] Linked issue had `work-in-progress` while active.
-- [ ] Linked issue lane/status/legend labels are current.
-- [ ] Follow-up work is captured as GitHub Issues, not hidden in chat or local-only backlog files.
+## Format and API compatibility
 
-## Risk
+<!-- The IR, a hash, a wire format, the CLI's output, a public Rust API. "None" is an answer. -->
 
-- User-facing or CI risk and mitigations. Rollout/enablement notes if any.
+## Determinism implications
 
-## Backout
-
-- How to revert safely; follow-up cleanup if rollback happens.
-
-## Testing
-
-- Rust core/CLI: `cargo xtask preflight`
-- Core fixtures: `cargo test --manifest-path crates/wesley-core/Cargo.toml`
-- Legacy package surfaces: `cargo xtask legacy-preflight` when touching `packages/`, docs checks, or JS tooling
-- JS package focus: `pnpm -w -F <package> test` only for legacy package changes
-
-## EvidenceMap / SourceMap (if applicable)
-
-- Confirm UIDs use `tbl:Table` and `col:Table.field`.
-- If mapping SQL to SDL, verify `.wesley-cache/bundle.json` exists and SourceMap finds SDL.
-
-## Screenshots / Logs (optional)
-
-## Merge Strategy
-
-- Merge commit only; no rebase.
-- Delete branch after merge.
+## Security implications
 
 ## Checklist
 
-- [ ] One-topic PR with tight diff
-- [ ] Rust-native preflight passes (`cargo xtask preflight`)
-- [ ] Legacy package preflight passes when relevant (`cargo xtask legacy-preflight`)
-- [ ] No widened permissions/secrets in workflows
-- [ ] Docs updated if behavior changed
+- [ ] One purpose, and small enough to review rigorously
+- [ ] `cargo xtask preflight` passes
+- [ ] `cargo xtask legacy-preflight` passes, if `packages/` or the lockfile changed
+- [ ] No file over a limit in `docs/rust-standard.md` grew, and no ledger count rose
+- [ ] The page that describes changed behavior is updated, and `CHANGELOG.md` has an entry
+- [ ] No widened permissions or secrets in workflows
+- [ ] Follow-on work is filed as issues
+
+Merged with a merge commit. No rebase, no squash.

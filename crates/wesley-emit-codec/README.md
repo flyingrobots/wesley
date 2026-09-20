@@ -1,27 +1,17 @@
 # wesley-emit-codec
 
-`wesley-emit-codec` lowers Wesley Level 1 IR and selected operations into a
-language-neutral LE-binary codec plan.
+Part of [Wesley](https://github.com/flyingrobots/wesley#readme). Lowers Wesley's L1 IR, and the operations of a
+schema, into a language-neutral plan for little-endian binary codecs: which
+values are scalars, enums, nested structs, options, or lists, and in what order.
 
-The crate is intentionally not a source printer. It defines the shared codec
-shape consumed by language-specific emitters such as `wesley-emit-rust` and
-`wesley-emit-typescript`, so those emitters do not each re-derive enum, object,
-list, nullable, and operation-variable codec behavior.
+```rust
+let codecs = wesley_emit_codec::plan(&ir, &operations);
+```
 
-## Boundary
+It prints no source. `wesley-emit-rust` and `wesley-emit-typescript` both consume
+this one plan, so they share one decision about structure and field order. Each
+still renders its own implementation, and nothing yet tests that the two
+languages produce the same bytes. Names in the plan are the GraphQL source
+names; each emitter applies its own casing.
 
-The plan layer owns codec semantics:
-
-- which GraphQL structs need codec definitions
-- scalar-to-wire-kind selection
-- list and nullable wrapper structure
-- operation variable request shape
-- output object versus input object labels
-
-Language emitters still own their generated source shape, names, imports,
-runtime adapter calls, and formatting.
-
-See the repository
-[README](https://github.com/flyingrobots/wesley#readme) and
-[architecture guide](https://github.com/flyingrobots/wesley/blob/main/docs/ARCHITECTURE.md)
-for the full project context.
+Wesley is pre-1.0. Pin an exact version. Apache-2.0.

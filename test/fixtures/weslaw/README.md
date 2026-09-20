@@ -1,7 +1,7 @@
 # weslaw Fixture Corpus
 
-This corpus supports design packet
-`docs/design/0019-weslaw-semantic-law-ir/`.
+This corpus supports the `weslaw/v1` law format, whose schema is
+`schemas/weslaw-v1.schema.json`.
 
 The files define the first v1 substrate target for `WLAW-008` and `WLAW-009`,
 then serve as Rust parser and published-schema fixtures for `WLAW-011` through
@@ -15,18 +15,18 @@ the same canonical Law IR. The Rust-validator payoff fixture supports
 
 ## Files
 
-| Path | Purpose |
-| --- | --- |
-| `contract-bundle-shape.graphql` | Minimal GraphQL shape used by accepted and rejected law fixtures. |
-| `accepted/*.weslaw.yaml` | Law documents that `wesley law validate` must accept. |
+| Path                                                       | Purpose                                                                |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `contract-bundle-shape.graphql`                            | Minimal GraphQL shape used by accepted and rejected law fixtures.      |
+| `accepted/*.weslaw.yaml`                                   | Law documents that `wesley law validate` must accept.                  |
 | `accepted/channel-ttd-protocol-from-directive.weslaw.yaml` | YAML equivalent for the schema's `@wes_channel` directive-lowered law. |
-| `accepted/rust-validator-payoff.weslaw.yaml` | Combined scalar and variant law fixture for Rust helper generation. |
-| `rejected/*.weslaw.yaml` | Law documents that validation must reject. |
-| `rejected/*.expected.txt` | Stable diagnostic code expected for each rejected fixture. |
-| `diff/*.weslaw.yaml` | Old/new law documents used by semantic diff fixtures. |
-| `diff/ci-semantic-diff.json` | CI-ready `wesley.law-diff/v1` output. |
-| `diff/ci-semantic-diff.md` | PR-ready Markdown generated from structured diff events. |
-| `diff/holmes-blade-binding-broken.json` | Holmes/BLADE-facing binding-break report. |
+| `accepted/rust-validator-payoff.weslaw.yaml`               | Combined scalar and variant law fixture for Rust helper generation.    |
+| `rejected/*.weslaw.yaml`                                   | Law documents that validation must reject.                             |
+| `rejected/*.expected.txt`                                  | Stable diagnostic code expected for each rejected fixture.             |
+| `diff/*.weslaw.yaml`                                       | Old/new law documents used by semantic diff fixtures.                  |
+| `diff/ci-semantic-diff.json`                               | CI-ready `wesley.law-diff/v1` output.                                  |
+| `diff/ci-semantic-diff.md`                                 | PR-ready Markdown generated from structured diff events.               |
+| `diff/holmes-blade-binding-broken.json`                    | Holmes/BLADE-facing binding-break report.                              |
 
 The schema hash anchors use the native Wesley `schema hash` output for
 `contract-bundle-shape.graphql`.

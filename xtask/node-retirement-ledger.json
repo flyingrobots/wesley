@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "packages": [
+    {
+      "path": "packages/wesley-holmes",
+      "disposition": "extract-or-rebuild-later"
+    }
+  ],
+  "retiredPackages": [
+    {
+      "path": "packages/wesley-core",
+      "disposition": "deleted",
+      "slice": "NR-076",
+      "replacement": "Rust crates own retained compiler authority; Holmes keeps only local assurance helpers copied out of the old package."
+    },
+    {
+      "path": "packages/wesley-cli",
+      "disposition": "deleted",
+      "slice": "NR-077",
+      "replacement": "The native Rust CLI is the product front door; Holmes owns retained assurance commands."
+    },
+    {
+      "path": "packages/wesley-host-node",
+      "disposition": "deleted",
+      "slice": "NR-078",
+      "replacement": "No product, test, or workflow path shells through the Node executable wrapper."
+    },
+    {
+      "path": "packages/wesley-runtime-node",
+      "disposition": "deleted",
+      "slice": "NR-079",
+      "replacement": "Holmes-local support owns retained ledger and module capability helpers."
+    },
+    {
+      "path": "packages/wesley-generator-vue",
+      "disposition": "deleted",
+      "slice": "NR-081",
+      "replacement": "External Vue projection ownership; generic Wesley no longer carries a built-in Vue generator package."
+    },
+    {
+      "path": "packages/wesley-scaffold-multitenant",
+      "disposition": "deleted",
+      "slice": "NR-082",
+      "replacement": "Product scaffolding is no longer generic Wesley surface area; future scaffolds belong to an owning product repository."
+    },
+    {
+      "path": "packages/wesley-test-fixtures",
+      "disposition": "deleted",
+      "slice": "NR-083",
+      "replacement": "Useful fixtures live as plain files under test/fixtures or Rust tests instead of an npm workspace package."
+    },
+    {
+      "path": "packages/wesley-tasks",
+      "disposition": "deleted",
+      "slice": "NR-084",
+      "replacement": "Rust TransmutationRunner keeps descriptor-only task graph evidence; no generic JavaScript task runtime remains in Wesley."
+    },
+    {
+      "path": "packages/wesley-generator-js",
+      "disposition": "deleted",
+      "slice": "NR-080",
+      "replacement": "Native Rust TypeScript emitters own retained product TypeScript output; Zod remains only as a legacy CLI compatibility projection until extracted or removed with the CLI."
+    },
+    {
+      "path": "packages/wesley-host-browser",
+      "disposition": "deleted",
+      "slice": "GH-629",
+      "replacement": "Browser execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner."
+    },
+    {
+      "path": "packages/wesley-host-bun",
+      "disposition": "deleted",
+      "slice": "GH-629",
+      "replacement": "Bun execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner."
+    },
+    {
+      "path": "packages/wesley-host-deno",
+      "disposition": "deleted",
+      "slice": "GH-629",
+      "replacement": "Deno execution is not a supported Wesley release surface; host-specific behavior belongs to an explicit downstream owner."
+    }
+  ],
+  "deletionBlockers": [],
+  "commands": [
+    {
+      "name": "generate",
+      "path": "packages/wesley-cli/src/commands/generate.mjs",
+      "disposition": "port-generic-pieces-then-delete"
+    },
+    {
+      "name": "transform",
+      "path": "packages/wesley-cli/src/commands/transform.mjs",
+      "disposition": "delete"
+    },
+    {
+      "name": "compile",
+      "path": "packages/wesley-cli/src/commands/compile.mjs",
+      "disposition": "defer-then-rebuild"
+    },
+    {
+      "name": "typescript",
+      "path": "packages/wesley-cli/src/commands/typescript.mjs",
+      "disposition": "partially-ported-to-wesley-emit-typescript"
+    },
+    {
+      "name": "zod",
+      "path": "packages/wesley-cli/src/commands/zod.mjs",
+      "disposition": "legacy-cli-local-compatibility-projection"
+    },
+    {
+      "name": "models",
+      "path": "deleted",
+      "disposition": "deleted"
+    },
+    {
+      "name": "init",
+      "path": "packages/wesley-cli/src/commands/init.mjs",
+      "disposition": "retire-legacy-scaffolding"
+    },
+    {
+      "name": "doctor",
+      "path": "packages/wesley-cli/src/commands/doctor.mjs",
+      "disposition": "port-narrow"
+    },
+    {
+      "name": "validate-bundle",
+      "path": "packages/wesley-cli/src/commands/validate-bundle.mjs",
+      "disposition": "defer"
+    },
+    {
+      "name": "runs",
+      "path": "packages/wesley-cli/src/commands/runs.mjs",
+      "disposition": "extract-or-defer"
+    },
+    {
+      "name": "cert-create",
+      "path": "packages/wesley-cli/src/commands/cert-create.mjs",
+      "disposition": "extract"
+    },
+    {
+      "name": "cert-sign",
+      "path": "packages/wesley-cli/src/commands/cert-sign.mjs",
+      "disposition": "extract"
+    },
+    {
+      "name": "cert-verify",
+      "path": "packages/wesley-cli/src/commands/cert-verify.mjs",
+      "disposition": "extract"
+    },
+    {
+      "name": "cert-badge",
+      "path": "packages/wesley-cli/src/commands/cert-badge.mjs",
+      "disposition": "extract-or-delete"
+    }
+  ],
+  "legacyCoreAuthorityPaths": [],
+  "legacyCoreAuthorityAllowedChanges": [],
+  "ciLaneLabels": {
+    "rustProduct": "Rust Product",
+    "repositoryHygiene": "Repository Hygiene",
+    "externalHostExperiment": "External Host Experiment"
+  }
+}

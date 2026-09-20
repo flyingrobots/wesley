@@ -62,31 +62,16 @@ docs:
   changelog: CHANGELOG.md
   front_door:
     - README.md
-    - docs/README.md
-    - docs/GUIDE.md
-    - docs/ENTRYPOINTS.md
+    - docs/getting-started.md
+    - docs/cli.md
   architecture:
-    - docs/ARCHITECTURE.md
-    - docs/TECHNICAL_TEARDOWN.md
-  user_docs:
-    - docs/GUIDE.md
-    - docs/site/
-    - docs/topics/
-    - docs/reference/
-    - docs/releases/
+    - docs/architecture.md
   operator_docs:
     - RELEASE.md
-    - docs/method/release.md
-    - docs/method/release-runbook.md
-    - docs/CRATES_IO_RELEASE.md
-    - docs/governance/RELEASE_POLICY.md
-    - docs/governance/RELEASE_CHECKLIST.md
+    - docs/ci.md
   contributor_docs:
     - AGENTS.md
     - CONTRIBUTING.md
-    - RELEASE.md
-    - docs/METHOD.md
-    - docs/topics/contributing/triage.md
 
 validation:
   docs_check: cargo xtask docs-check
@@ -129,7 +114,9 @@ issue_model:
   triage_axis: 'triage:* label'
   required_state_label: 'exactly one of triage:* or v{version}'
 
+# Release notes are the version's section of CHANGELOG.md; the publish workflow
+# extracts it for the GitHub Release. Evidence of a release is the tag, the
+# workflow runs, the GitHub Release, and the registry. No per-release documents
+# are kept in the repository.
 release_evidence:
-  internal_packet: docs/method/releases/v{version}/release.md
-  verification: docs/method/releases/v{version}/verification.md
-  user_notes: docs/releases/v{version}.md
+  user_notes: CHANGELOG.md

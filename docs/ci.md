@@ -1,53 +1,87 @@
-# Continuous Integration
+# CI
 
-This repository uses multiple GitHub Actions workflows to keep the codebase healthy and fast. This page documents the key workflows, reusable pieces, and a few conventions we follow.
+What runs on a pull request, what runs on `main`, and how to run the same things
+locally. The workflows are in `.github/workflows/`; this page names them by
+their file.
 
-## Workflows Overview
-
-- `ci.yml` — Main pipeline. Installs deps, runs unit tests, and runs every repository-level Bats suite on every change.
-- `rust-native.yml` — Rust product preflight for the native compiler kernel and CLI.
-- `preflight.yml` — Repository hygiene checks (docs links, dependency boundaries, ESLint purity, license audit).
-- Package workflows — focused checks for retained non-compiler packages such as Holmes.
-
-Workflow names distinguish product checks from compatibility checks:
-
-- `Rust Product ...` checks protect the native Rust product spine.
-- `Repository Hygiene ...` checks protect repo coherence.
-  Browser/Bun/Deno host experiment workflows are retired from the Wesley release
-  surface.
-
-## Reusable Pieces
-
-### Install Bats (composite action)
-
-`ci.yml` installs Bats, jq, and ripgrep with a composite action:
-
-```yaml
-- name: Install Bats
-  uses: ./.github/actions/install-bats
-```
-
-Use it in any job that runs Bats suites on a Linux runner. ripgrep is a test
-dependency, not a convenience: several suites assert that something is absent
-with `run rg ...; assert_failure`. Without ripgrep that command exits 127, which
-also satisfies `assert_failure`, so the assertion would pass having searched
-nothing. Those suites load `test/helpers/require-ripgrep.bash` and refuse to run
-when `rg` is not on `PATH`.
-
-## Repo-level Bats Tests
-
-`ci.yml` runs every suite under `test/*.bats` on every change, including the two
-that start a local server. It discovers them by glob, so a new suite needs no
-workflow edit, and a glob that matches nothing fails the step. All sixteen take
-under a minute.
-
-There is no path filter. An earlier version ran a listed subset only when a
-diff touched certain paths. That diff was computed on a shallow checkout, failed
-silently, and left the suites unselected, so in practice they did not run.
-
-### Run these locally
+## The one command
 
 ```bash
-pnpm run setup:bats-plugins
-for f in test/*.bats; do BATS_LIB_PATH=test/vendor bats "$f"; done
+cargo xtask preflight
 ```
+
+It runs, in order: `cargo fmt --check`, `cargo clippy --workspace --all-targets
+-- -D warnings`, the documentation checks, `cargo test --workspace`,
+`cargo xtask lean-core-check`, and a smoke run of the CLI. If it passes locally,
+the Rust checks will pass in CI. Run it before opening a pull request.
+
+## On a pull request
+
+| Workflow                      | What it runs                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| `rust-native.yml`             | `cargo xtask preflight`                                                        |
+| `ci.yml`                      | `pnpm -w test`, a CLI smoke run, and every bats suite under `test/*.bats`      |
+| `preflight.yml`               | `pnpm run legacy-preflight`: links, package policy, dependency boundaries      |
+| `architecture-boundaries.yml` | Import boundaries of the Node package, and that retired packages stay retired  |
+| `docs-link-check.yml`         | Relative links in Markdown resolve                                             |
+| `pkg-holmes.yml`              | `pnpm --filter @wesley/holmes test`                                            |
+| `wesley-holmes.yml`           | The Holmes assurance run over the schema sets a change touches                 |
+| `dependency-review.yml`       | Fails on a new dependency with a known vulnerability of high severity or worse |
+| `codeql.yml`                  | CodeQL static analysis                                                         |
+
+`ci.yml` discovers bats suites by glob, so a new `test/<name>.bats` runs without
+editing the workflow. A glob that matches nothing fails the step.
+
+## On `main` only
+
+| Workflow              | What it does                                                                                               |
+| --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `cert-shipme.yml`     | Produces a SHIPME certificate, only for a push that touches `packages/`, `.github/`, or the fixture script |
+| `release-autotag.yml` | Tags the commit if it is the merge of a `release/vX.Y.Z` pull request                                      |
+| `scorecards.yml`      | OpenSSF Scorecard, also on a schedule                                                                      |
+
+`release-crates.yml` runs from a release tag. [RELEASE.md](../RELEASE.md)
+describes it and the autotag workflow.
+
+## Tests
+
+A test executes something and checks what happened. Tests do not search
+documentation, workflow files, or source code for strings.
+
+- Rust: `cargo test --workspace`. `cargo xtask preflight` runs it.
+- Node: `pnpm -w test`.
+- bats: the suites under `test/` run the CLI, the fixture generators, and the
+  static file server, and check their output. To run them all:
+
+  ```bash
+  pnpm run setup:bats-plugins
+  for f in test/*.bats; do BATS_LIB_PATH=test/vendor bats "$f"; done
+  ```
+
+  `bats` itself is a prerequisite: `brew install bats-core`, or
+  `apt install bats`. `setup:bats-plugins` only verifies the assertion plugins
+  vendored under `test/vendor`; it does not install the runner.
+
+The documentation has two checks, and both execute something. Links are
+followed and must resolve (`cargo xtask docs-check`). Commands shown in
+`README.md` and `docs/getting-started.md` must be commands the CLI registers
+(`node scripts/check-doc-cli-commands.mjs`). `docs/cli.md` is not read by that
+check.
+
+## Git hooks
+
+`scripts/install-hooks.sh` points Git at `.githooks/`. The pre-commit hook keeps
+the lockfile in step with manifest changes.
+
+The pre-push hook chooses what to run from the paths a push changes
+(`scripts/pre-push-sanity.mjs`). Rust, workflow, hook, and documentation paths
+select `cargo xtask preflight`. `packages/`, the lockfile, and the package
+manifests select the legacy preflight. `.github/`, `.githooks/`, `scripts/`, and
+`test/` select the bats suites. A push that touches none of a group's paths
+skips that group, so the hook is a shortcut, not the gate: CI runs everything.
+
+## Toolchain
+
+Rust stable; the repository is developed on 1.96. Node `^22.13`, `^24`, or
+`>=26`, with `pnpm` at the version `package.json` names in `packageManager`.
+Corepack provides it: `corepack enable`.

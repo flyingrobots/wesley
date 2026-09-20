@@ -8,7 +8,7 @@
     "retirement": {
       "status": "legacy-compatibility",
       "disposition": "extract-or-rebuild-later",
-      "ledger": "docs/design/0017-rust-native-front-door-and-node-retirement/NODE_RETIREMENT_LEDGER.md",
+      "ledger": "xtask/node-retirement-ledger.json",
       "replacement": "Move assurance and evidence tooling behind an explicit non-compiler boundary; do not treat this package as Wesley compiler authority."
     }
   },

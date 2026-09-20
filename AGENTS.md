@@ -1,69 +1,62 @@
 # AGENTS
 
-This guide is for AI agents and human operators recovering context in the Wesley repository.
+Operating rules for AI agents, and for people recovering context, in this
+repository.
 
-## Git Rules
+## Git
 
-- **NEVER** amend commits.
-- **NEVER** rebase or force-push.
-- **NEVER** push to `main` without explicit permission.
-- Always use standard commits and regular pushes.
-- Every PR must name at least one GitHub Issue in the PR body.
-- Use a closing keyword such as `Closes #123`, `Fixes #123`, or
-  `Resolves #123` for every issue the PR fully resolves so GitHub auto-closes
-  it on merge.
-- If a PR only advances an issue, use a non-closing reference such as
-  `Refs #123` or `Tracks #123` and state what remains.
+- Never amend, rebase, squash, or force-push. Fix a mistake with a new commit.
+- Never push to `main` without explicit permission. Changes land through pull
+  requests, merged with a merge commit.
+- Every pull request names a GitHub issue: `Closes #123` if it resolves the
+  issue, `Refs #123` if it only advances it, with what remains.
 
-## Documentation & Planning Map
+## Binding standards
 
-Do not audit the repository by recursively walking the filesystem. Follow the authoritative manifests:
+Read both in full before writing, reviewing, or configuring anything:
 
-### 1. The Entrance
+- [docs/rust-standard.md](docs/rust-standard.md): every Rust file, manifest,
+  lockfile, and lint or toolchain configuration.
+- [docs/testing-standard.md](docs/testing-standard.md): every automated
+  assertion.
 
-- **`README.md`**: Public front door, core value prop, and quick start.
-- **`docs/GUIDE.md`**: Orientation, fast path, and system orchestration.
+Each ends with a compliance ledger and a ratchet. Existing violations may only
+shrink; new code complies from its first commit.
 
-### 2. The Bedrock
+## Where the truth is
 
-- **`docs/ARCHITECTURE.md`**: Authoritative structural reference (Base Platform, Modules, Pipeline).
-- **`docs/VISION.md`**: Core tenets and the "Trustworthy Change" mission.
-- **`docs/METHOD.md`**: Repo work doctrine (GitHub Issues, evidence ledger, Cycle loop).
+- **Behavior:** the code, and `wesley --help`. `docs/cli.md` is generated from
+  the latter.
+- **How the parts fit:** [docs/architecture.md](docs/architecture.md).
+- **What runs in CI and how to run it locally:** [docs/ci.md](docs/ci.md).
+- **How a release is made:** [RELEASE.md](RELEASE.md).
+- **What changed and when:** [CHANGELOG.md](CHANGELOG.md) and `git log`.
+- **Pending work:** GitHub issues. `triage:*` labels mark unscheduled work;
+  `vX.Y.Z` labels mark work scheduled into a release.
 
-### 3. The Direction
+There is no design archive in the tree. Git is the archive.
 
-- **`docs/BEARING.md`**: Current execution gravity and active tensions.
-- **`docs/design/README.md`**: Active design packets and structural doctrine.
-- **GitHub Issues**: The active source of truth for pending work. Use
-  `triage:*` labels for unscheduled intake and `vX.Y.Z` labels for work
-  scheduled into a named future release. See
-  **`docs/topics/contributing/triage.md`**.
+## Recovering context
 
-### 4. The Proof
+1. `git status` and `git log -n 10`.
+2. The open issues and pull requests.
+3. The pages above, as far as the task needs.
 
-- **`CHANGELOG.md`**: Historical truth of merged behavior.
-- **`docs/audit/`**: Structural health and due diligence reports.
+## Working
 
-## Context Recovery Protocol
+- Write the test first and watch it fail for the reason you expect.
+- A test executes something and checks what happened. Never add a test that
+  searches documentation, a workflow file, or source code for a string.
+- Documentation is not tested. When behavior changes, change the page that
+  describes it in the same pull request, taking every claim from the code or
+  from real command output, and add a `CHANGELOG.md` entry.
+- Before saying a check passed, find out what it looked at. Verify a publish
+  against the registry, not from inside this checkout.
 
-When starting a new session or recovering from context loss:
+## Before you finish
 
-1. **Read `docs/BEARING.md`** to find the current execution gravity.
-2. **Read `docs/METHOD.md`** to understand the work doctrine.
-3. **Check scheduled release lanes and triage queues** using
-   `docs/topics/contributing/triage.md`.
-4. **Check `git log -n 5` and `git status`** to verify the current branch state.
-
-## End of Turn Checklist
-
-After altering files:
-
-1. **Verify Truth**: Ensure documentation is updated if behavior or structure changed.
-2. **Log Debt**: Add follow-on work as GitHub Issues with either a `triage:*`
-   intake label or a concrete `vX.Y.Z` release label.
-3. **Commit**: Use focused, conventional commit messages. Propose a draft before executing.
-4. **Validate**: Run `pnpm run preflight`.
-
----
-
-**The goal is inevitably. Every feature is defined by its tests.**
+1. `cargo xtask preflight`, and `cargo xtask legacy-preflight` if the Node
+   package or the lockfile changed.
+2. Follow-on work is filed as issues, not left in comments.
+3. Commit with a conventional message that says what was wrong and how you know
+   it is fixed.

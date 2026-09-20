@@ -1,102 +1,59 @@
-# Security Policy
+# Security
 
-## Supported Versions
+## Reporting a vulnerability
 
-| Version or branch       | Supported                                          |
-| ----------------------- | -------------------------------------------------- |
-| Active release branches | Yes                                                |
-| Current `main`          | Yes                                                |
-| Older pre-1.0 tags      | No, unless a maintainer explicitly backports a fix |
+Email <security@flyingrobots.dev>. Please do not open a public issue for a
+vulnerability.
 
-## Reporting a Vulnerability
+Include what you found, how to reproduce it, the version or commit, and what an
+attacker could do with it. You will get an acknowledgement, and a fix or a
+decision will be coordinated with you before anything is made public.
 
-Wesley takes security seriously because it compiles schema-authored contracts,
-loads trusted extension modules, and emits artifacts and evidence that other
-systems may rely on.
+## Supported versions
 
-### Where to Report
+Wesley is pre-1.0. Security fixes are made on `main` and released as the next
+version. Older versions are not patched.
 
-Please report security vulnerabilities to: security@flyingrobots.dev
+## What Wesley does with its input
 
-### What to Include
+The Rust library crates do no I/O. They take SDL, law files, and manifests as
+strings and return the IR, reports, or generated source as values. They do not
+open files, use the network, or start processes.
 
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if any)
+The `wesley` CLI is the part that touches the system. It reads the paths you
+give it and writes generated source to the path you give it. With
+`schema diff --against <rev>` it also runs `git rev-parse` and `git show` in the
+schema's repository to read the old schema. It does not use the network.
 
-### Response Time
+Both treat all input as data: nothing executes the schema or runs the code that
+is generated. Treat generated code as you would any code you did not write:
+review it before you ship it.
 
-- **Acknowledgment**: Within 48 hours
-- **Initial Assessment**: Within 7 days
-- **Fix Timeline**: Based on severity
-  - Critical: Within 72 hours
-  - High: Within 1 week
-  - Medium: Within 2 weeks
-  - Low: Next release
+## Holmes loads and runs code
 
-## Security Considerations
+The Node package `@wesley/holmes` is different. When one of its commands runs in
+a directory that has a `wesley.config.mjs`, or one named by `WESLEY_CONFIG`, it
+**imports that file and every module the file enables**. Those are executable,
+trusted inputs, not data. Running Holmes in a checkout you do not trust runs
+that checkout's code with your permissions.
 
-### Trusted Module Execution
+Two environment variables control this:
 
-Wesley is a domain-empty compiler and assurance toolchain. Target semantics
-enter through modules, and modules are trusted code.
+- `WESLEY_MODULE_ALLOWLIST`: a list of the config and module specifiers that may
+  load. Anything not listed is refused. **When it is empty or unset, everything
+  is allowed.**
+- `WESLEY_DISABLE_MODULES`: set to `1`, `true`, `yes`, or `on` to load no
+  modules at all.
 
-- Load modules only from reviewed paths and packages.
-- Use `WESLEY_MODULE_ALLOWLIST` in CI when module imports must be restricted.
-- Use `WESLEY_DISABLE_MODULES=1` for no-module diagnostic runs.
-- Treat failed, missing, duplicate, or disabled module entries as release
-  evidence, not as harmless noise.
-- Keep product/runtime/database policy in the owning module or sibling repo,
-  not in generic Wesley.
+In CI, or anywhere Holmes runs over code from a pull request, set one of them.
+Review a module before you add it to the allowlist as you would review any
+dependency.
 
-### Generated Artifacts
+## How the repository is checked
 
-Wesley may emit code, descriptors, manifests, bindings, evidence, or other
-artifacts through generic emitters and external modules.
-
-- Review generated artifacts before applying them to production systems.
-- Verify the module that emitted each artifact and the input SDL it consumed.
-- Treat database-specific output such as SQL, migrations, RLS, Supabase policy,
-  or PostgreSQL execution plans as external-module responsibility.
-- Do not assume Wesley core has validated target-specific security semantics
-  unless the responsible module emits explicit evidence for that claim.
-
-### Evidence Integrity
-
-- Evidence should be content-addressed or hash-linked when it is used as a
-  release gate.
-- Bundle files should include version and source identity where applicable.
-- Generated artifact review should preserve the input SDL, module identity,
-  command, and validation output needed to reproduce the claim.
-
-### Dependency And Host Posture
-
-- Keep dependency updates reviewable and run repository preflight before
-  release.
-- Scope security scanners to Wesley's compiler and tooling surface. The current
-  baseline and candidate-gate decisions live in
-  [`docs/topics/security-tooling.md`](docs/topics/security-tooling.md).
-- Prefer deterministic inputs, injected clocks, and explicit host permissions
-  for portable capability work.
-- Do not grant portable modules ambient filesystem, network, process, or clock
-  access without an explicit host-function design.
-
-### Best Practices
-
-1. Review the SDL, loaded modules, and emitted artifacts together.
-2. Run `pnpm run preflight` before release.
-3. Use module allowlists in CI for trusted module surfaces.
-4. Keep database, runtime, and product-specific security decisions in the
-   owning module or repo.
-5. Preserve evidence needed to reproduce any security-relevant release claim.
-
-## Security Features
-
-- Module disable and allowlist controls for diagnostic and CI runs
-- Domain-empty compiler boundary that keeps target security policy out of core
-- Hash-linked evidence and artifact review surfaces
-- Dependency and documentation preflight checks
-- Documented scanner-fit posture for advisory and static-analysis gates
-- Explicit external-module responsibility for database, runtime, and product
-  security behavior
+- `cargo audit` runs inside `cargo xtask release-guard`, so a release cannot be
+  tagged or published with a known advisory in the dependency tree.
+- Dependency Review fails a pull request that adds a dependency with a known
+  vulnerability of high severity or worse.
+- CodeQL and OpenSSF Scorecard run on `main` and on a schedule.
+- Workflow actions are pinned to commit SHAs.
