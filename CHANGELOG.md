@@ -48,6 +48,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- ESLint was configured and nothing ran it: not CI, not a preflight, not a
+  hook. `pnpm run legacy-preflight` now runs `eslint .`, so `preflight.yml`
+  fails a pull request that has a lint error.
 - Four bats suites assert absence with `run rg ...; assert_failure`. Without
   ripgrep the command exits 127, which also satisfies `assert_failure`, so
   eighteen assertions, including the domain-empty boundary guard, passed having
