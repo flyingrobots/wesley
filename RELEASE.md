@@ -38,7 +38,10 @@ On a branch named `release/vX.Y.Z`:
 
    `release-prep-guard` checks the versions, the sibling pins, the changelog
    section, that no open GitHub issue mentions the version, and, for each of the
-   five crates, that the files it would package are the expected set.
+   five crates, that the package would include `Cargo.toml`, `README.md`, and
+   `src/lib.rs` or `src/main.rs`. That is a minimum: it does not reject a file
+   that should not be there, so read `cargo package --list` yourself if a crate's
+   contents changed.
    `release-check` runs the full preflight, builds the optimized CLI and runs
    it, and packages `wesley-core`.
 

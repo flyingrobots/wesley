@@ -31,6 +31,10 @@ fail, control everything a test observes.
 
 Do not count tests. Account for claims, counterexamples, and blind spots.
 
+**How to read this.** The rules state requirements, in the present tense. They do
+not describe the suite as it is: the
+[compliance ledger](#compliance-ledger-at-adoption) does that.
+
 ## Wesley profile
 
 These rules bind every new or materially changed assertion from adoption onward.

@@ -16,6 +16,12 @@ Sections that do not apply to Wesley say so instead of being dropped.
 **Primary objective:** make incorrect compiler behavior difficult to express,
 easy to find, and impossible to merge unnoticed.
 
+**How to read this.** Sections 1 to 28 state requirements. They are written in
+the present tense, as the state the repository is required to reach. They do not
+describe the repository as it is: the [compliance ledger](#compliance-ledger-at-adoption)
+at the end does that, and [CI](ci.md) says what is checked today. Where a
+section says something "runs" or "is gated", read "must".
+
 ## 1. Governing doctrine
 
 Wesley is compiler infrastructure. Other systems store its hashes, compile its
@@ -370,8 +376,9 @@ enforces it.
 **19.3** A dependency's type does not appear in a public API unless that
 dependency is deliberately part of the stability contract.
 
-**19.4** `cargo deny check` and `cargo audit` run in CI, over the whole
-workspace. `deny.toml` admits only licenses compatible with Apache-2.0. The
+**19.4** `cargo deny check` and `cargo audit` are required in CI, over the whole
+workspace. Neither runs on a pull request today: there is no `deny.toml`, and
+`cargo audit` runs only inside `release-guard`. The ledger carries both. `deny.toml` admits only licenses compatible with Apache-2.0. The
 lockfile is committed. Published crates pin their siblings exactly.
 
 ## 20. Features
@@ -421,7 +428,9 @@ code. Those need the reviewer to restate the invariant in their own words.
 
 ## 24. CI gates
 
-Every pull request passes:
+This is the required set, not a description of what runs today.
+[CI](ci.md) says what runs today, and the ledger below lists what is missing.
+Every pull request is required to pass:
 
 ```bash
 cargo fmt --all --check
