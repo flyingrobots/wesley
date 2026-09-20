@@ -6,8 +6,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- CI now runs every `test/*.bats` suite on every change, discovered by glob. It
+  ran seven of the sixteen, and only when the change touched a filtered path,
+  so a suite could break without any check failing.
+
 ### Fixed
 
+- `test/serve-static.bats` was failing on `main` and nothing ran it. It searched
+  `scripts/serve-static.mjs` for an object-literal spelling of the `.js` MIME
+  entry, which stopped matching when the table became a `Map`. The mapping
+  itself was always correct; the unit and HTTP suites prove it.
 - `cargo xtask release-guard` now refuses a lightweight release tag. It only
   peeled the tag to a commit before, so a hand-pushed lightweight tag passed
   every tag check and could publish. `release-crates.yml` force-fetches the tag

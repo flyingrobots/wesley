@@ -32,8 +32,9 @@ the `dependency-review` workflow, not by preflight.
 | JavaScript package or lockfile policy  | `cargo xtask legacy-preflight`, `pnpm lint`                                                       |
 | Security-tooling policy or docs        | `cargo xtask docs-check`, `git diff --check`                                                      |
 
-The pre-push hook may select relevant checks, but do not use the hook as the
-only plan for a risky change. Choose checks deliberately and record the
+CI runs every `test/*.bats` suite on every change, so a suite you did not pick
+locally still runs before merge. The pre-push hook may select relevant checks,
+but do not use the hook as the only plan for a risky change. Choose checks deliberately and record the
 important ones in the PR.
 
 ## Release Validation

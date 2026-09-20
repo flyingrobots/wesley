@@ -861,3 +861,21 @@ autotag_workflow=".github/workflows/release-autotag.yml"
   assert_success
   [ "$output" -eq 1 ]
 }
+
+@test "ci runs every bats suite on every change" {
+  ci=".github/workflows/ci.yml"
+
+  # No path filter decides whether the suites run. A change to RELEASE.md or to
+  # a workflow file once broke a suite that the filter never selected.
+  run bash -lc "grep -c 'RUN_BATS' $ci"
+  [ "$output" -eq 0 ]
+
+  # Suites are discovered, not listed, so a new suite cannot be forgotten, and
+  # none is left out: a suite nothing ran was failing on main unnoticed.
+  run bash -lc "grep -cF 'for f in test/*.bats; do' $ci"
+  assert_success
+  [ "$output" -eq 1 ]
+
+  run bash -lc "grep -A24 'name: Repo Bats tests' $ci | grep -cE 'continue|E2E|skip' "
+  [ "$output" -eq 0 ]
+}

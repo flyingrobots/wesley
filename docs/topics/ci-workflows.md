@@ -15,6 +15,7 @@ diff or running focused checks before a PR.
 | Rust product preflight       | Native compiler crates, CLI, tests, clippy.        |
 | Repository hygiene preflight | Docs links, truth manifest, policy hygiene.        |
 | Compatibility smoke          | Workspace compatibility and Rust product smoke.    |
+| Repository Bats suites       | Every `test/*.bats` suite, on every change.        |
 | CodeQL / analysis            | Static analysis for supported languages.           |
 | Dependency review            | Dependency risk in PRs.                            |
 | Security posture             | Advisory gates, scanner fit, and false positives.  |
@@ -42,6 +43,13 @@ Run workflow invariant tests:
 
 ```bash
 BATS_LIB_PATH=test/vendor bats -t test/ci-workflows.bats
+```
+
+CI runs every suite under `test/*.bats` on every change. It discovers them by
+glob, so a new suite needs no workflow edit. To run the same set locally:
+
+```bash
+for f in test/*.bats; do BATS_LIB_PATH=test/vendor bats "$f"; done
 ```
 
 ## Rules Of Thumb
