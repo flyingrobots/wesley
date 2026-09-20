@@ -2,8 +2,12 @@
 
 mod built_cli;
 mod docs_replay;
+mod release_crates;
 
 use ninelives::{Backoff, Jitter, ResilienceError, RetryPolicy};
+use release_crates::{
+    CargoVersionSource, PublishCrate, PUBLISH_CRATES, UNPUBLISHED_CARGO_VERSION_SOURCES,
+};
 use semver::Version;
 use std::collections::BTreeMap;
 use std::env;
@@ -28,38 +32,6 @@ const FORBIDDEN_GIT_IDENTITIES: &[&str] = &[
     "test@ci.com",
 ];
 const NODE_RETIREMENT_LEDGER: &str = "xtask/node-retirement-ledger.json";
-const PUBLISH_CRATES: &[PublishCrate] = &[
-    PublishCrate {
-        name: "wesley-core",
-        path: "crates/wesley-core",
-        dependencies: &[],
-    },
-    PublishCrate {
-        name: "wesley-emit-codec",
-        path: "crates/wesley-emit-codec",
-        dependencies: &["wesley-core"],
-    },
-    PublishCrate {
-        name: "wesley-emit-rust",
-        path: "crates/wesley-emit-rust",
-        dependencies: &["wesley-core", "wesley-emit-codec"],
-    },
-    PublishCrate {
-        name: "wesley-emit-typescript",
-        path: "crates/wesley-emit-typescript",
-        dependencies: &["wesley-core", "wesley-emit-codec"],
-    },
-    PublishCrate {
-        name: "wesley-cli",
-        path: "crates/wesley-cli",
-        dependencies: &["wesley-core", "wesley-emit-rust", "wesley-emit-typescript"],
-    },
-];
-const UNPUBLISHED_CARGO_VERSION_SOURCES: &[CargoVersionSource] = &[CargoVersionSource {
-    name: "wesley-holmes",
-    path: "crates/wesley-holmes",
-    publish: false,
-}];
 
 fn main() -> ExitCode {
     match run(env::args_os().skip(1).collect()) {
@@ -3062,18 +3034,6 @@ Publish options:
   cargo xtask release-prep-guard --version X.Y.Z
   cargo xtask release-guard --tag vX.Y.Z"
     );
-}
-
-struct PublishCrate {
-    name: &'static str,
-    path: &'static str,
-    dependencies: &'static [&'static str],
-}
-
-struct CargoVersionSource {
-    name: &'static str,
-    path: &'static str,
-    publish: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
