@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- `actionlint` runs over every workflow in `pnpm run legacy-preflight`, and so
+  on every pull request through `preflight.yml`, which installs a pinned
+  version. It was configured for pre-commit, which the installed hooks never
+  ran, so nothing linted the workflows. In CI a missing `actionlint` is a
+  failure; locally it is a warning that says the workflows were not linted.
+
 ## [0.3.0-alpha.3] - 2026-09-20
 
 The compiler is unchanged in this release: no source file under any crate's

@@ -94,6 +94,17 @@ try {
 const eslintChk = spawnSync('pnpm', ['exec', 'eslint', '.'], { stdio: 'inherit' });
 if (eslintChk.status !== 0) fail('ESLint failed');
 
+// actionlint, over every workflow. It is a separate binary, so a contributor may
+// not have it; CI always does, and there a missing linter is a failure, not a
+// skip. Locally the skip is said out loud.
+const actionlintChk = spawnSync('actionlint', [], { stdio: 'inherit' });
+if (actionlintChk.error?.code === 'ENOENT') {
+  if (process.env.CI) fail('actionlint is not installed, so the workflows were not linted');
+  else console.warn('⚠️  actionlint is not installed: the workflows were NOT linted here.');
+} else if (actionlintChk.status !== 0) {
+  fail('actionlint failed');
+}
+
 // Docs link check.
 const linkChk = spawnSync(process.execPath, ['scripts/check-doc-links.mjs'], { stdio: 'inherit' });
 if (linkChk.status !== 0) fail('Docs link check failed');

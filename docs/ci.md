@@ -23,7 +23,7 @@ the Rust checks will pass in CI. Run it before opening a pull request.
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | `rust-native.yml`             | `cargo xtask preflight`                                                        |
 | `ci.yml`                      | `pnpm -w test`, a CLI smoke run, and every bats suite under `test/*.bats`      |
-| `preflight.yml`               | `pnpm run legacy-preflight`: ESLint, links, package policy, dependency bounds  |
+| `preflight.yml`               | `pnpm run legacy-preflight`: ESLint, actionlint, links, package policy, bounds |
 | `architecture-boundaries.yml` | Import boundaries of the Node package, and that retired packages stay retired  |
 | `docs-link-check.yml`         | Relative links in Markdown resolve                                             |
 | `pkg-holmes.yml`              | `pnpm --filter @wesley/holmes test`                                            |
@@ -142,3 +142,8 @@ skips that group, so the hook is a shortcut, not the gate: CI runs everything.
 Rust stable; the repository is developed on 1.96. Node `^22.13`, `^24`, or
 `>=26`, with `pnpm` at the version `package.json` names in `packageManager`.
 Corepack provides it: `corepack enable`.
+
+`actionlint` is optional locally (`brew install actionlint`, or
+`go install github.com/rhysd/actionlint/cmd/actionlint@latest`). Without it,
+`legacy-preflight` says the workflows were not linted and carries on. In CI a
+missing `actionlint` fails the run, so a workflow is never merged unlinted.

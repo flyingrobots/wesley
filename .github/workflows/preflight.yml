@@ -31,5 +31,13 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify lockfile unchanged
         run: git diff --exit-code -- pnpm-lock.yaml
+      # legacy-preflight lints the workflows and fails here if the linter is
+      # missing. Built from a pinned version with the Go toolchain the runner
+      # already has; the module checksum database verifies what is fetched.
+      - name: Install actionlint
+        run: |
+          set -euo pipefail
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Run repository hygiene preflight
         run: pnpm run legacy-preflight
