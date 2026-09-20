@@ -66,8 +66,13 @@ const KNOWN = {
   stdout: { langs: ['json'], value: /^json-subset$/ }
 };
 
-function run(argv, cwd) {
-  const result = spawnSync(wesley, argv, { cwd, encoding: 'utf8', timeout: COMMAND_TIMEOUT_MS });
+// `--timeout-ms` is the wait for a documented command. The runner's own help
+// probe keeps a fixed limit, so a short one cannot stop the replay before any
+// documented command has been judged.
+const HELP_TIMEOUT_MS = 10_000;
+
+function run(argv, cwd, timeout = COMMAND_TIMEOUT_MS) {
+  const result = spawnSync(wesley, argv, { cwd, encoding: 'utf8', timeout });
   return result.error ? { failed: result.error.message } : result;
 }
 
@@ -141,7 +146,7 @@ function parse(markdown) {
 
 // The commands the binary says it has, read from its own help.
 function registeredCommands() {
-  const help = run(['--help']);
+  const help = run(['--help'], undefined, HELP_TIMEOUT_MS);
   if (help.failed || help.status !== 0) {
     const why = help.failed ?? `exit ${help.status}\n${help.stderr}`;
     console.error(`\`wesley --help\` did not succeed: ${why}`);

@@ -274,3 +274,16 @@ replay() {
   assert_failure
   assert_output --partial '`shows` is given twice'
 }
+
+@test "a short command limit does not apply to the runner's own help probe" {
+  # Deterministic form of a race: help that is slower than the limit must not
+  # stop the replay before the documented commands are judged.
+  write_page
+  stub="$BATS_TEST_TMPDIR/slow-help-wesley"
+  printf '#!/bin/bash\nif [ "$1" = "--help" ]; then sleep 0.7; exec "%s" --help; fi\nexec sleep 120\n' "$WESLEY_BIN" > "$stub"
+  chmod +x "$stub"
+  run node "$RUNNER" --wesley "$stub" --timeout-ms 300 "$PAGE"
+  assert_failure
+  assert_output --partial 'did not finish'
+  refute_output --partial '`wesley --help` did not succeed'
+}
