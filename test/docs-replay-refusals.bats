@@ -389,3 +389,11 @@ replay() {
   assert_failure
   assert_output --partial 'is not a command `wesley --help` lists'
 }
+
+@test "a prompt-prefixed wesley line in a bash block is refused, not skipped" {
+  write_page
+  printf '\n```bash\n$ wesley definitely-bogus\n```\n' >> "$PAGE"
+  replay
+  assert_failure
+  assert_output --partial 'does not start the line'
+}
