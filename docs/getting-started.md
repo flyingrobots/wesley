@@ -83,8 +83,9 @@ wesley schema lower --schema shop.graphql --json
 ```
 
 The listing above is shortened to one field. Directives in your schema are
-carried through as data, with their arguments. Wesley records them; it does not
-decide what they mean.
+carried through as data, with their arguments. A small fixed set of names is
+rewritten to a canonical spelling on the way: `@table` is recorded as
+`wes_table`, for example. [Architecture](architecture.md) lists them.
 
 `schema operations` lists the fields of `Query`, `Mutation`, and `Subscription`
 with their arguments and result types:
@@ -203,7 +204,9 @@ wesley schema diff --old shop.graphql --new shop-v2.graphql --format summary --e
 1 breaking, 1 safe
 ```
 
-To compare the working copy against a Git revision instead of a second file:
+The steps above work in an empty directory. This last form does not: it is for a
+schema that is already committed in a Git repository, and compares the working
+copy with the version at a revision:
 
 ```bash
 wesley schema diff --schema shop.graphql --against origin/main --exit-code

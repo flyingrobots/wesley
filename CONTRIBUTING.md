@@ -22,7 +22,9 @@ pnpm install --frozen-lockfile
 bash scripts/install-hooks.sh
 ```
 
-You need stable Rust and Node 22 or later. `pnpm` comes from Corepack at the
+You need stable Rust; Node `^22.13.0`, `^24.0.0`, or `>=26.0.0`, the range
+`package.json` declares; and `bats` (`brew install bats-core` or
+`apt install bats`) to run the shell suites. `pnpm` comes from Corepack at the
 version `package.json` names.
 
 ## Make the change
