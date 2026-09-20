@@ -347,9 +347,7 @@ fn bench_wesley_binary_path(root: &Path, cargo_target_dir: Option<OsString>) -> 
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("target"));
 
-    target_dir
-        .join("debug")
-        .join(format!("wesley{}", env::consts::EXE_SUFFIX))
+    built_wesley_path(&target_dir)
 }
 
 fn run_wesley_schema_lower(wesley_bin: &Path, schema_path: &Path) -> Result<Vec<u8>, Error> {
