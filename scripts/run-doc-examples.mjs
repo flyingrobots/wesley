@@ -17,15 +17,18 @@
 // A block takes one annotation, so that none can switch another's check off.
 //
 // The runner fails closed. Each of these is a failure, not something skipped:
-// an annotation it does not know, given twice, or attached to nothing; two
-// annotations on one block; a command or a leading option that `wesley --help`
-// does not list, even in a block that is not run; a fence left
-// open; a `wesley` line that is indented and so would not run, or that uses
-// shell syntax, which no shell is here to interpret; an output block
-// with no command before it; a comparison that compares nothing; a JSON block
-// that repeats a key, since only the last would be compared; a file outside
-// the scratch directory; a process that does not finish; and any output, on
-// either stream, that the page does not show.
+//   - an annotation it does not know, given twice, or attached to nothing; two
+//     annotations on one block; `norun` or `exit` on a block with no command
+//   - a command or a leading option that `wesley --help` does not list, even
+//     in a block that is not run
+//   - a fence left open; a `wesley` line that is indented and so would not run
+//   - in a command that is run: shell syntax, which no shell is here to
+//     interpret, and an argument that is absolute or climbs out with `..`
+//   - an output block with no command before it; a comparison that compares
+//     nothing; a JSON block that repeats a key, since only the last is compared
+//   - a `file` or `shows` path outside the scratch directory
+//   - a process that does not finish
+//   - any output, on either stream, that the page does not show
 //
 //   node scripts/run-doc-examples.mjs --wesley <binary> [--timeout-ms N] <doc.md>...
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

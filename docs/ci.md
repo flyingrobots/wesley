@@ -97,15 +97,28 @@ A `text` block directly after a `bash` block is that block's exact output. A
 stream the page does not show must be empty: a command that prints a warning the
 page omits fails the replay.
 
-The replay fails closed. An annotation it does not know, or one not directly
-before a block; two annotations on one block; a fence left open; an indented
-`wesley` line, which would not run; a pipe, redirect, quote or other shell
-syntax in a command that is run, since no shell interprets it; an output block
-with no command before it; a comparison that compares nothing; a file path
-outside the scratch directory; and a command that does not finish within ten
-seconds (`--timeout-ms` changes the wait) are all failures, not things it skips.
+The replay fails closed. Each of these is a failure, not something it skips:
+
+- an annotation it does not know, one given twice, one not directly before a
+  block, two on one block, or `norun` or `exit` on a block with no `wesley`
+  command;
+- a fence left open, or an indented `wesley` line, which would not run;
+- in a command that is run: a pipe, redirect, quote or other shell syntax, since
+  no shell interprets it, and an argument that is an absolute path or climbs
+  out with `..`;
+- an output block with no command before it, a comparison that compares nothing,
+  and a JSON block that repeats a key, since only the last would be compared;
+- a `file` or `shows` path outside the scratch directory;
+- a command that does not finish within ten seconds (`--timeout-ms` changes the
+  wait).
+
 `test/docs-replay-refusals.bats` gives it one broken page per rule and requires
 each to be refused with a message that names the problem.
+
+The scratch directory is a working directory, not a sandbox. Refusing path
+arguments that leave it stops a documented command from writing into the
+checkout; it does not contain a command that finds a path some other way.
+
 Prettier does not reformat code inside Markdown here, because an excerpt has to
 stay byte for byte what the tool printed.
 
