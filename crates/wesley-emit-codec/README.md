@@ -9,8 +9,9 @@ let codecs = wesley_emit_codec::plan(&ir, &operations);
 ```
 
 It prints no source. `wesley-emit-rust` and `wesley-emit-typescript` both consume
-this one plan and decide only how to spell it in their language, so the two
-cannot disagree about the bytes on the wire. Names in the plan are the GraphQL
-source names; each emitter applies its own casing.
+this one plan, so they share one decision about structure and field order. Each
+still renders its own implementation, and nothing yet tests that the two
+languages produce the same bytes. Names in the plan are the GraphQL source
+names; each emitter applies its own casing.
 
 Wesley is pre-1.0. Pin an exact version. Apache-2.0.

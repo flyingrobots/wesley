@@ -477,9 +477,11 @@ risk decision.
   and verified by contract; interaction assertions only where the interaction is
   the behavior.
 - **Coverage numbers.** A signal in review, never a target.
-- **Red first.** Writing the test first is not mandated. Having seen it red for
-  the right reason is. For a bug fix the order _is_ mandated, because there the
-  red is the diagnosis.
+- **Red first.** The portable standard mandates only that a test has been seen
+  red for the right reason, and mandates the order for bug fixes alone. This
+  profile is stricter, to agree with the repository's operating rules: in
+  Wesley, write the test first and watch it fail, for every kind of change. For
+  a bug fix the red is also the diagnosis.
 - **Test plans.** No prose plans that enumerate cases; a well-named suite is the
   plan. The risk map above is reviewed when it is wrong.
 - **Pyramid ratios.** None is mandated. Small tests dominate because speed and
