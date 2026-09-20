@@ -148,11 +148,13 @@ synchronous and pure, but every consumer used to inherit an async runtime
 stack. Two of those dependencies were unused and are gone, and the async
 `LoweringPort` with its `ninelives`-backed resilient wrapper now sits behind a
 default-on `resilience` feature. A consumer that only lowers, hashes, or diffs
-SDL can set `default-features = false`: `wesley-core`'s normal dependency tree
-drops from 90 crates to 44. Default-feature consumers see the same public API.
-`cargo xtask lean-core-check`, part of preflight, holds that line. Published
-crates now pin their siblings exactly (`=0.3.0-alpha.2`), and this is the first
-release tagged by the autotag workflow rather than by hand. As a pre-release, APIs, CLI surface, and emitted artifacts remain unstable and may
+SDL can set `default-features = false`: across all targets, `wesley-core`'s
+normal dependency tree drops from 111 crates to 64. Default-feature consumers
+see the same public API. `cargo xtask lean-core-check`, part of preflight, holds
+that line. Published crates now pin their siblings exactly (`=0.3.0-alpha.2`),
+and releases are now tagged by the autotag workflow when the release PR merges,
+with a signed manual tag as the fallback. As a pre-release, APIs, CLI surface,
+and emitted artifacts remain unstable and may
 change before the stable `0.3.0`; see the changelog for the complete list.
 
 ## What's New in v0.3.0-alpha.1

@@ -6,7 +6,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-## [0.3.0-alpha.2] - 2026-09-19
+## [0.3.0-alpha.2] - 2026-09-20
 
 ### Added
 
@@ -30,7 +30,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   async `LoweringPort` and the ninelives-backed `ResilientLoweringPort`. A
   consumer that only lowers, hashes, or diffs SDL can now depend on
   `wesley-core` with `default-features = false` and omit the async runtime
-  stack: the crate's normal dependency tree drops from 90 crates to 44.
+  stack: across all targets, the crate's normal dependency tree drops from 111
+  crates to 64.
   Default-feature consumers see the same public API as before.
 - Added `cargo xtask lean-core-check`, run by `cargo xtask preflight`. It tests
   `wesley-core` without default features and fails if that build's dependency
@@ -52,7 +53,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Removed two unused `wesley-core` dependencies: `tower`, which no source file
   referenced, and the normal `tokio` dependency with every feature enabled,
   which only tests used and the existing dev-dependency already covers. The
-  default dependency tree drops from 90 crates to 77.
+  default dependency tree drops from 111 crates to 95 across all targets.
 
 ### Fixed
 

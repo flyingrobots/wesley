@@ -48,7 +48,7 @@ registry checks; release truth must not depend on a post-publish backfill merge.
 
 ## Local Evidence
 
-Run on 2026-09-19 from the prep branch at `1aef2d4a` with a clean tree, each
+Run on 2026-09-20 (UTC) from the prep branch at `1aef2d4a` with a clean tree, each
 exiting 0. That commit already contains #811 and #807, merged in from `main`:
 
 ```bash
@@ -89,16 +89,42 @@ without default features and fails if that build's dependency tree names
 `async-trait`, `ninelives`, `tokio`, or `tower`. It was observed failing against
 the unfixed crate, naming all four, before #804.
 
-Measured with `cargo tree -p wesley-core -e normal --prefix none`:
+Dependency counts are distinct crates in the normal dependency tree, other than
+the root crate itself, resolved against the committed `Cargo.lock`:
 
-| Build                      | Before #804 | After #804 |
+```bash
+cargo tree -p wesley-core -e normal --prefix none --target all \
+  | awk '{print $1, $2}' | sort -u | grep -vc '^wesley-core '
+```
+
+Add `--no-default-features` for the lean build. "Before" is `4891a631`, the
+parent of the #804 merge.
+
+| Build, `--target all`      | Before #804 | After #804 |
 | -------------------------- | ----------: | ---------: |
-| default features           |          90 |         77 |
-| `default-features = false` |          90 |         44 |
+| default features           |         111 |         95 |
+| `default-features = false` |         111 |         64 |
 
-A downstream build-time tool pointed at #804 with `default-features = false`
-went from 92 crates to 46, passed its 18 tests, and generated a byte-identical
-artifact from `lower_schema_sdl` and `compute_registry_hash`.
+`--target all` makes the count independent of the machine that runs it. A single
+platform resolves fewer, because platform-specific crates drop out:
+
+| Build, one target                                       | Before #804 | After #804 |
+| ------------------------------------------------------- | ----------: | ---------: |
+| `x86_64-unknown-linux-gnu`, default features            |          88 |         75 |
+| `x86_64-unknown-linux-gnu`, `default-features = false`  |          88 |         41 |
+| `aarch64-apple-darwin` host, default features           |          89 |         76 |
+| `aarch64-apple-darwin` host, `default-features = false` |          89 |         43 |
+
+An earlier version of this packet, and of the release copy, said 90, 77, and 44.
+Those figures counted `wesley-core` itself and were resolved for the macOS host
+only, so another machine could not reproduce them. They are corrected
+everywhere they appeared.
+
+A minimal consumer that depends only on `wesley-core` and `serde_json`, measured
+the same way with `--target all` and a fresh lockfile on 2026-09-20, went from
+113 crates to 66 with `default-features = false`. The downstream build-time tool
+that motivated #803 passed its 18 tests against #804 and generated a
+byte-identical artifact from `lower_schema_sdl` and `compute_registry_hash`.
 
 ## Review Evidence
 

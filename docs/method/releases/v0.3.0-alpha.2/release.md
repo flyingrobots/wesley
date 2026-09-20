@@ -6,7 +6,7 @@ Wesley `0.3.0-alpha.2` puts `wesley-core`'s async lowering port behind a
 default-on `resilience` feature and removes two unused dependencies, so a
 consumer that needs only the synchronous compiler kernel can omit the async
 runtime stack. It also pins sibling crates exactly in every published manifest,
-and it is the first release tagged by the autotag workflow.
+and it is the first release prepared for the autotag workflow to tag.
 
 It changes no IR, no hash, no CLI behavior, and no emitted artifact.
 
@@ -39,7 +39,7 @@ Retrospective and evidence live in this directory:
   crates are immutable. The third is how the tag gets made.
 - **May slip:** nothing.
 - **Explicitly not included:** turning `resilience` off by default; any further
-  reduction of the remaining 44 crates; verifying inside `release-guard` that a
+  reduction of the remaining 64 crates; verifying inside `release-guard` that a
   tag is annotated (#808); running every bats suite in CI (#810); the
   repository-wide markdownlint sweep (#812).
 
@@ -48,8 +48,8 @@ Retrospective and evidence live in this directory:
 - A downstream build-time tool that calls only `lower_schema_sdl` and
   `compute_registry_hash` to compile a GraphQL vocabulary into a generated
   descriptor. Pointed at #804 with `default-features = false`, its dependency
-  tree went from 92 crates to 46, its tests passed, and the artifact it
-  generates was byte-identical.
+  tree roughly halved, its tests passed, and the artifact it generates was
+  byte-identical. Reproducible counts are in [`verification.md`](./verification.md).
 
 ## Version Justification
 
@@ -65,7 +65,7 @@ The stable `0.3.0` is not claimed.
 - No change to the CLI or to any emitter.
 - The `resilience` feature is not turned off by default. That would break
   consumers of the async port and belongs to a deliberate later decision.
-- No reduction of the remaining 44 crates. Most arrive through `apollo-parser`,
+- No reduction of the remaining 64 crates. Most arrive through `apollo-parser`,
   `chrono`, and `serde`.
 
 ## Acceptance
