@@ -158,11 +158,11 @@ descriptor-only until Rust planning proves a runtime need.
 
 It has three internal areas:
 
-| Area     | Files            | Responsibility                                                    |
-| -------- | ---------------- | ----------------------------------------------------------------- |
-| Domain   | `src/domain/*`   | IR structs, operation-analysis structs, error types, hashes.      |
-| Ports    | `src/ports/*`    | Host-neutral traits such as `LoweringPort`.                       |
-| Adapters | `src/adapters/*` | Concrete parser/lowering implementation, currently Apollo Parser. |
+| Area     | Files            | Responsibility                                                                          |
+| -------- | ---------------- | --------------------------------------------------------------------------------------- |
+| Domain   | `src/domain/*`   | IR structs, operation-analysis structs, error types, hashes.                            |
+| Ports    | `src/ports/*`    | Host-neutral traits such as `LoweringPort`, behind the default-on `resilience` feature. |
+| Adapters | `src/adapters/*` | Concrete parser/lowering implementation, currently Apollo Parser.                       |
 
 Public Rust APIs currently include:
 
@@ -346,6 +346,7 @@ classDiagram
         <<trait>>
         +lower_sdl(sdl)
     }
+    note for LoweringPort "Compiled only with the default-on resilience feature"
 
     class ApolloLoweringAdapter {
         +new(usize)

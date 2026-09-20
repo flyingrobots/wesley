@@ -12,7 +12,11 @@
 This document is an end-to-end technical explanation of the Wesley repository
 as prepared for the `v0.2.0` release on June 26, 2026. The `v0.3.0-alpha.1`
 pre-release carries the same architecture; it is the first 0.3.0-line
-pre-release, cut to unblock downstream consumers.
+pre-release, cut to unblock downstream consumers. `v0.3.0-alpha.2` follows it
+with one structural change: `wesley-core`'s async `LoweringPort` and its
+resilient wrapper now sit behind a default-on `resilience` feature, so the ports
+layer is optional and kernel-only consumers can omit the async runtime stack.
+The synchronous kernel, the IR, and the pipeline are unchanged.
 
 It assumes no prior knowledge of Wesley, its domain, or its implementation.
 The explanation starts with the business and domain concepts, then follows the
@@ -62,21 +66,20 @@ assurance ingestion lives in `wesley-holmes`.
 
 ### Current Version And Next Work
 
-The Rust crates in this checkout declare version `0.2.0`, and the public README
-now carries the matching "What's New in v0.2.0" release note. The changelog's
-dated `0.2.0` section carries the project manifest and config CLI, manifest-led
-HOLMES schema selection, descriptor-only fixture module zoo, docs/topic coverage
-expansion, release documentation gate, and removal of the old Holmes capability
-alias. This is a pre-1.0 minor release over the published `v0.1.1`
-residue-purge baseline.
+The Rust crates in this checkout declare version `0.3.0-alpha.2`, and the public
+README carries the matching "What's New in v0.3.0-alpha.2" release note. It is
+the second pre-release of the 0.3.0 line, over the published `0.3.0-alpha.1`.
+The changelog's dated `0.3.0-alpha.2` section carries the `wesley-core`
+`resilience` feature and the lean-core dependency check, exact sibling pins in
+every published manifest, and the autotag workflow. The last stable release is
+`v0.2.0`.
 
-As of this teardown refresh, release preparation has landed on synced `main`.
-The remaining pre-tag sequence must rerun
-`cargo xtask release-prep-guard --version 0.2.0`, `cargo xtask preflight`,
-`cargo xtask release-check`, and `cargo xtask package-crates --version 0.2.0`
-on the final synced `main` commit before the signed tag is cut. The `v0.2.0`
-release gate is the only issue scheduled in the `Release: v0.2.0` milestone,
-and it remains open until the signed tag publishes and publication checks pass.
+As of this teardown refresh, release preparation has landed on synced `main`
+through the `release/v0.3.0-alpha.2` PR. That merge starts the autotag workflow,
+which reruns `release-prep-guard`, `release-check`, and the full `release-guard`
+on the release commit and creates the annotated tag only if they pass.
+Publication starts when a maintainer dispatches `release-crates.yml` from that
+tag. The tracking issue stays open until the crates are visible on crates.io.
 
 The active project direction is to finish the Rust-native compiler spine,
 preserve the domain-empty boundary, and grow Holmes law-assurance ingestion
@@ -297,7 +300,7 @@ intentionally not yet exposed as a public Holmes CLI from Rust.
 
 ### Current Tensions
 
-The README now describes `v0.3.0-alpha.1`, aligned with the `Cargo.toml` crate
+The README now describes `v0.3.0-alpha.2`, aligned with the `Cargo.toml` crate
 version declared across the workspace. The changelog's dated `0.3.0-alpha.1`
 section carries the post-`0.2.0` extension-generation provenance contract,
 generation input-schema hardening, pre-push and test Git-context isolation, and

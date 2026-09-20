@@ -28,7 +28,7 @@ analysis — is synchronous and pure. A consumer that only needs the kernel can
 omit the async runtime stack:
 
 ```toml
-wesley-core = { version = "0.3.0-alpha.2", default-features = false }
+wesley-core = { version = "=0.3.0-alpha.2", default-features = false }
 ```
 
 `cargo xtask lean-core-check` keeps that build free of `async-trait`,

@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.3.0-alpha.2] - 2026-09-20
+
 ### Added
 
 - Added `.github/workflows/release-autotag.yml`, following the Continuum release
@@ -28,7 +30,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   async `LoweringPort` and the ninelives-backed `ResilientLoweringPort`. A
   consumer that only lowers, hashes, or diffs SDL can now depend on
   `wesley-core` with `default-features = false` and omit the async runtime
-  stack: the crate's normal dependency tree drops from 90 crates to 44.
+  stack: across all targets, the crate's normal dependency tree drops from 111
+  crates to 64.
   Default-feature consumers see the same public API as before.
 - Added `cargo xtask lean-core-check`, run by `cargo xtask preflight`. It tests
   `wesley-core` without default features and fails if that build's dependency
@@ -50,7 +53,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Removed two unused `wesley-core` dependencies: `tower`, which no source file
   referenced, and the normal `tokio` dependency with every feature enabled,
   which only tests used and the existing dev-dependency already covers. The
-  default dependency tree drops from 90 crates to 77.
+  default dependency tree drops from 111 crates to 95 across all targets.
 
 ### Fixed
 
@@ -1776,7 +1779,8 @@ kind` instead of being silently accepted via structural duck-typing. All
 
 - Initial public repository layout
 
-[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.1...HEAD
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.2...HEAD
+[0.3.0-alpha.2]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.1...v0.3.0-alpha.2
 [0.3.0-alpha.1]: https://github.com/flyingrobots/wesley/compare/v0.2.0...v0.3.0-alpha.1
 [0.2.0]: https://github.com/flyingrobots/wesley/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/flyingrobots/wesley/compare/v0.1.0...v0.1.1
