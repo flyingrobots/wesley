@@ -141,15 +141,23 @@ fn run_preflight() -> Result<(), Error> {
 
 /// The documents whose shell sessions are replayed against the built CLI.
 const REPLAYED_DOCUMENTS: [&str; 2] = ["README.md", "docs/getting-started.md"];
-/// Where `cargo build --bin wesley` leaves the CLI.
-const BUILT_CLI: &str = "target/debug/wesley";
-
 /// Builds the CLI, replays the sessions the documentation shows, and checks
 /// that the generated CLI reference still matches the binary.
 fn run_docs_replay() -> Result<(), Error> {
     run_command("cargo", &["build", "--quiet", "--bin", "wesley"])?;
 
-    let mut replay = vec!["scripts/run-doc-examples.mjs", "--wesley", BUILT_CLI];
+    // Where Cargo put it: `CARGO_TARGET_DIR` moves the directory and Windows
+    // adds a suffix, so a fixed `target/debug/wesley` could be missing or stale.
+    let root = env::current_dir()
+        .map_err(|source| Error::Usage(format!("failed to resolve current directory: {source}")))?;
+    let built_cli = bench_wesley_binary_path(&root, env::var_os("CARGO_TARGET_DIR"));
+    let built_cli = built_cli.to_string_lossy();
+
+    let mut replay = vec![
+        "scripts/run-doc-examples.mjs",
+        "--wesley",
+        built_cli.as_ref(),
+    ];
     replay.extend(REPLAYED_DOCUMENTS);
     run_command("node", &replay)?;
 
@@ -158,7 +166,7 @@ fn run_docs_replay() -> Result<(), Error> {
         &[
             "scripts/generate-cli-reference.mjs",
             "--wesley",
-            BUILT_CLI,
+            built_cli.as_ref(),
             "--check",
         ],
     )

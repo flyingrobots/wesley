@@ -33,6 +33,9 @@ if (flag === -1 || !args[flag + 1]) {
 const wesley = resolve(args[flag + 1]);
 const docs = args.filter((_, i) => i !== flag && i !== flag + 1);
 
+// A documented command that hangs must fail the replay, not stall the gate.
+const COMMAND_TIMEOUT_MS = 10_000;
+
 const FENCE = /^```([a-z]*)\s*$/;
 const DIRECTIVE = /^<!--\s*(file|exit|norun|shows|stdout):\s*(.+?)\s*-->$/;
 
@@ -90,7 +93,10 @@ function registeredCommands() {
 function namesRegisteredCommand(argv, registered) {
   const [first, second] = argv;
   if (first === undefined || first.startsWith('-')) return true;
-  return registered.has(`${first} ${second}`) || registered.has(first);
+  if (registered.has(`${first} ${second}`) || registered.has(first)) return true;
+  // `wesley schema` with nothing after it prints that family's help.
+  const names = second === undefined || second.startsWith('-');
+  return names && [...registered].some((command) => command.startsWith(`${first} `));
 }
 
 // Every key and value in `shown` is present in `actual`. Arrays match by
@@ -129,12 +135,20 @@ for (const doc of docs) {
   const blocks = blocksOf(readFileSync(doc, 'utf8'));
   const dir = mkdtempSync(join(tmpdir(), 'wesley-docs-'));
   const witness = { ran: 0, compared: 0 };
-  let lastStdout = null;
+  // The stdout of the bash block at `index`, for a json-subset block at
+  // `index + 1` only. Output must never be compared with a block it did not
+  // directly precede.
+  let produced = null;
   try {
     blocks.forEach((block, index) => {
       if (block.file) writeFileSync(join(dir, block.file), `${block.lines.join('\n')}\n`);
 
       if (block.shows) {
+        const excerpt = block.lines.join('\n');
+        if (excerpt.trim() === '') {
+          failures.push(`${doc}: the block that shows \`${block.shows}\` is empty`);
+          return;
+        }
         witness.compared += 1;
         let written;
         try {
@@ -143,7 +157,6 @@ for (const doc of docs) {
           failures.push(`${doc}: the page shows \`${block.shows}\`, but no command wrote it`);
           return;
         }
-        const excerpt = block.lines.join('\n');
         if (!written.includes(excerpt)) {
           failures.push(
             `${doc}: the \`${block.lang}\` block is not an excerpt of \`${block.shows}\` as written\n--- page\n${excerpt}\n--- ${block.shows}\n${written}`
@@ -153,14 +166,19 @@ for (const doc of docs) {
       }
 
       if (block.stdout === 'json-subset') {
-        witness.compared += 1;
-        if (lastStdout === null) {
-          failures.push(`${doc}: a json-subset block has no command output before it`);
+        if (produced === null || produced.index !== index - 1) {
+          failures.push(
+            `${doc}: a json-subset block must directly follow the bash block it checks`
+          );
           return;
         }
+        witness.compared += 1;
         let mismatch;
         try {
-          mismatch = subsetMismatch(JSON.parse(block.lines.join('\n')), JSON.parse(lastStdout));
+          mismatch = subsetMismatch(
+            JSON.parse(block.lines.join('\n')),
+            JSON.parse(produced.stdout)
+          );
         } catch (error) {
           mismatch = `not valid JSON: ${error.message}`;
         }
@@ -184,8 +202,13 @@ for (const doc of docs) {
       for (const command of commands) {
         const result = spawnSync(wesley, command.split(/\s+/).slice(1), {
           cwd: dir,
-          encoding: 'utf8'
+          encoding: 'utf8',
+          timeout: COMMAND_TIMEOUT_MS
         });
+        if (result.error) {
+          failures.push(`${doc}: \`${command}\` did not finish: ${result.error.message}`);
+          continue;
+        }
         witness.ran += 1;
         stdout += result.stdout;
         stderr += result.stderr;
@@ -195,7 +218,7 @@ for (const doc of docs) {
           );
         }
       }
-      lastStdout = stdout;
+      produced = { index, stdout };
 
       if (stderr !== '') {
         failures.push(
