@@ -33,7 +33,7 @@ ninelives = { version = "0.2", optional = true }
 yaml-rust2 = { version = "0.11", default-features = false }
 
 [dev-dependencies]
-jsonschema = { version = "0.47", default-features = false }
+jsonschema = { version = "0.57", default-features = false }
 pretty_assertions = "1.4"
 tokio = { version = "1", features = ["full", "test-util"] }
 
