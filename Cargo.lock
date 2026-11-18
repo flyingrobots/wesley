@@ -1412,7 +1412,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-cli"
-version = "0.3.0-alpha.3"
+version = "0.3.0-alpha.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -1423,7 +1423,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-core"
-version = "0.3.0-alpha.3"
+version = "0.3.0-alpha.4"
 dependencies = [
  "apollo-parser",
  "async-trait",
@@ -1442,14 +1442,14 @@ dependencies = [
 
 [[package]]
 name = "wesley-emit-codec"
-version = "0.3.0-alpha.3"
+version = "0.3.0-alpha.4"
 dependencies = [
  "wesley-core",
 ]
 
 [[package]]
 name = "wesley-emit-rust"
-version = "0.3.0-alpha.3"
+version = "0.3.0-alpha.4"
 dependencies = [
  "pretty_assertions",
  "serde_json",
@@ -1460,7 +1460,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-emit-typescript"
-version = "0.3.0-alpha.3"
+version = "0.3.0-alpha.4"
 dependencies = [
  "pretty_assertions",
  "serde_json",
@@ -1470,7 +1470,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-holmes"
-version = "0.3.0-alpha.3"
+version = "0.3.0-alpha.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -1479,7 +1479,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-holmes-domain"
-version = "0.3.0-alpha.3"
+version = "0.3.0-alpha.4"
 dependencies = [
  "libm",
  "serde",

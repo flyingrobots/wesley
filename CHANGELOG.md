@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.3.0-alpha.4] - 2026-11-18
+
+This release drops `wesley-core`'s unused `chrono` dependency
+(RUSTSEC-2026-0543). The compiler is otherwise unchanged from
+`0.3.0-alpha.2`: the IR, the registry hash and the emitted code are identical.
+
 ### Added
 
 - `actionlint` runs over every workflow in `pnpm run legacy-preflight`, and so
@@ -1919,7 +1925,8 @@ kind` instead of being silently accepted via structural duck-typing. All
 
 - Initial public repository layout
 
-[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.3...HEAD
+[Unreleased]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.4...HEAD
+[0.3.0-alpha.4]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.3...v0.3.0-alpha.4
 [0.3.0-alpha.3]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.2...v0.3.0-alpha.3
 [0.3.0-alpha.2]: https://github.com/flyingrobots/wesley/compare/v0.3.0-alpha.1...v0.3.0-alpha.2
 [0.3.0-alpha.1]: https://github.com/flyingrobots/wesley/compare/v0.2.0...v0.3.0-alpha.1
