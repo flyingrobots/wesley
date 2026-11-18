@@ -58,6 +58,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   with the CLI's output, generated proof artifacts, and the vendored bats
   plugins.
 
+### Removed
+
+- `wesley-core` no longer depends on `chrono`. No source file used it, and it
+  brought in RUSTSEC-2026-0543 (`chrono` is unmaintained). `cargo audit` and
+  `cargo deny` report that advisory for every project that depends on
+  `wesley-core`, and fail where unmaintained advisories are denied, as in
+  Echo. The IR, the registry hash and the emitted code are unchanged.
+
 ## [0.3.0-alpha.3] - 2026-09-20
 
 The compiler is unchanged in this release: no source file under any crate's
