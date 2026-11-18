@@ -38,6 +38,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Fixed
 
+- `cargo clippy -D warnings` passes on Rust 1.99. Its new `double_must_use`
+  lint fired on the `#[async_trait]` expansion of `LoweringPort::lower_sdl`,
+  which failed the Rust product preflight on every pull request.
 - `wesley schema --help` now documents `--config`. `schema lower`, `schema hash`,
   and `schema operations` have always taken the schema from a project manifest
   when `--schema` is omitted, and the help said neither that nor how to name the
