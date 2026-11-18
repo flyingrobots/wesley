@@ -2,23 +2,23 @@
 
 This walkthrough starts in an empty directory and ends with a check you can put
 in CI. Every command and every output below is real: the outputs were captured
-from version 0.3.0-alpha.3.
+from version 0.3.0-alpha.4.
 
 ## 1. Install
 
 ```bash
-cargo install wesley-cli --version 0.3.0-alpha.3
+cargo install wesley-cli --version 0.3.0-alpha.4
 wesley doctor
 ```
 
 `doctor` checks that the CLI, the lowerer, and the emitters are present:
 
 ```text
-[pass] wesley-cli 0.3.0-alpha.3 (rust-native)
+[pass] wesley-cli 0.3.0-alpha.4 (rust-native)
 [pass] wesley-core lowerer accepts minimal SDL
 [pass] normalized SDL hash evidence is available
-[pass] wesley-emit-rust 0.3.0-alpha.3 available
-[pass] wesley-emit-typescript 0.3.0-alpha.3 available
+[pass] wesley-emit-rust 0.3.0-alpha.4 available
+[pass] wesley-emit-typescript 0.3.0-alpha.4 available
 ```
 
 ## 2. Write a schema

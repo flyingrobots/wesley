@@ -4,7 +4,7 @@ Installs `wesley`, the command-line front end of [Wesley](https://github.com/fly
 compiler for GraphQL schemas.
 
 ```bash
-cargo install wesley-cli --version 0.3.0-alpha.3
+cargo install wesley-cli --version 0.3.0-alpha.4
 wesley doctor
 ```
 
