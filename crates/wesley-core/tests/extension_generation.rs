@@ -3,10 +3,10 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 use wesley_core::{
-    compute_generation_artifact_digest_v1, list_schema_operations_sdl, load_weslaw_yaml,
-    lower_schema_sdl, ExtensionGenerationInputV1, GenerationArtifactContentV1,
-    GenerationArtifactReferenceV1, GenerationContractErrorKind, GenerationProvenanceManifestV1,
-    GenerationReviewV1, GeneratorIdentityV1, Metadata, UnitMeta,
+    compute_generation_artifact_digest_v1, list_schema_operations_sdl, lower_schema_sdl,
+    ExtensionGenerationInputV1, GenerationArtifactContentV1, GenerationArtifactReferenceV1,
+    GenerationContractErrorKind, GenerationProvenanceManifestV1, GenerationReviewV1,
+    GeneratorIdentityV1, Metadata, UnitMeta,
 };
 
 fn repo_path(path: &str) -> PathBuf {
@@ -20,32 +20,14 @@ fn read(path: &str) -> String {
 }
 
 fn generation_schema_validator(schema: &Value) -> jsonschema::Validator {
-    let registry = jsonschema::Registry::new()
-        .add(
-            "https://wesley.dev/schemas/wesley-law-ir-v1.schema.json",
-            serde_json::from_str::<Value>(&read("schemas/wesley-law-ir-v1.schema.json")).unwrap(),
-        )
-        .expect("Law IR schema URI should be valid")
-        .prepare()
-        .expect("generation schema registry should prepare");
-    jsonschema::options()
-        .with_registry(&registry)
-        .build(schema)
-        .expect("generation schema should compile")
+    jsonschema::validator_for(schema).expect("generation schema should compile")
 }
 
 fn shape_fixture() -> (wesley_core::WesleyIR, Vec<wesley_core::SchemaOperation>) {
-    let sdl = read("test/fixtures/weslaw/contract-bundle-shape.graphql");
+    let sdl = read("test/fixtures/extension-generation/catalog.graphql");
     let shape_ir = lower_schema_sdl(&sdl).expect("fixture schema should lower");
     let operations = list_schema_operations_sdl(&sdl).expect("fixture operations should list");
     (shape_ir, operations)
-}
-
-fn law_fixture() -> wesley_core::LawIrV1 {
-    load_weslaw_yaml(&read(
-        "test/fixtures/weslaw/accepted/scalar-semantics.weslaw.yaml",
-    ))
-    .expect("fixture law should lower")
 }
 
 fn artifact_ref(coordinate: &str, bytes: &[u8]) -> GenerationArtifactReferenceV1 {
@@ -56,7 +38,6 @@ fn artifact_ref(coordinate: &str, bytes: &[u8]) -> GenerationArtifactReferenceV1
 fn input_with(
     shape_ir: wesley_core::WesleyIR,
     operations: Vec<wesley_core::SchemaOperation>,
-    law_ir: Option<wesley_core::LawIrV1>,
     owner_declarations: Vec<GenerationArtifactReferenceV1>,
     settings: &[u8],
     projection_roles: Vec<&str>,
@@ -64,7 +45,6 @@ fn input_with(
     ExtensionGenerationInputV1::new(
         shape_ir,
         operations,
-        law_ir,
         owner_declarations,
         compute_generation_artifact_digest_v1(settings),
         projection_roles.into_iter().map(str::to_owned).collect(),
@@ -106,20 +86,16 @@ fn canonical_generation_input_ignores_ambient_metadata_and_set_order() {
     let first = input_with(
         first_shape,
         first_operations,
-        Some(law_fixture()),
         vec![owner_a.clone(), owner_b.clone()],
         b"settings",
-        vec!["profile", "lawpack"],
+        vec!["profile", "target-artifact"],
     );
-    let mut reordered_law = law_fixture();
-    reordered_law.entries[0].tags.reverse();
     let second = input_with(
         second_shape,
         second_operations,
-        Some(reordered_law),
         vec![owner_b, owner_a],
         b"settings",
-        vec!["lawpack", "profile"],
+        vec!["target-artifact", "profile"],
     );
 
     assert_eq!(
@@ -136,70 +112,55 @@ fn canonical_generation_input_ignores_ambient_metadata_and_set_order() {
 }
 
 #[test]
-fn every_semantic_input_class_moves_the_generation_digest() {
+fn every_generation_input_class_moves_the_generation_digest() {
     let (shape_ir, operations) = shape_fixture();
     let owner = artifact_ref("fixture:owner@1", b"owner-v1");
     let base = input_with(
         shape_ir.clone(),
         operations.clone(),
-        None,
         vec![owner.clone()],
         b"settings-v1",
-        vec!["lawpack"],
+        vec!["target-artifact"],
     );
     let base_digest = base.digest().expect("base input should hash");
 
     let mut changed_shape = shape_ir.clone();
-    changed_shape.types[0].description = Some("semantic shape revision".to_owned());
+    changed_shape.types[0].description = Some("structural shape revision".to_owned());
     let shape_change = input_with(
         changed_shape,
         operations.clone(),
-        None,
         vec![owner.clone()],
         b"settings-v1",
-        vec!["lawpack"],
+        vec!["target-artifact"],
     );
     assert_ne!(base_digest, shape_change.digest().unwrap());
-
-    let law_change = input_with(
-        shape_ir.clone(),
-        operations.clone(),
-        Some(law_fixture()),
-        vec![owner.clone()],
-        b"settings-v1",
-        vec!["lawpack"],
-    );
-    assert_ne!(base_digest, law_change.digest().unwrap());
 
     let mut changed_operations = operations.clone();
     changed_operations[0].result_type.nullable = !changed_operations[0].result_type.nullable;
     let operation_change = input_with(
         shape_ir.clone(),
         changed_operations,
-        None,
         vec![owner.clone()],
         b"settings-v1",
-        vec!["lawpack"],
+        vec!["target-artifact"],
     );
     assert_ne!(base_digest, operation_change.digest().unwrap());
 
     let owner_change = input_with(
         shape_ir.clone(),
         operations.clone(),
-        None,
         vec![artifact_ref("fixture:owner@1", b"owner-v2")],
         b"settings-v1",
-        vec!["lawpack"],
+        vec!["target-artifact"],
     );
     assert_ne!(base_digest, owner_change.digest().unwrap());
 
     let settings_change = input_with(
         shape_ir,
         operations,
-        None,
         vec![owner],
         b"settings-v2",
-        vec!["lawpack"],
+        vec!["target-artifact"],
     );
     assert_ne!(base_digest, settings_change.digest().unwrap());
 }
@@ -211,7 +172,6 @@ fn generation_input_rejects_malformed_operation_coordinates() {
         let error = ExtensionGenerationInputV1::new(
             shape_ir.clone(),
             operations,
-            None,
             Vec::new(),
             compute_generation_artifact_digest_v1(b"settings"),
             Vec::new(),
@@ -240,7 +200,6 @@ fn generation_input_classifies_invalid_projection_roles_as_tokens() {
     let error = ExtensionGenerationInputV1::new(
         shape_ir,
         operations,
-        None,
         Vec::new(),
         compute_generation_artifact_digest_v1(b"settings"),
         vec![" padded-role ".to_owned()],
@@ -258,13 +217,12 @@ fn conflicting_digests_for_one_coordinate_are_rejected_structurally() {
     let error = ExtensionGenerationInputV1::new(
         shape_ir,
         operations,
-        None,
         vec![
             artifact_ref("fixture:owner@1", b"first"),
             artifact_ref("fixture:owner@1", b"second"),
         ],
         compute_generation_artifact_digest_v1(b"settings"),
-        vec!["lawpack".to_owned()],
+        vec!["target-artifact".to_owned()],
     )
     .expect_err("conflicting coordinate digests must fail");
 
@@ -282,10 +240,9 @@ fn conflicting_digests_for_one_coordinate_are_rejected_structurally() {
     let input = input_with(
         shape_ir,
         operations,
-        None,
         vec![artifact_ref("fixture:shared@1", b"source")],
         b"settings",
-        vec!["lawpack"],
+        vec!["target-artifact"],
     );
     let generator =
         GeneratorIdentityV1::for_bytes("fixture:generator@1", "1.0.0", b"generator").unwrap();
@@ -310,19 +267,18 @@ fn provenance_recomputes_generator_source_and_output_digests() {
         GenerationArtifactContentV1::new("fixture:owner-b@1", b"owner-b".to_vec()),
     ];
     let outputs = vec![
-        GenerationArtifactContentV1::new("fixture:lawpack@1", b"lawpack".to_vec()),
+        GenerationArtifactContentV1::new("fixture:target-artifact@1", b"target-artifact".to_vec()),
         GenerationArtifactContentV1::new("fixture:profile@1", b"profile".to_vec()),
     ];
     let input = input_with(
         shape_ir,
         operations,
-        Some(law_fixture()),
         sources
             .iter()
             .map(GenerationArtifactContentV1::reference)
             .collect(),
         b"settings",
-        vec!["profile", "lawpack"],
+        vec!["profile", "target-artifact"],
     );
     let generator_bytes = b"fixture generator component";
     let generator = GeneratorIdentityV1::for_bytes("fixture:generator@1", "1.0.0", generator_bytes)
@@ -388,14 +344,13 @@ fn review_json_is_deterministic_and_explicitly_non_authoritative() {
     let input = input_with(
         shape_ir,
         operations,
-        None,
         vec![source.reference()],
         b"settings",
-        vec!["profile", "lawpack"],
+        vec!["profile", "target-artifact"],
     );
     let generator = GeneratorIdentityV1::for_bytes("fixture:generator@1", "1.0.0", b"generator")
         .expect("generator identity should validate");
-    let output_a = artifact_ref("fixture:lawpack@1", b"lawpack");
+    let output_a = artifact_ref("fixture:target-artifact@1", b"target-artifact");
     let output_b = artifact_ref("fixture:profile@1", b"profile");
     let first_manifest = GenerationProvenanceManifestV1::new(
         &input,
@@ -449,7 +404,6 @@ fn checked_generation_fixtures_match_public_api_and_published_schemas() {
     let input = input_with(
         shape_ir,
         operations,
-        None,
         vec![source.reference()],
         b"fixture-settings-v1",
         vec!["generated-profile"],
@@ -547,23 +501,38 @@ fn published_input_schema_rejects_malformed_nested_contracts() {
     let mut empty_shape_type = fixture.clone();
     empty_shape_type["shapeIr"]["types"][0] = serde_json::json!({});
 
-    let mut incomplete_law = fixture;
-    incomplete_law["law"] = serde_json::json!({
-        "lawIr": { "apiVersion": "wesley.law-ir/v1" },
-        "semanticDigest": compute_generation_artifact_digest_v1(b"semantic-law"),
-        "canonicalDigest": compute_generation_artifact_digest_v1(b"canonical-law")
-    });
-
     for (name, invalid) in [
         ("empty operation", empty_operation),
         ("empty Shape IR type", empty_shape_type),
-        ("incomplete Law IR", incomplete_law),
     ] {
         assert!(
             !validator.is_valid(&invalid),
             "published input schema accepted {name}"
         );
     }
+}
+
+#[test]
+fn generation_input_has_no_law_member() {
+    let mut fixture: Value =
+        serde_json::from_str(&read("test/fixtures/extension-generation/input.json")).unwrap();
+    fixture["law"] = serde_json::json!({});
+
+    let error = serde_json::from_value::<ExtensionGenerationInputV1>(fixture.clone())
+        .expect_err("an input carrying a law member must not deserialize");
+    assert!(
+        error.to_string().contains("unknown field `law`"),
+        "unexpected deserialization failure: {error}"
+    );
+
+    let schema: Value = serde_json::from_str(&read(
+        "schemas/wesley-extension-generation-input-v1.schema.json",
+    ))
+    .unwrap();
+    assert!(
+        !generation_schema_validator(&schema).is_valid(&fixture),
+        "published input schema accepted a law member"
+    );
 }
 
 #[test]
@@ -617,7 +586,6 @@ fn published_input_schema_accepts_documented_shape_arguments() {
     let input = input_with(
         lower_schema_sdl(schema_sdl).expect("documented schema should lower"),
         list_schema_operations_sdl(schema_sdl).expect("documented operations should list"),
-        None,
         Vec::new(),
         b"settings",
         vec!["projection"],

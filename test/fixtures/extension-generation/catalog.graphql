@@ -1,12 +1,11 @@
 """
-Minimal schema used by the weslaw v1 substrate fixtures.
+Domain-empty schema used by the extension-generation contract tests.
 
-This is not a product schema. It combines small Echo, jedit, Continuum, and
-warp-ttd-shaped surfaces so law fixtures can exercise scalar, variant,
-footprint, channel, and invariant subjects against one stable hash.
+It is not a product schema. It has several root operations, input objects,
+enums, custom scalars, and directives, so that canonical ordering and every
+digest input class are exercised.
 """
 
-directive @wes_channel(name: String!, version: Int!, ordered: Boolean!) on OBJECT
 directive @wes_op(name: String, readonly: Boolean, idempotent: Boolean) on FIELD_DEFINITION
 directive @wes_footprint(
   reads: [String!]
@@ -126,9 +125,7 @@ type ExecutionContext {
   mode: String!
 }
 
-type TtdProtocolChannel
-  @wes_channel(name: "ttd.protocol", version: 4, ordered: true)
-{
+type TtdProtocolChannel {
   hostHello: HostHello!
   laneCatalog: LaneCatalog!
   playbackHeadSnapshot: PlaybackHeadSnapshot!
