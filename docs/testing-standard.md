@@ -52,7 +52,7 @@ on what comes out of it:
 | The L1 IR                    | a versioned JSON document, described by `schemas/ir.schema.json`    |
 | Emitted source               | Rust and TypeScript that must compile and mean what the IR says     |
 | The registry hash            | a value other systems store and compare                             |
-| Law and manifest files       | `weslaw/v1`, `wesley.config.json`, the JSON Schemas in `schemas/`   |
+| Manifest files               | `wesley.config.json`, the JSON Schemas in `schemas/`                |
 | `cargo xtask` commands       | exit status and report, as the workflows consume them               |
 
 **What is not a test here.** Documentation, workflow YAML, and source text are
@@ -291,7 +291,7 @@ place of suite state.
 
 ## 13. Fuzz what parses; property-test what transforms; keep the corpus
 
-Wesley parses untrusted text: GraphQL SDL, operations, law files, and manifests.
+Wesley parses untrusted text: GraphQL SDL, operations, and manifests.
 Each of those entry points owes a fuzz target. Each total transformation owes a
 property: lowering is deterministic, normalization is idempotent, a codec
 round-trips (`decode(encode(x)) == x`), and the Rust and TypeScript codecs agree
@@ -345,7 +345,7 @@ variation, and re-baselined only through a diff small enough to read. No bulk
 bug report.
 
 Goldens are legitimate where the whole artifact is the contract, which in Wesley
-is common: emitted Rust and TypeScript, the L1 IR for a fixture schema, law
+is common: emitted Rust and TypeScript, the L1 IR for a fixture schema, schema
 diffs, CLI diagnostics. They are class-5 oracles and are labeled as such. Pair
 them with an assertion that the emitted code compiles or parses, which is a
 stronger oracle than its text.
@@ -430,15 +430,7 @@ reports success just as confidently.
 
 Recorded on 2026-09-20. Each line is a debt, not an excuse.
 
-- **Rule 1.** At adoption, 112 of 128 bats tests, 16 xtask unit tests, and
-  assertions inside two `wesley-core` tests searched documentation, workflow
-  YAML, or source text. They were removed under rule 18's last criterion. So was
-  `crates/wesley-holmes/tests/architecture.rs`, which searched the Holmes domain
-  sources for forbidden imports. The property it guarded is real, and the
-  compiler now holds it: the domain is its own `no_std` crate,
-  `wesley-holmes-domain`, and `cargo xtask holmes-domain-check` builds it for a
-  target that has no `std` at all. That is not a debt any more; it is recorded
-  here because the test it replaced was.
+- **Rule 1.** At adoption, 112 of 128 bats tests, 16 xtask unit tests, and assertions inside two `wesley-core` tests searched documentation, workflow YAML, or source text. They were removed under rule 18's last criterion. So was a Holmes architecture test that searched source for forbidden imports; the Holmes crates it guarded have since been removed with Weslaw.
 - **Rule 4.** No mutation tooling. Calibration is by hand, recorded in commit
   messages and pull requests. Most inherited assertions have no recorded
   demonstration.
@@ -446,11 +438,6 @@ Recorded on 2026-09-20. Each line is a debt, not an excuse.
   workspace. No fuzz target exists for any parser. No corpus.
 - **Rule 6.** Inherited tests do not name their oracles. Goldens are not labeled
   as class 5.
-- **Rule 8.** `law_backed_generated_rust_compiles_as_crate` in
-  `wesley-emit-rust` is not hermetic. It writes a manifest that depends on
-  `serde` from crates.io and runs `cargo check` on it with no offline or
-  vendored source, so `cargo test --workspace` fails on a runner without
-  registry access. It is the only test that does this.
 - **Rule 9.** Size classes are not declared or enforced.
 - **Rule 14.** The `resilience` feature's async policy is tested with real
   timers.

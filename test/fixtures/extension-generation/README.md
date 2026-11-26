@@ -5,6 +5,7 @@ contract without embedding a target implementation.
 
 - `schema.graphql` is lowered into canonical Shape IR and the root-operation
   catalog.
+- `catalog.graphql` is a larger domain-empty schema, with several operations, inputs, enums, and scalars, that the contract tests use to exercise canonical ordering and every digest input class.
 - `semantic-source.json` stands in for an external owner's explicit declaration
   artifact.
 - `generated-profile.json` stands in for one externally owned generated output.

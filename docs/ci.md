@@ -10,22 +10,7 @@ their file.
 cargo xtask preflight
 ```
 
-It runs, in order: `cargo fmt --check`, `cargo clippy --workspace --all-targets
--- -D warnings`, the documentation checks, `cargo test --workspace`,
-`cargo xtask lean-core-check`, `cargo xtask holmes-domain-check`, a smoke run of
-the CLI, and `cargo xtask docs-replay`, which replays the documented sessions.
-It needs Node for that last step. Run it before opening a pull request.
-
-A local pass predicts a CI pass only for the checks that ran. One check here
-needs a tool a contributor may not have, and then it says it did not run and
-lets preflight continue; in CI (`CI=true`) the same gap fails the run. So read
-the output: a line saying a check was NOT run means CI will run something you
-have not.
-
-`holmes-domain-check` is that check. It builds `wesley-holmes-domain` for
-`thumbv7em-none-eabihf`, a target with no `std`, which is how the domain's
-no-I/O rule is held. Install the target once and it always runs:
-`rustup target add thumbv7em-none-eabihf`. The workflows install it.
+It runs, in order: `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D warnings`, the documentation checks, `cargo test --workspace`, `cargo xtask lean-core-check`, a smoke run of the CLI, and `cargo xtask docs-replay`, which replays the documented sessions. It needs Node for that last step. Run it before opening a pull request.
 
 ## On a pull request
 
@@ -50,8 +35,7 @@ editing the workflow. A glob that matches nothing fails the step.
 - ESLint;
 - `actionlint` over every workflow;
 - the Markdown link check;
-- markdownlint over every tracked Markdown file but two, named with their
-  reasons in `.markdownlint-cli2.jsonc`;
+- markdownlint over every tracked Markdown file except the vendored bats plugins under `test/vendor/`, which `.markdownlint-cli2.jsonc` excludes with its reason;
 - the forbidden machine-local path check and the package manager policy;
 - Prettier, over every tracked file that `.prettierignore` does not name. The
   file list comes from Git, so a tracked file under a git-ignored path is
