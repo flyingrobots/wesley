@@ -1,10 +1,9 @@
 use sha2::{Digest, Sha256};
 use wesley_core::{
     compile_operation_artifact, compile_operation_artifact_registration, compile_runtime_optic,
-    compile_runtime_optic_registration, CodecField, DirectiveRecord, EvidenceKind,
-    InMemoryOperationArtifactRegistry, LawVerdict, LawWitness, OperationArtifactResolver,
-    OperationKind, PermissionAction, PermissionRequirement, ReplayHint, ResolveError,
-    OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
+    compile_runtime_optic_registration, CodecField, DirectiveRecord,
+    InMemoryOperationArtifactRegistry, OperationArtifactResolver, OperationKind, PermissionAction,
+    PermissionRequirement, ResolveError, OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 
 #[test]
@@ -51,12 +50,6 @@ fn compiles_runtime_operation_into_domain_empty_operation_artifact() {
     assert_eq!(artifact.operation.kind, OperationKind::Mutation);
     assert_eq!(artifact.operation.root_field, "renameSymbol");
 
-    assert_contains_directive(
-        &artifact.operation.directives,
-        "Mutation.renameSymbol",
-        "wes_law",
-        serde_json::json!({ "id": "bounded.rewrite.v1" }),
-    );
     assert_contains_directive(
         &artifact.operation.directives,
         "Mutation.renameSymbol",
@@ -119,11 +112,6 @@ fn compiles_runtime_operation_into_domain_empty_operation_artifact() {
     );
     assert_eq!(witness_digest.type_ref.base, "String");
     assert!(witness_digest.required);
-
-    assert_contains_law_claim(&artifact, "operation.shape.valid.v1");
-    assert_contains_law_claim(&artifact, "operation.codec.canonical.v1");
-    assert_contains_law_claim(&artifact, "bounded.rewrite.v1");
-    assert_contains_law_claim(&artifact, "operation.footprint.closed.v1");
 }
 
 #[test]
@@ -267,14 +255,6 @@ fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
         "changing declared footprint must change requirements digest"
     );
 
-    let law_changed = operation.replace("bounded.rewrite.v1", "bounded.rewrite.audit.v1");
-    let law_artifact = compile_operation_artifact(schema, &law_changed, Some("RenameSymbol"))
-        .expect("law-changed operation artifact should compile");
-    assert_ne!(
-        baseline.requirements_digest, law_artifact.requirements_digest,
-        "changing law claim directives must change requirements digest"
-    );
-
     let payload_changed = operation.replace("      resultRef\n", "");
     let payload_artifact =
         compile_operation_artifact(schema, &payload_changed, Some("RenameSymbol"))
@@ -296,7 +276,6 @@ fn canonical_requirements_bytes_are_deterministic() {
         .expect("operation artifact should compile");
     let expected = wesley_core::to_canonical_json(&serde_json::json!({
         "declaredFootprint": &artifact.operation.declared_footprint,
-        "lawClaims": &artifact.operation.law_claims,
         "requirements": &artifact.requirements,
     }))
     .expect("expected requirements body should canonicalize")
@@ -389,7 +368,9 @@ fn canonical_requirements_json_keys_are_ordered_if_json_codec_is_used() {
         "top-level JSON keys should begin in sorted order: {canonical}"
     );
     assert!(
-        canonical.find("\"lawClaims\"").expect("lawClaims key")
+        canonical
+            .find("\"declaredFootprint\"")
+            .expect("declaredFootprint key")
             < canonical
                 .find("\"requirements\"")
                 .expect("requirements key"),
@@ -426,7 +407,7 @@ fn operation_artifact_exposes_requirements_artifact() {
 }
 
 #[test]
-fn changing_footprint_law_requirements_changes_requirements_digest() {
+fn changing_footprint_requirements_changes_requirements_digest() {
     let schema =
         include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let operation =
@@ -446,18 +427,6 @@ fn changing_footprint_law_requirements_changes_requirements_digest() {
     assert_ne!(
         baseline.requirements_artifact.bytes, footprint_artifact.requirements_artifact.bytes,
         "changing footprint requirements must change canonical requirements bytes"
-    );
-
-    let law_changed = operation.replace("bounded.rewrite.v1", "bounded.rewrite.audit.v1");
-    let law_artifact = compile_operation_artifact(schema, &law_changed, Some("RenameSymbol"))
-        .expect("law-changed operation artifact should compile");
-    assert_ne!(
-        baseline.requirements_digest, law_artifact.requirements_digest,
-        "changing law requirements must change requirements digest"
-    );
-    assert_ne!(
-        baseline.requirements_artifact.bytes, law_artifact.requirements_artifact.bytes,
-        "changing law requirements must change canonical requirements bytes"
     );
 }
 
@@ -1138,31 +1107,6 @@ fn operation_artifact_rejects_duplicate_footprint_directive_arguments() {
 }
 
 #[test]
-fn operation_artifact_rejects_duplicate_law_directive_arguments() {
-    let schema =
-        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
-    let duplicate_law_argument = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input)
-            @wes_law(
-              id: "bounded.rewrite.v1"
-              id: "operation.footprint.closed.v1"
-            ) {
-            receipt {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-
-    assert_operation_lowering_error(compile_operation_artifact(
-        schema,
-        duplicate_law_argument,
-        Some("RenameSymbol"),
-    ));
-}
-
-#[test]
 fn operation_artifact_rejects_non_root_footprint_directives() {
     let schema =
         include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
@@ -1331,18 +1275,18 @@ fn operation_artifact_preserves_operation_nested_and_fragment_directives() {
         include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let operation = r#"
         mutation RenameSymbol($input: RenameSymbolInput!)
-          @wes_law(id: "operation.audit.v1") {
+          @audit(id: "operation.audit.v1") {
           renameSymbol(input: $input)
-            @wes_law(id: "bounded.rewrite.v1") {
+            @audit(id: "bounded.rewrite.v1") {
             receipt {
-              ...ReceiptWitness @wes_law(id: "fragment.spread.v1")
+              ...ReceiptWitness @audit(id: "fragment.spread.v1")
             }
           }
         }
 
         fragment ReceiptWitness on RewriteReceipt
-          @wes_law(id: "fragment.definition.v1") {
-          witnessDigest @wes_law(id: "payload.witness.v1")
+          @audit(id: "fragment.definition.v1") {
+          witnessDigest @audit(id: "payload.witness.v1")
         }
     "#;
 
@@ -1352,31 +1296,27 @@ fn operation_artifact_preserves_operation_nested_and_fragment_directives() {
     assert_contains_directive(
         &artifact.operation.directives,
         "Operation.RenameSymbol",
-        "wes_law",
+        "audit",
         serde_json::json!({ "id": "operation.audit.v1" }),
     );
     assert_contains_directive(
         &artifact.operation.directives,
         "RenameSymbolResult.receipt...ReceiptWitness",
-        "wes_law",
+        "audit",
         serde_json::json!({ "id": "fragment.spread.v1" }),
     );
     assert_contains_directive(
         &artifact.operation.directives,
         "Fragment.ReceiptWitness",
-        "wes_law",
+        "audit",
         serde_json::json!({ "id": "fragment.definition.v1" }),
     );
     assert_contains_directive(
         &artifact.operation.directives,
         "RewriteReceipt.witnessDigest",
-        "wes_law",
+        "audit",
         serde_json::json!({ "id": "payload.witness.v1" }),
     );
-    assert_contains_law_claim(&artifact, "operation.audit.v1");
-    assert_contains_law_claim(&artifact, "fragment.spread.v1");
-    assert_contains_law_claim(&artifact, "fragment.definition.v1");
-    assert_contains_law_claim(&artifact, "payload.witness.v1");
 }
 
 #[test]
@@ -1555,22 +1495,6 @@ fn operation_artifact_wire_shapes_serialize_with_stable_field_names() {
         include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
     let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
         .expect("operation artifact should compile");
-    let witness = LawWitness {
-        law_id: "operation.footprint.closed.v1".to_string(),
-        claim_id: "claim-1".to_string(),
-        basis_ref: Some("basis-1".to_string()),
-        checker_id: "echo.fixture.v0".to_string(),
-        checker_artifact_hash: Some("checker-hash-1".to_string()),
-        verdict: LawVerdict::Obstructed,
-        evidence_digests: vec!["evidence-digest-1".to_string()],
-        runtime_trace_digest: Some("trace-digest-1".to_string()),
-        obstruction_reason: Some("forbidden resource touched".to_string()),
-        replay_hints: vec![ReplayHint {
-            kind: "trace".to_string(),
-            value: "trace://fixture/1".to_string(),
-        }],
-    };
-
     assert_eq!(
         serde_json::to_value(&artifact.registration).expect("registration should serialize"),
         serde_json::json!({
@@ -1582,36 +1506,8 @@ fn operation_artifact_wire_shapes_serialize_with_stable_field_names() {
         })
     );
     assert_eq!(
-        serde_json::to_value(&witness).expect("witness should serialize"),
-        serde_json::json!({
-            "lawId": "operation.footprint.closed.v1",
-            "claimId": "claim-1",
-            "basisRef": "basis-1",
-            "checkerId": "echo.fixture.v0",
-            "checkerArtifactHash": "checker-hash-1",
-            "verdict": "OBSTRUCTED",
-            "evidenceDigests": ["evidence-digest-1"],
-            "runtimeTraceDigest": "trace-digest-1",
-            "obstructionReason": "forbidden resource touched",
-            "replayHints": [
-                {
-                    "kind": "trace",
-                    "value": "trace://fixture/1",
-                }
-            ],
-        })
-    );
-    assert_eq!(
         serde_json::to_value(PermissionAction::Read).expect("permission action should serialize"),
         serde_json::json!("READ")
-    );
-    assert_eq!(
-        serde_json::to_value(EvidenceKind::RuntimeTrace).expect("evidence kind should serialize"),
-        serde_json::json!("RUNTIME_TRACE")
-    );
-    assert_eq!(
-        serde_json::to_value(LawVerdict::Unknown).expect("law verdict should serialize"),
-        serde_json::json!("UNKNOWN")
     );
 }
 
@@ -1635,17 +1531,6 @@ fn find_codec_field<'a>(fields: &'a [CodecField], name: &str) -> &'a CodecField 
         .iter()
         .find(|field| field.name == name)
         .unwrap_or_else(|| panic!("codec field {name} should exist"))
-}
-
-fn assert_contains_law_claim(artifact: &wesley_core::OperationArtifact, law_id: &str) {
-    let claim = artifact
-        .operation
-        .law_claims
-        .iter()
-        .find(|claim| claim.law_id == law_id)
-        .unwrap_or_else(|| panic!("law claim {law_id} should exist"));
-    assert_eq!(claim.operation_id, artifact.operation.operation_id);
-    assert_eq!(claim.claim_id.len(), 64);
 }
 
 fn assert_contains_permission(
