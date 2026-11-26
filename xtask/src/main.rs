@@ -2849,6 +2849,25 @@ fn commit_of_tag(tag: &str) -> Result<Option<String>, Error> {
     ))
 }
 
+/// The `package.version` declared by the autotag version source manifest.
+fn autotag_package_version(manifest: &str) -> Result<String, Error> {
+    let manifest: toml::Value = toml::from_str(manifest).map_err(|source| {
+        Error::Usage(format!(
+            "failed to parse {AUTOTAG_VERSION_SOURCE}: {source}"
+        ))
+    })?;
+    manifest
+        .get("package")
+        .and_then(|package| package.get("version"))
+        .and_then(toml::Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| {
+            Error::Usage(format!(
+                "{AUTOTAG_VERSION_SOURCE} declares no package.version"
+            ))
+        })
+}
+
 /// Prints the autotag decision for the checked-out commit as `key=value` lines
 /// suitable for `$GITHUB_OUTPUT`.
 ///
@@ -2860,20 +2879,8 @@ fn run_release_autotag_plan() -> Result<(), Error> {
     let manifest = fs::read_to_string(AUTOTAG_VERSION_SOURCE).map_err(|source| {
         Error::Usage(format!("failed to read {AUTOTAG_VERSION_SOURCE}: {source}"))
     })?;
-    let manifest: toml::Value = manifest.parse().map_err(|source| {
-        Error::Usage(format!(
-            "failed to parse {AUTOTAG_VERSION_SOURCE}: {source}"
-        ))
-    })?;
-    let Some(version) = manifest
-        .get("package")
-        .and_then(|package| package.get("version"))
-        .and_then(toml::Value::as_str)
-    else {
-        return Err(Error::Usage(format!(
-            "{AUTOTAG_VERSION_SOURCE} declares no package.version"
-        )));
-    };
+    let version = autotag_package_version(&manifest)?;
+    let version = version.as_str();
 
     let head_commit = git_output(&["rev-parse", "HEAD"])?;
     let expected_tag = format!("v{}", version_from_release_arg(version)?);
@@ -4385,6 +4392,28 @@ mod tests {
         fs::remove_dir_all(root).expect("temp root should be removed");
     }
 
+    // --- autotag version source ---
+
+    #[test]
+    fn autotag_reads_package_version_from_a_whole_manifest() {
+        let manifest = "[package]\nname = \"wesley-core\"\nversion = \"1.2.3-alpha.2\"\n\n[dependencies]\nhex = \"0.4\"\n";
+
+        assert_eq!(
+            autotag_package_version(manifest).expect("manifest should yield a version"),
+            "1.2.3-alpha.2"
+        );
+    }
+
+    #[test]
+    fn autotag_refuses_a_manifest_without_package_version() {
+        match autotag_package_version("[package]\nname = \"wesley-core\"\n") {
+            Err(Error::Usage(message)) => {
+                assert!(message.contains("declares no package.version"), "{message}");
+            }
+            other => panic!("expected a usage error, got {other:?}"),
+        }
+    }
+
     // --- sibling requirements ---
 
     /// Failures `check_dependency_hygiene` reports for a `wesley-cli` manifest
@@ -4394,7 +4423,8 @@ mod tests {
             .iter()
             .find(|publish_crate| publish_crate.name == "wesley-cli")
             .expect("wesley-cli should be a published crate");
-        let manifest: toml::Value = manifest.parse().expect("fixture manifest should parse");
+        let manifest: toml::Value =
+            toml::from_str(manifest).expect("fixture manifest should parse");
         let mut failures = Vec::new();
         check_dependency_hygiene(
             cli,
@@ -4461,9 +4491,9 @@ mod tests {
             .iter()
             .find(|publish_crate| publish_crate.name == "wesley-cli")
             .expect("wesley-cli should be a published crate");
-        let manifest: toml::Value = "[dependencies]\nwesley-core = \"1.2.3-alpha.2\"\n"
-            .parse()
-            .expect("fixture manifest should parse");
+        let manifest: toml::Value =
+            toml::from_str("[dependencies]\nwesley-core = \"1.2.3-alpha.2\"\n")
+                .expect("fixture manifest should parse");
         let mut failures = Vec::new();
 
         check_dependency_hygiene(

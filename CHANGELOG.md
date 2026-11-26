@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- `xtask` now depends on `toml` 1.2 (was 0.8).
+
+### Fixed
+
+- `cargo xtask release-autotag-plan` reads the package version from the whole `crates/wesley-core/Cargo.toml` again under `toml` 1.x. That release made `str::parse::<toml::Value>()` parse a single value instead of a document, so the autotag job would have failed on every merge to `main` with "unexpected content, expected nothing", and no test exercised that path. Manifest parsing now goes through `toml::from_str`, and new unit tests cover the version lookup.
+
 ## [0.3.0-alpha.4] - 2026-11-18
 
 This release drops `wesley-core`'s unused `chrono` dependency
