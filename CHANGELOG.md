@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- `wesley-core` now depends on `sha2` 0.11 (was 0.10). Digests are hex-encoded through `hex::encode`, since `sha2` 0.11 outputs no longer implement `LowerHex`. Hashes are byte-for-byte unchanged; the generated-artifact digest tests still pass against the committed fixtures.
+
 ## [0.3.0-alpha.4] - 2026-11-18
 
 This release drops `wesley-core`'s unused `chrono` dependency

@@ -22,7 +22,7 @@ resilience = ["dep:async-trait", "dep:ninelives"]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
-sha2 = "0.10"
+sha2 = "0.11"
 hex = "0.4"
 thiserror = "1.0"
 indexmap = { version = "2.0", features = ["serde"] }
