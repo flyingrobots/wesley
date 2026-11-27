@@ -15,6 +15,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 - `cargo xtask release-autotag-plan` reads the package version from the whole `crates/wesley-core/Cargo.toml` after the move from `toml` 0.8 to 1.2. `toml` 0.9.0 changed `impl FromStr for Value` to parse a single TOML value instead of a document, and the upgrade crosses that change, so the autotag job would have failed on every merge to `main` with "unexpected content, expected nothing", and no test exercised that path. Manifest parsing now goes through `toml::from_str`, and new unit tests cover the version lookup.
 
+### Security
+
+- `wesley-core`'s optional `resilience` feature now requires `ninelives` 0.2.1 or later (was any 0.2). ninelives 0.2.1 moves Tokio from 1.48 to 1.54.1, fixing RUSTSEC-2026-0386 (`AsyncFd` constructors violate I/O safety). Bumping only the lockfile would not have reached downstream projects that already lock ninelives 0.2.0, because a library's lockfile does not constrain its consumers. ninelives 0.2.1 needs Rust 1.88, and `resilience` is a default feature, so a default build of `wesley-core` now needs Rust 1.88. Consumers that set `default-features = false` and leave `resilience` off are unaffected.
+
 ## [0.3.0-alpha.4] - 2026-11-18
 
 This release drops `wesley-core`'s unused `chrono` dependency
