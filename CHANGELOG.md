@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 
+- `xtask` now depends on `toml` 1.2 (was 0.8).
 - `wesley-core` now depends on `sha2` 0.11 (was 0.10). Digests are hex-encoded through `hex::encode`, since `sha2` 0.11 outputs no longer implement `LowerHex`. Hashes are byte-for-byte unchanged; the generated-artifact digest tests still pass against the committed fixtures.
 
 ### Removed
@@ -18,6 +19,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - The extension-generation input loses its optional `law` member, and `ExtensionGenerationInputV1::new` its Law IR parameter. An input with a `law` member is rejected. An input without one encodes to the same bytes and digest as before.
 
 The L1 IR and the schema registry hash are unchanged: no schema hashes differently, and emitted TypeScript, emitted Rust without `--law`, and emit metadata without `--law` are byte for byte what they were.
+
+### Fixed
+
+- `cargo xtask release-autotag-plan` reads the package version from the whole `crates/wesley-core/Cargo.toml` after the move from `toml` 0.8 to 1.2. `toml` 0.9.0 changed `impl FromStr for Value` to parse a single TOML value instead of a document, and the upgrade crosses that change, so the autotag job would have failed on every merge to `main` with "unexpected content, expected nothing", and no test exercised that path. Manifest parsing now goes through `toml::from_str`, and new unit tests cover the version lookup.
 
 ### Security
 
