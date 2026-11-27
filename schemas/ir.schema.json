@@ -11,6 +11,11 @@
     "types": {
       "type": "array",
       "items": { "$ref": "#/definitions/TypeDefinition" }
+    },
+    "directiveDefinitions": {
+      "type": "array",
+      "description": "Directive definitions declared in the schema document, sorted by canonical name. Absent when the schema declares none.",
+      "items": { "$ref": "#/definitions/DirectiveDefinition" }
     }
   },
   "additionalProperties": false,
@@ -64,6 +69,64 @@
         "isList": { "type": "boolean" },
         "listItemNullable": { "type": "boolean" }
       }
+    },
+    "DirectiveDefinition": {
+      "type": "object",
+      "required": ["name", "locations", "repeatable"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "arguments": {
+          "type": "array",
+          "description": "Declared arguments, in declaration order.",
+          "items": { "$ref": "#/definitions/InputValueDefinition" }
+        },
+        "locations": {
+          "type": "array",
+          "description": "Sorted, unique locations where the directive may be used.",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "ARGUMENT_DEFINITION",
+              "ENUM",
+              "ENUM_VALUE",
+              "FIELD",
+              "FIELD_DEFINITION",
+              "FRAGMENT_DEFINITION",
+              "FRAGMENT_SPREAD",
+              "INLINE_FRAGMENT",
+              "INPUT_FIELD_DEFINITION",
+              "INPUT_OBJECT",
+              "INTERFACE",
+              "MUTATION",
+              "OBJECT",
+              "QUERY",
+              "SCALAR",
+              "SCHEMA",
+              "SUBSCRIPTION",
+              "UNION",
+              "VARIABLE_DEFINITION"
+            ]
+          }
+        },
+        "repeatable": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "InputValueDefinition": {
+      "type": "object",
+      "required": ["name", "type", "directives"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "$ref": "#/definitions/TypeReference" },
+        "defaultValue": {
+          "description": "The declared default, in the same JSON form as directive argument values."
+        },
+        "directives": { "$ref": "#/definitions/DirectiveMap" }
+      },
+      "additionalProperties": false
     },
     "DirectiveMap": {
       "type": "object",

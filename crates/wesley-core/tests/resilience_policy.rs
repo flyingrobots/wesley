@@ -26,6 +26,7 @@ impl LoweringPort for BlockingLowerer {
             version: "1.0.0".to_string(),
             metadata: None,
             types: Vec::new(),
+            directive_definitions: Vec::new(),
         })
     }
 }

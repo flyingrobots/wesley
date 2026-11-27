@@ -69,9 +69,13 @@ feature. That feature is on by default. With
 if any of them comes back.
 
 Directives are lowered as data: a name and its arguments, attached to the type
-or field they were written on. A directive the core does not know, such as
-`@audited(level: 2)`, passes through unchanged and means whatever the tool that
-reads the IR says it means.
+or field they were written on. A directive the core attaches no meaning to, such
+as `@audited(level: 2)`, is lowered unchanged and means whatever the tool that
+reads the IR says it means, as long as the schema declares it.
+
+The L1 IR also carries the directive definitions the schema declares, in `directiveDefinitions`: each one's canonical name, description, arguments with their types and defaults, sorted locations, and whether it is repeatable, sorted by name. Lowering holds every usage of a declared directive to its definition, and every usage of a GraphQL built-in (`@deprecated`, `@specifiedBy`, `@oneOf`, `@skip`, `@include`) to the specification's definition: the location must be one the definition lists, every argument must be declared, every required argument present, every literal must fit its declared type, and a directive may repeat at one site only if its definition is repeatable. The definitions are checked as well: argument types must be input types the schema defines, and defaults must fit them. A violation is a lowering error in the `directive` area that names the directive, the location, and the schema coordinate, such as `OBJECT 'A'` or `FIELD_DEFINITION 'A.id'`. Usages are recorded exactly as written; an omitted argument's default lives on the definition and is not copied into the usage. These checks live in `adapters/apollo/directive_definitions.rs`, `directive_usage.rs`, and `directive_literal.rs`.
+
+The compatibility boundary for existing IR consumers: `directiveDefinitions` is optional and absent when a schema declares no directives, so such a schema's IR and registry hash are what they were before the member existed. A schema that declares directives hashes differently, because its definitions are part of the IR. A schema whose usages break their declared or built-in definitions used to lower and is now rejected. A directive with no definition in the schema is rejected as unknown, unless it is a GraphQL built-in, a core directive alias below, or in Wesley's reserved `wes_` (or `wesley_`) namespace. Those pass through unchecked beyond the rule that they may not repeat, because there is no definition in the document to hold them to; schemas that take their `wes_*` definitions from Wesley's shared directive pack, such as the consumer models under `test/fixtures/consumer-models/`, rely on that. A schema that used an undeclared directive outside that namespace used to lower and is now rejected.
 
 The core does know a fixed set, and that set changes a schema's IR and hash:
 

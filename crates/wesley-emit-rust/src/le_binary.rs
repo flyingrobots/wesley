@@ -353,6 +353,7 @@ mod tests {
             version: "1.0.0".to_string(),
             metadata: None,
             types,
+            directive_definitions: Vec::new(),
         };
         emit_le_binary_rust(&ir, &[], DEFAULT_CODEC_IMPORT)
     }
@@ -509,6 +510,7 @@ mod tests {
             version: "1.0.0".to_string(),
             metadata: None,
             types: vec![mutation],
+            directive_definitions: Vec::new(),
         };
         let operations = [make_operation("Mutation")];
         let rust = emit_le_binary_rust(&ir, &operations, DEFAULT_CODEC_IMPORT);

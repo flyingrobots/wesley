@@ -253,6 +253,28 @@ fn l1_ir_fixtures_satisfy_declared_schema() {
 }
 
 #[test]
+fn l1_ir_with_directive_definitions_satisfies_declared_schema() {
+    let ir = lower_schema_sdl(
+        "enum Level { LOW HIGH }\n\
+         \"Audited types\"\n\
+         directive @audit(level: Level = LOW, tags: [String!]) repeatable on OBJECT | FIELD_DEFINITION\n\
+         type A @audit @audit(level: HIGH) { id: ID @audit(tags: [\"x\"]) }",
+    )
+    .expect("schema with directive definitions should lower");
+    let artifact = serde_json::to_value(&ir).expect("IR should serialize");
+    assert!(
+        artifact["directiveDefinitions"].is_array(),
+        "lowered IR should carry directiveDefinitions: {artifact}"
+    );
+
+    assert_schema_valid(
+        "schemas/ir.schema.json",
+        "lowered IR with directive definitions",
+        &artifact,
+    );
+}
+
+#[test]
 fn holmes_and_shipme_artifacts_satisfy_declared_schemas() {
     let sha = "abcdef1234567890abcdef1234567890abcdef12";
     let timestamp = "2026-01-01T00:00:00.000Z";
