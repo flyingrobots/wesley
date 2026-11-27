@@ -154,16 +154,20 @@ fn autotag_package_version(manifest: &str) -> Result<String, Error> {
             "failed to parse {AUTOTAG_VERSION_SOURCE}: {source}"
         ))
     })?;
-    manifest
+    let Some(version) = manifest
         .get("package")
         .and_then(|package| package.get("version"))
-        .and_then(toml::Value::as_str)
-        .map(str::to_owned)
-        .ok_or_else(|| {
-            Error::Usage(format!(
-                "{AUTOTAG_VERSION_SOURCE} declares no package.version"
-            ))
-        })
+    else {
+        return Err(Error::Usage(format!(
+            "{AUTOTAG_VERSION_SOURCE} declares no package.version"
+        )));
+    };
+    version.as_str().map(str::to_owned).ok_or_else(|| {
+        Error::Usage(format!(
+            "{AUTOTAG_VERSION_SOURCE}: package.version must be a string, got {}",
+            version.type_str()
+        ))
+    })
 }
 
 /// Prints the autotag decision for the checked-out commit as `key=value` lines
@@ -396,6 +400,19 @@ mod tests {
         match autotag_package_version("[package]\nname = \"wesley-core\"\n") {
             Err(Error::Usage(message)) => {
                 assert!(message.contains("declares no package.version"), "{message}");
+            }
+            other => panic!("expected a usage error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn autotag_refuses_a_package_version_that_is_not_a_string() {
+        match autotag_package_version("[package]\nname = \"wesley-core\"\nversion = 123\n") {
+            Err(Error::Usage(message)) => {
+                assert!(
+                    message.contains("package.version must be a string, got integer"),
+                    "{message}"
+                );
             }
             other => panic!("expected a usage error, got {other:?}"),
         }
