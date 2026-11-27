@@ -10,6 +10,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 - `wesley-core` now depends on `sha2` 0.11 (was 0.10). Digests are hex-encoded through `hex::encode`, since `sha2` 0.11 outputs no longer implement `LowerHex`. Hashes are byte-for-byte unchanged; the generated-artifact digest tests still pass against the committed fixtures.
 
+### Security
+
+- `wesley-core`'s optional `resilience` feature now requires `ninelives` 0.2.1 or later (was any 0.2). ninelives 0.2.1 moves Tokio from 1.48 to 1.54.1, fixing RUSTSEC-2026-0386 (`AsyncFd` constructors violate I/O safety). Bumping only the lockfile would not have reached downstream projects that already lock ninelives 0.2.0, because a library's lockfile does not constrain its consumers. ninelives 0.2.1 needs Rust 1.88, and `resilience` is a default feature, so a default build of `wesley-core` now needs Rust 1.88. Consumers that set `default-features = false` and leave `resilience` off are unaffected.
+
 ## [0.3.0-alpha.4] - 2026-11-18
 
 This release drops `wesley-core`'s unused `chrono` dependency
