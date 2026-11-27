@@ -2,8 +2,8 @@
 //! and supplies the definitions of the GraphQL built-in directives.
 
 use super::{
-    argument_parts_from_input_value, canonical_core_directive_name, description_from,
-    lowering_error_value, parse_error_from_apollo,
+    argument_parts_from_input_value, description_from, lowering_error_value,
+    parse_error_from_apollo,
 };
 use crate::domain::error::WesleyError;
 use crate::domain::ir::{DirectiveDefinition, DirectiveLocation, FieldArgument};
@@ -83,9 +83,7 @@ fn directive_definition_from_node(
         .ok_or_else(|| {
             lowering_error_value("directive", "Directive definition missing name".to_string())
         })?;
-    let canonical_name = canonical_core_directive_name(&name)
-        .unwrap_or(name.as_str())
-        .to_string();
+    let canonical_name = name;
 
     Ok(DirectiveDefinition {
         arguments: directive_arguments(directive, &canonical_name, repeatable)?,

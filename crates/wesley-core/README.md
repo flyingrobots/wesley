@@ -35,12 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `diff_schema_sdl`                                                  | added, removed, and modified types       |
 | `resolve_operation_selections`, `extract_operation_directive_args` | facts about a GraphQL operation          |
 
-Directives are lowered as data, a name and its arguments, and one the core does
-not know passes through unchanged. A fixed set is rewritten on the way, which
-changes the IR and the registry hash: `table`, `pk` or `primaryKey`, `fk` or
-`foreignKey`, `unique`, `index`, `tenant`, `default`, and `rls` are each accepted
-bare, as `wesley_<name>`, or as `wes_<name>`, and recorded as `wes_<name>`. So
-`@table` and `@wes_table` give the same IR and the same hash.
+Directives are lowered as data: a name, exactly as written, and its arguments. The core folds no aliases and gives no directive meaning. A usage must match a definition in the schema or a GraphQL built-in, or be in the reserved `wes_` namespace that directive packs such as wesley-postgres's define elsewhere; anything else is rejected as unknown.
 
 ## The `resilience` feature
 

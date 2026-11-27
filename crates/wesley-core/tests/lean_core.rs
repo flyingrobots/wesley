@@ -9,9 +9,9 @@ use wesley_core::{compute_registry_hash, diff_schema_sdl, lower_schema_sdl};
 
 const SCHEMA: &str = r#"
 """A thing with a name."""
-type Thing @table {
+type Thing @wes_table {
   id: ID!
-  name: String! @unique
+  name: String! @wes_unique
 }
 "#;
 
@@ -40,7 +40,7 @@ fn the_registry_hash_is_stable_without_the_async_port() {
 
 #[test]
 fn schema_diffing_works_without_the_async_port() {
-    let changed = SCHEMA.replace("name: String! @unique", "name: String!");
+    let changed = SCHEMA.replace("name: String! @wes_unique", "name: String!");
 
     let delta = diff_schema_sdl(SCHEMA, &changed).expect("both schemas lower");
 

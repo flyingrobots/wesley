@@ -4,15 +4,14 @@
 //! when its definition is repeatable.
 //!
 //! Definitions come from the document itself, then from the GraphQL built-ins.
-//! A directive with neither, including a Wesley core directive (see
-//! `canonical_core_directive_name`) the document does not define, passes
-//! through unchecked apart from repetition: there is no definition to hold it
-//! to, and schemas that take their directive definitions from elsewhere rely
-//! on that.
+//! A directive with neither is unknown and rejected, unless it is in the
+//! reserved `wes_` or `wesley_` namespace that directive packs (such as
+//! wesley-postgres's) define outside the schema document; those pass through
+//! unchecked apart from the rule that they may not repeat.
 
 use super::directive_definitions::{built_in_directive_definitions, DirectiveDefinitions};
 use super::directive_literal::{check_literal, InputType, TypeIndex};
-use super::{canonical_core_directive_name, lowering_error_value};
+use super::lowering_error_value;
 use crate::domain::error::WesleyError;
 use crate::domain::ir::{
     DirectiveDefinition, DirectiveLocation, FieldArgument, TypeDefinition, TypeKind,
@@ -240,7 +239,7 @@ impl UsageChecker<'_> {
         node: &cst::DirectiveDefinition,
     ) -> Result<(), WesleyError> {
         let written = required_name(node.name(), "directive definition")?;
-        let name = canonical_core_directive_name(&written).unwrap_or(&written);
+        let name = written.as_str();
         let declared = self.declared;
         let Some(definition) = declared.get(name) else {
             return Err(directive_error(format!(
@@ -307,9 +306,7 @@ impl UsageChecker<'_> {
     }
 
     fn check_usage(&mut self, directive: &cst::Directive, site: &Site) -> Result<(), WesleyError> {
-        let written = required_name(directive.name(), "directive")?;
-        let core_name = canonical_core_directive_name(&written);
-        let name = core_name.unwrap_or(&written).to_string();
+        let name = required_name(directive.name(), "directive")?;
         let definition = self
             .declared
             .get(&name)
@@ -319,14 +316,13 @@ impl UsageChecker<'_> {
             Some(definition) => {
                 check_location(&name, definition, site)?;
                 self.check_arguments(&name, directive, definition, site)?;
-                // Core directives never repeat, matching how lowering stores them.
-                core_name.is_none() && definition.repeatable
+                definition.repeatable
             }
-            // Wesley's shared directive pack defines `wes_*` directives outside
-            // the schema document, and the core aliases predate it, so those
-            // pass through unchecked. Like any undeclared directive they may
-            // not repeat. Anything else undeclared is unknown.
-            None if core_name.is_some() || in_wesley_namespace(&name) => false,
+            // Directive packs (such as wesley-postgres's) define `wes_*` directives
+            // outside the schema document, so those pass through unchecked. Like
+            // any undeclared directive they may not repeat. Anything else
+            // undeclared is unknown.
+            None if in_wesley_namespace(&name) => false,
             None => {
                 return Err(directive_error(format!(
                     "directive '@{name}' at {} is not defined; declare it with `directive @{name}` or use a GraphQL built-in or a `wes_` directive",

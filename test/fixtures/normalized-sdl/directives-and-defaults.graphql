@@ -1,10 +1,10 @@
 directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT
 
 "A reusable user"
-type User @table @tag(name: "object") {
+type User @wes_table @tag(name: "object") {
   name: String @tag(name: "beta") @tag(name: "alpha")
   "The stable id"
-  id: ID! @pk
+  id: ID! @wes_pk
 }
 
 input UserFilter {

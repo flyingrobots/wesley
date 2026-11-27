@@ -88,10 +88,7 @@ wesley schema lower --schema shop.graphql --json
 }
 ```
 
-The listing above is shortened to one field. Directives in your schema are
-carried through as data, with their arguments. A small fixed set of names is
-rewritten to a canonical spelling on the way: `@table` is recorded as
-`wes_table`, for example. [Architecture](architecture.md) lists them.
+The listing above is shortened to one field. Directives in your schema are carried through as data, with their arguments, under the names you wrote. A directive must be declared in the schema, be a GraphQL built-in, or be in the reserved `wes_` namespace; [Architecture](architecture.md) has the rules.
 
 `schema operations` lists the fields of `Query`, `Mutation`, and `Subscription`
 with their arguments and result types:

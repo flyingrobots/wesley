@@ -1,3 +1,0 @@
-type Account @wes_table @table {
-  id: ID! @wes_pk @pk
-}

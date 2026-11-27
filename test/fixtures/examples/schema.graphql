@@ -1,7 +1,7 @@
 # Stable current-path Wesley example schema.
 #
-# This fixture intentionally uses only directives in current use, as declared
-# in schemas/directives.graphql.
+# This fixture intentionally uses only wesley-postgres's database directives
+# (@wes_table, @wes_pk, ...), which wesley-postgres declares.
 # It is copied by HOLMES smoke tests and should stay boring.
 
 scalar DateTime

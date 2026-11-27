@@ -59,10 +59,10 @@ fn lowering_rejects_an_undeclared_directive_outside_the_wesley_namespace() {
 
 #[test]
 fn lowering_accepts_undeclared_directives_from_the_wesley_directive_pack() {
-    // Wesley's shared directive pack defines `wes_*` directives outside the
-    // schema document, and the core aliases (`@table`, `@pk`, ...) predate it.
+    // Directive packs, such as wesley-postgres's, define `wes_*` directives
+    // outside the schema document.
     let ir = lower(
-        "type A @table @wes_critical { id: ID! @pk @wes_footprint(reads: [\"a\"]) }\n\
+        "type A @wes_table @wes_critical { id: ID! @wes_pk @wes_footprint(reads: [\"a\"]) }\n\
          type Query { a: A @wesley_op(name: \"a\") }",
     );
 
@@ -337,10 +337,12 @@ fn directive_definitions_are_recorded_in_canonical_order_whatever_the_source_ord
 }
 
 #[test]
-fn a_core_directive_alias_definition_is_recorded_under_its_canonical_name() {
+fn a_directive_definition_and_its_usages_keep_the_name_as_written() {
+    // Core folds no aliases: `@table` is not `@wes_table`. Database directives
+    // and their spellings belong to wesley-postgres.
     let ir = lower(
         "directive @table(name: String) on OBJECT\n\
-         type A @table(name: \"a\") { id: ID }",
+         type A @table(name: \"a\") @wesley_table { id: ID }",
     );
 
     let names = ir
@@ -348,7 +350,33 @@ fn a_core_directive_alias_definition_is_recorded_under_its_canonical_name() {
         .iter()
         .map(|definition| definition.name.as_str())
         .collect::<Vec<_>>();
-    assert_eq!(names, vec!["wes_table"]);
+    assert_eq!(names, vec!["table"]);
+    let usages = ir.types[0]
+        .directives
+        .keys()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    assert_eq!(usages, vec!["table", "wesley_table"]);
+}
+
+#[test]
+fn lowering_rejects_an_undeclared_bare_database_alias_as_unknown() {
+    let message = lowering_refusal("type A @table { id: ID! @pk }");
+
+    assert_eq!(
+        message,
+        "directive '@table' at OBJECT 'A' is not defined; declare it with `directive @table` or use a GraphQL built-in or a `wes_` directive"
+    );
+}
+
+#[test]
+fn a_declared_wes_table_follows_its_definition_on_repetition() {
+    let ir = lower(
+        "directive @wes_table(name: String) repeatable on OBJECT\n\
+         type A @wes_table(name: \"a\") @wes_table(name: \"b\") { id: ID }",
+    );
+
+    assert_eq!(ir.directive_definitions[0].name, "wes_table");
 }
 
 #[test]
@@ -427,5 +455,5 @@ fn schemas_without_directive_definitions_lower_to_the_committed_l1_fixtures() {
     }
 
     assert_eq!(checked, schemas.len());
-    assert!(checked >= 7, "checked {checked} fixtures");
+    assert!(checked >= 6, "checked {checked} fixtures");
 }
