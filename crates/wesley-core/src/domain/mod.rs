@@ -4,7 +4,6 @@ pub mod capability;
 pub mod error;
 pub mod extension_generation;
 pub mod ir;
-pub mod law;
 pub(crate) mod normalized_sdl;
 pub mod operation;
 pub mod operation_artifact;

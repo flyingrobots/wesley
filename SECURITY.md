@@ -16,7 +16,7 @@ version. Older versions are not patched.
 
 ## What Wesley does with its input
 
-The Rust library crates do no I/O. They take SDL, law files, and manifests as
+The Rust library crates do no I/O. They take SDL, operations, and manifests as
 strings and return the IR, reports, or generated source as values. They do not
 open files, use the network, or start processes.
 

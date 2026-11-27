@@ -120,7 +120,7 @@ is not a reason.
 **5.2 Dependency direction.** Acyclic and obvious:
 
 ```text
-wesley-core            IR, hashing, lowering, diff, law
+wesley-core            IR, hashing, lowering, diff
       ↓
 wesley-emit-codec      codec plan
       ↓
@@ -219,7 +219,7 @@ tests. `unreachable!` is still a panic; model the state space so it is not
 needed.
 
 **9.2 Errors are domain artifacts**, typed by the boundary that failed: a
-lowering error, a diff error, a law validation error, a manifest error. No
+lowering error, a diff error, a manifest error. No
 single universal error internally; a facade may aggregate.
 
 **9.3 Variants are actionable.** Not `InvalidData`. Say what failed, which
@@ -275,7 +275,7 @@ applies to a tool that reads and writes files:
 
 ## 14. Formats are protocols
 
-The L1 IR, the registry hash, the LE-binary codec layout, the law IR, and the
+The L1 IR, the registry hash, the LE-binary codec layout, and the
 manifests are contracts with other systems, not implementation details.
 
 **14.1** Each has a version, a canonical encoding, explicit endianness where it

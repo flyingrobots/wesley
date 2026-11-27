@@ -4,11 +4,7 @@
     {
       "id": "ecommerce",
       "path": "test/fixtures/examples/ecommerce.graphql",
-      "rebuildOnGlobs": [
-        "test/fixtures/examples/ecommerce.graphql",
-        "test/fixtures/weslaw/**",
-        "schemas/**"
-      ]
+      "rebuildOnGlobs": ["test/fixtures/examples/ecommerce.graphql", "schemas/**"]
     },
     {
       "id": "reference",

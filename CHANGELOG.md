@@ -11,6 +11,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - `xtask` now depends on `toml` 1.2 (was 0.8).
 - `wesley-core` now depends on `sha2` 0.11 (was 0.10). Digests are hex-encoded through `hex::encode`, since `sha2` 0.11 outputs no longer implement `LowerHex`. Hashes are byte-for-byte unchanged; the generated-artifact digest tests still pass against the committed fixtures.
 
+### Removed
+
+- Weslaw, Wesley's semantic-law layer, is gone. Wesley is a structural compiler: GraphQL SDL defines shape, and application semantics belong to Edict and to each runtime. Removed: the `weslaw/v1` authoring format, the Law IR and its hash, contract-bundle manifests, the semantic law diff, `@wes_channel` lowering, and every law API in `wesley-core`; the `wesley law` commands (`validate`, `lint`, `diff`, `explain`, `rebind`, `capabilities`, `coverage`), `wesley init-law`, and `--law` on every `emit` command, which now fail as an unknown command or option; `emit_rust_with_operations_and_law` and `emit_rust_with_operations_and_hashes` in `wesley-emit-rust`, so generated Rust no longer carries `WESLAW_HASH` or law-backed validators; and the `weslaw-v1`, `wesley-law-ir-v1`, `wesley-law-diff-v1`, and `wesley-contract-bundle-manifest-v1` JSON Schemas with their fixtures.
+- The `wesley-holmes` and `wesley-holmes-domain` crates, which only checked law evidence, and `cargo xtask holmes-domain-check`. Neither crate was published. The Node package `@wesley/holmes`, which scores this repository's SHA-lock evidence, is unchanged.
+- Operation artifacts no longer carry `operation.lawClaims`, and `LawClaimTemplate`, `EvidenceKind`, `LawWitness`, `LawVerdict`, and `ReplayHint` are gone from `wesley-core`. The law claims were part of the canonical requirements bytes, so **every operation's `requirementsDigest` and `artifactHash` change**. A consumer that stores or compares them, such as Echo, must regenerate what it holds.
+- The extension-generation input loses its optional `law` member, and `ExtensionGenerationInputV1::new` its Law IR parameter. An input with a `law` member is rejected. An input without one encodes to the same bytes and digest as before.
+
+The L1 IR and the schema registry hash are unchanged: no schema hashes differently, and emitted TypeScript, emitted Rust without `--law`, and emit metadata without `--law` are byte for byte what they were.
+
 ### Fixed
 
 - `cargo xtask release-autotag-plan` reads the package version from the whole `crates/wesley-core/Cargo.toml` after the move from `toml` 0.8 to 1.2. `toml` 0.9.0 changed `impl FromStr for Value` to parse a single TOML value instead of a document, and the upgrade crosses that change, so the autotag job would have failed on every merge to `main` with "unexpected content, expected nothing", and no test exercised that path. Manifest parsing now goes through `toml::from_str`, and new unit tests cover the version lookup.

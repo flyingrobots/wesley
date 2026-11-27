@@ -12,8 +12,7 @@ the next version, never by moving a tag.
 Five crates, published to crates.io in dependency order: `wesley-core`,
 `wesley-emit-codec`, `wesley-emit-rust`, `wesley-emit-typescript`,
 `wesley-cli`. They share one version and pin each other exactly (`=X.Y.Z`).
-`wesley-holmes` and the root `package.json` carry the same version but are not
-published.
+The root `package.json` carries the same version but is not published.
 
 A version with a hyphen (`0.3.0-alpha.2`) is a pre-release. It is published to
 crates.io, where it must be asked for by exact version, and its GitHub Release

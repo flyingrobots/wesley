@@ -1,6 +1,6 @@
 # Architecture
 
-Wesley is a Cargo workspace of seven crates plus one Node package. This page
+Wesley is a Cargo workspace of five crates plus one Node package. This page
 says what each part owns and how a schema moves through them. It describes the
 code as it is; for why a change was made, read the commit and the pull request.
 
@@ -33,15 +33,13 @@ it.
 
 ## The crates
 
-| Crate                    | Published | Owns                                                  |
-| ------------------------ | --------- | ----------------------------------------------------- |
-| `wesley-core`            | yes       | Parsing, the L1 IR, hashing, diffing, operations, law |
-| `wesley-emit-codec`      | yes       | The language-neutral plan for the LE-binary codecs    |
-| `wesley-emit-rust`       | yes       | Rust output                                           |
-| `wesley-emit-typescript` | yes       | TypeScript output                                     |
-| `wesley-cli`             | yes       | The `wesley` binary                                   |
-| `wesley-holmes`          | no        | Law-evidence checks; a library with no CLI of its own |
-| `wesley-holmes-domain`   | no        | The pure Holmes domain, `no_std` so it cannot do I/O  |
+| Crate                    | Published | Owns                                               |
+| ------------------------ | --------- | -------------------------------------------------- |
+| `wesley-core`            | yes       | Parsing, the L1 IR, hashing, diffing, operations   |
+| `wesley-emit-codec`      | yes       | The language-neutral plan for the LE-binary codecs |
+| `wesley-emit-rust`       | yes       | Rust output                                        |
+| `wesley-emit-typescript` | yes       | TypeScript output                                  |
+| `wesley-cli`             | yes       | The `wesley` binary                                |
 
 The published crates are versioned in lockstep and pin each other exactly
 (`=X.Y.Z`), so a given `wesley-cli` always builds against the `wesley-core` it
@@ -61,7 +59,6 @@ The compiler kernel. It depends on none of the other crates.
   or breaking.
 - `domain::operation` and `domain::operation_artifact` describe root operations
   and the artifacts compiled from them.
-- `domain::law` holds the law model behind the `wesley law` commands.
 - `domain::project_manifest` reads `wesley.config.json` and its YAML forms.
 
 The kernel is synchronous. An async `LoweringPort`, and a wrapper that adds a
@@ -85,8 +82,6 @@ The core does know a fixed set, and that set changes a schema's IR and hash:
   `@table` and `@wes_table` lower to the same IR and the same hash. The list is
   `canonical_core_directive_name` in `adapters/apollo.rs`; the directives
   themselves are declared in `schemas/directives.graphql`.
-- `@wes_channel` on an object type can be lowered into the law IR by
-  `lower_wes_channel_directives_to_law_ir_v1`.
 
 Beyond recording those names, the core attaches no database, runtime, or product
 behavior to any directive.
@@ -114,24 +109,7 @@ Parses the command line, reads files, calls the libraries for the compiler
 work, and prints the result. `wesley doctor` reports whether the pieces it needs are
 present.
 
-### wesley-holmes and packages/wesley-holmes
-
-`crates/wesley-holmes` is a Rust library that validates law-evidence artifacts.
-It is not published and adds no commands to `wesley`.
-
-Its domain model is a separate crate, `crates/wesley-holmes-domain`, re-exported
-as `wesley_holmes::domain`. The split exists to make one rule enforceable: the
-domain must give the same answer on every machine and every run, so it may not
-touch the filesystem, the network, a process, the environment, or a clock. The
-crate is `no_std`, so those parts of the standard library are not in scope for
-it, and `cargo xtask holmes-domain-check`, which preflight runs, builds it for a
-bare-metal target, where an `extern crate std` fails to compile.
-
-That stops the rule eroding by accident. It does not stop someone going around
-it on purpose, and review has to: a second `extern crate` gated to the host
-with `cfg`, which the bare-metal build never sees, or a new dependency that does
-I/O. The crate should have one `extern crate`, `alloc`, and three dependencies,
-`serde`, `serde_json`, and `libm`.
+### packages/wesley-holmes
 
 `packages/wesley-holmes` is the one remaining Node package. It provides the
 `holmes` and `moriarty` commands used by this repository's own assurance
@@ -142,7 +120,7 @@ workflow. It is marked `legacy-compatibility` in its `package.json`, and
 ## Repository layout
 
 ```text
-crates/       the seven Rust crates
+crates/       the five Rust crates
 packages/     wesley-holmes, the remaining Node package
 schemas/      JSON Schemas for the artifacts Wesley reads and writes
 test/         bats suites and fixtures
@@ -156,7 +134,7 @@ scripts/      Node and shell helpers used by the hooks and by CI
 
 `cargo xtask` is the entry point for everything a contributor or a workflow
 runs: `preflight`, `docs-check`, `docs-replay`, `built-cli`, `lean-core-check`,
-`holmes-domain-check`, `release-prep-guard`, `release-check`, `release-guard`,
+`release-prep-guard`, `release-check`, `release-guard`,
 `release-autotag-plan`, `package-crates`, and `publish-crates`. Run
 `cargo xtask help` for the list.
 [CI](ci.md) says which of them run where, and [RELEASE.md](../RELEASE.md) covers
