@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- The README links [wesley-brainfuck](https://github.com/flyingrobots/wesley-brainfuck), a worked example of a generator built outside this repository on `wesley-core`'s public extension-generation API. It began as #741 and moved to its own repository instead of landing here as a Cargo example.
+
 ### Changed
 
 - `xtask` now depends on `toml` 1.2 (was 0.8).

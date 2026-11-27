@@ -119,6 +119,10 @@ The crate READMEs describe each library: [`wesley-core`](crates/wesley-core),
 [`wesley-emit-codec`](crates/wesley-emit-codec), and
 [`wesley-cli`](crates/wesley-cli).
 
+## Writing your own generator
+
+A generator outside this repository can build on `wesley-core`'s public extension-generation API: lower a schema, build an `ExtensionGenerationInputV1`, emit an artifact, and bind it all into a verified provenance manifest. [wesley-brainfuck](https://github.com/flyingrobots/wesley-brainfuck) is a deliberately impractical worked example. It compiles a summary of the IR into Brainfuck, runs it, and verifies the provenance of the generator, its source and its output.
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
