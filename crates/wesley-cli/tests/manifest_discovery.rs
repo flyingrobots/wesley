@@ -98,7 +98,31 @@ fn assert_success(output: &std::process::Output) {
     );
 }
 
-fn temp_dir(name: &str) -> std::path::PathBuf {
+/// A directory under the system temp dir that the test owns.
+struct Sandbox(std::path::PathBuf);
+
+impl std::ops::Deref for Sandbox {
+    type Target = std::path::Path;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Drop for Sandbox {
+    // Runs on success and while unwinding from a failed assertion alike.
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
+impl AsRef<std::path::Path> for Sandbox {
+    fn as_ref(&self) -> &std::path::Path {
+        &self.0
+    }
+}
+
+fn temp_dir(name: &str) -> Sandbox {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("system time should be after unix epoch")
@@ -108,5 +132,16 @@ fn temp_dir(name: &str) -> std::path::PathBuf {
         std::process::id()
     ));
     std::fs::create_dir_all(&path).expect("temp directory should create");
-    path
+    Sandbox(path)
+}
+
+#[test]
+fn sandbox_is_removed_when_dropped() {
+    let sandbox = temp_dir("sandbox-cleanup");
+    std::fs::write(sandbox.join("file"), "x").expect("file should write");
+    let path = sandbox.to_path_buf();
+
+    drop(sandbox);
+
+    assert!(!path.exists(), "{} should be removed", path.display());
 }
