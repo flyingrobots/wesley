@@ -48,6 +48,28 @@ fn scalar(base: &str, nullable: bool) -> TypeReference {
 }
 
 #[test]
+fn lowering_rejects_an_undeclared_directive_outside_the_wesley_namespace() {
+    let message = lowering_refusal("type A @cache(ttl: 60) { id: ID }");
+
+    assert_eq!(
+        message,
+        "directive '@cache' at OBJECT 'A' is not defined; declare it with `directive @cache` or use a GraphQL built-in or a `wes_` directive"
+    );
+}
+
+#[test]
+fn lowering_accepts_undeclared_directives_from_the_wesley_directive_pack() {
+    // Wesley's shared directive pack defines `wes_*` directives outside the
+    // schema document, and the core aliases (`@table`, `@pk`, ...) predate it.
+    let ir = lower(
+        "type A @table @wes_critical { id: ID! @pk @wes_footprint(reads: [\"a\"]) }\n\
+         type Query { a: A @wesley_op(name: \"a\") }",
+    );
+
+    assert!(ir.directive_definitions.is_empty());
+}
+
+#[test]
 fn lowering_rejects_a_directive_used_at_a_location_its_definition_does_not_list() {
     let message = lowering_refusal(
         "directive @retry(max: Int!) on FIELD_DEFINITION\n\

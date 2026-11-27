@@ -322,10 +322,17 @@ impl UsageChecker<'_> {
                 // Core directives never repeat, matching how lowering stores them.
                 core_name.is_none() && definition.repeatable
             }
-            // An undeclared directive passes through unchecked, as the
-            // architecture page promises; like any undeclared directive it
-            // may not repeat.
-            None => false,
+            // Wesley's shared directive pack defines `wes_*` directives outside
+            // the schema document, and the core aliases predate it, so those
+            // pass through unchecked. Like any undeclared directive they may
+            // not repeat. Anything else undeclared is unknown.
+            None if core_name.is_some() || in_wesley_namespace(&name) => false,
+            None => {
+                return Err(directive_error(format!(
+                    "directive '@{name}' at {} is not defined; declare it with `directive @{name}` or use a GraphQL built-in or a `wes_` directive",
+                    site.describe()
+                )));
+            }
         };
 
         self.check_repetition(name, repeatable, site)
@@ -402,6 +409,11 @@ impl UsageChecker<'_> {
         }
         Ok(())
     }
+}
+
+/// Whether a directive name belongs to Wesley's reserved directive namespace.
+fn in_wesley_namespace(name: &str) -> bool {
+    name.starts_with("wes_") || name.starts_with("wesley_")
 }
 
 fn check_location(
