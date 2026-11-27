@@ -58,8 +58,9 @@ pub(crate) fn print_config_help() {
 Wesley project manifest commands
 
 Manifest files are domain-free JSON or YAML documents. The CLI discovers
-wesley.config.json, wesley.config.yaml, or wesley.config.yml by walking upward
-from the current directory when --config is omitted.
+wesley.config.json, wesley.config.yaml, wesley.config.yml, or
+.wesley/config.json by walking upward from the current directory when --config
+is omitted. Paths inside a manifest resolve from the manifest's directory.
 
 Usage:
   wesley config validate [--config <path>] [--json]

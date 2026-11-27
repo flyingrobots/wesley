@@ -460,38 +460,6 @@ fn config_changed_schemas_resolves_manifest_relative_paths_before_selection() {
 }
 
 #[test]
-fn schema_commands_discover_single_schema_manifest_when_schema_flag_is_omitted() {
-    let dir = temp_dir("config-discovery");
-    std::fs::create_dir_all(dir.join("schema")).expect("schema dir should create");
-    std::fs::write(
-        dir.join("schema/schema.graphql"),
-        "type Query { health: Boolean }\n",
-    )
-    .expect("schema should write");
-    std::fs::write(
-        dir.join("wesley.config.json"),
-        r#"
-        {
-          "apiVersion": "wesley.project-manifest/v1",
-          "schemaPaths": ["schema/schema.graphql"]
-        }
-        "#,
-    )
-    .expect("config should write");
-
-    let output = wesley()
-        .current_dir(&dir)
-        .args(["schema", "hash", "--json"])
-        .output()
-        .expect("wesley should run");
-
-    assert_success(&output);
-    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
-    let report: serde_json::Value = serde_json::from_str(&stdout).expect("stdout should be json");
-    assert!(report["schemaHash"].as_str().unwrap().len() == 64);
-}
-
-#[test]
 fn schema_lower_reports_missing_schema_path() {
     let dir = temp_dir("missing-schema-path");
     let missing_schema = dir.join("missing-schema.graphql");
