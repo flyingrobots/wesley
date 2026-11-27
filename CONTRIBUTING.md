@@ -27,6 +27,8 @@ You need stable Rust; Node `^22.13.0`, `^24.0.0`, or `>=26.0.0`, the range
 `apt install bats`) to run the shell suites. `pnpm` comes from Corepack at the
 version `package.json` names.
 
+`pnpm clean` removes generated state: `out/`, `.wesley-cache/`, coverage, and the contents of `.wesley/`. It keeps `.wesley/config.json`, because `wesley` discovers a project manifest there.
+
 ## Make the change
 
 Two standards bind every change: the [Rust standard](docs/rust-standard.md) and
