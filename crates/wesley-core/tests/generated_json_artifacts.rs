@@ -29,7 +29,7 @@ fn read_bytes(path: &str) -> Vec<u8> {
 }
 
 fn sha256_prefixed(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    format!("sha256:{}", hex::encode(Sha256::digest(bytes)))
 }
 
 fn schema_json(path: &str) -> serde_json::Value {

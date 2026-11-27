@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- `wesley-core` now depends on `sha2` 0.11 (was 0.10). Digests are hex-encoded through `hex::encode`, since `sha2` 0.11 outputs no longer implement `LowerHex`. Hashes are byte-for-byte unchanged; the generated-artifact digest tests still pass against the committed fixtures.
+
 ### Removed
 
 - Weslaw, Wesley's semantic-law layer, is gone. Wesley is a structural compiler: GraphQL SDL defines shape, and application semantics belong to Edict and to each runtime. Removed: the `weslaw/v1` authoring format, the Law IR and its hash, contract-bundle manifests, the semantic law diff, `@wes_channel` lowering, and every law API in `wesley-core`; the `wesley law` commands (`validate`, `lint`, `diff`, `explain`, `rebind`, `capabilities`, `coverage`), `wesley init-law`, and `--law` on every `emit` command, which now fail as an unknown command or option; `emit_rust_with_operations_and_law` and `emit_rust_with_operations_and_hashes` in `wesley-emit-rust`, so generated Rust no longer carries `WESLAW_HASH` or law-backed validators; and the `weslaw-v1`, `wesley-law-ir-v1`, `wesley-law-diff-v1`, and `wesley-contract-bundle-manifest-v1` JSON Schemas with their fixtures.
@@ -14,6 +18,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - The extension-generation input loses its optional `law` member, and `ExtensionGenerationInputV1::new` its Law IR parameter. An input with a `law` member is rejected. An input without one encodes to the same bytes and digest as before.
 
 The L1 IR and the schema registry hash are unchanged: no schema hashes differently, and emitted TypeScript, emitted Rust without `--law`, and emit metadata without `--law` are byte for byte what they were.
+
+### Security
+
+- `wesley-core`'s optional `resilience` feature now requires `ninelives` 0.2.1 or later (was any 0.2). ninelives 0.2.1 moves Tokio from 1.48 to 1.54.1, fixing RUSTSEC-2026-0386 (`AsyncFd` constructors violate I/O safety). Bumping only the lockfile would not have reached downstream projects that already lock ninelives 0.2.0, because a library's lockfile does not constrain its consumers. ninelives 0.2.1 needs Rust 1.88, and `resilience` is a default feature, so a default build of `wesley-core` now needs Rust 1.88. Consumers that set `default-features = false` and leave `resilience` off are unaffected.
 
 ## [0.3.0-alpha.4] - 2026-11-18
 
