@@ -21,6 +21,13 @@ use async_trait::async_trait;
 use indexmap::IndexMap;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+mod directive_definitions;
+mod directive_literal;
+mod directive_usage;
+
+use directive_definitions::directive_definitions_from_document;
+use directive_usage::check_directive_usages;
+
 /// Adapter that uses `apollo-parser` to lower SDL to IR.
 pub struct ApolloLoweringAdapter {
     _max_retries: usize,
@@ -50,65 +57,21 @@ pub fn lower_schema_sdl(sdl: &str) -> Result<WesleyIR, WesleyError> {
 
 /// Renders GraphQL SDL as a deterministic Rust-core semantic view.
 pub fn normalize_schema_sdl(sdl: &str) -> Result<String, WesleyError> {
-    let directive_argument_types = directive_argument_types_from_sdl(sdl)?;
     let ir = lower_schema_sdl(sdl)?;
+    let directive_argument_types = ir
+        .directive_definitions
+        .iter()
+        .map(|definition| {
+            let arguments = definition
+                .arguments
+                .iter()
+                .map(|argument| (argument.name.clone(), argument.r#type.clone()))
+                .collect();
+            (definition.name.clone(), arguments)
+        })
+        .collect::<DirectiveArgumentTypes>();
 
     Ok(render_normalized_sdl(&ir, &directive_argument_types))
-}
-
-fn directive_argument_types_from_sdl(sdl: &str) -> Result<DirectiveArgumentTypes, WesleyError> {
-    let parser = Parser::new(sdl);
-    let cst = parser.parse();
-
-    let errors = cst.errors().collect::<Vec<_>>();
-    if !errors.is_empty() {
-        let err = &errors[0];
-        return Err(parse_error_from_apollo(sdl, err));
-    }
-
-    let mut definitions = DirectiveArgumentTypes::new();
-    for definition in cst.document().definitions() {
-        let cst::Definition::DirectiveDefinition(directive) = definition else {
-            continue;
-        };
-
-        let name = directive
-            .name()
-            .map(|name| name.text().to_string())
-            .ok_or_else(|| {
-                lowering_error_value("directive", "Directive definition missing name".to_string())
-            })?;
-        let canonical_name = canonical_core_directive_name(&name)
-            .unwrap_or(name.as_str())
-            .to_string();
-        let mut arguments = BTreeMap::new();
-        if let Some(arguments_definition) = directive.arguments_definition() {
-            for input_value in arguments_definition.input_value_definitions() {
-                let argument_name = input_value
-                    .name()
-                    .map(|name| name.text().to_string())
-                    .ok_or_else(|| {
-                        lowering_error_value(
-                            "directive",
-                            format!("Directive '@{name}' argument missing name"),
-                        )
-                    })?;
-                let argument_type = input_value.ty().ok_or_else(|| {
-                    lowering_error_value(
-                        "directive",
-                        format!("Directive '@{name}' argument '{argument_name}' missing type"),
-                    )
-                })?;
-                arguments.insert(
-                    argument_name,
-                    type_reference_from_type(argument_type, true)?,
-                );
-            }
-        }
-        definitions.insert(canonical_name, arguments);
-    }
-
-    Ok(definitions)
 }
 
 /// Computes the structural L1 delta between two GraphQL SDL documents.
@@ -332,10 +295,15 @@ impl ApolloLoweringAdapter {
             types.push(self.build_type_from_aggregate(agg, &repeatable_directives)?);
         }
 
+        let directive_definitions =
+            directive_definitions_from_document(&doc, &repeatable_directives)?;
+        check_directive_usages(&doc, &directive_definitions, &types)?;
+
         Ok(WesleyIR {
             version: "1.0.0".to_string(),
             metadata: None,
             types,
+            directive_definitions: directive_definitions.into_values().collect(),
         })
     }
 

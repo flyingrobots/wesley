@@ -1297,6 +1297,7 @@ mod tests {
                 enum_values: Vec::new(),
                 union_members: Vec::new(),
             }],
+            directive_definitions: Vec::new(),
         };
 
         let ts = emit_le_binary_typescript(&ir, &[], DEFAULT_CODEC_IMPORT);

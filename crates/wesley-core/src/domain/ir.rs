@@ -16,6 +16,141 @@ pub struct WesleyIR {
     pub metadata: Option<Metadata>,
     /// Consolidated type definitions.
     pub types: Vec<TypeDefinition>,
+    /// Directive definitions declared in the schema document, sorted by
+    /// canonical name.
+    ///
+    /// Absent from the serialized IR when the schema declares no directives,
+    /// so the IR and registry hash of such a schema are unchanged by this
+    /// member. Built-in GraphQL directives are not recorded unless the schema
+    /// declares them itself.
+    #[serde(
+        rename = "directiveDefinitions",
+        default,
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub directive_definitions: Vec<DirectiveDefinition>,
+}
+
+/// A directive definition: the declaration that says which arguments a
+/// directive takes, where it may be used, and whether it may repeat.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectiveDefinition {
+    /// Canonical directive name, without the `@`. Wesley core directive
+    /// aliases are recorded under their canonical `wes_` name.
+    pub name: String,
+    /// Optional description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Declared arguments, in declaration order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub arguments: Vec<FieldArgument>,
+    /// Locations where the directive may be used, sorted and unique.
+    pub locations: Vec<DirectiveLocation>,
+    /// Whether the directive may be used more than once at one site.
+    pub repeatable: bool,
+}
+
+/// A location at which a GraphQL directive may be used.
+///
+/// Variants are declared in the alphabetical order of their wire names, so
+/// sorting by this type sorts by wire name.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DirectiveLocation {
+    /// An argument definition.
+    ArgumentDefinition,
+    /// An enum type.
+    Enum,
+    /// An enum value.
+    EnumValue,
+    /// A field in an executable document.
+    Field,
+    /// A field definition.
+    FieldDefinition,
+    /// A fragment definition.
+    FragmentDefinition,
+    /// A fragment spread.
+    FragmentSpread,
+    /// An inline fragment.
+    InlineFragment,
+    /// An input object field definition.
+    InputFieldDefinition,
+    /// An input object type.
+    InputObject,
+    /// An interface type.
+    Interface,
+    /// A mutation operation.
+    Mutation,
+    /// An object type.
+    Object,
+    /// A query operation.
+    Query,
+    /// A scalar type.
+    Scalar,
+    /// A schema definition or extension.
+    Schema,
+    /// A subscription operation.
+    Subscription,
+    /// A union type.
+    Union,
+    /// A variable definition.
+    VariableDefinition,
+}
+
+impl DirectiveLocation {
+    /// Returns the GraphQL spelling of the location, such as `FIELD_DEFINITION`.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::ArgumentDefinition => "ARGUMENT_DEFINITION",
+            Self::Enum => "ENUM",
+            Self::EnumValue => "ENUM_VALUE",
+            Self::Field => "FIELD",
+            Self::FieldDefinition => "FIELD_DEFINITION",
+            Self::FragmentDefinition => "FRAGMENT_DEFINITION",
+            Self::FragmentSpread => "FRAGMENT_SPREAD",
+            Self::InlineFragment => "INLINE_FRAGMENT",
+            Self::InputFieldDefinition => "INPUT_FIELD_DEFINITION",
+            Self::InputObject => "INPUT_OBJECT",
+            Self::Interface => "INTERFACE",
+            Self::Mutation => "MUTATION",
+            Self::Object => "OBJECT",
+            Self::Query => "QUERY",
+            Self::Scalar => "SCALAR",
+            Self::Schema => "SCHEMA",
+            Self::Subscription => "SUBSCRIPTION",
+            Self::Union => "UNION",
+            Self::VariableDefinition => "VARIABLE_DEFINITION",
+        }
+    }
+
+    /// Parses the GraphQL spelling of a location. Returns `None` for any
+    /// other text.
+    pub fn from_graphql_name(name: &str) -> Option<Self> {
+        let location = match name {
+            "ARGUMENT_DEFINITION" => Self::ArgumentDefinition,
+            "ENUM" => Self::Enum,
+            "ENUM_VALUE" => Self::EnumValue,
+            "FIELD" => Self::Field,
+            "FIELD_DEFINITION" => Self::FieldDefinition,
+            "FRAGMENT_DEFINITION" => Self::FragmentDefinition,
+            "FRAGMENT_SPREAD" => Self::FragmentSpread,
+            "INLINE_FRAGMENT" => Self::InlineFragment,
+            "INPUT_FIELD_DEFINITION" => Self::InputFieldDefinition,
+            "INPUT_OBJECT" => Self::InputObject,
+            "INTERFACE" => Self::Interface,
+            "MUTATION" => Self::Mutation,
+            "OBJECT" => Self::Object,
+            "QUERY" => Self::Query,
+            "SCALAR" => Self::Scalar,
+            "SCHEMA" => Self::Schema,
+            "SUBSCRIPTION" => Self::Subscription,
+            "UNION" => Self::Union,
+            "VARIABLE_DEFINITION" => Self::VariableDefinition,
+            _ => return None,
+        };
+        Some(location)
+    }
 }
 
 /// Metadata for the IR.
