@@ -7,11 +7,10 @@ use crate::domain::operation::{
     OperationArgument, OperationDirectiveArgs, OperationType, SchemaOperation,
 };
 use crate::domain::operation_artifact::{
-    CodecField, CodecShape, CompiledOperation, DirectiveRecord, EvidenceKind, Footprint,
-    IdentityRequirement, LawClaimTemplate, OperationArtifact, OperationKind,
-    OperationRegistrationDescriptor, OperationRequirements, OperationRequirementsArtifact,
-    PermissionAction, PermissionRequirement, RootArgumentBinding, SelectionArgumentBinding,
-    OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
+    CodecField, CodecShape, CompiledOperation, DirectiveRecord, Footprint, IdentityRequirement,
+    OperationArtifact, OperationKind, OperationRegistrationDescriptor, OperationRequirements,
+    OperationRequirementsArtifact, PermissionAction, PermissionRequirement, RootArgumentBinding,
+    SelectionArgumentBinding, OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 #[cfg(feature = "resilience")]
@@ -1237,8 +1236,7 @@ pub fn resolve_operation_selections_with_schema(
 /// Compiles runtime-provided SDL plus one GraphQL operation into an operation artifact.
 ///
 /// This is a compiler-only entry point. It validates and inspects the declared
-/// operation shape, but it does not execute the operation, grant authority, or
-/// verify runtime law satisfaction.
+/// operation shape, but it does not execute the operation or grant authority.
 pub fn compile_operation_artifact(
     sdl: &str,
     operation_source: &str,
@@ -1308,12 +1306,9 @@ pub fn compile_operation_artifact(
         "directives": directives,
     });
     let operation_id = stable_json_hash(&identity_seed, "operation identity")?;
-    let law_claims =
-        law_claims_for_operation(&operation_id, &directives, declared_footprint.as_ref())?;
     let requirements = requirements_from_footprint(declared_footprint.as_ref());
     let requirements_artifact = canonical_requirements_artifact(&serde_json::json!({
         "declaredFootprint": &declared_footprint,
-        "lawClaims": &law_claims,
         "requirements": &requirements,
     }))?;
     let requirements_digest = requirements_artifact.digest.clone();
@@ -1357,7 +1352,6 @@ pub fn compile_operation_artifact(
             payload_shape,
             directives,
             declared_footprint,
-            law_claims,
         },
         requirements,
         registration,
@@ -3289,52 +3283,6 @@ fn push_unique_codec_field(fields: &mut Vec<CodecField>, field: CodecField) {
     }
 }
 
-fn law_claims_for_operation(
-    operation_id: &str,
-    directives: &[DirectiveRecord],
-    footprint: Option<&Footprint>,
-) -> Result<Vec<LawClaimTemplate>, WesleyError> {
-    let mut claims = Vec::new();
-    let mut seen = BTreeSet::new();
-
-    push_law_claim(
-        &mut claims,
-        &mut seen,
-        operation_id,
-        "operation.shape.valid.v1",
-        vec![EvidenceKind::Compiler],
-    );
-    push_law_claim(
-        &mut claims,
-        &mut seen,
-        operation_id,
-        "operation.codec.canonical.v1",
-        vec![EvidenceKind::Compiler, EvidenceKind::Codec],
-    );
-
-    for law_id in law_ids_from_directives(directives)? {
-        push_law_claim(
-            &mut claims,
-            &mut seen,
-            operation_id,
-            &law_id,
-            vec![EvidenceKind::HostPolicy, EvidenceKind::DomainVerifier],
-        );
-    }
-
-    if footprint.is_some() {
-        push_law_claim(
-            &mut claims,
-            &mut seen,
-            operation_id,
-            "operation.footprint.closed.v1",
-            vec![EvidenceKind::RuntimeTrace],
-        );
-    }
-
-    Ok(claims)
-}
-
 fn requirements_from_footprint(footprint: Option<&Footprint>) -> OperationRequirements {
     let mut required_permissions = Vec::new();
     let mut forbidden_resources = Vec::new();
@@ -3367,49 +3315,6 @@ fn requirements_from_footprint(footprint: Option<&Footprint>) -> OperationRequir
         required_permissions,
         forbidden_resources,
     }
-}
-
-fn push_law_claim(
-    claims: &mut Vec<LawClaimTemplate>,
-    seen: &mut BTreeSet<String>,
-    operation_id: &str,
-    law_id: &str,
-    required_evidence: Vec<EvidenceKind>,
-) {
-    if !seen.insert(law_id.to_string()) {
-        return;
-    }
-
-    let claim_id = compute_content_hash(&format!("law-claim:{operation_id}:{law_id}"));
-    claims.push(LawClaimTemplate {
-        law_id: law_id.to_string(),
-        claim_id,
-        operation_id: operation_id.to_string(),
-        required_evidence,
-    });
-}
-
-fn law_ids_from_directives(directives: &[DirectiveRecord]) -> Result<Vec<String>, WesleyError> {
-    let mut law_ids = Vec::new();
-
-    for directive in directives
-        .iter()
-        .filter(|directive| directive.name == "wes_law")
-    {
-        let arguments: serde_json::Value =
-            serde_json::from_str(&directive.arguments_canonical_json).map_err(|err| {
-                operation_error_value(format!("Invalid canonical law arguments: {err}"))
-            })?;
-        let law_id = arguments
-            .get("id")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| {
-                operation_error_value("Directive 'wes_law' requires string argument 'id'".into())
-            })?;
-        law_ids.push(law_id.to_string());
-    }
-
-    Ok(law_ids)
 }
 
 fn is_list_type(type_ref: &TypeReference) -> bool {

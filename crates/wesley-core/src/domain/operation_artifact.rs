@@ -1,8 +1,8 @@
 //! Operation artifact models.
 //!
 //! These types are intentionally domain-empty. They describe the GraphQL
-//! operation shape, declared bounds, and law claims that an external target can
-//! import, evaluate, witness, or replay.
+//! operation shape and declared bounds that an external target can import,
+//! evaluate, or replay.
 
 use crate::domain::ir::TypeReference;
 use crate::domain::operation::OperationType;
@@ -23,7 +23,7 @@ pub struct OperationArtifact {
     pub artifact_hash: String,
     /// Stable schema identity derived from the lowered Wesley IR.
     pub schema_id: String,
-    /// Stable digest of contract requirements and law claim templates.
+    /// Stable digest of the canonical contract requirements artifact.
     pub requirements_digest: String,
     /// Wesley-owned canonical byte artifact for contract requirements.
     pub requirements_artifact: OperationRequirementsArtifact,
@@ -51,7 +51,7 @@ pub struct OperationRegistrationDescriptor {
     pub schema_id: String,
     /// Stable operation identity for the referenced artifact.
     pub operation_id: String,
-    /// Stable digest of contract requirements and law claim templates.
+    /// Stable digest of the canonical contract requirements artifact.
     pub requirements_digest: String,
 }
 
@@ -319,8 +319,6 @@ pub struct CompiledOperation {
     /// Declared resource footprint, when the operation supplies one.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub declared_footprint: Option<Footprint>,
-    /// Compiler-produced templates for laws relevant to this operation.
-    pub law_claims: Vec<LawClaimTemplate>,
 }
 
 /// Canonical binding for one argument supplied to an operation root field.
@@ -427,86 +425,4 @@ pub struct Footprint {
     pub writes: Vec<String>,
     /// Resource labels the operation declares forbidden.
     pub forbids: Vec<String>,
-}
-
-/// Compiler-produced declaration that a law is relevant to an operation.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct LawClaimTemplate {
-    /// Stable law identifier.
-    pub law_id: String,
-    /// Stable claim identity for this operation and law pairing.
-    pub claim_id: String,
-    /// Operation identity this claim applies to.
-    pub operation_id: String,
-    /// Evidence categories a runtime or verifier should produce.
-    pub required_evidence: Vec<EvidenceKind>,
-}
-
-/// Evidence category requested by a law claim template.
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum EvidenceKind {
-    /// Evidence produced by the Wesley compiler.
-    Compiler,
-    /// Evidence produced by codec inspection or fixture vectors.
-    Codec,
-    /// Evidence produced by host/runtime policy.
-    HostPolicy,
-    /// Evidence produced from runtime trace data.
-    RuntimeTrace,
-    /// Evidence produced by a domain verifier outside Wesley core.
-    DomainVerifier,
-}
-
-/// Runtime or verifier-produced verdict for one law claim.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct LawWitness {
-    /// Stable law identifier.
-    pub law_id: String,
-    /// Claim identity this witness evaluates.
-    pub claim_id: String,
-    /// Optional state basis reference evaluated by the checker.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub basis_ref: Option<String>,
-    /// Identifier for the checker that produced the verdict.
-    pub checker_id: String,
-    /// Optional hash of the checker artifact.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub checker_artifact_hash: Option<String>,
-    /// Verdict for the law claim.
-    pub verdict: LawVerdict,
-    /// Digests of evidence artifacts considered by the checker.
-    pub evidence_digests: Vec<String>,
-    /// Optional digest of the runtime trace considered by the checker.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub runtime_trace_digest: Option<String>,
-    /// Optional reason for an obstructed verdict.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub obstruction_reason: Option<String>,
-    /// Replay hints supplied by the runtime or verifier.
-    pub replay_hints: Vec<ReplayHint>,
-}
-
-/// Verdict produced for a law claim.
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum LawVerdict {
-    /// The checker found the law satisfied.
-    Satisfied,
-    /// The checker found a concrete obstruction.
-    Obstructed,
-    /// The checker cannot establish satisfaction or obstruction.
-    Unknown,
-}
-
-/// Hint that helps a runtime replay or inspect a witnessed interaction.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct ReplayHint {
-    /// Hint kind, such as `trace`, `basis`, or `artifact`.
-    pub kind: String,
-    /// Hint value, intentionally opaque to Wesley core.
-    pub value: String,
 }

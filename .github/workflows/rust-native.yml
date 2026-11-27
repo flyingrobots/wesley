@@ -24,7 +24,6 @@ on:
       - 'scripts/wesley-help.mjs'
       - 'test/fixtures/extension-generation/**'
       - 'test/fixtures/ir-parity/**'
-      - 'test/fixtures/weslaw/**'
       - 'xtask/**'
   push:
     branches:
@@ -48,7 +47,6 @@ on:
       - 'scripts/wesley-help.mjs'
       - 'test/fixtures/extension-generation/**'
       - 'test/fixtures/ir-parity/**'
-      - 'test/fixtures/weslaw/**'
       - 'xtask/**'
 
 jobs:
@@ -65,10 +63,6 @@ jobs:
         run: |
           rustc --version
           cargo --version
-      # preflight builds the Holmes domain for a target that has no std, to hold
-      # its purity boundary. In CI a missing target fails that check.
-      - name: Install the bare-metal Rust target
-        run: rustup target add thumbv7em-none-eabihf
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:

@@ -255,6 +255,5 @@ wesley schema diff --schema shop.graphql --against origin/main --exit-code
 
 ## Where next
 
-- [CLI reference](cli.md) for every command, including project manifests
-  (`wesley config`), law files (`wesley law`), and the binary codec emitters.
+- [CLI reference](cli.md) for every command, including project manifests (`wesley config`) and the binary codec emitters.
 - [Architecture](architecture.md) for how the crates fit together.

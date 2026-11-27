@@ -1,4 +1,3 @@
-directive @wes_law(id: String!) on FIELD
 directive @wes_footprint(
   reads: [String!]!
   writes: [String!]!
