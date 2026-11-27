@@ -71,7 +71,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@git-stunts/alfred": "0.10.4",
-    "dependency-cruiser": "18.8.0",
+    "dependency-cruiser": "18.9.0",
     "eslint": "^10.15.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-promise": "^7.3.0",
