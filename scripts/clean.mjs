@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readdir, rm } from 'node:fs/promises';
+import { lstat, readdir, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -53,51 +53,83 @@ async function removePattern(root, { directory, shouldRemove }, log) {
   }
 }
 
+/**
+ * Cleans one `.wesley/` directory. Returns a refusal message instead of
+ * touching anything when a symbolic link makes the outcome unsafe: following
+ * the directory link would delete files in its target, and `wesley` accepts a
+ * symlinked `config.json` that this script could not otherwise tell apart.
+ */
 async function cleanStateDirectory(path, log) {
-  let entries;
+  let status;
   try {
-    entries = await readdir(path, { withFileTypes: true });
+    status = await lstat(path);
   } catch (error) {
     if (error.code !== 'ENOENT') {
       console.warn(`warning: could not inspect ${path}: ${error.message}`);
     }
-    return;
+    return null;
   }
-  const keepsManifest = entries.some((entry) => entry.isFile() && entry.name === AUTHORED_MANIFEST);
+  if (status.isSymbolicLink()) {
+    return `${path}: .wesley is a symbolic link; clean it by hand, or remove the link`;
+  }
+  if (!status.isDirectory()) {
+    return null;
+  }
+
+  const entries = await readdir(path, { withFileTypes: true });
+  const manifest = entries.find((entry) => entry.name === AUTHORED_MANIFEST);
+  if (manifest?.isSymbolicLink()) {
+    return `${join(path, AUTHORED_MANIFEST)}: config.json is a symbolic link; clean ${path} by hand`;
+  }
+  const keepsManifest = manifest?.isFile() ?? false;
   if (!keepsManifest) {
     await removePath(path, log);
-    return;
+    return null;
   }
   await Promise.all(
     entries
-      .filter((entry) => !(entry.isFile() && entry.name === AUTHORED_MANIFEST))
+      .filter((entry) => entry !== manifest)
       .map((entry) => removePath(join(path, entry.name), log))
   );
   log(`kept ${join(path, AUTHORED_MANIFEST)} (authored project manifest)`);
+  return null;
 }
 
 /**
- * Removes generated state under `root`. An authored `.wesley/config.json` is kept.
+ * Removes generated state under `root`. An authored `.wesley/config.json` is
+ * kept, and a `.wesley/` that involves a symbolic link is left alone.
  *
  * @param {string} root workspace root
  * @param {{ log?: (message: string) => void }} [options]
+ * @returns {Promise<{ refused: string[] }>} paths left untouched, with reasons
  */
 export async function cleanWorkspace(root, { log = console.log } = {}) {
   await Promise.all(directories.map((directory) => removePath(join(root, directory), log)));
-  await Promise.all(
+  const outcomes = await Promise.all(
     stateDirectories.map((directory) => cleanStateDirectory(join(root, directory), log))
   );
   await Promise.all(filePatterns.map((pattern) => removePattern(root, pattern, log)));
+  return { refused: outcomes.filter((outcome) => outcome !== null) };
 }
 
 const invokedDirectly =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 
+async function main() {
+  const { refused } = await cleanWorkspace(process.cwd());
+  for (const reason of refused) {
+    console.error(`refused: ${reason}`);
+  }
+  if (refused.length > 0) {
+    process.exitCode = 1;
+  } else {
+    console.log('workspace cleaned');
+  }
+}
+
 if (invokedDirectly) {
-  cleanWorkspace(process.cwd())
-    .then(() => console.log('workspace cleaned'))
-    .catch((error) => {
-      console.error(error);
-      process.exitCode = 1;
-    });
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
 }

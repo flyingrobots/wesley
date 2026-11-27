@@ -26,7 +26,7 @@ The L1 IR and the schema registry hash are unchanged: no schema hashes different
 
 ### Fixed
 
-- `pnpm clean` no longer deletes an authored `.wesley/config.json`. It removed `.wesley/` wholesale, although `wesley` discovers a project manifest there, so an untracked or ignored manifest was lost. It now empties `.wesley/` and keeps `config.json`, and removes the directory only when there is no manifest. `wesley config --help` now lists `.wesley/config.json` among the discovered manifests, and says manifest paths resolve from the manifest's directory.
+- `pnpm clean` no longer deletes an authored `.wesley/config.json`. It removed `.wesley/` wholesale, although `wesley` discovers a project manifest there, so an untracked or ignored manifest was lost. It now empties `.wesley/` and keeps `config.json`, and removes the directory only when there is no manifest. If `.wesley/` or its `config.json` is a symbolic link, clean refuses that directory and exits non-zero rather than follow the link. `wesley config --help` now lists `.wesley/config.json` among the discovered manifests, and says manifest paths resolve from the manifest's directory.
 - `cargo xtask release-autotag-plan` reads the package version from the whole `crates/wesley-core/Cargo.toml` after the move from `toml` 0.8 to 1.2. `toml` 0.9.0 changed `impl FromStr for Value` to parse a single TOML value instead of a document, and the upgrade crosses that change, so the autotag job would have failed on every merge to `main` with "unexpected content, expected nothing", and no test exercised that path. Manifest parsing now goes through `toml::from_str`, and new unit tests cover the version lookup.
 
 ### Security
