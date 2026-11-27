@@ -538,8 +538,7 @@ impl ApolloLoweringAdapter {
                 })?
                 .text()
                 .to_string();
-            let core_name = canonical_core_directive_name(&dir_name);
-            let canonical_name = core_name.unwrap_or(dir_name.as_str()).to_string();
+            let canonical_name = dir_name;
 
             let mut args_map = serde_json::Map::new();
             if let Some(args) = dir.arguments() {
@@ -557,7 +556,7 @@ impl ApolloLoweringAdapter {
                 serde_json::Value::Object(args_map)
             };
 
-            let repeatable = core_name.is_none() && repeatable_directives.contains(&canonical_name);
+            let repeatable = repeatable_directives.contains(&canonical_name);
             insert_directive_value(map, canonical_name, val, repeatable)?;
         }
         Ok(())
@@ -1086,20 +1085,6 @@ fn source_location_for_byte_index(source: &str, index: usize) -> (u32, u32) {
     (line, column)
 }
 
-fn canonical_core_directive_name(name: &str) -> Option<&str> {
-    match name {
-        "wes_table" | "wesley_table" | "table" => Some("wes_table"),
-        "wes_pk" | "wesley_pk" | "pk" | "primaryKey" => Some("wes_pk"),
-        "wes_fk" | "wesley_fk" | "fk" | "foreignKey" => Some("wes_fk"),
-        "wes_unique" | "wesley_unique" | "unique" => Some("wes_unique"),
-        "wes_index" | "wesley_index" | "index" => Some("wes_index"),
-        "wes_tenant" | "wesley_tenant" | "tenant" => Some("wes_tenant"),
-        "wes_default" | "wesley_default" | "default" => Some("wes_default"),
-        "wes_rls" | "wesley_rls" | "rls" => Some("wes_rls"),
-        _ => None,
-    }
-}
-
 fn repeatable_directive_names_from_document(
     doc: &cst::Document,
 ) -> Result<BTreeSet<String>, WesleyError> {
@@ -1118,10 +1103,7 @@ fn repeatable_directive_names_from_document(
             .ok_or_else(|| {
                 lowering_error_value("directive", "Directive definition missing name".to_string())
             })?;
-        let canonical_name = canonical_core_directive_name(&name)
-            .unwrap_or(name.as_str())
-            .to_string();
-        repeatable.insert(canonical_name);
+        repeatable.insert(name);
     }
 
     Ok(repeatable)

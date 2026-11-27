@@ -7,13 +7,7 @@ or experimental and historical coverage.
 
 ## Stable Current-Path Fixtures
 
-These fixtures use only the eight directive families the core rewrites to a
-canonical name during lowering: `@wes_table`, `@wes_pk`, `@wes_fk`,
-`@wes_unique`, `@wes_index`, `@wes_tenant`, `@wes_default`, and `@wes_rls`. That
-list is `canonical_core_directive_name` in
-`crates/wesley-core/src/adapters/apollo.rs`, and
-[the architecture page](../../../docs/architecture.md) describes it. A fixture
-that uses any other directive belongs in the next section.
+These fixtures use only wesley-postgres's eight database directives: `@wes_table`, `@wes_pk`, `@wes_fk`, `@wes_unique`, `@wes_index`, `@wes_tenant`, `@wes_default`, and `@wes_rls`. The core gives them no meaning; it records them as written, and accepts them undeclared because they are in the reserved `wes_` namespace ([the architecture page](../../../docs/architecture.md) has the rules). A fixture that uses any other directive belongs in the next section.
 
 [`schemas/directives.graphql`](../../../schemas/directives.graphql) declares
 more directives than these. It is a registry of names, not a statement of

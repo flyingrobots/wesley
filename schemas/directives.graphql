@@ -29,33 +29,10 @@ directive @wes_import(
 ) on SCHEMA
 
 # ═══════════════════════════════════════════════════════════════════
-# CORE DIRECTIVES - Table and Field Markers (Canonical @wes_ namespace)
+# FIELD AND TYPE METADATA (Canonical @wes_ namespace)
+# Database directives (@wes_table, @wes_pk, @wes_fk, @wes_unique, @wes_index,
+# @wes_tenant, @wes_default, @wes_rls) belong to wesley-postgres.
 # ═══════════════════════════════════════════════════════════════════
-
-directive @wes_table(
-  name: String
-) on OBJECT
-
-directive @wes_pk on FIELD_DEFINITION
-
-directive @wes_fk(
-  ref: String!
-) on FIELD_DEFINITION
-
-directive @wes_unique on FIELD_DEFINITION
-
-directive @wes_index(
-  name: String
-  using: String
-) on FIELD_DEFINITION | OBJECT
-
-directive @wes_tenant(
-  by: String!
-) on OBJECT
-
-directive @wes_default(
-  value: String!
-) on FIELD_DEFINITION
 
 directive @wes_uid(
   value: String!
@@ -93,34 +70,10 @@ directive @wes_grant(
 
 directive @wes_noRPC on OBJECT
 
-directive @wes_rls(
-  using: String
-  check: String
-  select: String
-  insert: String
-  update: String
-  delete: String
-  roles: [String!]
-  selectRoles: [String!]
-  insertRoles: [String!]
-  updateRoles: [String!]
-  deleteRoles: [String!]
-  preset: String
-  name: String
-  options: JSON
-) on OBJECT
-
 # ═══════════════════════════════════════════════════════════════════
 # LEGACY ALIASES (Deprecated - use @wes_* instead)
 # ═══════════════════════════════════════════════════════════════════
 
-directive @wesley_table(name: String) on OBJECT
-directive @wesley_pk on FIELD_DEFINITION
-directive @wesley_fk(ref: String!) on FIELD_DEFINITION
-directive @wesley_unique on FIELD_DEFINITION
-directive @wesley_index(name: String, using: String) on FIELD_DEFINITION | OBJECT
-directive @wesley_tenant(by: String!) on OBJECT
-directive @wesley_default(value: String!) on FIELD_DEFINITION
 directive @wesley_uid(value: String!) on FIELD_DEFINITION | OBJECT
 directive @wesley_weight(value: Int!) on FIELD_DEFINITION | OBJECT
 directive @wesley_critical on FIELD_DEFINITION | OBJECT
@@ -131,59 +84,16 @@ directive @wesley_belongsTo(ref: String!) on FIELD_DEFINITION
 directive @wesley_owner(column: String, select: String, insert: String, update: String, delete: String) on OBJECT
 directive @wesley_grant(roles: [String!]) on OBJECT | FIELD_DEFINITION
 directive @wesley_noRPC on OBJECT
-directive @wesley_rls(
-  using: String
-  check: String
-  select: String
-  insert: String
-  update: String
-  delete: String
-  roles: [String!]
-  selectRoles: [String!]
-  insertRoles: [String!]
-  updateRoles: [String!]
-  deleteRoles: [String!]
-  preset: String
-  name: String
-  options: JSON
-) on OBJECT
-
-directive @table on OBJECT
-directive @pk on FIELD_DEFINITION
-directive @fk(ref: String!) on FIELD_DEFINITION
-directive @unique on FIELD_DEFINITION
-directive @index(name: String, using: String) on FIELD_DEFINITION | OBJECT
-directive @tenant(by: String!) on OBJECT
-directive @default(value: String!) on FIELD_DEFINITION
 directive @uid(value: String!) on FIELD_DEFINITION | OBJECT
 directive @weight(value: Int!) on FIELD_DEFINITION | OBJECT
 directive @critical on FIELD_DEFINITION | OBJECT
 directive @sensitive on FIELD_DEFINITION | OBJECT
 directive @pii on FIELD_DEFINITION | OBJECT
-directive @primaryKey on FIELD_DEFINITION | OBJECT
-directive @foreignKey(ref: String!) on FIELD_DEFINITION
 directive @hasMany(type: String!, field: String, via: String) on FIELD_DEFINITION
 directive @belongsTo(ref: String!) on FIELD_DEFINITION
 directive @owner(column: String, select: String, insert: String, update: String, delete: String) on OBJECT
 directive @grant(roles: [String!]) on OBJECT | FIELD_DEFINITION
 directive @noRPC on OBJECT
-directive @rls(
-  using: String
-  check: String
-  select: String
-  insert: String
-  update: String
-  delete: String
-  roles: [String!]
-  selectRoles: [String!]
-  insertRoles: [String!]
-  updateRoles: [String!]
-  deleteRoles: [String!]
-  preset: String
-  name: String
-  options: JSON
-) on OBJECT
-
 # ═══════════════════════════════════════════════════════════════════
 # JOIN DIRECTIVES - Generic deterministic merge metadata
 # ═══════════════════════════════════════════════════════════════════
