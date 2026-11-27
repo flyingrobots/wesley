@@ -58,8 +58,8 @@ importers:
   packages/wesley-holmes:
     dependencies:
       commander:
-        specifier: ^15.0.0
-        version: 15.0.0
+        specifier: ^15.1.0
+        version: 15.1.0
 
 packages:
 
