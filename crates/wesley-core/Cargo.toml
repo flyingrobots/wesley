@@ -28,7 +28,7 @@ thiserror = "1.0"
 indexmap = { version = "2.0", features = ["serde"] }
 async-trait = { version = "0.1", optional = true }
 apollo-parser = "0.8"
-ninelives = { version = "0.2", optional = true }
+ninelives = { version = "0.2.1", optional = true }
 yaml-rust2 = { version = "0.13", default-features = false }
 
 [dev-dependencies]
