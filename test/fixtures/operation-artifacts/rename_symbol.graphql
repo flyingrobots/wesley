@@ -1,6 +1,6 @@
 mutation RenameSymbol($input: RenameSymbolInput!) {
   renameSymbol(input: $input)
-    @wes_footprint(
+    @example_access(
       reads: ["workspace.files", "symbol.index"]
       writes: ["workspace.files"]
       forbids: ["secrets", "git.refs"]

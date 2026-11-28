@@ -7,10 +7,10 @@ use crate::domain::operation::{
     OperationArgument, OperationDirectiveArgs, OperationType, SchemaOperation,
 };
 use crate::domain::operation_artifact::{
-    CodecField, CodecShape, CompiledOperation, DirectiveRecord, Footprint, IdentityRequirement,
+    CodecField, CodecShape, CompiledOperation, DirectiveRecord, IdentityRequirement,
     OperationArtifact, OperationKind, OperationRegistrationDescriptor, OperationRequirements,
-    OperationRequirementsArtifact, PermissionAction, PermissionRequirement, RootArgumentBinding,
-    SelectionArgumentBinding, OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
+    OperationRequirementsArtifact, RootArgumentBinding, SelectionArgumentBinding,
+    OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 use crate::domain::schema_delta::{diff_schema_ir, SchemaDelta};
 #[cfg(feature = "resilience")]
@@ -1234,8 +1234,6 @@ pub fn compile_operation_artifact(
     let operation_name = op.name().map(|name| name.text().to_string());
     let directives =
         directive_records_for_operation(op, root_type, &root_field, &schema, &parsed.fragments)?;
-    let root_coordinate = format!("{root_type}.{root_field_name}");
-    let declared_footprint = footprint_from_directives(&directives, &root_coordinate)?;
     let variable_shape = variable_codec_shape(op, schema_operation)?;
     let payload_shape = payload_codec_shape(
         &root_field,
@@ -1256,9 +1254,8 @@ pub fn compile_operation_artifact(
         "directives": directives,
     });
     let operation_id = stable_json_hash(&identity_seed, "operation identity")?;
-    let requirements = requirements_from_footprint(declared_footprint.as_ref());
+    let requirements = operation_requirements();
     let requirements_artifact = canonical_requirements_artifact(&serde_json::json!({
-        "declaredFootprint": &declared_footprint,
         "requirements": &requirements,
     }))?;
     let requirements_digest = requirements_artifact.digest.clone();
@@ -1301,7 +1298,6 @@ pub fn compile_operation_artifact(
             variable_shape,
             payload_shape,
             directives,
-            declared_footprint,
         },
         requirements,
         registration,
@@ -2157,91 +2153,6 @@ fn extract_executable_directive_arguments(
     }
 
     Ok(values)
-}
-
-fn footprint_from_directives(
-    directives: &[DirectiveRecord],
-    root_coordinate: &str,
-) -> Result<Option<Footprint>, WesleyError> {
-    let mut footprint = None;
-
-    for directive in directives
-        .iter()
-        .filter(|directive| directive.name == "wes_footprint")
-    {
-        if directive.coordinate != root_coordinate {
-            return operation_error(format!(
-                "Operation artifact @wes_footprint is only supported on selected root field '{root_coordinate}', found on '{}'",
-                directive.coordinate
-            ));
-        }
-
-        if footprint.is_some() {
-            return operation_error("Operation artifact declares multiple footprints".to_string());
-        }
-
-        let arguments: serde_json::Value =
-            serde_json::from_str(&directive.arguments_canonical_json).map_err(|err| {
-                operation_error_value(format!("Invalid canonical footprint arguments: {err}"))
-            })?;
-        footprint = Some(Footprint {
-            reads: required_string_array(&arguments, "reads")?,
-            writes: required_string_array(&arguments, "writes")?,
-            forbids: optional_string_array(&arguments, "forbids")?,
-        });
-    }
-
-    Ok(footprint)
-}
-
-fn required_string_array(
-    arguments: &serde_json::Value,
-    name: &str,
-) -> Result<Vec<String>, WesleyError> {
-    let value = arguments
-        .get(name)
-        .ok_or_else(|| operation_error_value(format!("Footprint argument '{name}' is required")))?;
-    string_array(value, name)
-}
-
-fn optional_string_array(
-    arguments: &serde_json::Value,
-    name: &str,
-) -> Result<Vec<String>, WesleyError> {
-    let Some(value) = arguments.get(name) else {
-        return Ok(Vec::new());
-    };
-
-    string_array(value, name)
-}
-
-fn string_array(value: &serde_json::Value, name: &str) -> Result<Vec<String>, WesleyError> {
-    let serde_json::Value::Array(items) = value else {
-        return operation_error(format!(
-            "Footprint argument '{name}' must be a string array"
-        ));
-    };
-
-    let mut labels = Vec::new();
-    let mut seen = BTreeSet::new();
-    for item in items {
-        let label = item
-            .as_str()
-            .map(|value| value.to_string())
-            .ok_or_else(|| {
-                operation_error_value(format!(
-                    "Footprint argument '{name}' contains a non-string value"
-                ))
-            })?;
-        if !seen.insert(label.clone()) {
-            return operation_error(format!(
-                "Footprint argument '{name}' contains duplicate label '{label}'"
-            ));
-        }
-        labels.push(label);
-    }
-
-    Ok(labels)
 }
 
 fn variable_definition_types(
@@ -3233,37 +3144,16 @@ fn push_unique_codec_field(fields: &mut Vec<CodecField>, field: CodecField) {
     }
 }
 
-fn requirements_from_footprint(footprint: Option<&Footprint>) -> OperationRequirements {
-    let mut required_permissions = Vec::new();
-    let mut forbidden_resources = Vec::new();
-
-    if let Some(footprint) = footprint {
-        for resource in &footprint.reads {
-            required_permissions.push(PermissionRequirement {
-                action: PermissionAction::Read,
-                resource: resource.clone(),
-                source: "wes_footprint.reads".to_string(),
-            });
-        }
-
-        for resource in &footprint.writes {
-            required_permissions.push(PermissionRequirement {
-                action: PermissionAction::Write,
-                resource: resource.clone(),
-                source: "wes_footprint.writes".to_string(),
-            });
-        }
-
-        forbidden_resources = footprint.forbids.clone();
-    }
-
+/// What every compiled operation requires. Core derives no permissions or forbidden resources
+/// from directives; a consumer that gives a directive such meaning reads the directive record.
+fn operation_requirements() -> OperationRequirements {
     OperationRequirements {
         identity: IdentityRequirement {
             required: true,
             accepted_principal_kinds: Vec::new(),
         },
-        required_permissions,
-        forbidden_resources,
+        required_permissions: Vec::new(),
+        forbidden_resources: Vec::new(),
     }
 }
 

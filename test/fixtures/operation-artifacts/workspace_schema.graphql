@@ -1,4 +1,4 @@
-directive @wes_footprint(
+directive @example_access(
   reads: [String!]!
   writes: [String!]!
   forbids: [String!]
