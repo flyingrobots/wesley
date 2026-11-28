@@ -194,7 +194,7 @@ fn registry_insert_normalizes_embedded_registration_descriptor() {
 }
 
 #[test]
-fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
+fn artifact_hashes_are_stable_and_sensitive_to_shape_and_directives() {
     let schema =
         include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
     let operation =
@@ -1344,7 +1344,7 @@ fn wes_footprint_is_an_uninterpreted_directive() {
         ),
         (
             "duplicate labels",
-            r#"mutation M { touch(id: "a") @wes_footprint(reads: ["x", "x"], writes: []) { ok } }"#,
+            r#"mutation M { touch(id: "a") @wes_footprint(reads: ["x", "x"], writes: [], forbids: ["z"]) { ok } }"#,
         ),
         (
             "off the root field",

@@ -61,9 +61,11 @@ pub struct OperationRegistrationDescriptor {
 pub struct OperationRequirements {
     /// Identity binding described by the compiler.
     pub identity: IdentityRequirement,
-    /// Permission requirements inferred from the declared operation bounds.
+    /// Permission requirements. Core derives none from directives, so it always compiles this
+    /// empty; the field stays so an artifact's shape does not change for a consumer that fills it.
     pub required_permissions: Vec<PermissionRequirement>,
-    /// Resource labels that must remain inaccessible to the operation.
+    /// Resource labels that must remain inaccessible to the operation. Always empty from core,
+    /// for the same reason.
     pub forbidden_resources: Vec<String>,
 }
 
@@ -270,7 +272,8 @@ pub struct IdentityRequirement {
     pub accepted_principal_kinds: Vec<String>,
 }
 
-/// Permission requirement inferred from an operation declaration.
+/// A permission an operation requires. Core compiles none (flyingrobots/wesley#891); the type
+/// stays public for consumers that build requirements of their own.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct PermissionRequirement {
