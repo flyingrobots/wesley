@@ -316,9 +316,6 @@ pub struct CompiledOperation {
     pub payload_shape: CodecShape,
     /// Directives preserved from the executable operation.
     pub directives: Vec<DirectiveRecord>,
-    /// Declared resource footprint, when the operation supplies one.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub declared_footprint: Option<Footprint>,
 }
 
 /// Canonical binding for one argument supplied to an operation root field.
@@ -413,16 +410,4 @@ pub struct DirectiveRecord {
     pub name: String,
     /// Canonical JSON object containing the directive arguments.
     pub arguments_canonical_json: String,
-}
-
-/// Declared resource families an operation may read, write, or must not touch.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct Footprint {
-    /// Resource labels the operation declares it may read.
-    pub reads: Vec<String>,
-    /// Resource labels the operation declares it may write.
-    pub writes: Vec<String>,
-    /// Resource labels the operation declares forbidden.
-    pub forbids: Vec<String>,
 }

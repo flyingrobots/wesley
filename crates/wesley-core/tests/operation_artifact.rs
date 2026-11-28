@@ -3,7 +3,7 @@ use wesley_core::{
     compile_operation_artifact, compile_operation_artifact_registration, compile_runtime_optic,
     compile_runtime_optic_registration, CodecField, DirectiveRecord,
     InMemoryOperationArtifactRegistry, OperationArtifactResolver, OperationKind, PermissionAction,
-    PermissionRequirement, ResolveError, OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
+    ResolveError, OPERATION_REQUIREMENTS_ARTIFACT_CODEC,
 };
 
 #[test]
@@ -53,7 +53,7 @@ fn compiles_runtime_operation_into_domain_empty_operation_artifact() {
     assert_contains_directive(
         &artifact.operation.directives,
         "Mutation.renameSymbol",
-        "wes_footprint",
+        "example_access",
         serde_json::json!({
             "reads": ["workspace.files", "symbol.index"],
             "writes": ["workspace.files"],
@@ -61,37 +61,11 @@ fn compiles_runtime_operation_into_domain_empty_operation_artifact() {
         }),
     );
 
-    let footprint = artifact
-        .operation
-        .declared_footprint
-        .as_ref()
-        .expect("footprint should be extracted");
-    assert_eq!(footprint.reads, vec!["workspace.files", "symbol.index"]);
-    assert_eq!(footprint.writes, vec!["workspace.files"]);
-    assert_eq!(footprint.forbids, vec!["secrets", "git.refs"]);
-
     let requirements = &artifact.requirements;
     assert!(requirements.identity.required);
     assert!(requirements.identity.accepted_principal_kinds.is_empty());
-    assert_contains_permission(
-        &requirements.required_permissions,
-        PermissionAction::Read,
-        "workspace.files",
-    );
-    assert_contains_permission(
-        &requirements.required_permissions,
-        PermissionAction::Read,
-        "symbol.index",
-    );
-    assert_contains_permission(
-        &requirements.required_permissions,
-        PermissionAction::Write,
-        "workspace.files",
-    );
-    assert_eq!(
-        requirements.forbidden_resources,
-        vec!["secrets", "git.refs"]
-    );
+    assert!(requirements.required_permissions.is_empty());
+    assert!(requirements.forbidden_resources.is_empty());
 
     let input = find_codec_field(&artifact.operation.variable_shape.fields, "input");
     assert_eq!(
@@ -246,13 +220,17 @@ fn artifact_hashes_are_stable_and_sensitive_to_shape_and_requirements() {
         reformatted_artifact.requirements_digest
     );
 
-    let footprint_changed = operation.replace("\"symbol.index\"", "\"diagnostics\"");
-    let footprint_artifact =
-        compile_operation_artifact(schema, &footprint_changed, Some("RenameSymbol"))
-            .expect("footprint-changed operation artifact should compile");
+    let directive_changed = operation.replace("\"symbol.index\"", "\"diagnostics\"");
+    let directive_artifact =
+        compile_operation_artifact(schema, &directive_changed, Some("RenameSymbol"))
+            .expect("directive-changed operation artifact should compile");
     assert_ne!(
-        baseline.requirements_digest, footprint_artifact.requirements_digest,
-        "changing declared footprint must change requirements digest"
+        baseline.artifact_hash, directive_artifact.artifact_hash,
+        "changing a directive's arguments must change artifact hash"
+    );
+    assert_eq!(
+        baseline.requirements_digest, directive_artifact.requirements_digest,
+        "core derives no requirements from directives"
     );
 
     let payload_changed = operation.replace("      resultRef\n", "");
@@ -275,7 +253,6 @@ fn canonical_requirements_bytes_are_deterministic() {
     let artifact = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
         .expect("operation artifact should compile");
     let expected = wesley_core::to_canonical_json(&serde_json::json!({
-        "declaredFootprint": &artifact.operation.declared_footprint,
         "requirements": &artifact.requirements,
     }))
     .expect("expected requirements body should canonicalize")
@@ -364,17 +341,8 @@ fn canonical_requirements_json_keys_are_ordered_if_json_codec_is_used() {
         .expect("canonical requirements bytes should parse as JSON");
 
     assert!(
-        canonical.starts_with("{\"declaredFootprint\":"),
-        "top-level JSON keys should begin in sorted order: {canonical}"
-    );
-    assert!(
-        canonical
-            .find("\"declaredFootprint\"")
-            .expect("declaredFootprint key")
-            < canonical
-                .find("\"requirements\"")
-                .expect("requirements key"),
-        "top-level JSON keys should stay lexicographically ordered: {canonical}"
+        canonical.starts_with("{\"requirements\":"),
+        "the requirements body has one top-level key: {canonical}"
     );
     assert!(
         canonical
@@ -404,30 +372,6 @@ fn operation_artifact_exposes_requirements_artifact() {
         OPERATION_REQUIREMENTS_ARTIFACT_CODEC
     );
     assert!(!artifact.requirements_artifact.bytes.is_empty());
-}
-
-#[test]
-fn changing_footprint_requirements_changes_requirements_digest() {
-    let schema =
-        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
-    let operation =
-        include_str!("../../../test/fixtures/operation-artifacts/rename_symbol.graphql");
-
-    let baseline = compile_operation_artifact(schema, operation, Some("RenameSymbol"))
-        .expect("baseline operation artifact should compile");
-
-    let footprint_changed = operation.replace("\"symbol.index\"", "\"diagnostics\"");
-    let footprint_artifact =
-        compile_operation_artifact(schema, &footprint_changed, Some("RenameSymbol"))
-            .expect("footprint-changed operation artifact should compile");
-    assert_ne!(
-        baseline.requirements_digest, footprint_artifact.requirements_digest,
-        "changing footprint requirements must change requirements digest"
-    );
-    assert_ne!(
-        baseline.requirements_artifact.bytes, footprint_artifact.requirements_artifact.bytes,
-        "changing footprint requirements must change canonical requirements bytes"
-    );
 }
 
 #[test]
@@ -959,135 +903,13 @@ fn operation_artifact_rejects_nullable_leaf_nested_list_variables() {
 }
 
 #[test]
-fn operation_artifact_requires_reads_and_writes_when_footprint_is_present() {
+fn operation_artifact_rejects_duplicate_directive_arguments() {
     let schema =
         include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
-    let missing_reads = r#"
+    let duplicate_directive_argument = r#"
         mutation RenameSymbol($input: RenameSymbolInput!) {
           renameSymbol(input: $input)
-            @wes_footprint(writes: ["workspace.files"]) {
-            receipt {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-    let missing_writes = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input)
-            @wes_footprint(reads: ["workspace.files"]) {
-            receipt {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-    let without_forbids = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input)
-            @wes_footprint(
-              reads: ["workspace.files"]
-              writes: ["workspace.files"]
-            ) {
-            receipt {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-
-    assert_operation_lowering_error(compile_operation_artifact(
-        schema,
-        missing_reads,
-        Some("RenameSymbol"),
-    ));
-    assert_operation_lowering_error(compile_operation_artifact(
-        schema,
-        missing_writes,
-        Some("RenameSymbol"),
-    ));
-
-    let artifact = compile_operation_artifact(schema, without_forbids, Some("RenameSymbol"))
-        .expect("footprint without forbids should compile");
-    let footprint = artifact
-        .operation
-        .declared_footprint
-        .expect("footprint should be extracted");
-    assert_eq!(footprint.reads, vec!["workspace.files"]);
-    assert_eq!(footprint.writes, vec!["workspace.files"]);
-    assert!(footprint.forbids.is_empty());
-}
-
-#[test]
-fn operation_artifact_rejects_duplicate_footprint_labels() {
-    let schema =
-        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
-    let duplicate_reads = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input)
-            @wes_footprint(
-              reads: ["workspace.files", "workspace.files"]
-              writes: ["workspace.files"]
-            ) {
-            receipt {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-    let duplicate_writes = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input)
-            @wes_footprint(
-              reads: ["workspace.files"]
-              writes: ["workspace.files", "workspace.files"]
-            ) {
-            receipt {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-    let duplicate_forbids = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input)
-            @wes_footprint(
-              reads: ["workspace.files"]
-              writes: ["workspace.files"]
-              forbids: ["secrets", "secrets"]
-            ) {
-            receipt {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-
-    assert_operation_lowering_error(compile_operation_artifact(
-        schema,
-        duplicate_reads,
-        Some("RenameSymbol"),
-    ));
-    assert_operation_lowering_error(compile_operation_artifact(
-        schema,
-        duplicate_writes,
-        Some("RenameSymbol"),
-    ));
-    assert_operation_lowering_error(compile_operation_artifact(
-        schema,
-        duplicate_forbids,
-        Some("RenameSymbol"),
-    ));
-}
-
-#[test]
-fn operation_artifact_rejects_duplicate_footprint_directive_arguments() {
-    let schema =
-        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
-    let duplicate_footprint_argument = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input)
-            @wes_footprint(
+            @example_access(
               reads: ["workspace.files"]
               reads: ["secrets"]
               writes: ["workspace.files"]
@@ -1101,54 +923,7 @@ fn operation_artifact_rejects_duplicate_footprint_directive_arguments() {
 
     assert_operation_lowering_error(compile_operation_artifact(
         schema,
-        duplicate_footprint_argument,
-        Some("RenameSymbol"),
-    ));
-}
-
-#[test]
-fn operation_artifact_rejects_non_root_footprint_directives() {
-    let schema =
-        include_str!("../../../test/fixtures/operation-artifacts/workspace_schema.graphql");
-    let nested_only = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input) {
-            receipt
-              @wes_footprint(
-                reads: ["receipt.local"]
-                writes: []
-              ) {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-    let root_and_nested = r#"
-        mutation RenameSymbol($input: RenameSymbolInput!) {
-          renameSymbol(input: $input)
-            @wes_footprint(
-              reads: ["workspace.files"]
-              writes: ["workspace.files"]
-            ) {
-            receipt
-              @wes_footprint(
-                reads: ["receipt.local"]
-                writes: []
-              ) {
-              witnessDigest
-            }
-          }
-        }
-    "#;
-
-    assert_operation_lowering_error(compile_operation_artifact(
-        schema,
-        nested_only,
-        Some("RenameSymbol"),
-    ));
-    assert_operation_lowering_error(compile_operation_artifact(
-        schema,
-        root_and_nested,
+        duplicate_directive_argument,
         Some("RenameSymbol"),
     ));
 }
@@ -1533,19 +1308,6 @@ fn find_codec_field<'a>(fields: &'a [CodecField], name: &str) -> &'a CodecField 
         .unwrap_or_else(|| panic!("codec field {name} should exist"))
 }
 
-fn assert_contains_permission(
-    permissions: &[PermissionRequirement],
-    action: PermissionAction,
-    resource: &str,
-) {
-    assert!(
-        permissions
-            .iter()
-            .any(|permission| permission.action == action && permission.resource == resource),
-        "permission {action:?} {resource} should exist"
-    );
-}
-
 fn assert_operation_lowering_error(
     result: Result<wesley_core::OperationArtifact, wesley_core::WesleyError>,
 ) {
@@ -1562,4 +1324,65 @@ fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
     hex::encode(hasher.finalize())
+}
+
+/// `@wes_footprint` is Echo vocabulary, not Wesley's (flyingrobots/wesley#891): core keeps it as a
+/// directive record like any other and derives nothing from it. Each of these was refused while
+/// core interpreted it; now each lowers, with no permissions and no footprint in the artifact.
+#[test]
+fn wes_footprint_is_an_uninterpreted_directive() {
+    let schema = r#"
+        directive @wes_footprint(reads: [String!], writes: [String!], forbids: [String!]) repeatable on FIELD
+        type Query { ping: Int }
+        type Mutation { touch(id: ID!): Receipt! }
+        type Receipt { ok: Boolean! inner: Receipt }
+    "#;
+    let cases = [
+        (
+            "writes only",
+            r#"mutation M { touch(id: "a") @wes_footprint(writes: ["x"]) { ok } }"#,
+        ),
+        (
+            "duplicate labels",
+            r#"mutation M { touch(id: "a") @wes_footprint(reads: ["x", "x"], writes: []) { ok } }"#,
+        ),
+        (
+            "off the root field",
+            r#"mutation M { touch(id: "a") { inner @wes_footprint(reads: ["x"], writes: []) { ok } } }"#,
+        ),
+        (
+            "twice",
+            r#"mutation M { touch(id: "a") @wes_footprint(reads: ["x"]) @wes_footprint(writes: ["y"]) { ok } }"#,
+        ),
+    ];
+    for (case, operation) in cases {
+        let artifact = compile_operation_artifact(schema, operation, Some("M"))
+            .unwrap_or_else(|err| panic!("{case}: should lower as a plain directive: {err:?}"));
+        assert!(
+            artifact.requirements.required_permissions.is_empty(),
+            "{case}: no permissions derived"
+        );
+        assert!(
+            artifact.requirements.forbidden_resources.is_empty(),
+            "{case}: no forbidden resources derived"
+        );
+        assert!(
+            artifact
+                .operation
+                .directives
+                .iter()
+                .any(|d| d.name == "wes_footprint"),
+            "{case}: the directive record is kept"
+        );
+        let json = serde_json::to_string(&artifact).expect("artifact serializes");
+        assert!(
+            !json.contains("declaredFootprint"),
+            "{case}: no declaredFootprint: {json}"
+        );
+        let bytes = std::str::from_utf8(&artifact.requirements_artifact.bytes).expect("utf-8");
+        assert!(
+            !bytes.contains("declaredFootprint"),
+            "{case}: requirements bytes: {bytes}"
+        );
+    }
 }
